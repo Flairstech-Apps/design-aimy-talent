@@ -1581,7 +1581,7 @@
       : isClient() ? (sentTo.length ? 'We sent <b>' + plural(sentTo.length, 'profile') + '</b>; you met ' + sentTo.filter((c) => rank(q, c.maxAt) >= rank(q, 'client')).length + '.' : 'No profiles sent yet.')
       : CLOSED[q.state]
       ? (q.state === 'filled' || q.state === 'started' ? plural(q.seats, 'seat') + ' filled, from ' + DB.byReq[q.id].length + ' candidates.' : 'Closed before anyone was hired.')
-      : ws ? '<b>' + ws.m + ' of ' + ws.n + '</b> moved on from the ' + esc(lower(STAGE[ws.from].label)) + ', the biggest drop here.'
+      : ws ? '<b>' + ws.m + ' of ' + ws.n + '</b> moved on after ' + esc(STAGE[ws.from].label) + ', the biggest drop here.'
       : 'Too early to say where people drop.';
     return '<article class="type-card s-card b-qcard" data-open="req:' + q.id + '" style="--i:' + Math.min(i, 8) + '">' +
       '<div class="tc-head">' + tag(st.label, st.tone) + '<span class="b-kind">' + esc(clock) + '</span>' +
@@ -1801,7 +1801,7 @@
   const busy = () => {
     if (CALL && CALL.state === 'logging') { toast('Log the last call first.'); return true; }
     if (CALL) { toast('You are already on a call. One line at a time.'); return true; }
-    if (RINGING) { toast('Your phone is ringing. Answer it or let it go first.'); return true; }
+    if (RINGING) { toast('A call is coming in. Answer it or let it go first.'); return true; }
     return false;
   };
 
@@ -2885,7 +2885,7 @@
       const q = reqOf(c);
       const sug = c.ev.map((x, i) => (i % 3 === 2 && x === 'm' ? 'p' : x === 'n' && i % 2 ? 'p' : x));
       const lines = [];
-      q.must.forEach((m, i) => { lines.push(['you', 'Tell me about ' + lower(m) + '.']); lines.push(['them', ANSWER[sug[i]]]); });
+      q.must.forEach((m, i) => { lines.push(['you', 'Give me an example for this one: ' + lower(m) + '.']); lines.push(['them', ANSWER[sug[i]]]); });
       const strong = q.must.filter((m, i) => sug[i] === 'm'), weak = q.must.filter((m, i) => sug[i] !== 'm');
       put('ivs', v, { recording: { mins: 26 + (v.id.length % 17), at: 0, lines: lines,
         summary: (strong.length ? 'Clear examples on ' + strong.join('; ') + '. ' : '') + (weak.length ? 'Less to go on for ' + weak.join('; ') + '.' : ''), suggests: sug } });
@@ -3479,6 +3479,11 @@
       deskReqs().filter(isOpen).forEach((q) => activeOf(q).filter((c) => c.stage === 'tech' && c.since <= 2).forEach((c) => {
         out.push({ k: 'new', c: c, head: c.name + ' is on your shortlist', body: 'Advanced to the technical round for ' + q.title + '. ' + evMet(c) + ' of ' + c.ev.length + ' must-haves met in the CV.', go: { cand: c.id }, verb: 'See them' });
       }));
+      /* A client's request lands here as a draft, to be talked through. */
+      DB.reqs.filter((q) => q.state === 'draft' && q.hm === DESK && DESKS[q.askedBy] && DESKS[q.askedBy].fn === 'client').forEach((q) => {
+        out.push({ k: 'request', c: null, head: DESKS[q.askedBy].name + ' asked for ' + (q.title ? plural(q.seats, 'seat') + ' as ' + q.title : 'a hire'),
+          body: q.desc + ' Talk it through with them, then open it.', go: { req: q.id }, verb: 'Open the draft' });
+      });
     } else if (isClient()) {
       deskReqs().filter(isOpen).forEach((q) => activeOf(q).filter((c) => c.stage === 'sent').forEach((c) => {
         out.push({ k: 'sent', c: c, head: c.name + ' for ' + q.title, body: 'Sent ' + days(c.since) + ' ago. ' + evMet(c) + ' of ' + c.ev.length + ' must-haves met, verified in our interviews.', go: { cand: c.id }, verb: 'Decide', yes: true });
@@ -3508,7 +3513,7 @@
   function askRows(list) {
     return '<div class="b-owed">' + list.map((x, i) => '<div class="b-owed-row t-row" style="--i:' + Math.min(i, 8) + '">' +
       '<span class="b-owed-sev" aria-hidden="true"></span>' +
-      '<button class="b-owed-main t-row-open" type="button"' + goAttr({ cand: x.c.id }) + '><span class="b-owed-head"><span class="b-owed-type">' + esc(x.head) + '</span></span>' +
+      '<button class="b-owed-main t-row-open" type="button"' + goAttr(x.c ? { cand: x.c.id } : x.go) + '><span class="b-owed-head"><span class="b-owed-type">' + esc(x.head) + '</span></span>' +
         '<span class="b-owed-body">' + esc(x.body) + '</span></button>' +
       (x.yes ? '<span class="t-acts"><button class="b-ghost" type="button" data-out="' + x.c.id + '|clientno">Pass</button>' +
         '<button class="b-owed-go t-row-go" type="button" data-move="' + x.c.id + '|client">Meet them</button></span>'
@@ -3523,7 +3528,7 @@
     const accs = ACCOUNTS.filter((x) => open.some((q) => q.acc === x.id));
     return '<div class="s-home">' +
       deskBrief('Today', [
-        a.length ? '<b>' + plural(a.length, 'ask') + '</b> waiting on you: ' + ['offer', 'debrief', 'new'].map((k) => { const n = a.filter((x) => x.k === k).length; return n ? n + ' ' + { offer: n === 1 ? 'offer to approve' : 'offers to approve', debrief: n === 1 ? 'debrief' : 'debriefs', new: 'new on your shortlists' }[k] : null; }).filter(Boolean).join(', ') + '.' : 'Nothing waits on you today.',
+        a.length ? '<b>' + plural(a.length, 'ask') + '</b> waiting on you: ' + ['request', 'offer', 'debrief', 'new'].map((k) => { const n = a.filter((x) => x.k === k).length; return n ? n + ' ' + { offer: n === 1 ? 'offer to approve' : 'offers to approve', debrief: n === 1 ? 'debrief' : 'debriefs', new: 'new on your shortlists', request: n === 1 ? 'request from a client' : 'requests from clients' }[k] : null; }).filter(Boolean).join(', ') + '.' : 'Nothing waits on you today.',
         '<b>' + plural(open.length, 'requisition') + '</b> open across ' + plural(accs.length, 'account') + (risky.length ? ', and <b>' + risky.length + '</b> ' + (risky.length === 1 ? 'is' : 'are') + ' likely to miss the date.' : '.'),
         'You see candidates once the recruiter advances them; until then they are a count.',
       ], [
@@ -4618,7 +4623,7 @@
     const am = HMS.filter((h) => h.id === acc.hm)[0].name;
     const q = make('reqs', { id: uid('r'), title: p.title, fam: famOf(p.title), level: p.level, must: [], acc: acc.id, tpl: acc.tpl, hm: acc.hm, rec: 'omar', seats: p.seats,
       kind: 'new', billable: true, state: 'draft', opened: 0, target: expDays(acc.tpl), place: 'Nasr City office', plan: null, domain: acc.domain, published: false,
-      budget: { min: BUDGETS[p.level][0], max: BUDGETS[p.level][1] }, desc: me().name + ' at ' + acc.name + ' asked: “' + text + '”', asmt: null, askedBy: DESK });
+      budget: { min: BUDGETS[p.level][0], max: BUDGETS[p.level][1] }, desc: me().name + ' at ' + acc.name + ' asked: “' + text.replace(/[.!?]$/, '') + '.”', asmt: null, askedBy: DESK });
     byId('floatInput').placeholder = 'Ask AiMY, or find a requisition or a candidate…';
     peekHide();
     paint();

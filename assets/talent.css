@@ -247,7 +247,7 @@ textarea.dial-input.t-area { height: auto; padding: 10px 12px; }
 /* Skills, verified: each must-have, what the CV says, what an interview found. */
 .t-vlist { display: grid; gap: 0; margin: 4px 0 0; }
 .t-vrow {
-  display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 1.6fr);
+  display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr) minmax(0, 1.6fr) max-content;
   gap: 16px; align-items: start; padding: 12px 0; border-top: 1px solid var(--card-border);
 }
 .t-vrow:first-child { border-top: 0; padding-top: 4px; }
@@ -255,9 +255,11 @@ textarea.dial-input.t-area { height: auto; padding: 10px 12px; }
 .t-vcol { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
 .t-vcap { font-size: var(--t-micro); font-weight: var(--fw-medium); letter-spacing: 0.08em; text-transform: uppercase; color: var(--d100); }
 .t-vnote { font-size: var(--fs-sm); color: var(--d100); line-height: var(--lh-base); }
+.t-vrow > .tag { justify-self: end; }
 @media (max-width: 720px) {
   .t-vrow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .t-vmust { grid-column: 1 / -1; }
+  .t-vrow > .tag { grid-column: 1 / -1; justify-self: start; }
 }
 
 /* Interviews: one row each, details open in place. */
@@ -382,3 +384,8 @@ body.is-portal .b-ring-host { display: none !important; }
 .t-chat > :last-child { animation: t-reveal-in var(--reveal-dur) ease-in-out both; }
 .t-apply-form { display: grid; gap: 10px; }
 @media (prefers-reduced-motion: reduce) { .t-chat > :last-child { animation: none; } }
+.t-chat-ai > svg { flex-shrink: 0; width: 18px; height: 20px; margin-top: 9px; }
+.t-ivs, .t-vlist, .t-qlist, .t-asq { grid-template-columns: minmax(0, 1fr); }
+.t-iv { min-width: 0; }
+.t-tpl .b-month { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.t-tpl .b-kind { white-space: normal; min-width: 0; }

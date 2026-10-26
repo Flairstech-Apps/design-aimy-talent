@@ -13,7 +13,7 @@ Don't serve it with `python -m http.server`. The cache stamp `?v=` lives inside 
 
 ## What the recruiter sees
 
-The recruiter's desk opens as **Omar Saeed**. It is the only desk so far.
+The recruiter's desk opens as **Omar Saeed**. The other three desks are described under "The rest of the requirements".
 
 - **Today** (`/`) is the briefing, with:
   - The day in three sentences: decisions waiting on you and today's interviews, the requisition likely to miss its date, and what clients owe.
@@ -62,6 +62,29 @@ Recruiters make and take calls all day, so Sales's whole call model comes across
 
 In Sales, the log is read back in the AiMY canvas. Talent has no canvas yet, so it's read back in the call panel.
 
+## The rest of the requirements (built 26 Oct)
+
+Everything in the New Operations list and the Product Overview now has a surface. Each one follows the Sales rules: one press with Undo, prose behind Edit, no modals or pickers as the only way.
+
+- **Four desks, switched by `?as=`** from the name in the top bar:
+  - `omar` (recruiter, the default).
+  - `rania` (hiring manager). Sees candidates from the technical interview on, approves offers, owes debriefs, and gets clients' requests as drafts.
+  - `dina` (HR Manager). Sees every requisition, the ones at risk with a Reassign menu (AiMY's pick is the lightest load), stage templates, interview templates and the reports.
+  - `jana` (client, Northwind only). Sees her own requisitions, decides on profiles sent (Meet them or Pass), gives interview feedback, and asks for a hire in the AiMY bar. No salary, no internal notes.
+- **Requisitions are created and edited** through the interface (New requisition, Clone it, Edit) or through AiMY ("open a requisition for 2 Senior Accountants at Northwind"). A new one is a draft until Open; Write it with AiMY drafts the description and success profile, and says so when nothing like the role was filled before. Published puts it on the careers page with a link to copy for LinkedIn. Hold, Filled and the two cancels are one press each.
+- **Stage templates** are per account and edited on the HR desk (`?on=templates`); a requisition takes its account's stages when it opens.
+- **Candidates are added from a CV** (`?on=add&req=r1`). AiMY reads it in four shown steps, asks only for what is missing (a phone number, usually), checks the pool for the same person, and creates the profile. A candidate can also be added to another requisition from their page, and their details edited behind Edit.
+- **Finding candidates** (`?on=find`) takes a brief or a requisition and searches the talent pool, the web, Apollo and SignalHire. Each result carries its must-haves met, as counts, with Why behind it. People found outside wait for a recruiter to approve first contact.
+- **Assessments** (`?on=asmts`, `?asmt=a1`) are questionnaires or live with the AiMY agent, with a pass mark, a link to share, AI scoring, per-question results, and the insight when one question fails most people ("74% got Q5 wrong") with Reword it with AiMY or Drop it. The candidate takes it at `?take=`.
+- **Interviews** carry the template's agenda plus what the CV is silent on. The interviewer gets a link (`?debrief=`) to rate each must-have and say proceed or not; other interviewers' feedback stays hidden until theirs is in. A recording can be uploaded, transcribed and read against the success profile. The candidate page shows each must-have as CV says, then Interview found, with the deepest interview first.
+- **Offers** are prepared from the card, approved in parallel by the hiring manager and the BU director (`?approve=&by=hm|bu`), sent by a person, and answered. Accepted opens onboarding with its checklist and day-30 and day-90 check-ins.
+- **History** on every candidate: calls, moves, interviews, tests, offers and notes. A typed note that reads as a pass or a no gets the matching move offered beside it.
+- **The careers page** (`?apply=r1`) is an anonymous AiMY chat: drop a CV, fill in only what it lacks, consent, send. The candidate's own profile (`?me=`) opens with a one-time code, shows where each application stands, and lets them update details or withdraw.
+- **Reports** (`?on=reports`) for the recruiter, the hiring manager and HR, plus an account page (`?acc=`).
+- **The AiMY bar** answers in the peek card: what is waiting, which requisitions are at risk, where people drop (or at a named stage), how long it takes to send the first profile, and finds people and requisitions by name.
+
+Motion uses transitions.dev pieces on the shell's own timing: the error shake on a wrong field, shimmer on the step AiMY is on, the accordion on interview details, the success check when an outside page is done, and a short reveal for results. All stop under reduced motion.
+
 ## Rules carried over from Sales
 
 - **The stage is stored.** `cand.stage` moves only through `move` (one press, with Undo). It never moves backwards except by Undo. An exit is not a stage.
@@ -83,19 +106,15 @@ Omar's own ten requisitions are scripted, so Today always has its cases: one at 
 
 ## Files
 
-- `index.html` is the Sales shell with the dialer, call panel, drop layer, peek, canvas overlay and desk menu taken out. Comments mark each gap.
+- `index.html` is the Sales shell with the canvas overlay and drop layer taken out; the dialer, call panel, peek card and desk menu are in.
 - `assets/talent.js` is the whole product.
-- `assets/talent.css` is an appendix holding only what `sales.css` and `bdr.css` don't already say: the two-verb work row and the funnel.
+- `assets/talent.css` is an appendix holding only what `sales.css` and `bdr.css` don't already say: the two-verb work row, the funnel, call logging, the transitions.dev motion, and the parts of the record, intake, finder, assessment and outside pages.
 - `assets/sales.css`, `assets/bdr.css`, `assets/aimy-ds.css`, `assets/aimy-ds.js`, `assets/aimy-responsive.css` and `assets/aimy-viewport.js` are copied from Sales and never edited here.
 - `assets/audit.js` is Sales's audit, retargeted to `talent.js` and `talent.css`. Sales's call-fixture and sales-target checks are dropped.
 
-## Not ported yet
+## Not built yet
 
-These come with the surface that needs them:
-- The AiMY canvas, the answer card and voice.
-- Sourcing in chat.
-- CV intake.
+- The AiMY canvas and voice. The bar answers in the peek card instead.
+- Real integrations: LinkedIn, Apollo, SignalHire, Teams recordings, WhatsApp and Freshdesk are fixtures.
 - Voicemail playback and video calls.
-- The account page.
-- The hiring manager, HR Manager and client desks.
-- The bell's follow-up lines.
+- The live assessment agent itself; the questionnaire is real, the live mode is a stated mode.
