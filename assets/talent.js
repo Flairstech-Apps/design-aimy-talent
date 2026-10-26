@@ -94,6 +94,10 @@
 
   const plural = (n, one, many) => n + ' ' + (n === 1 ? one : (many || one + 's'));
   const first = (name) => String(name).split(' ')[0];
+  /* Where someone is, said as English: "at the technical interview", but
+     "with the client" rather than "at the profile sent". */
+  const STAGE_AT = { sourced: 'sourced, not contacted yet', applied: 'at the application', sent: 'with the client, profile sent', accepted: 'past the offer, accepted', joined: 'joined' };
+  const atStage = (k) => STAGE_AT[k] || 'at the ' + STAGE[k].label.charAt(0).toLowerCase() + STAGE[k].label.slice(1);
 
   /* Lucide icons, verbatim path data on the 24 grid. */
   const IC = {
@@ -122,6 +126,8 @@
     callout: '<path d="M7 17 17 7"/> <path d="M7 7h10v10"/>',
     down: '<path d="m6 9 6 6 6-6"/>',
     up: '<path d="m18 15-6-6-6 6"/>',
+    video: '<path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/>',
+    videooff: '<path d="M10.66 6H14a2 2 0 0 1 2 2v2.5l5.248-3.062A.5.5 0 0 1 22 7.87v8.196"/><path d="M16 16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2"/><path d="m2 2 20 20"/>',
     skip: '<polygon points="5 4 15 12 5 20 5 4"/><line x1="19" x2="19" y1="5" y2="19"/>',
     check: '<path d="M20 6 9 17l-5-5"/>',
     upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>',
@@ -750,7 +756,10 @@
       T(c, 0, { outcome: 'noanswer', secs: 0, time: '11:15', note: 'No answer. Left a voicemail.' });
     });
     minePeople((c) => c.stage === 'applied' || c.stage === 'phone').slice(2, 5).forEach((c, i) => {
-      T(c, i ? -1 : 0, { dir: 'in', missed: true, outcome: 'noanswer', time: i === 0 ? '12:05' : i === 1 ? '17:20' : '15:10', note: 'They called. Nobody picked up.' });
+      /* Two of them left a message, which plays back from the log (Sales). */
+      T(c, i ? -1 : 0, Object.assign({ dir: 'in', missed: true, outcome: 'noanswer', time: i === 0 ? '12:05' : i === 1 ? '17:20' : '15:10', note: 'They called. Nobody picked up.' },
+        i === 1 ? {} : { vm: { secs: i ? 24 : 19, text: 'Hi, it is ' + c.name.split(' ')[0] + ', calling about the ' + DB.reqById[c.req].title + ' role. ' +
+          (i ? 'I have another offer to answer by Thursday, so I would like to know where I stand.' : 'I am free after four today. Thank you.') } }));
     });
 
     seedPeople(r);
@@ -1403,7 +1412,7 @@
     if (risky.length) {
       const q = risky[0], h = health(q);
       lines.push('<button class="slv-n" type="button"' + goAttr({ req: q.id }) + '>' + esc(q.title) + '</button> for ' + esc(accOf(q).name) +
-        ' is likely to miss its date: <b>' + days(h.left) + '</b> left, and the furthest candidate is at the ' + esc(lower(STAGE[h.furthest].label)) + '.');
+        ' is likely to miss its date: <b>' + days(h.left) + '</b> left, and the furthest candidate is ' + esc(atStage(h.furthest)) + '.');
     }
     if (client.length) {
       lines.push('Clients owe an answer on <button class="slv-n" type="button"' + goAttr({ on: 'reqs', q: 'client' }) + '>' + plural(client.length, 'candidate') + '</button>' +
@@ -1818,7 +1827,7 @@
     clearCallTimers();
     CALL = { cand: id, state: 'ready', secs: 0, dir: 'out', from: UI.line, phone: c.phone,
       script: scriptFor(c), shown: 0, note: '', recording: false, asking: false, muted: false,
-      held: false, sess: sess || null, lit: null, read: null };
+      held: false, sess: sess || null, lit: null, read: null, video: false, camOff: false };
     document.body.classList.add('is-calling');
     callMin(false);
     paintCall();
@@ -1907,7 +1916,7 @@
     const time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
     const rd = call.read || {};
     const t = { id: 'u' + Date.now().toString(36), cand: call.cand || null, phone: call.phone, who: call.who || null,
-      day: 0, time: time, dir: call.dir, secs: call.secs, outcome: o, by: ME, missed: false, from: call.dir === 'out' ? call.from : null,
+      day: 0, time: time, dir: call.dir, secs: call.secs, outcome: o, by: ME, missed: false, from: call.dir === 'out' && !call.video ? call.from : null, video: !!call.video,
       note: call.note || (rd.notice || rd.salary ? 'Said on the call: ' + [rd.notice, rd.salary ? 'expects ' + rd.salary : null].filter(Boolean).join(', ') + '.'
         : call.dir === 'in' ? 'They called in.' : OUTCOME[o].label + '.'),
       lines: call.recording ? call.script.slice(0, call.shown).map((l) => ({ who: l[0], text: l[1] })) : [] };
@@ -2007,10 +2016,33 @@
         '<p class="b-open-say">' + esc(what) + (early
           ? 'Their notice, the salary they expect' + (silent.length ? ', and what the CV is silent on: ' + esc(silent.join('; ')) + '.' : '.') +
             (partly.length ? ' The CV only partly shows: ' + esc(partly.join('; ')) + '.' : '')
-          : 'A follow-up. They are at the ' + esc(lower(STAGE[c.stage].label)) + ', and nothing on this call moves their stage.') + '</p>' +
+          : 'A follow-up. They are ' + esc(atStage(c.stage)) + ', and nothing on this call moves their stage.') + '</p>' +
       '</blockquote>' +
       (last ? '<p class="b-prep-line">' + esc(callSay(last)) + (last.note && !last.missed ? ' ' + esc(last.note) : '') + '</p>' : '') +
+      (CALL && CALL.video ? videoBlock(c) : '') +
     '</div>';
+  }
+  /* ══ ON VIDEO (Sales) ══════════════════════════════════════════════════
+     A screen can be on Teams instead of the phone, and on video how the
+     recruiter comes across is read as closely as what they ask. Folded, so
+     the brief under it does not move. */
+  function videoTips(c) {
+    const f = first(c.name), last = lastCall(c);
+    const spoken = !!(last && !last.missed && last.outcome !== 'noanswer');
+    return [
+      spoken ? ['Open', f + ' has spoken to you before. Say the one thing they told you last time in your first sentence, so they see you remember.']
+        : ['Open', 'This is the first time ' + f + ' sees you. Smile as the video connects, then say your name, FlairsTech and the role in one sentence.'],
+      ['Eye line', 'Put the camera at eye level. Look at the lens, not at their face, when you ask about notice and salary.'],
+      ['Listening', 'When they answer, keep your eyes on the screen. Do not read the CV or look at another window while they talk.'],
+      ['Their camera', 'If they keep their camera off, carry on as normal. It says nothing about them as a candidate.'],
+      ['Camera and room', 'Light in front of you, a plain wall behind, and your phone face down out of shot.'],
+    ];
+  }
+  function videoBlock(c) {
+    const tips = videoTips(c);
+    return '<details class="b-video"><summary class="b-video-sum">' + svg('video') +
+        '<span><b>On video.</b> ' + tips.length + ' tips for how you come across</span>' + svg('down') + '</summary>' +
+      '<ol class="b-video-list">' + tips.map((t) => '<li><b>' + esc(t[0]) + '</b> ' + esc(t[1]) + '</li>').join('') + '</ol></details>';
   }
 
   function paintCall() {
@@ -2042,7 +2074,8 @@
         (sess ? '<span class="call-of">' + at + ' of ' + sess.ids.length + '</span>' : '') +
       '</div></div>' +
       '<p class="call-sub">' + esc(sub) + '</p>' +
-      '<p class="call-num">' + esc(call.phone) + '</p>' +
+      (call.video ? '<p class="call-num call-vid">' + svg('video') + 'Video call on Teams' + (call.camOff && st === 'live' ? ' · your camera is off' : '') + '</p>'
+        : '<p class="call-num">' + esc(call.phone) + '</p>') +
       (call.dir === 'in' ? '<p class="call-from-on">They called you</p>'
         : st !== 'ready' && from ? '<p class="call-from-on">From ' + esc(from.num) + ', ' + esc(from.cc) + '</p>' : '') +
     '</div>';
@@ -2088,12 +2121,19 @@
         '<p class="call-consent-say" id="callConsentSay">They have to be told before this can start. Have you told them?</p>' +
         '<div class="call-consent-acts"><button class="btn btn-ghost btn-sm" type="button" data-call-consent="no">Not yet</button>' +
         '<button class="btn btn-brand btn-sm" type="button" data-call-consent="yes">I have told them</button></div></div>' : '') +
-      (st === 'ready' && call.dir === 'out' ? '<div class="call-from"><span class="call-from-cap">From</span>' + telPick('Call') + '</div>' : '') +
+      (st === 'ready' && call.dir === 'out' && c ? '<div class="b-cuts t-call-mode" role="group" aria-label="How to reach them">' +
+        '<button class="filter-chip' + (call.video ? '' : ' active') + '" type="button" data-call-mode="phone" aria-pressed="' + !call.video + '">' + svg('phone', 14) + 'Phone</button>' +
+        '<button class="filter-chip' + (call.video ? ' active' : '') + '" type="button" data-call-mode="video" aria-pressed="' + !!call.video + '">' + svg('video', 14) + 'Video on Teams</button></div>' : '') +
+      (st === 'ready' && call.dir === 'out' && !call.video ? '<div class="call-from"><span class="call-from-cap">From</span>' + telPick('Call') + '</div>' : '') +
       '<div class="call-tools">' +
         (st === 'ready' ? (sess ? '<button class="call-tool" type="button" data-call-skip aria-label="Skip to the next one" title="Skip to the next one">' + svg('skip') + '</button>' : '') +
-            '<button class="call-end call-go" type="button" data-callgo aria-label="Start the call to ' + esc(name) + ' from ' + esc(from.num) + '">' +
-            svg('phone') + 'Call from ' + esc(telTag(from)) + '</button>'
-          : '<button class="call-tool' + (call.recording ? ' is-rec' : '') + '" type="button" data-call-rec aria-pressed="' + call.recording + '" aria-label="' +
+            (call.video
+              ? '<button class="call-end call-go" type="button" data-callgo aria-label="Start the video call with ' + esc(name) + '">' + svg('video') + 'Start the video call</button>'
+              : '<button class="call-end call-go" type="button" data-callgo aria-label="Start the call to ' + esc(name) + ' from ' + esc(from.num) + '">' +
+                svg('phone') + 'Call from ' + esc(telTag(from)) + '</button>')
+          : (call.video ? '<button class="call-tool' + (call.camOff ? ' is-on' : '') + '" type="button" data-call-cam aria-pressed="' + call.camOff + '" aria-label="' +
+              (call.camOff ? 'Turn your camera on' : 'Turn your camera off') + '" title="' + (call.camOff ? 'Turn your camera on' : 'Turn your camera off') + '">' + svg(call.camOff ? 'videooff' : 'video') + '</button>' : '') +
+            '<button class="call-tool' + (call.recording ? ' is-rec' : '') + '" type="button" data-call-rec aria-pressed="' + call.recording + '" aria-label="' +
               (call.recording ? 'Stop recording' : 'Record') + '" title="' + (call.recording ? 'Stop recording' : 'Record') + '">' + svg('dot') + '</button>' +
             '<button class="call-tool' + (call.muted ? ' is-on' : '') + '" type="button" data-call-mute aria-pressed="' + call.muted + '" aria-label="' +
               (call.muted ? 'Unmute' : 'Mute') + '" title="' + (call.muted ? 'Unmute' : 'Mute') + '">' + svg(call.muted ? 'micoff' : 'mic') + '</button>' +
@@ -2216,6 +2256,9 @@
     const t = { id: 'u' + Date.now().toString(36), cand: r.cand, phone: r.phone, who: null, day: 0,
       time: String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0'),
       dir: 'in', secs: 0, outcome: 'noanswer', by: ME, missed: true, note: verb + ' their call.' };
+    /* Somebody on file who gets nobody leaves a message. */
+    const known = r.cand ? DB.byId[r.cand] : null;
+    if (known && verb === 'You missed') t.vm = { secs: 17, text: 'Hi, it is ' + first(known.name) + ' returning your call about the ' + reqOf(known).title + ' role. Call me back when you can.' };
     addCall(t);
     paint();
     const c = r.cand ? DB.byId[r.cand] : null;
@@ -2307,7 +2350,7 @@
     const c = candByPhone(DIAL_NUM);
     if (!c) return dialSay('That number is not on file. When you hang up, I will offer to add them as a candidate.');
     if (c.dnc) return dialSay(esc(c.name) + ' asked not to be called again.');
-    return dialSay('That is <b>' + esc(c.name) + '</b>, at the ' + esc(lower(STAGE[c.stage].label)) + ' for ' + esc(reqOf(c).title) + '. The call goes on their record.');
+    return dialSay('That is <b>' + esc(c.name) + '</b>, ' + esc(atStage(c.stage)) + ' for ' + esc(reqOf(c).title) + '. The call goes on their record.');
   }
   function dialBody() {
     const l = telLine(UI.line);
@@ -2369,7 +2412,65 @@
        nothing is the one thing the audit cannot see. */
     return '<div class="b-log-item" style="--i:' + Math.min(i, 8) + '">' +
       (o.act ? '<button class="b-log-row" type="button" ' + o.act + '>' + inner + '</button>'
-        : '<div class="b-log-row t-log-static">' + inner + '</div>') + '</div>';
+        : '<div class="b-log-row t-log-static">' + inner + '</div>') +
+      (o.vm ? vmStrip(o.vm, o.vmId) : '') + '</div>';
+  }
+
+  /* ══ A MESSAGE THEY LEFT (Sales's voicemail strip) ═════════════════════
+     The call is one thing in the log and the message is another, attached to
+     it, so playing it back is its own press. The strip fills as it plays,
+     and the browser reads the message aloud where it can speak (telephony is
+     a fixture, so the words are what the caller left, read by the browser's
+     own voice). It does not repaint the page: only the strip changes. */
+  const VM_BARS = 28;
+  let VM_ON = null, VM_T0 = 0, VM_TIMER = null, VM_TICK = null;
+  const vmHash = (s) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); };
+  const vmCall = (id) => DB.calls.filter((t) => t.id === id)[0] || null;
+  const vmAt = () => (VM_ON && vmCall(VM_ON) ? Math.min(vmCall(VM_ON).vm.secs, (Date.now() - VM_T0) / 1000) : 0);
+  function vmWave(id) {
+    let out = '';
+    for (let b = 0; b < VM_BARS; b++) out += '<i style="height:' + (18 + vmHash(id + ':w' + b) % 79) + '%"></i>';
+    return out;
+  }
+  function vmStrip(vm, id) {
+    const on = VM_ON === id;
+    const el = on ? vmAt() : 0;
+    return '<button class="b-log-vm' + (on ? ' is-playing' : '') + '" type="button" data-vm="' + esc(id) + '" aria-pressed="' + on + '" ' +
+      'aria-label="' + (on ? 'Stop the message' : 'Play the message they left, ' + fmtClock(vm.secs)) + '">' +
+      '<span class="b-log-vm-go">' + svg(on ? 'pause' : 'play') + '</span>' +
+      '<span class="b-log-vm-wave"><span class="b-log-vm-bars">' + vmWave(id) + '</span>' +
+        '<span class="b-log-vm-bars b-log-vm-on"' + (on ? ' style="animation-duration:' + vm.secs + 's;animation-delay:-' + el + 's"' : '') + '>' + vmWave(id) + '</span></span>' +
+      '<span class="b-log-vm-len">' + fmtClock(Math.ceil(vm.secs - el)) + '</span></button>';
+  }
+  function vmDraw(id) {
+    const el = document.querySelector('[data-vm="' + id + '"]'), t = vmCall(id);
+    if (el && t && t.vm) el.outerHTML = vmStrip(t.vm, id);
+  }
+  function vmStop() {
+    if (VM_TIMER) { clearTimeout(VM_TIMER); VM_TIMER = null; }
+    if (VM_TICK) { clearInterval(VM_TICK); VM_TICK = null; }
+    try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
+    const was = VM_ON;
+    VM_ON = null;
+    if (was) vmDraw(was);
+  }
+  function vmPlay(id) {
+    const was = VM_ON;
+    vmStop();
+    if (was === id) return;
+    const t = vmCall(id);
+    if (!t || !t.vm) return;
+    VM_ON = id;
+    VM_T0 = Date.now();
+    vmDraw(id);
+    if (!UI.quiet && window.speechSynthesis && window.SpeechSynthesisUtterance) {
+      try { const u = new SpeechSynthesisUtterance(t.vm.text); u.lang = 'en-GB'; window.speechSynthesis.speak(u); } catch (e) {}
+    }
+    VM_TIMER = setTimeout(() => { VM_TIMER = null; vmStop(); }, t.vm.secs * 1000);
+    VM_TICK = setInterval(() => {
+      const el = document.querySelector('[data-vm="' + VM_ON + '"] .b-log-vm-len');
+      if (el && vmCall(VM_ON)) el.textContent = fmtClock(Math.max(0, Math.ceil(vmCall(VM_ON).vm.secs - vmAt())));
+    }, 250);
   }
   const dayLabel = (d) => d === 0 ? 'Today' : d === -1 ? 'Yesterday' : sayDay(d);
   function logDays(items, draw) {
@@ -2382,13 +2483,14 @@
   }
   function callRow(t, i, withName) {
     const c = t.cand ? DB.byId[t.cand] : null;
-    const ico = t.dir === 'in' ? svg('callin') : svg('callout');
+    const ico = t.video ? svg('video') : t.dir === 'in' ? svg('callin') : svg('callout');
     return logRow({
       tone: t.missed ? 'is-missed' : '', ico: ico,
-      who: withName ? (c ? c.name : t.who || t.phone) : (t.dir === 'in' ? (t.missed ? 'Missed call' : 'They called') : 'You called'),
-      meta: logMeta([t.missed ? 'Missed' : OUTCOME[t.outcome].label, t.secs ? fmtClock(t.secs) : null, t.time,
+      who: withName ? (c ? c.name : t.who || t.phone) : (t.dir === 'in' ? (t.missed ? 'Missed call' : 'They called') : t.video ? 'Video call' : 'You called'),
+      meta: logMeta([t.missed ? (t.vm ? 'Missed, left a message' : 'Missed') : OUTCOME[t.outcome].label, t.video ? 'on Teams' : null, t.secs ? fmtClock(t.secs) : null, t.time,
         withName && c ? reqOf(c).title : null, t.from && telLine(t.from) ? 'from ' + telTag(telLine(t.from)) : null]),
-      say: esc(t.note || ''),
+      say: t.vm ? '“' + esc(t.vm.text) + '”' : esc(t.note || ''),
+      vm: t.vm || null, vmId: t.id,
       act: withName ? (c ? 'data-cand="' + c.id + '"' : 'data-redial="' + esc(t.phone) + '"') : '',
       go: withName ? (c ? 'Open' : 'Call back') : '', goIco: withName && !c ? svg('phone', 14) : '',
     }, i);
@@ -2422,8 +2524,9 @@
         ? aimyBlock({ text: '<b>' + plural(miss.length, 'person', 'people') + '</b> called and nobody picked up. Calling them back clears them from here.' }, true) +
           '<div class="b-log">' + logDays(miss, (t, i) => {
             const c = DB.byId[t.cand];
-            return c ? logRow({ tone: 'is-missed', ico: svg('callin'), who: c.name, meta: logMeta(['Missed', c.phone, t.time]),
-              say: ringRead(c), aimy: true, act: 'data-call="' + c.id + '"', go: 'Call them back', goIco: svg('phone', 14) }, i)
+            return c ? logRow({ tone: 'is-missed', ico: svg('callin'), who: c.name, meta: logMeta([t.vm ? 'Missed, left a message' : 'Missed', c.phone, t.time]),
+              say: t.vm ? '“' + esc(t.vm.text) + '”' : ringRead(c), aimy: !t.vm, act: 'data-call="' + c.id + '"', go: 'Call them back', goIco: svg('phone', 14),
+              vm: t.vm || null, vmId: t.id }, i)
               : logRow({ tone: 'is-missed', ico: svg('callin'), who: t.phone, meta: logMeta(['Missed', 'not on file', t.time]),
               say: 'Nobody on file has this number. Calling back puts it in the dialer.', aimy: true,
               act: 'data-redial="' + esc(t.phone) + '"', go: 'Call them back', goIco: svg('phone', 14) }, i);
@@ -3356,7 +3459,7 @@
     const ai = (t) => said.push('<div class="t-chat-ai">' + mark(14) + '<p>' + t + '</p></div>');
     const you = (t) => said.push('<div class="t-chat-you"><p>' + esc(t) + '</p></div>');
     ai('Hi ' + esc(first(c.name)) + '. I will ask ' + plural(a.questions.length, 'question') + ', one at a time, for ' + esc(reqOf(c).title) +
-      '. Answer in your own words. If an answer is short I may ask for a little more; that is normal.');
+      '. Answer in your own words, typed or spoken. If an answer is short I may ask for a little more; that is normal.');
     let at = -1;
     a.questions.forEach((qq, i) => {
       if (at >= 0) return;
@@ -3377,7 +3480,8 @@
     } else {
       input = '<div class="t-input-wrap" id="wrapLive"><textarea class="dial-input t-area t-input" id="liveIn" rows="3" aria-label="Your answer" placeholder="Type your answer. Enter sends it."></textarea>' +
         '<p class="t-error-msg">Type an answer first.</p></div>' +
-        '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-live-send>Send</button></p>';
+        '<p class="t-acts"><button class="btn btn-ghost btn-sm t-live-mic" type="button" data-live-mic aria-pressed="false">' + svg('mic', 14) + '<span>Say it</span></button>' +
+          '<button class="btn btn-brand btn-sm" type="button" data-live-send>Send</button></p>';
     }
     return '<div class="t-out">' + outsideHead('Assessment', 'FlairsTech careers') +
       '<section class="t-out-card">' +
@@ -3389,7 +3493,36 @@
     const a = asmtOf(DB.sends.filter((x) => x.id === TAKE.id)[0].asmt);
     return { a: a, i: a.questions.findIndex((qq, i) => !TAKE.live.done[i]) };
   }
+  /* Dictation into the answer, with the browser's own recognition. Where it
+     is missing or the microphone is refused, it says so in words; it never
+     writes a sentence nobody said. */
+  let DICT = null;
+  function liveMic() {
+    if (DICT) { DICT.stop(); return; }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { toast('This browser cannot take dictation', null, 'Type your answer instead. Chrome, Edge and Safari can listen.'); return; }
+    const box = byId('liveIn'), btn = document.querySelector('[data-live-mic]');
+    const p = liveAt();
+    const base = box.value.trim() ? box.value.trim() + ' ' : '';
+    const rec = new SR();
+    rec.lang = /german/i.test(p.a.title) ? 'de-DE' : 'en-GB';
+    rec.interimResults = true;
+    rec.continuous = true;
+    rec.onresult = (e) => { let t = ''; for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript; box.value = base + t.trim(); };
+    rec.onerror = (e) => {
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') toast('The microphone was refused', null, 'Allow it in the browser to speak your answers, or type them.');
+    };
+    rec.onend = () => {
+      DICT = null;
+      const b = document.querySelector('[data-live-mic]');
+      if (b) { b.classList.remove('is-rec'); b.setAttribute('aria-pressed', 'false'); b.lastChild.textContent = 'Say it'; }
+    };
+    try { rec.start(); } catch (err) { toast('The microphone could not start', null, 'Type your answer instead.'); return; }
+    DICT = rec;
+    btn.classList.add('is-rec'); btn.setAttribute('aria-pressed', 'true'); btn.lastChild.textContent = 'Listening. Press to stop';
+  }
   function liveSend() {
+    if (DICT) { DICT.onresult = null; DICT.stop(); }
     const box = byId('liveIn');
     const v = box ? box.value.trim() : '';
     if (!v) { shake('wrapLive'); return; }
@@ -3453,7 +3586,7 @@
   function toggleStage(k, s) {
     const on = TEMPLATE[k].indexOf(s) >= 0;
     if (on && DB.reqs.some((q) => q.tpl === k && isOpen(q) && DB.byReq[q.id].some((c) => !c.exit && c.stage === s))) {
-      toast('Somebody is at the ' + lower(STAGE[s].label) + ' on an open requisition', null, 'Move them on first, then switch the stage off.');
+      toast('Somebody is ' + atStage(s) + ' on an open requisition', null, 'Move them on first, then switch the stage off.');
       return;
     }
     const before = TEMPLATE[k].slice();
@@ -3923,13 +4056,17 @@
   }
   /* Asked in the canvas: the question shows at once with AiMY reading under
      it, then the answer replaces the reading. */
+  /* `.is-generating` on the bar while AiMY reads is what voice.js listens
+     for: the answer is finished when it leaves (Sales's beam contract). */
   function canvasAsk(text) {
     const t = String(text || '').trim();
     if (!t || THINK) return;
+    const bar = document.querySelector('.overlay-input-bar');
     byId('overlayInput').value = '';
     THINK = t;
+    bar.classList.add('is-generating');
     paintThread();
-    setTimeout(() => { THINK = null; ask(t); if (canvasShown()) paintThread(); }, 600);
+    setTimeout(() => { THINK = null; ask(t); paintThread(); bar.classList.remove('is-generating'); }, 600);
   }
   /* "2 Senior Accountants at Northwind", "we need two more support
      engineers": the role, its level and how many, read from plain words. */
@@ -4736,6 +4873,10 @@
       paintCall(); return;
     }
     if ((el = at('[data-call-mute]'))) { CALL.muted = !CALL.muted; paintCall(); return; }
+    if ((el = at('[data-call-mode]'))) { CALL.video = el.getAttribute('data-call-mode') === 'video'; paintCall(); return; }
+    if ((el = at('[data-call-cam]'))) { CALL.camOff = !CALL.camOff; paintCall(); return; }
+    if ((el = at('[data-vm]'))) { vmPlay(el.getAttribute('data-vm')); return; }
+    if ((el = at('[data-live-mic]'))) { liveMic(); return; }
     if ((el = at('[data-call-hold]'))) { CALL.held = !CALL.held; paintCall(); return; }
     if ((el = at('[data-call-min]'))) { callMin(!CALL_MIN); paintCall(); return; }
     if ((el = at('[data-call-line]'))) {

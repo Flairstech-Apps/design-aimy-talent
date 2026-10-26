@@ -401,3 +401,15 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-apply-form .t-q { align-items: flex-start; }
 .t-apply-form .t-q .t-check { margin-top: 2px; }
 .t-apply-form .t-q + .t-q { margin-top: 10px; }
+
+/* ══ 11. VIDEO CALLS, VOICEMAIL AND DICTATION ══════════════════════════════ */
+.t-call-mode { padding: 0 16px; margin: 0 0 10px; gap: 6px; }
+.t-call-mode .filter-chip { gap: 6px; }
+.t-call-mode .filter-chip svg, .call-vid svg, .t-live-mic svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; flex-shrink: 0; }
+.call-vid { display: inline-flex; align-items: center; gap: 6px; }
+.t-live-mic { gap: 6px; }
+.t-live-mic.is-rec { color: var(--err-text); border-color: var(--err); }
+.b-log-item > .b-log-vm { margin-top: 4px; }
+/* Sales draws a face and clears the monogram's ground for it (bdr.css §52).
+   Talent has no faces yet, so the monogram keeps its circle. */
+.topnav-avatar, .msg-avatar.user-av { background: var(--grad-avatar); color: #fff; border-radius: 50%; }

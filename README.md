@@ -112,8 +112,14 @@ Omar's own ten requisitions are scripted, so Today always has its cases: one at 
 - `assets/sales.css`, `assets/bdr.css`, `assets/aimy-ds.css`, `assets/aimy-ds.js`, `assets/aimy-responsive.css` and `assets/aimy-viewport.js` are copied from Sales and never edited here.
 - `assets/audit.js` is Sales's audit, retargeted to `talent.js` and `talent.css`. Sales's call-fixture and sales-target checks are dropped.
 
+## Voice, voicemail and video (from Sales)
+
+- **Voice** is Sales's `voice.js` and `voice.css`, unedited. It mounts on both bars: attach a file, dictate into the field, or start a spoken conversation that asks through the canvas and reads the answer back. It uses the browser's own speech recognition and voice, and says so in words where they are missing. The canvas sets `.is-generating` on its bar while AiMY reads, which is how voice knows the answer is in.
+- **Voicemail**: a missed call can carry the message the caller left. It plays back from the call log, the Missed tab and the candidate's record as Sales's strip, and the browser reads the words aloud unless sound is off in the prototype panel.
+- **Video calls**: before a call starts, Phone or Video on Teams is one press in the call panel. On video the brief opens with five tips for how you come across, the live call has a camera button, and the log marks the call as on Teams.
+- **Dictation in the live assessment**: Say it fills the answer from the microphone, in German for the German check.
+
 ## Not built yet
 
-- Real integrations: LinkedIn, Apollo, SignalHire, Teams recordings, WhatsApp and Freshdesk are fixtures, as telephony is in Sales.
-- Voice: the live assessment and the canvas are typed.
-- Voicemail playback and video calls.
+- Real integrations: LinkedIn, Apollo, SignalHire, Teams, recordings, WhatsApp and Freshdesk are fixtures, as telephony is in Sales.
+- A Cloudflare Worker for `aimy-talent` (`wrangler.jsonc` is ready; nothing is deployed).
