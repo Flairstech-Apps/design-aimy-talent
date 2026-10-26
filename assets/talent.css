@@ -1,0 +1,46 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   talent.css — AN APPENDIX, NOT A STYLESHEET
+
+   The shell is sales.css and the components are bdr.css, both copied from
+   AiMY Sales unedited, over the shared aimy-ds.css. This file holds only what
+   neither of them already says. If a rule here redefines something those
+   files have, delete it and use theirs (Sales's own rule for bdr.css).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ══ 1. A WORK ROW WITH ITS OWN VERB ═══════════════════════════════════════
+   Sales's `.b-owed-row` is one button: the whole row opens the thing. A
+   recruiter's row needs two presses — open the requisition, or make the move
+   (proceed, nudge) without leaving Today — and a button cannot hold a button.
+   So the row is a `div`, the reading is a button, and the verb is a button
+   beside it. Nothing about the look changes; these rules only undo what the
+   button skin gave the row and give it to the reading instead. */
+.t-row { cursor: default; }
+.t-row-open {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: stretch;
+  background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit;
+  text-align: left; cursor: pointer;
+}
+.t-row-open:focus-visible { outline: 2px solid var(--brand); outline-offset: 4px; border-radius: 6px; }
+.t-row-go { cursor: pointer; }
+
+/* ══ 2. THE FUNNEL ON A REQUISITION ═════════════════════════════════════════
+   The one chart on the record: everyone who reached each stage, drawn to
+   scale against the first, with the share of the stage before it. The stage
+   with the biggest drop is marked in words in the AiMY line under it and in
+   colour on the bar, never in colour alone. */
+.t-funnel { display: grid; gap: 6px; margin: 4px 0 12px; }
+.t-fn-row {
+  display: grid; grid-template-columns: minmax(0, 180px) minmax(0, 1fr) 96px;
+  gap: 12px; align-items: center; font-size: var(--fs-sm);
+}
+.t-fn-label { color: var(--d100); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t-fn-track { height: 14px; border-radius: 4px; background: rgba(var(--accent-rgb), 0.10); position: relative; overflow: hidden; }
+.t-fn-fill { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--brand); }
+.t-fn-n { text-align: right; color: var(--d100); font-variant-numeric: tabular-nums; }
+.t-fn-n b { color: var(--d50); font-weight: var(--fw-bold); }
+.t-fn-row.is-leak .t-fn-fill { background: var(--warn); }
+.t-fn-row.is-leak .t-fn-label, .t-fn-row.is-leak .t-fn-n b { color: var(--warn); }
+@media (max-width: 560px) {
+  .t-fn-row { grid-template-columns: minmax(0, 1fr) 84px; }
+  .t-fn-track { grid-column: 1 / -1; order: 3; }
+}

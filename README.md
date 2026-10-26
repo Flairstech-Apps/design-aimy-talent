@@ -1,0 +1,69 @@
+# AiMY Talent — the recruiter build
+
+AiMY Talent is FlairsTech's recruiting product. This repo is its design prototype: one HTML shell and one vanilla-JS file, with a seeded corpus and no backend.
+
+It is built on **AiMY Sales** (decided 26 Oct 2026). It uses the same shell, components and design system, and the same nine-section layout as Sales's `bdr.js`, with a different process on top. The reasoning, and the full map of what comes from Sales, is in the audit: https://claude.ai/artifact/PGmYnMYfeXPs2fUG7rYZe7 ("Building on AiMY Sales").
+
+```bash
+python devserver.py 8131      # then open http://localhost:8131/
+node assets/audit.js          # before every commit; read the whole output
+```
+
+Don't serve it with `python -m http.server`. The cache stamp `?v=` lives inside `index.html`, and `devserver.py` exists to send `no-store` on HTML. Bump the stamp on `talent.js` or `talent.css` whenever either changes.
+
+## What the recruiter sees
+
+The recruiter's desk opens as **Omar Saeed**. It is the only desk so far.
+
+- **Today** (`/`) is the briefing, with:
+  - The day in three sentences: decisions waiting on you and today's interviews, the requisition likely to miss its date, and what clients owe.
+  - Four Start tiles.
+  - The decisions waiting on you, each one press with Undo.
+  - Today's interviews.
+  - Candidates waiting on others past the usual time, with a Nudge on each.
+  - The requisitions likely to miss their date, each with its reason.
+- **Requisitions** (`?on=reqs`) shows your requisitions as cards. Cuts: Open, At risk, Waiting on the client, Waiting on you, On hold, Closed. There's a find box that also matches candidate names.
+- **One requisition** (`?req=r2`) is Sales's campaign record turned into a requisition:
+  - The record head, with the need, hiring manager, stages, success profile and notes.
+  - A lead reading.
+  - The funnel, with the biggest drop marked.
+  - The candidates on it, cut by stage. Each card has its next move and its exit, each with Undo.
+
+The rail shows what's waiting on you, plus two doors: the next interview, and your days to send profiles against the team's. The bell lists results that are in and answers that are owed. The composer finds: Enter takes you to the requisitions matching what you typed.
+
+## Rules carried over from Sales
+
+- **The stage is stored.** `cand.stage` moves only through `move` (one press, with Undo). It never moves backwards except by Undo. An exit is not a stage.
+- **The order comes from the requisition's template**, not one global list. `TEMPLATE.client` ends in profile sent, then client interview. `TEMPLATE.internal` (FlairsTech's own roles) has a managerial interview instead.
+- **The store holds the delta, not the corpus.** The corpus is regenerated from one seed on every load, dated relative to today. Only your changes are saved, under `aimy-talent:db:v1`. Reset is in the prototype panel.
+- **One definition per figure.** Everything is derived in section 5 of `talent.js`. "Open" on the chips, the rail and the switcher all read `isOpen`.
+- **Evidence is said as counts:** "3 of 4 must-haves met". There is no match percentage. This is the audit's recommendation, and the manager's answer is still pending.
+
+## The corpus
+
+It is shaped like the real Recruitment dashboard (Power BI, Aug–Sep 2026), with invented people and accounts:
+- 6 recruiters and 39 requisitions.
+- One account (Northwind Software) holding more than half.
+- About 82% replacements.
+- Support, accounting and operations roles.
+- Stage pass rates of about 71% (phone to HR), 54% (HR to technical), 79% (technical to profile sent), 30% (profile sent to client interview) and 88% (client interview to offer).
+
+Omar's own ten requisitions are scripted, so Today always has its cases: one at risk, one with profiles waiting on the client, two with results in, one just opened, one on hold, and a closed tail.
+
+## Files
+
+- `index.html` is the Sales shell with the dialer, call panel, drop layer, peek, canvas overlay and desk menu taken out. Comments mark each gap.
+- `assets/talent.js` is the whole product.
+- `assets/talent.css` is an appendix holding only what `sales.css` and `bdr.css` don't already say: the two-verb work row and the funnel.
+- `assets/sales.css`, `assets/bdr.css`, `assets/aimy-ds.css`, `assets/aimy-ds.js`, `assets/aimy-responsive.css` and `assets/aimy-viewport.js` are copied from Sales and never edited here.
+- `assets/audit.js` is Sales's audit, retargeted to `talent.js` and `talent.css`. Sales's call-fixture and sales-target checks are dropped.
+
+## Not ported yet
+
+These come with the surface that needs them:
+- The AiMY canvas, the answer card and voice.
+- Sourcing in chat.
+- The candidate page, with the phone screen read-back and CV intake.
+- The account page.
+- The hiring manager, HR Manager and client desks.
+- The bell's follow-up lines.
