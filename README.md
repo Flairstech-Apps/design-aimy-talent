@@ -2,7 +2,7 @@
 
 AiMY Talent is FlairsTech's recruiting product. This repo is its design prototype: one HTML shell and one vanilla-JS file, with a seeded corpus and no backend.
 
-It is built on **AiMY Sales** (decided 26 Oct 2026). It uses the same shell, components and design system, and the same nine-section layout as Sales's `bdr.js`, with a different process on top. The reasoning, and the full map of what comes from Sales, is in the audit: https://claude.ai/artifact/PGmYnMYfeXPs2fUG7rYZe7 ("Building on AiMY Sales").
+It is built on **AiMY Sales** (decided 26 Oct 2026). It uses the same shell, components and design system, and the same nine-section layout as Sales's `bdr.js`, with a different process on top. The reasoning, and the full map of what comes from Sales, is in the audit
 
 ```bash
 python devserver.py 8131      # then open http://localhost:8131/
