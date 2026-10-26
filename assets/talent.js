@@ -90,7 +90,7 @@
   const days = (n) => n === 1 ? '1 day' : n + ' days';
   /* Lower-case a label for the middle of a sentence, but keep an acronym
      ("HR interview") as it is. */
-  const lower = (t) => /^[A-Z]{2}/.test(t) ? t : t.charAt(0).toLowerCase() + t.slice(1);
+  const lower = (t) => /^[A-Z][A-Z0-9]/.test(t) ? t : t.charAt(0).toLowerCase() + t.slice(1);
 
   const plural = (n, one, many) => n + ' ' + (n === 1 ? one : (many || one + 's'));
   const first = (name) => String(name).split(' ')[0];
@@ -774,7 +774,7 @@
       const pool = SKILLS[q.fam];
       c.skills = pool.filter(() => chance(r, 0.5)).slice(0, 5);
       if (!c.skills.length) c.skills = [pool[0]];
-      c.summary = c.years + ' years, now ' + c.at.charAt(0).toLowerCase() + c.at.slice(1) + '. Strongest in ' + c.skills.slice(0, 2).join(' and ') + '.';
+      c.summary = c.years + ' years, now ' + lower(c.at) + '. Strongest in ' + c.skills.slice(0, 2).join(' and ') + '.';
       c.applied = q.opened + between(r, 1, Math.max(2, -q.opened - 1));
       if (c.applied > -1) c.applied = -1;
     });
@@ -2843,7 +2843,7 @@
     const c = { id: id, pid: dup ? dup.pid : id, name: String(f.name).trim(), req: q.id, stage: 'applied', exit: null, since: 0, meet: null, fb: false,
       nudged: null, years: p.years, at: String(f.at).trim(), place: String(f.place).trim(), langs: p.langs, skills: p.skills, source: 'Added by the recruiter',
       ev: evFor(q.must, p), maxAt: 'applied', phone: String(f.phone).trim() || null, email: String(f.email).trim(), fate: 'pass', dnc: false, badNumber: false,
-      callback: null, applied: 0, summary: p.years + ' years, now ' + String(f.at).charAt(0).toLowerCase() + String(f.at).slice(1) + '. Strongest in ' + p.skills.slice(0, 2).join(' and ') + '.' };
+      callback: null, applied: 0, summary: p.years + ' years, now ' + lower(String(f.at)) + '. Strongest in ' + p.skills.slice(0, 2).join(' and ') + '.' };
     addCand(c);
     const e = note(c, 'apply', 'Profile made from ' + INTAKE.file + ' by ' + me().name + '.');
     INTAKE = null;
@@ -2885,7 +2885,7 @@
       const q = reqOf(c);
       const sug = c.ev.map((x, i) => (i % 3 === 2 && x === 'm' ? 'p' : x === 'n' && i % 2 ? 'p' : x));
       const lines = [];
-      q.must.forEach((m, i) => { lines.push(['you', 'Tell me about ' + m.charAt(0).toLowerCase() + m.slice(1) + '.']); lines.push(['them', ANSWER[sug[i]]]); });
+      q.must.forEach((m, i) => { lines.push(['you', 'Tell me about ' + lower(m) + '.']); lines.push(['them', ANSWER[sug[i]]]); });
       const strong = q.must.filter((m, i) => sug[i] === 'm'), weak = q.must.filter((m, i) => sug[i] !== 'm');
       put('ivs', v, { recording: { mins: 26 + (v.id.length % 17), at: 0, lines: lines,
         summary: (strong.length ? 'Clear examples on ' + strong.join('; ') + '. ' : '') + (weak.length ? 'Less to go on for ' + weak.join('; ') + '.' : ''), suggests: sug } });
@@ -3131,7 +3131,7 @@
       if (S.on === 'find') paint();
     }, 620);
   }
-  const findSteps = () => ['Reading what to look for'].concat(FIND_SOURCES.filter((s) => FIND.src[s.k]).map((s) => 'Searching ' + s.label.charAt(0).toLowerCase() + s.label.slice(1)))
+  const findSteps = () => ['Reading what to look for'].concat(FIND_SOURCES.filter((s) => FIND.src[s.k]).map((s) => 'Searching ' + (s.k === 'pool' || s.k === 'web' ? lower(s.label) : s.label)))
     .concat(['Reading each profile against the criteria']);
   function findPage() {
     if (S.req && S.req !== FIND.req && FIND.step !== 'results') FIND.req = S.req;
@@ -3147,7 +3147,7 @@
     } else if (FIND.step === 'results') {
       const bySrc = (k) => FIND.res.filter((x) => x.src === k).length;
       const added = Object.keys(FIND.done).length;
-      body = aimyBlock({ text: '<b>' + plural(FIND.res.length, 'person', 'people') + '</b> found: ' + FIND_SOURCES.filter((s) => FIND.src[s.k]).map((s) => bySrc(s.k) + ' from ' + s.label.charAt(0).toLowerCase() + s.label.slice(1)).join(', ') +
+      body = aimyBlock({ text: '<b>' + plural(FIND.res.length, 'person', 'people') + '</b> found: ' + FIND_SOURCES.filter((s) => FIND.src[s.k]).map((s) => bySrc(s.k) + ' from ' + (s.k === 'pool' || s.k === 'web' ? lower(s.label) : s.label)).join(', ') +
         '. Sorted by how many of the ' + FIND.crit.length + ' must-haves each one meets.' + (added ? ' ' + plural(added, 'person', 'people') + ' added so far.' : ''), from: 'the sources you picked' }) +
         '<div class="b-cuts">' + FIND.crit.map((m) => '<span class="filter-chip t-static">' + esc(m) + '</span>').join('') + '</div>' +
         '<p class="t-acts">' + (FIND.req ? '<button class="s-insight-lnk primary" type="button" data-find-top>Add the 5 strongest to ' + esc(DB.reqById[FIND.req].title) + '</button>' : '') +
@@ -3205,7 +3205,7 @@
     const c = { id: id, pid: x.pid || id, name: x.name, req: q.id, stage: 'sourced', exit: null, since: 0, meet: null, fb: false, nudged: null,
       years: x.years, at: x.at, place: x.place, langs: x.langs, skills: x.skills, source: x.src === 'pool' ? 'From the talent pool' : 'Found on ' + (x.src === 'web' ? 'the web' : FIND_SOURCES.filter((s) => s.k === x.src)[0].label),
       ev: evFor(q.must, x), maxAt: 'sourced', phone: x.phone, email: x.email, fate: 'pass', dnc: false, badNumber: false, callback: null, applied: 0,
-      contactOk: x.src === 'pool' && x.consent.indexOf('Withdrew') < 0, summary: x.years + ' years, now ' + x.at.charAt(0).toLowerCase() + x.at.slice(1) + '.' };
+      contactOk: x.src === 'pool' && x.consent.indexOf('Withdrew') < 0, summary: x.years + ' years, now ' + lower(x.at) + '.' };
     addCand(c);
     FIND.done[i] = q.title;
     if (!quiet) { paint(); toast('Added ' + x.name + ' to ' + q.title, () => { dropCand(c); delete FIND.done[i]; paint(); }, c.contactOk ? 'Sourced. They agreed to hear about roles, so you can call.' : 'Sourced. First contact waits for your approval.'); }
@@ -3248,7 +3248,7 @@
   function newAsmt(fromReq) {
     const q = fromReq ? DB.reqById[fromReq] : null;
     const a = make('asmts', { id: uid('a'), title: q ? q.title + ' check' : 'New assessment', kind: 'quiz', fam: q ? q.fam : 'support', pass: 70, mins: 15,
-      questions: q ? q.must.map((m) => ({ q: 'Give an example from your work of: ' + m.charAt(0).toLowerCase() + m.slice(1) + '.', type: 'open', points: ['a real example', 'what they did themselves', 'the result'], fails: 0 })) : [] });
+      questions: q ? q.must.map((m) => ({ q: 'Give an example from your work of: ' + lower(m) + '.', type: 'open', points: ['a real example', 'what they did themselves', 'the result'], fails: 0 })) : [] });
     EDIT = null;
     go({ asmt: a.id, edit: '1' });
     if (q) toast('AiMY drafted ' + plural(a.questions.length, 'question') + ' from the success profile', () => { unmake('asmts', a); go({ on: 'asmts' }, true); }, 'One per must-have. Change any of them.');
@@ -3330,7 +3330,9 @@
         '<p>For ' + esc(reqOf(c).title) + '. ' + (a.kind === 'live' ? 'AiMY asks each question; answer in your own words, out loud or typed.' : 'Answer every question. There is no trick to it.') + '</p>' +
         '<div class="t-input-wrap" id="wrapTake"><div class="t-input">' + a.questions.map((qq, i) => '<div class="t-dr">' +
           '<p class="t-dr-must">' + (a.kind === 'live' ? mark(12) + ' ' : '') + 'Q' + (i + 1) + '. ' + esc(qq.q) + '</p>' +
-          (qq.type === 'choice' ? '<div class="b-cuts t-col">' + qq.options.map((o, k) => '<button class="filter-chip' + (TAKE.a[i] === k ? ' active' : '') + '" type="button" data-ans="' + i + '|' + k + '">' + esc(o) + '</button>').join('') + '</div>'
+          /* The options are written right answer first; the person taking
+             it sees them turned, a different turn per question. */
+          (qq.type === 'choice' ? '<div class="b-cuts t-col">' + qq.options.map((o, k, all) => { const j = (k + i * 3 + 1) % all.length; return '<button class="filter-chip' + (TAKE.a[i] === j ? ' active' : '') + '" type="button" data-ans="' + i + '|' + j + '">' + esc(all[j]) + '</button>'; }).join('') + '</div>'
             : '<textarea class="dial-input t-area" rows="3" data-anstext="' + i + '" aria-label="Your answer">' + esc(TAKE.a[i] || '') + '</textarea>') +
         '</div>').join('') + '</div><p class="t-error-msg">Answer every question first.</p></div>' +
         '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-take-submit>Send my answers</button></p>' +
@@ -3629,7 +3631,7 @@
     } else {
       you(APPLY.file);
       const f = APPLY.f;
-      ai('Thanks, ' + esc(first(f.name)) + '. I read ' + plural(f.years, 'year') + ' of experience, now ' + esc(f.at.charAt(0).toLowerCase() + f.at.slice(1)) + '.' +
+      ai('Thanks, ' + esc(first(f.name)) + '. I read ' + plural(f.years, 'year') + ' of experience, now ' + esc(lower(f.at)) + '.' +
         (APPLY.cv.phone ? '' : ' <b>Your CV has no phone number.</b> Add one so the recruiter can call you.'));
       if (APPLY.step === 'done') {
         ai('Sent. A person on the recruiting team reads every application, and you will hear back either way.');
@@ -3685,7 +3687,7 @@
     const c = { id: id, pid: dup ? dup.pid : id, name: f.name, req: q.id, stage: 'applied', exit: null, since: 0, meet: null, fb: false, nudged: null,
       years: f.years, at: f.at, place: f.place, langs: f.langs, skills: f.skills, source: 'Applied through the link', ev: evFor(q.must, f), maxAt: 'applied',
       phone: String(f.phone || '').trim() || null, email: f.email, fate: 'pass', dnc: false, badNumber: false, callback: null, applied: 0, wa: APPLY.wa,
-      summary: f.years + ' years, now ' + f.at.charAt(0).toLowerCase() + f.at.slice(1) + '.' };
+      summary: f.years + ' years, now ' + lower(f.at) + '.' };
     addCand(c);
     note(c, 'apply', 'Applied on the careers page with AiMY. Consent given' + (APPLY.wa ? ', WhatsApp updates on.' : '.'));
     APPLY.cand = c.id;
@@ -3744,19 +3746,41 @@
     byId('aimyPeek').hidden = false;
   }
   const peekHide = () => { byId('aimyPeek').hidden = true; };
+  /* "2 Senior Accountants at Northwind", "we need two more support
+     engineers": the role, its level and how many, read from plain words. */
+  const NUMW = { a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6 };
+  function parseRole(t) {
+    const role = ROLES.filter((r) => t.toLowerCase().indexOf(r.title.toLowerCase()) >= 0)[0];
+    const tail = '(?:(\\d+|a|an|one|two|three|four|five|six)\\s+)?(?:more\\s+)?(junior|mid-level|senior|manager)?\\s*([a-z][a-z0-9 ()&/+.-]*?)(?:\\s+(?:at|for|with|in|on|by|to|starting)\\s+.*)?[.!?]?$';
+    const m = new RegExp('\\b(?:need|hire|hiring|want)\\s+' + tail, 'i').exec(t) || new RegExp('\\bfor\\s+' + tail, 'i').exec(t);
+    const n = m && m[1] ? (NUMW[m[1].toLowerCase()] || Number(m[1])) : 1;
+    let title = role ? role.title : m && m[3] ? m[3].replace(/\b(a |an |new |requisitions?|roles?|positions?|vacanc(y|ies)|people|hires?)\b/ig, ' ').replace(/\s+/g, ' ').trim() : '';
+    if (!role && n > 1) title = title.replace(/ies$/i, 'y').replace(/([^s])s$/i, '$1');
+    if (!role) title = title.split(' ').map((w) => /^(of|and|for|the|in)$/i.test(w) ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    const level = m && m[2] ? LEVELS.filter((l) => l.toLowerCase() === m[2].toLowerCase())[0] : role ? role.level : 'Mid-level';
+    return { title: title, level: level, seats: n, role: role };
+  }
   function ask(text) {
     const t = text.trim();
     if (!t) return;
     const lc = t.toLowerCase();
     const reqMatch = DB.reqs.filter((q) => q.state !== 'draft' && lc.indexOf(q.title.toLowerCase()) >= 0)[0];
-    const role = ROLES.filter((r) => lc.indexOf(r.title.toLowerCase()) >= 0)[0];
     const accMatch = ACCOUNTS.filter((a) => lc.indexOf(a.name.toLowerCase().split(' ')[0]) >= 0)[0];
+    if (isClient() && /\b(need|hire|hiring|request|another|more|want)\b/.test(lc)) { clientRequest(t); return; }
     if (/\b(open|new|create|start|raise|draft)\b.*\b(requisition|req|role|position|vacancy)\b|^(we need|i need|hire)\b/.test(lc) && !isClient()) {
-      const seats = /(\d+)\s*(people|seats|hires|agents|engineers)/.exec(lc);
-      const q = newReq({ title: role ? role.title : '', acc: accMatch ? accMatch.id : undefined, seats: seats ? Number(seats[1]) : 1 });
-      if (q && role) { const f = { title: role.title, seats: q.seats }; aiDraft(f); put('reqs', q, { must: f.must.split('\n'), desc: f.desc }); EDIT = null; paint(); }
-      peek('I drafted <b>' + esc(role ? role.title : 'a new requisition') + '</b>' + (accMatch ? ' for ' + esc(accMatch.name) : '') + '. ' +
-        (role ? 'Press Write it with AiMY for the description and success profile, check them, then open it.' : 'Name the role, then I can write the rest.'), []);
+      const p = parseRole(t);
+      const q = newReq({ title: p.title, level: p.level, acc: accMatch ? accMatch.id : undefined, seats: p.seats });
+      let known = true;
+      if (q && p.title) {
+        const f = { title: p.title, seats: q.seats, level: p.level };
+        known = aiDraft(f);
+        put('reqs', q, { must: f.must.split('\n'), desc: f.desc, fam: famOf(p.title), budget: { min: BUDGETS[p.level][0], max: BUDGETS[p.level][1] } });
+        EDIT = null; paint();
+      }
+      peek(!q ? 'I could not draft it from this desk.' : p.title
+        ? 'I drafted <b>' + esc(plural(q.seats, 'seat')) + ' as ' + esc(p.level.toLowerCase()) + ' ' + esc(p.title) + '</b>' + (accMatch ? ' for ' + esc(accMatch.name) : '') + ', with a description and a success profile' +
+          (known ? ' from the roles like it filled before.' : '. Nothing like it was filled here before, so <b>check the success profile</b>.') + ' Open it when it reads right.'
+        : 'I started a draft' + (accMatch ? ' for ' + esc(accMatch.name) : '') + '. Name the role and I can write the rest.', []);
       return;
     }
     if (/\b(find|search|source|look for|looking for)\b/.test(lc) && (isRec() || isHR())) {
@@ -3782,6 +3806,37 @@
         const a = asks();
         peek(a.length ? '<b>' + plural(a.length, 'thing') + '</b> wait on you. First: ' + esc(a[0].head) + '.' : 'Nothing waits on you today.', a[0] ? [{ label: a[0].verb, go: a[0].go, primary: true }] : []);
       }
+      return;
+    }
+    /* Questions about the work itself, answered from the same numbers the
+       reports draw (the insights layer, asked in words). */
+    if (/\b(risk|risky|late|behind|overdue)\b|miss(ing)? (its|their|the) (date|target)/.test(lc) && !isClient()) {
+      const open = deskReqs().filter(isOpen), risky = open.filter((q) => health(q).risk);
+      peek(risky.length ? '<b>' + risky.length + ' of ' + open.length + '</b> open requisitions are likely to miss their date. ' + risky.slice(0, 3).map((q) => {
+        const h = health(q);
+        return esc(q.title) + ' (' + (h.left >= 0 ? days(h.left) + ' left' : days(-h.left) + ' past the target') + ', ' + (h.furthest === 'sourced' || h.furthest === 'applied' ? 'nobody screened yet' : 'furthest at ' + esc(STAGE[h.furthest].label)) + ')';
+      }).join('; ') + (risky.length > 3 ? '; and ' + (risky.length - 3) + ' more.' : '.')
+        : 'All ' + plural(open.length, 'open requisition') + ' are on course.', risky.length ? [{ label: 'See them', go: { on: 'reqs', q: 'risk' }, primary: true }] : []);
+      return;
+    }
+    if (/\b(drop|drops|dropped|dropping|leak|lose|losing|lost|funnel|fall|falls|stuck)\b/.test(lc) && !isClient()) {
+      const asked = STAGE_ORDER.filter((k) => lc.indexOf(STAGE[k].label.toLowerCase()) >= 0)
+        .sort((a, b) => STAGE[b].label.length - STAGE[a].label.length)[0];
+      const reqs = deskReqs().filter((q) => q.state !== 'draft');
+      const tot = {};
+      reqs.forEach((q) => { const f = funnel(q); f.forEach((x, i) => { if (i === f.length - 1) return; const s = tot[x.k] || (tot[x.k] = { n: 0, m: 0 }); s.n += x.n; s.m += f[i + 1].n; }); });
+      const rows = Object.keys(tot).filter((k) => tot[k].n >= 5 && k !== 'sourced');
+      const pick = asked && tot[asked] ? asked : rows.sort((a, b) => tot[a].m / tot[a].n - tot[b].m / tot[b].n)[0];
+      if (!pick) { peek('Too few people have moved yet to say where they drop.', []); return; }
+      const x = tot[pick];
+      peek((asked ? 'At ' : 'The biggest drop comes after ') + '<b>' + esc(STAGE[pick].label) + '</b>: ' + x.m + ' of ' + x.n + ' who reached it went on to the next stage (' +
+        Math.round(x.m / x.n * 100) + '%), across ' + plural(reqs.length, 'requisition') + '.', [{ label: 'Open the reports', go: { on: 'reports' }, primary: true }]);
+      return;
+    }
+    if (/\b(how long|time to|average|days to|how fast)\b/.test(lc) && !isClient()) {
+      const reqs = deskReqs().filter((q) => q.state !== 'draft'), a = avgSent(reqs);
+      peek(a != null ? 'On average it takes <b>' + days(a) + '</b> from opening a requisition to sending the first profile, across ' + plural(reqs.length, 'requisition') + '.'
+        : 'No profile has been sent yet, so there is no time to report.', [{ label: 'Open the reports', go: { on: 'reports' }, primary: true }]);
       return;
     }
     /* A search: names first, then requisitions. */
@@ -4549,14 +4604,26 @@
   }
   /* A client asks for a hire; it lands with their account manager as a
      draft, to be talked through before it opens (Sales's client request). */
-  function clientRequest() {
+  /* The button asks in the bar; what they type there is the request. */
+  function clientRequest(text) {
+    if (!text) {
+      const inp = byId('floatInput');
+      inp.placeholder = 'Who do you need? For example: two more support engineers by December';
+      inp.focus();
+      peek('Tell me who you need in the bar below, in your own words. I pass it to ' + esc(HMS.filter((h) => h.id === ACCOUNTS.filter((a) => a.id === me().acc)[0].hm)[0].name) + ' as a draft.', []);
+      return;
+    }
     const acc = ACCOUNTS.filter((a) => a.id === me().acc)[0];
-    const q = make('reqs', { id: uid('r'), title: '', fam: 'support', level: 'Mid-level', must: [], acc: acc.id, tpl: acc.tpl, hm: acc.hm, rec: 'omar', seats: 1,
-      kind: 'new', billable: true, state: 'draft', opened: 0, target: 30, place: 'Nasr City office', plan: null, domain: acc.domain, published: false,
-      budget: { min: BUDGETS['Mid-level'][0], max: BUDGETS['Mid-level'][1] }, desc: 'Asked for by ' + me().name + ' at ' + acc.name + '.', asmt: null, askedBy: DESK });
+    const p = parseRole(text);
+    const am = HMS.filter((h) => h.id === acc.hm)[0].name;
+    const q = make('reqs', { id: uid('r'), title: p.title, fam: famOf(p.title), level: p.level, must: [], acc: acc.id, tpl: acc.tpl, hm: acc.hm, rec: 'omar', seats: p.seats,
+      kind: 'new', billable: true, state: 'draft', opened: 0, target: expDays(acc.tpl), place: 'Nasr City office', plan: null, domain: acc.domain, published: false,
+      budget: { min: BUDGETS[p.level][0], max: BUDGETS[p.level][1] }, desc: me().name + ' at ' + acc.name + ' asked: “' + text + '”', asmt: null, askedBy: DESK });
+    byId('floatInput').placeholder = 'Ask AiMY, or find a requisition or a candidate…';
+    peekHide();
     paint();
-    toast('Sent to ' + HMS.filter((h) => h.id === acc.hm)[0].name + ', your account manager', () => { unmake('reqs', q); paint(); },
-      'She talks it through with you before it opens.');
+    toast('Sent to ' + am + ', your account manager', () => { unmake('reqs', q); paint(); },
+      (p.title ? plural(p.seats, 'seat') + ' as ' + p.title + '. ' : '') + 'She talks it through with you before it opens.');
   }
   document.addEventListener('change', (e) => {
     const f = e.target.files && e.target.files[0];
