@@ -85,6 +85,16 @@ Everything in the New Operations list and the Product Overview now has a surface
 
 Motion uses transitions.dev pieces on the shell's own timing: the error shake on a wrong field, shimmer on the step AiMY is on, the accordion on interview details, the success check when an outside page is done, and a short reveal for results. All stop under reduced motion.
 
+## Live
+
+https://aimy-talent.nour-ali.workers.dev, the Cloudflare Worker `aimy-talent` (first deployed 26 Oct 2026). It is deployed by hand from this folder:
+
+```bash
+npx wrangler@4 deploy
+```
+
+`.assetsignore` keeps the git history, local settings and dev files off the site (Sales's list). After a deploy, check that the live `?v=` stamps match `index.html`. Unlike Sales, pushing does not deploy: no Git integration is set up for this Worker.
+
 ## Rules carried over from Sales
 
 - **The stage is stored.** `cand.stage` moves only through `move` (one press, with Undo). It never moves backwards except by Undo. An exit is not a stage.
@@ -122,4 +132,3 @@ Omar's own ten requisitions are scripted, so Today always has its cases: one at 
 ## Not built yet
 
 - Real integrations: LinkedIn, Apollo, SignalHire, Teams, recordings, WhatsApp and Freshdesk are fixtures, as telephony is in Sales.
-- A Cloudflare Worker for `aimy-talent` (`wrangler.jsonc` is ready; nothing is deployed).
