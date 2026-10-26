@@ -68,6 +68,22 @@ const MARKERS = {
   'chat-rename-in': 'which conversation the rename box is renaming, read by the keydown and focusout listeners that commit it',
   'find': 'the find box, read by an input listener rather than a click',
   'load': 'whether the surface is still standing behind its skeleton, read by bdr.css rather than by a click; arrive() writes it and the next prePaint takes it off',
+  'acc-open': 'whether an accordion is open, read by talent.css; data-acc-toggle flips it',
+  'text': 'the shimmer copies its own words from here in CSS (content: attr(data-text))',
+  'ed': 'which field of the edit buffer a box writes, read by the input listener',
+  'in': 'which field of the CV intake a box writes, read by the input listener',
+  'drn': 'which must-have a debrief note is about, read by the input listener',
+  'find-q': 'the finder’s brief, read by the input listener',
+  'aed': 'the assessment title box, read by the input listener',
+  'qed': 'which question a box rewrites, read by the input listener',
+  'qopt': 'which option of which question a box rewrites, read by the input listener',
+  'qpts': 'the points an open answer should cover, read by the input listener',
+  'anstext': 'an open answer on the test, read by the input listener',
+  'tpled': 'which agenda item a box rewrites, read by the input listener',
+  'apply-in': 'which field of the careers-page form a box writes, read by the input listener',
+  'me-in': 'which detail a profile box holds; Save reads the boxes by id',
+  'cv-file': 'the CV file box, read by the change listener',
+  'apply-file': 'the careers-page CV box, read by the change listener',
 };
 
 /* ── 1 & 2. CONTROLS AND HANDLERS, BOTH DIRECTIONS ───────────────────────── */

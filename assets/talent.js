@@ -123,6 +123,9 @@
     down: '<path d="m6 9 6 6 6-6"/>',
     up: '<path d="m18 15-6-6-6 6"/>',
     skip: '<polygon points="5 4 15 12 5 20 5 4"/><line x1="19" x2="19" y1="5" y2="19"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>',
+    link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
   };
   const svg = (k, px) => '<svg viewBox="0 0 24 24"' + (px ? ' width="' + px + '" height="' + px + '"' : '') +
     ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -145,12 +148,14 @@
   const STAGE = {
     sourced:  { label: 'Sourced',             who: 'me',        exp: 3, go: 'They want to talk', say: 'found, not yet in touch' },
     applied:  { label: 'Applied',             who: 'me',        exp: 2, go: 'Book the call',     say: 'applied or agreed to talk' },
+    assess:   { label: 'Assessment',          who: 'candidate', exp: 3, go: 'Passed the assessment', say: 'taking the assessment' },
     phone:    { label: 'Phone screen',        who: 'me',        exp: 2, go: 'Passed the call',   say: 'a screening call is due' },
     hr:       { label: 'HR interview',        who: 'me',        exp: 3, go: 'Passed HR',         say: 'with HR' },
     tech:     { label: 'Technical interview', who: 'interviewer', exp: 4, go: 'Send the profile', say: 'with the technical interviewer' },
     mgr:      { label: 'Managerial interview', who: 'hm',       exp: 3, go: 'Passed',            say: 'with the hiring manager' },
     sent:     { label: 'Profile sent',        who: 'client',    exp: 3, go: 'Client wants to meet', say: 'with the client to choose' },
     client:   { label: 'Client interview',    who: 'client',    exp: 5, go: 'Client said yes',   say: 'met the client' },
+    ctech:    { label: 'Client technical interview', who: 'client', exp: 5, go: 'Client said yes', say: 'with the client’s technical team' },
     offer:    { label: 'Offer',               who: 'candidate', exp: 4, go: 'Accepted',          say: 'an offer is out' },
     accepted: { label: 'Accepted',            who: 'candidate', exp: 40, go: 'Joined',           say: 'accepted, not started' },
     joined:   { label: 'Joined',              who: null,        exp: 0, say: 'started' },
@@ -158,10 +163,22 @@
   /* The internal template's tech step does not send a profile anywhere. */
   const GO_INTERNAL = { tech: 'Passed technical' };
 
+  /* The stage templates. The pipeline differs by company and department
+     (New Operations list), so each account picks one, and the HR Manager
+     edits them on the Templates page. `northwind` is the one client that
+     tests before the call and runs a technical round of its own. */
   const TEMPLATE = {
-    client:   ['sourced', 'applied', 'phone', 'hr', 'tech', 'sent', 'client', 'offer', 'accepted', 'joined'],
-    internal: ['sourced', 'applied', 'phone', 'hr', 'tech', 'mgr', 'offer', 'accepted', 'joined'],
+    client:    ['sourced', 'applied', 'phone', 'hr', 'tech', 'sent', 'client', 'offer', 'accepted', 'joined'],
+    northwind: ['sourced', 'applied', 'assess', 'phone', 'hr', 'tech', 'sent', 'client', 'ctech', 'offer', 'accepted', 'joined'],
+    internal:  ['sourced', 'applied', 'phone', 'hr', 'tech', 'mgr', 'offer', 'accepted', 'joined'],
   };
+  const TEMPLATE_SEED = JSON.parse(JSON.stringify(TEMPLATE));
+  const TEMPLATE_NAME = { client: 'Client roles', northwind: 'Northwind Software', internal: 'FlairsTech’s own roles' };
+  /* Stages a template must keep, because the product's own steps hang off
+     them: someone has to come in, be screened and be hired. */
+  const STAGE_FIXED = { sourced: 1, applied: 1, phone: 1, offer: 1, accepted: 1, joined: 1 };
+  /* The library a template is built from, in the order a pipeline runs. */
+  const STAGE_ORDER = ['sourced', 'applied', 'assess', 'phone', 'hr', 'tech', 'mgr', 'sent', 'client', 'ctech', 'offer', 'accepted', 'joined'];
 
   /* The ways out. Not stages: a candidate does not climb to "declined". */
   const EXIT = {
@@ -172,9 +189,10 @@
   };
 
   /* Stages where an interview happens, so a result can be in or still owed. */
-  const MEETS = { hr: 1, tech: 1, mgr: 1, client: 1 };
+  const MEETS = { hr: 1, tech: 1, mgr: 1, client: 1, ctech: 1 };
 
   const REQ_STATE = {
+    draft:    { label: 'Draft',             tone: 'warn' },
     open:     { label: 'Open',              tone: 'neutral' },
     risk:     { label: 'At risk',           tone: 'warn' },
     hold:     { label: 'On hold',           tone: 'neutral' },
@@ -331,6 +349,74 @@
     return m ? m[1] : null;
   }
 
+  /* ── Desks ──────────────────────────────────────────────────────────────
+     Sales's desks, for recruiting (audit, "Building on AiMY Sales"). The
+     recruiter does the work; the hiring manager is an account manager who
+     asks for hires, approves and interviews; the HR Manager reads all of it
+     and assigns; the client sees the profiles sent to them and nothing
+     internal. The candidate and the interviewer are not desks: they reach
+     their own screens from a link, as the audit recommended. */
+  const DESKS = {
+    omar:  { id: 'omar',  name: 'Omar Saeed',   ini: 'OS', role: 'Recruiter',      fn: 'rec' },
+    rania: { id: 'rania', name: 'Rania Samir',  ini: 'RS', role: 'Hiring manager', fn: 'hm' },
+    dina:  { id: 'dina',  name: 'Dina Ragab',   ini: 'DR', role: 'HR Manager',     fn: 'hr' },
+    jana:  { id: 'jana',  name: 'Jana Weber',   ini: 'JW', role: 'Northwind Software', fn: 'client', acc: 'northwind' },
+  };
+  const DESK_ORDER = ['omar', 'rania', 'dina', 'jana'];
+
+  /* The people who interview, by role family. */
+  const INTERVIEWERS = {
+    support: ['Mostafa Kamel, support lead', 'Heba Nagy, L3 support'],
+    finance: ['Ahmed Fathy, finance lead', 'Noha Selim, senior accountant'],
+    ops:     ['Tamer Ezzat, operations lead', 'Karim Hosny, delivery manager'],
+  };
+  const BU_DIRECTOR = 'Hesham Nabil';
+
+  /* ── Assessments ─────────────────────────────────────────────────────────
+     Questionnaires and live interviews with the AiMY agent (New Operations
+     list). A question is a choice (one right answer) or open (AiMY scores it
+     against the points listed). `fails` is the share that got it wrong in
+     the seed, so the insight "everyone fails Q5" has something to read. */
+  const ASMT_SEED = [
+    { id: 'a1', title: 'Support troubleshooting and written English', kind: 'quiz', fam: 'support', pass: 70, mins: 20, questions: [
+      { q: 'A customer says the app logs them out every few minutes. What do you check first?', type: 'choice', options: ['Their session timeout settings', 'Their screen resolution', 'Their invoice history', 'The app’s colour theme'], right: 0, fails: 0.18 },
+      { q: 'Which SQL finds the 10 most recent errors in a table called logs?', type: 'choice', options: ['SELECT * FROM logs ORDER BY created_at DESC LIMIT 10', 'SELECT TOP logs 10', 'GET logs LAST 10', 'SELECT * FROM logs WHERE 10'], right: 0, fails: 0.31 },
+      { q: 'Write a two-sentence reply to a customer whose ticket you must escalate.', type: 'open', points: ['says it is escalated', 'says when they will hear back', 'polite and plain'], fails: 0.22 },
+      { q: 'A bug only happens for one customer. What do you ask them for?', type: 'choice', options: ['Steps to reproduce, browser and a screenshot', 'Their password', 'Nothing, close it', 'Their manager’s number'], right: 0, fails: 0.12 },
+      { q: 'What does an HTTP 502 usually mean?', type: 'choice', options: ['A server upstream gave a bad response', 'The page was not found', 'The user is not logged in', 'The request was too large'], right: 0, fails: 0.79 },
+      { q: 'Put these in order of urgency: a typo on the help page, checkout is down, one user cannot reset a password.', type: 'open', points: ['checkout first', 'password second', 'typo last'], fails: 0.27 },
+    ] },
+    { id: 'a2', title: 'German language check', kind: 'live', fam: 'support', pass: 75, mins: 12, questions: [
+      { q: 'Stellen Sie sich bitte kurz vor.', type: 'open', points: ['fluent', 'clear structure'], fails: 0.2 },
+      { q: 'Ein Kunde ist verärgert, weil seine Bestellung fehlt. Wie reagieren Sie?', type: 'open', points: ['apologises', 'next step', 'polite register'], fails: 0.34 },
+      { q: 'Erklären Sie einem Kunden, wie er sein Passwort zurücksetzt.', type: 'open', points: ['clear steps', 'correct grammar'], fails: 0.28 },
+    ] },
+    { id: 'a3', title: 'Accounting basics', kind: 'quiz', fam: 'finance', pass: 65, mins: 25, questions: [
+      { q: 'A customer pays an invoice. Which accounts move?', type: 'choice', options: ['Cash up, accounts receivable down', 'Revenue up, cash down', 'Accounts payable up', 'Nothing moves'], right: 0, fails: 0.14 },
+      { q: 'What is a bank reconciliation for?', type: 'choice', options: ['To match the books to the bank statement', 'To pay suppliers', 'To file taxes', 'To set budgets'], right: 0, fails: 0.1 },
+      { q: 'An invoice is 95 days overdue. What do you do?', type: 'open', points: ['contacts the customer', 'escalates per policy', 'records the follow-up'], fails: 0.3 },
+      { q: 'Which is an accrual?', type: 'choice', options: ['An expense incurred but not yet invoiced', 'Cash in the bank', 'A paid invoice', 'A share issue'], right: 0, fails: 0.41 },
+    ] },
+    { id: 'a4', title: 'Operations case', kind: 'quiz', fam: 'ops', pass: 65, mins: 20, questions: [
+      { q: 'A weekly report takes a team member a full day. What do you do first?', type: 'open', points: ['writes down the steps', 'finds what repeats', 'asks who reads it'], fails: 0.26 },
+      { q: 'Which is the clearest way to hand a process to a new joiner?', type: 'choice', options: ['A short written checklist with an example', 'A long call', 'Nothing, they will learn', 'A screenshot'], right: 0, fails: 0.11 },
+      { q: 'Two teams want opposite changes to the same form. What do you do?', type: 'open', points: ['asks both why', 'finds the shared need', 'agrees an owner'], fails: 0.38 },
+    ] },
+  ];
+
+  /* ── Interview templates ── the agenda the HR Manager sets for each kind
+     of interview (New Operations list). AiMY adds the questions the CV is
+     silent on to whichever template is used. */
+  const IVTPL_SEED = [
+    { id: 'tp-hr',   kind: 'hr',     title: 'HR interview',                items: ['Motivation and why this role', 'Notice period and salary expectation', 'Shift and location fit', 'Questions they have for us'] },
+    { id: 'tp-tech', kind: 'tech',   title: 'Technical interview',         items: ['Walk through a recent piece of work', 'One live problem from the role', 'The must-haves the CV is silent on', 'How they learn something new'] },
+    { id: 'tp-mgr',  kind: 'mgr',    title: 'Managerial interview',        items: ['How they work with a team lead', 'A time they disagreed and how it ended', 'What a good first month looks like'] },
+    { id: 'tp-cli',  kind: 'client', title: 'Client interview',            items: ['The client introduces the team', 'Their questions on the candidate’s experience', 'Fit with the client’s hours and tools'] },
+    { id: 'tp-ctech', kind: 'ctech', title: 'Client technical interview',  items: ['The client’s own technical exercise', 'Questions on their stack'] },
+  ];
+  const IV_MODES = { person: 'In person or on Teams', aimy: 'With the AiMY agent', phone: 'By phone' };
+  const RATE = { m: 'Met', p: 'Partly met', n: 'Not shown' };
+
 
   /* ══ 3. THE CORPUS ══════════════════════════════════════════════════════ */
 
@@ -354,13 +440,13 @@
      data. `tpl` picks the stage template; `ctech` would add the client's own
      technical round and is not used yet. */
   const ACCOUNTS = [
-    { id: 'northwind', name: 'Northwind Software', tpl: 'client',   weight: 21, hm: 'rania' },
-    { id: 'flairs',    name: 'FlairsTech',         tpl: 'internal', weight: 5,  hm: 'tarek' },
-    { id: 'halcyon',   name: 'Halcyon Mobile',     tpl: 'client',   weight: 3,  hm: 'laila' },
-    { id: 'quarry',    name: 'Quarry Payroll',     tpl: 'client',   weight: 3,  hm: 'laila' },
-    { id: 'kestrel',   name: 'Kestrel Labs',       tpl: 'client',   weight: 3,  hm: 'sherine' },
-    { id: 'seaborne',  name: 'Seaborne Cruises',   tpl: 'client',   weight: 2,  hm: 'amr' },
-    { id: 'fernhill',  name: 'Fernhill Data',      tpl: 'client',   weight: 2,  hm: 'amr' },
+    { id: 'northwind', name: 'Northwind Software', tpl: 'northwind', weight: 21, hm: 'rania', domain: 'Software', since: 2023 },
+    { id: 'flairs',    name: 'FlairsTech',         tpl: 'internal',  weight: 5,  hm: 'tarek', domain: 'Internal', since: 2016 },
+    { id: 'halcyon',   name: 'Halcyon Mobile',     tpl: 'client',    weight: 3,  hm: 'laila', domain: 'Telecom', since: 2024 },
+    { id: 'quarry',    name: 'Quarry Payroll',     tpl: 'client',    weight: 3,  hm: 'laila', domain: 'Payroll software', since: 2022 },
+    { id: 'kestrel',   name: 'Kestrel Labs',       tpl: 'client',    weight: 3,  hm: 'sherine', domain: 'Test automation', since: 2025 },
+    { id: 'seaborne',  name: 'Seaborne Cruises',   tpl: 'client',    weight: 2,  hm: 'amr', domain: 'Travel', since: 2021 },
+    { id: 'fernhill',  name: 'Fernhill Data',      tpl: 'client',    weight: 2,  hm: 'amr', domain: 'Data annotation', since: 2025 },
   ];
 
   /* Role families, with the success profile each is read against. The
@@ -401,12 +487,15 @@
 
   /* How many of the candidates reaching a stage reach the next one. The
      phone→HR through client→offer rates are the dashboard's. */
-  const PASS = { sourced: 0.62, applied: 0.8, phone: 0.71, hr: 0.54, tech: 0.79, mgr: 0.75, sent: 0.30, client: 0.88, offer: 0.86, accepted: 0.92 };
+  const PASS = { sourced: 0.62, applied: 0.8, assess: 0.72, ctech: 0.82, phone: 0.71, hr: 0.54, tech: 0.79, mgr: 0.75, sent: 0.30, client: 0.88, offer: 0.86, accepted: 0.92 };
 
   const DB = { reqs: [], cands: [], byReq: {}, byId: {}, reqById: {}, calls: [] };
 
   function seed() {
     const r = rng(20261026);
+    /* The templates are editable; a seed always starts from the shipped ones. */
+    Object.keys(TEMPLATE).forEach((k) => delete TEMPLATE[k]);
+    Object.keys(TEMPLATE_SEED).forEach((k) => { TEMPLATE[k] = TEMPLATE_SEED[k].slice(); });
     DB.reqs = []; DB.cands = []; DB.byReq = {}; DB.byId = {}; DB.reqById = {};
     const accBag = [];
     ACCOUNTS.forEach((a) => { for (let i = 0; i < a.weight; i++) accBag.push(a.id); });
@@ -440,6 +529,15 @@
       'filled', 'filled', 'filled', 'filled', 'filled', 'filled', 'filled', 'started',
       'cclient', 'cclient', 'cclient', 'cclient', 'cclient', 'cmgr', 'cmgr', 'cmgr', 'filled'];
 
+    /* Monthly gross, EGP, by level. Sample bands for the offer packet. */
+    const BUDGET = { Junior: [14000, 20000], 'Mid-level': [20000, 32000], Senior: [32000, 48000], Manager: [40000, 60000] };
+    const BLURB = {
+      support: 'You will answer customers by ticket and phone, work out what broke, and fix it or hand it on with everything the next person needs.',
+      finance: 'You will keep the books straight for a growing client: invoices, collections, reconciliations and a clean month-end close.',
+      ops: 'You will keep the work moving: write down how things are done, spot what slows the team, and fix it with them.',
+    };
+    const descOf = (q, acc) => 'We are hiring ' + (q.seats === 1 ? 'a ' : q.seats + ' people as ') + q.title +
+      (acc.id === 'flairs' ? ' for FlairsTech itself. ' : ' for ' + acc.name + ', a ' + acc.domain.toLowerCase() + ' client. ') + BLURB[q.fam];
     const makeReq = (spec, recId) => {
       const acc = ACCOUNTS.filter((a) => a.id === spec.acc)[0];
       const role = ROLES[spec.role];
@@ -449,11 +547,18 @@
         acc: acc.id, tpl: acc.tpl, hm: acc.hm, rec: recId,
         seats: spec.seats || 1,
         kind: chance(r, 0.82) ? 'replacement' : 'new',
-        billable: acc.tpl === 'client' && chance(r, 0.8),
+        billable: acc.tpl !== 'internal' && chance(r, 0.8),
         state: spec.state, opened: -spec.open, target: -spec.open + spec.span,
         place: chance(r, 0.7) ? 'Nasr City office' : 'Hybrid, Maadi office',
         plan: spec.plan || null,
+        domain: acc.domain,
+        /* Published is off by default (overview); about half the open ones
+           have been put on the careers site and LinkedIn by now. */
+        published: spec.state === 'open' && chance(r, 0.55),
+        budget: BUDGET[role.level] ? { min: BUDGET[role.level][0], max: BUDGET[role.level][1] } : null,
+        desc: null,
       };
+      q.desc = descOf(q, acc);
       DB.reqs.push(q); DB.reqById[id] = q; DB.byReq[id] = [];
       return q;
     };
@@ -645,6 +750,129 @@
     minePeople((c) => c.stage === 'applied' || c.stage === 'phone').slice(2, 5).forEach((c, i) => {
       T(c, i ? -1 : 0, { dir: 'in', missed: true, outcome: 'noanswer', time: i === 0 ? '12:05' : i === 1 ? '17:20' : '15:10', note: 'They called. Nobody picked up.' });
     });
+
+    seedPeople(r);
+    seedWork(r);
+  }
+
+  /* ── People, not just applications ──────────────────────────────────────
+     A candidate record here is one application to one requisition. The
+     person behind it (`pid`) can hold several: the New Operations list asks
+     for "positions they applied to", and rediscovery is someone who left one
+     requisition turning up on another. About one in eighteen does. */
+  const SKILLS = {
+    support: ['Zendesk', 'Freshdesk', 'SQL', 'Jira', 'Log reading', 'Customer calls', 'Written English', 'REST APIs'],
+    finance: ['NetSuite', 'Oracle', 'Excel', 'Reconciliations', 'Collections', 'Month-end close', 'IFRS basics'],
+    ops:     ['Process mapping', 'Excel', 'Power BI', 'Jira', 'Documentation', 'Stakeholder updates'],
+  };
+  function seedPeople(r) {
+    DB.cands.forEach((c) => {
+      const q = DB.reqById[c.req];
+      c.pid = c.id;
+      c.contactOk = c.source !== 'Found on the web';
+      c.email = c.name.toLowerCase().replace(/[^a-z ]/g, '').split(' ').join('.') + '@' + pick(r, ['gmail.com', 'outlook.com', 'yahoo.com']);
+      const pool = SKILLS[q.fam];
+      c.skills = pool.filter(() => chance(r, 0.5)).slice(0, 5);
+      if (!c.skills.length) c.skills = [pool[0]];
+      c.summary = c.years + ' years, now ' + c.at.charAt(0).toLowerCase() + c.at.slice(1) + '. Strongest in ' + c.skills.slice(0, 2).join(' and ') + '.';
+      c.applied = q.opened + between(r, 1, Math.max(2, -q.opened - 1));
+      if (c.applied > -1) c.applied = -1;
+    });
+    /* Rediscovery: people who left a closed requisition, back on an open
+       one of the same family, at the start of it. */
+    const openReqs = DB.reqs.filter((q) => q.state === 'open');
+    const left = DB.cands.filter((c) => c.exit === 'out' || c.exit === 'clientno');
+    left.forEach((c) => {
+      if (!chance(r, 0.055)) return;
+      const q0 = DB.reqById[c.req];
+      const to = openReqs.filter((q) => q.fam === q0.fam && q.id !== q0.id)[0];
+      if (!to) return;
+      const id = 'k' + (DB.cands.length + 1) + 'r';
+      const k = Object.assign({}, c, {
+        id: id, req: to.id, stage: chance(r, 0.5) ? 'sourced' : 'applied', exit: null, since: between(r, 0, 4),
+        meet: null, fb: false, nudged: null, maxAt: null, callback: null, source: 'From the talent pool',
+        ev: to.must.map((m, i) => c.ev[i] || 'p'), applied: -between(r, 1, 6),
+      });
+      k.maxAt = k.stage;
+      DB.cands.push(k); DB.byId[id] = k; DB.byReq[to.id].push(k);
+    });
+  }
+
+  /* ── Interviews, assessment results and offers, consistent with where each
+     person stands ── */
+  const IV_NOTE = {
+    m: ['Gave a clear example from their current job.', 'Answered with numbers and a real case.', 'Strong, and could explain why.'],
+    p: ['Knows the idea, has not owned it yet.', 'Did it once with help.', 'Partly there; would need support.'],
+    n: ['Could not give an example.', 'Has not done this.', 'Did not come up, and they had nothing to add when asked.'],
+  };
+  function interviewerFor(q, stage) {
+    if (stage === 'hr') return DESKS.omar.name + ', recruiter';
+    if (stage === 'tech') return INTERVIEWERS[q.fam][0];
+    if (stage === 'mgr') return (HMS.filter((h) => h.id === q.hm)[0] || {}).name + ', hiring manager';
+    if (q.acc === 'northwind') return stage === 'ctech' ? 'Lukas Brandt, Northwind engineering' : 'Jana Weber, Northwind';
+    return 'The client’s panel';
+  }
+  function seedWork(r) {
+    DB.ivs = []; DB.sends = []; DB.offers = []; DB.events = [];
+    DB.asmts = ASMT_SEED.map((a) => JSON.parse(JSON.stringify(a)));
+    DB.ivtpls = IVTPL_SEED.map((t) => JSON.parse(JSON.stringify(t)));
+    let ivn = 0, sn = 0, on = 0;
+    const rate = (bias) => { const x = r() + bias; return x > 0.7 ? 'm' : x > 0.4 ? 'p' : 'n'; };
+    DB.reqs.forEach((q) => {
+      if (q.tpl === 'northwind') q.asmt = q.title.indexOf('German') >= 0 ? 'a2' : q.fam === 'finance' ? 'a3' : q.fam === 'ops' ? 'a4' : 'a1';
+    });
+    DB.cands.forEach((c) => {
+      const q = DB.reqById[c.req], t = TEMPLATE[q.tpl];
+      const at = t.indexOf(c.stage);
+      t.forEach((s, i) => {
+        if (!MEETS[s] || i > at) return;
+        const current = i === at && !c.exit;
+        const leftHere = i === at && !!c.exit;
+        let status = 'done', day = Math.min(-1, c.applied + 2 + i * 3);
+        if (current) {
+          if (c.meet == null) return;
+          day = c.meet;
+          status = c.meet >= 0 ? 'booked' : c.fb ? 'done' : 'owed';
+        }
+        const verdict = status !== 'done' ? null : leftHere ? 'no' : 'yes';
+        const bias = verdict === 'no' ? -0.25 : 0.25;
+        const iv = { id: 'iv' + (++ivn), cand: c.id, stage: s, day: day, slot: c.slot || pick(r, ['10:00', '11:00', '12:30', '14:00']),
+          by: interviewerFor(q, s), mode: s === 'hr' && chance(r, 0.15) ? 'aimy' : 'person', status: status,
+          ratings: status === 'done' ? q.must.map(() => rate(bias)) : null, notes: null, verdict: verdict, recording: null,
+          tpl: (IVTPL_SEED.filter((x) => x.kind === s)[0] || {}).id };
+        if (iv.ratings) iv.notes = iv.ratings.map((x) => pick(r, IV_NOTE[x]));
+        if (status === 'done' && chance(r, 0.4)) iv.recording = { mins: between(r, 22, 48), at: day };
+        DB.ivs.push(iv);
+      });
+      /* Assessment results, on the template that tests. */
+      if (q.asmt && t.indexOf('assess') >= 0) {
+        const ai = t.indexOf('assess');
+        const reached = c.exit ? t.indexOf(c.stage) >= ai : at >= ai;
+        if (reached) {
+          const a = ASMT_SEED.filter((x) => x.id === q.asmt)[0];
+          const pending = !c.exit && c.stage === 'assess' && chance(r, 0.5);
+          const answers = a.questions.map((qq) => !chance(r, qq.fails * (at > ai ? 0.7 : 1.1)));
+          const score = Math.round(answers.filter(Boolean).length / answers.length * 100);
+          DB.sends.push({ id: 's' + (++sn), asmt: a.id, cand: c.id, day: Math.min(-1, c.applied + 1), status: pending ? 'sent' : 'done',
+            answers: pending ? null : answers, score: pending ? null : score, doneDay: pending ? null : Math.min(-1, c.applied + 2) });
+        }
+      }
+      /* Offers. */
+      const oi = t.indexOf('offer');
+      if (at >= oi || c.exit === 'offerno') {
+        const lo = q.budget ? q.budget.min : 20000, hi = q.budget ? q.budget.max : 30000;
+        const salary = Math.round((lo + (hi - lo) * (0.35 + r() * 0.5)) / 500) * 500;
+        const offer = { id: 'o' + (++on), cand: c.id, salary: salary, notice: c.notice || 'one month’s notice',
+          expects: c.salary || null, hm: 'ok', bu: 'ok', sentDay: null, status: 'draft', joinDay: null, note: null };
+        if (c.exit === 'offerno') Object.assign(offer, { status: 'declined', sentDay: -between(r, 5, 20), note: 'Took a counter-offer from their current employer.' });
+        else if (c.stage === 'offer') {
+          if (chance(r, 0.5)) Object.assign(offer, { hm: chance(r, 0.5) ? 'ok' : 'waiting', bu: 'waiting', status: 'approving' });
+          else Object.assign(offer, { status: 'sent', sentDay: -c.since });
+        } else if (c.stage === 'accepted') Object.assign(offer, { status: 'accepted', sentDay: -between(r, 10, 30), joinDay: between(r, 3, 35) });
+        else if (c.stage === 'joined') Object.assign(offer, { status: 'joined', sentDay: -between(r, 40, 80), joinDay: -between(r, 5, 30) });
+        DB.offers.push(offer);
+      }
+    });
   }
 
 
@@ -654,15 +882,61 @@
   const KEY = 'aimy-talent:db:v1';
   /* `calls` are the calls you logged, appended to the seed's history.
      `added` are candidates a call brought in (a stranger who rang). */
-  const fresh = () => ({ c: {}, calls: [], added: [] });
+  const fresh = () => ({ c: {}, calls: [], added: [], x: {}, tpl: {} });
+  /* Every other collection keeps its changes the same way: `D.x[col][id]`
+     holds the fields a person changed, and a record made here carries
+     `_new` so it is rebuilt on load. */
+  const COLS = ['reqs', 'ivs', 'sends', 'offers', 'asmts', 'ivtpls', 'events'];
   let D = fresh();
   function load() {
     try { const s = localStorage.getItem(KEY); if (s) D = JSON.parse(s); } catch (e) { D = fresh(); }
     if (!D || !D.c) D = fresh();
     D.calls = D.calls || []; D.added = D.added || [];
     D.added.forEach((c) => { if (!DB.byId[c.id] && DB.byReq[c.req]) { DB.cands.push(c); DB.byId[c.id] = c; DB.byReq[c.req].push(c); } });
+    D.x = D.x || {}; D.tpl = D.tpl || {};
+    Object.keys(D.tpl).forEach((k) => { TEMPLATE[k] = D.tpl[k].slice(); });
+    COLS.forEach((col) => {
+      const m = D.x[col] || {};
+      Object.keys(m).forEach((id) => {
+        const f = m[id];
+        let rec = DB[col].filter((x) => x.id === id)[0];
+        if (rec) { Object.assign(rec, f); return; }
+        if (!f._new) return;
+        rec = JSON.parse(JSON.stringify(f));
+        DB[col].push(rec);
+        if (col === 'reqs') { DB.reqById[id] = rec; DB.byReq[id] = DB.byReq[id] || []; }
+      });
+    });
+    D.added.forEach((c) => { if (!DB.byId[c.id] && DB.byReq[c.req]) { DB.cands.push(c); DB.byId[c.id] = c; DB.byReq[c.req].push(c); } });
     Object.keys(D.c).forEach((id) => { if (DB.byId[id]) Object.assign(DB.byId[id], D.c[id]); });
     D.calls.forEach((t) => DB.calls.push(t));
+  }
+  function put(col, rec, fields) {
+    D.x[col] = D.x[col] || {};
+    D.x[col][rec.id] = Object.assign(D.x[col][rec.id] || {}, JSON.parse(JSON.stringify(fields)));
+    Object.assign(rec, fields);
+    save();
+  }
+  function make(col, rec) {
+    rec._new = true;
+    DB[col].push(rec);
+    if (col === 'reqs') { DB.reqById[rec.id] = rec; DB.byReq[rec.id] = DB.byReq[rec.id] || []; }
+    D.x[col] = D.x[col] || {};
+    D.x[col][rec.id] = JSON.parse(JSON.stringify(rec));
+    save();
+    return rec;
+  }
+  function unmake(col, rec) {
+    DB[col] = DB[col].filter((x) => x !== rec);
+    if (col === 'reqs') { delete DB.reqById[rec.id]; delete DB.byReq[rec.id]; }
+    if (D.x[col]) delete D.x[col][rec.id];
+    save();
+  }
+  const uid = (p) => p + Date.now().toString(36) + Math.floor(Math.random() * 1000);
+  const nowTime = () => { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+  /* Something a person did, on the candidate's history, and its undo. */
+  function note(c, kind, text, extra) {
+    return make('events', Object.assign({ id: uid('e'), cand: c.id, day: 0, time: nowTime(), kind: kind, text: text, by: DESK }, extra || {}));
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) {} }
   function write(c, fields) {
@@ -680,6 +954,7 @@
   }
   function addCand(c) { D.added.push(c); DB.cands.push(c); DB.byId[c.id] = c; DB.byReq[c.req].push(c); save(); }
   function dropCand(c) {
+    if (D.c[c.id]) delete D.c[c.id];
     D.added = D.added.filter((x) => x.id !== c.id);
     DB.cands = DB.cands.filter((x) => x.id !== c.id);
     DB.byReq[c.req] = DB.byReq[c.req].filter((x) => x.id !== c.id);
@@ -698,8 +973,38 @@
   const tplOf = (q) => TEMPLATE[q.tpl];
   const reqOf = (c) => DB.reqById[c.req];
   const rank = (q, k) => tplOf(q).indexOf(k);
-  const isOpen = (q) => !CLOSED[q.state] && q.state !== 'hold';
-  const mine = () => DB.reqs.filter((q) => q.rec === ME);
+  const isOpen = (q) => !CLOSED[q.state] && q.state !== 'hold' && q.state !== 'draft';
+
+  /* ── The desk you are looking from (Sales's DESKS and `?as=`) ── */
+  let DESK = 'omar';
+  const me = () => DESKS[DESK];
+  const isRec = () => me().fn === 'rec';
+  const isHM = () => me().fn === 'hm';
+  const isHR = () => me().fn === 'hr';
+  const isClient = () => me().fn === 'client';
+  /* WHOSE REQUISITIONS. The recruiter's are the ones they fill, the hiring
+     manager's the ones they asked for, the client's the ones for their
+     company, and the HR Manager reads all of them. */
+  function deskReqs() {
+    const d = me();
+    if (d.fn === 'rec') return DB.reqs.filter((q) => q.rec === d.id);
+    if (d.fn === 'hm') return DB.reqs.filter((q) => q.hm === d.id);
+    if (d.fn === 'client') return DB.reqs.filter((q) => q.acc === d.acc && q.state !== 'draft');
+    return DB.reqs;
+  }
+  const mine = () => deskReqs();
+  /* WHO A DESK SEES. The hiring manager sees candidates once the recruiter
+     has advanced them to the technical round, and the rest as a count; the
+     client sees only the profiles sent to them (overview, "visibility
+     boundaries"). */
+  function sees(c) {
+    if (isRec() || isHR()) return true;
+    const q = DB.reqById[c.req], t = TEMPLATE[q.tpl];
+    const reached = t.indexOf(c.maxAt || c.stage);
+    if (isHM()) return reached >= t.indexOf('tech');
+    if (isClient()) return q.acc === me().acc && t.indexOf('sent') >= 0 && reached >= t.indexOf('sent') && c.exit !== 'out';
+    return false;
+  }
   const myOpen = () => mine().filter(isOpen);
   const activeOf = (q) => DB.byReq[q.id].filter((c) => !c.exit && c.stage !== 'joined');
 
@@ -712,6 +1017,7 @@
      one with the result still owed is the interviewer's (or the client's). */
   function waitsOn(c) {
     if (c.exit || c.stage === 'joined') return null;
+    if (c.stage === 'assess') { const s = sendOf(c); return s && s.status === 'done' ? 'me' : 'candidate'; }
     if (MEETS[c.stage]) {
       if (c.fb) return 'me';
       if (c.meet != null && c.meet >= 0) return 'booked';
@@ -727,6 +1033,7 @@
     const out = [];
     myOpen().forEach((q) => activeOf(q).forEach((c) => {
       if (MEETS[c.stage] && c.fb) out.push(c);
+      else if (c.stage === 'assess' && sendOf(c) && sendOf(c).status === 'done') out.push(c);
     }));
     return out.sort((a, b) => b.since - a.since);
   }
@@ -801,7 +1108,7 @@
   /* Days to send the first profile, per requisition with one sent. Sample
      arithmetic off the opening date; the real figure needs the event. */
   function sentDays(q) {
-    if (q.tpl !== 'client') return null;
+    if (TEMPLATE[q.tpl].indexOf('sent') < 0) return null;
     const sent = DB.byReq[q.id].filter((c) => rank(q, c.maxAt) >= rank(q, 'sent'));
     if (!sent.length) return null;
     return Math.max(3, Math.round(-q.opened * 0.45));
@@ -818,6 +1125,69 @@
   const evSay = (c) => '<b>' + evMet(c) + ' of ' + c.ev.length + '</b> must-haves met' +
     (c.ev.filter((e) => e === 'p').length ? ', ' + c.ev.filter((e) => e === 'p').length + ' partly' : '');
 
+
+  /* ── Interviews, assessments, offers, derived ── */
+  const ivsOf = (c) => DB.ivs.filter((v) => v.cand === c.id).sort((a, b) => b.day - a.day);
+  const ivNow = (c) => DB.ivs.filter((v) => v.cand === c.id && v.stage === c.stage)[0] || null;
+  const sendOf = (c) => DB.sends.filter((x) => x.cand === c.id).sort((a, b) => b.day - a.day)[0] || null;
+  const asmtOf = (id) => DB.asmts.filter((a) => a.id === id)[0] || null;
+  const offerOf = (c) => DB.offers.filter((o) => o.cand === c.id)[0] || null;
+  const apps = (c) => DB.cands.filter((x) => x.pid === (c.pid || c.id));
+  const tplById = (id) => DB.ivtpls.filter((t) => t.id === id)[0] || null;
+  const tplFor = (stage) => DB.ivtpls.filter((t) => t.kind === stage)[0] || null;
+
+  /* WHAT IS VERIFIED, PER MUST-HAVE (New Operations list: "validation on
+     the skills and experience based on the communication history"). The CV
+     says one thing; each interview that rated it says another. Where they
+     disagree it is said plainly, "CV says" next to "Interview found", never
+     as a warning about the person. */
+  function verified(c) {
+    const q = reqOf(c);
+    const done = ivsOf(c).filter((v) => v.status === 'done' && v.ratings);
+    return q.must.map((m, i) => {
+      /* The deepest interview that rated it speaks first: a technical
+         interview outranks the HR screen on a technical must-have. */
+      const seen = done.filter((v) => v.ratings[i]).map((v) => ({ r: v.ratings[i], by: v.by, note: v.notes ? v.notes[i] : '', stage: v.stage, day: v.day }))
+        .sort((a, b) => rank(q, b.stage) - rank(q, a.stage));
+      const best = seen[0] || null;
+      const cv = c.ev[i];
+      const state = !best ? 'unproven' : best.r === 'm' ? 'verified' : cv === 'm' ? 'differs' : best.r === 'p' ? 'partly' : 'notshown';
+      return { must: m, cv: cv, seen: seen, state: state };
+    });
+  }
+  const VSTATE = {
+    verified: { label: 'Verified in interview', tone: 'ok' },
+    partly:   { label: 'Partly shown in interview', tone: 'warn' },
+    notshown: { label: 'Not shown in interview', tone: 'neutral' },
+    differs:  { label: 'CV and interview differ', tone: 'warn' },
+    unproven: { label: 'Not checked yet', tone: 'neutral' },
+  };
+
+  /* EVERYTHING THAT HAPPENED TO ONE APPLICATION, newest first: applying,
+     calls, assessments, interviews, offers, and what people did and wrote. */
+  function historyOf(c) {
+    const out = [];
+    const q = reqOf(c);
+    out.push({ day: c.applied != null ? c.applied : -3, time: '09:00', kind: 'apply',
+      text: (c.source === 'Applied through the link' ? 'Applied through the careers link' : c.source) + ' for ' + q.title + '.' });
+    callsOf(c.id).forEach((t) => out.push({ day: t.day, time: t.time, kind: 'call',
+      text: t.missed ? 'Called and got nobody.' : (t.dir === 'in' ? 'Called in: ' : 'Phone call: ') + OUTCOME[t.outcome].label + '. ' + (t.note || '') }));
+    DB.sends.filter((x) => x.cand === c.id).forEach((x) => {
+      const a = asmtOf(x.asmt);
+      out.push({ day: x.day, time: '10:00', kind: 'asmt', text: 'Sent the ' + a.title + ' assessment.' });
+      if (x.status === 'done') out.push({ day: x.doneDay != null ? x.doneDay : x.day, time: '18:00', kind: 'asmt',
+        text: 'Finished the assessment: ' + x.score + '%' + (x.score >= a.pass ? ', a pass.' : ', under the ' + a.pass + '% pass mark.') });
+    });
+    ivsOf(c).forEach((v) => out.push({ day: v.day, time: v.slot, kind: 'iv', text: STAGE[v.stage].label + ' with ' + v.by +
+      (v.status === 'booked' ? ' is booked.' : v.status === 'owed' ? '. The result is still owed.' : v.verdict === 'yes' ? '. Result: proceed.' : '. Result: do not proceed.') +
+      (v.recording ? ' Recorded, ' + v.recording.mins + ' minutes, transcribed.' : '') }));
+    const o = offerOf(c);
+    if (o && o.sentDay != null) out.push({ day: o.sentDay, time: '16:00', kind: 'offer', text: 'Offer sent: EGP ' + o.salary.toLocaleString('en-US') + ' a month.' });
+    if (o && o.status === 'accepted') out.push({ day: Math.min(0, o.sentDay + 2), time: '12:00', kind: 'offer', text: 'Accepted the offer. Joins ' + sayDay(o.joinDay) + '.' });
+    if (o && o.status === 'declined') out.push({ day: Math.min(0, o.sentDay + 2), time: '12:00', kind: 'offer', text: 'Declined the offer. ' + (o.note || '') });
+    DB.events.filter((e) => e.cand === c.id).forEach((e) => out.push({ day: e.day, time: e.time, kind: e.kind, text: e.text, by: e.by }));
+    return out.sort((a, b) => b.day - a.day || String(b.time).localeCompare(String(a.time)));
+  }
 
   /* ── Calls, derived ── newest first. A day is an offset from today; within
      a day, the clock. */
@@ -867,13 +1237,21 @@
   /* ══ 6. THE URL ═════════════════════════════════════════════════════════
      Every view is a URL, so every view can be sent and Back works. */
   let S = {};
-  const KEYS = ['on', 'req', 'cand', 'q', 'find'];
+  /* `as` is the desk (Sales's `?as=`). `apply`, `me`, `take`, `debrief` and
+     `approve` are the screens people outside the recruiting team reach from a
+     link: the careers page, a candidate's own profile, an assessment, an
+     interviewer's debrief and an approver's offer packet. */
+  const KEYS = ['as', 'on', 'req', 'cand', 'asmt', 'acc', 'q', 'find', 'edit', 'apply', 'me', 'take', 'debrief', 'approve', 'by', 'src'];
+  const OUTSIDE = ['apply', 'me', 'take', 'debrief', 'approve'];
+  const outside = () => OUTSIDE.some((k) => !!S[k]);
   function parse() {
     const p = new URLSearchParams(location.search);
     S = {};
     KEYS.forEach((k) => { if (p.get(k)) S[k] = p.get(k); });
     if (S.req && !DB.reqById[S.req]) delete S.req;
     if (S.cand && !DB.byId[S.cand]) delete S.cand;
+    if (S.asmt && !asmtOf(S.asmt)) delete S.asmt;
+    DESK = DESKS[S.as] ? S.as : 'omar';
   }
   function urlOf(s) {
     const p = new URLSearchParams();
@@ -886,12 +1264,17 @@
   let TRAIL = null;
   function go(over, replace) {
     const next = Object.assign({}, over);
+    /* The desk travels with every link inside the product, and never onto a
+       screen somebody outside it opens. */
+    if (DESK !== 'omar' && !('as' in over) && !OUTSIDE.some((k) => !!next[k])) next.as = DESK;
     if (!replace) TRAIL = Object.assign({}, S);
     S = next;
+    DESK = DESKS[S.as] ? S.as : 'omar';
     const u = urlOf(S);
     if (replace) history.replaceState(null, '', u); else history.pushState(null, '', u);
     /* A row in the bell is a way somewhere; once you are there it closes. */
     byId('ntfPanel').hidden = true;
+    peekHide();
     byId('ntfBell').setAttribute('aria-expanded', 'false');
     paint();
     byId('pageScroll').scrollTop = 0;
@@ -918,14 +1301,44 @@
   /* ── The header: who you are. One desk for now; the switcher arrives with
      the hiring manager's. ── */
   function paintWho() {
-    const me = RECRUITERS[0];
-    byId('userAvatar').textContent = me.ini;
-    byId('userName').textContent = me.name;
-    byId('userRole').textContent = 'Recruiter';
+    const d = me();
+    byId('userAvatar').textContent = d.ini;
+    byId('userName').textContent = d.name;
+    byId('userRole').textContent = d.role;
+    byId('asPanel').innerHTML = '<span class="b-menu-cap">Looking as</span>' + DESK_ORDER.map((k) => {
+      const x = DESKS[k];
+      return '<button class="b-menu-item' + (k === DESK ? ' is-on' : '') + '" type="button" role="menuitemradio" aria-checked="' + (k === DESK) + '" data-as="' + k + '">' +
+        '<span class="b-menu-name">' + esc(x.name) + '</span><span class="tel-menu-cc">' + esc(x.role) + '</span></button>';
+    }).join('');
   }
 
   /* ── The rail: what is reachable, with one reading on top. ── */
+  /* The other desks' rail: their one reading, and doors to their work. */
+  function paintDeskRail() {
+    const a = asks();
+    const reqs = deskReqs().filter((q) => q.state !== 'draft');
+    const open = reqs.filter(isOpen);
+    const risky = open.filter((q) => health(q).risk);
+    const say = isHR() ? '<b>' + risky.length + ' of ' + open.length + '</b> open requisitions are likely to miss their date.'
+      : a.length ? '<b>' + plural(a.length, 'thing') + '</b> ' + (a.length === 1 ? 'waits' : 'wait') + ' on you.' : 'Nothing waits on you.';
+    byId('appRail').innerHTML =
+      '<div class="rail-read"><div class="bcard rail-card">' +
+        '<div class="bcard-meta"><span class="type-label rail-state p2">' + esc(isHR() ? 'At risk' : 'Waiting on you') + '</span></div>' +
+        '<p class="bcard-conclusion rail-conclusion">' + say + '</p>' +
+        '<div class="bcard-evidence rail-evidence"><span class="evidence-pill"><span class="val">' + open.length + '</span>open requisitions</span>' +
+          (isClient() ? '' : '<span class="evidence-pill"><span class="val">' + reqs.filter((q) => q.state === 'filled' || q.state === 'started').length + '</span>filled</span>') + '</div>' +
+      '</div></div>' +
+      '<div class="rail-doors">' +
+        (a[0] ? '<button class="b-door" type="button"' + goAttr(a[0].go) + '><span class="b-door-cap">Next</span>' +
+          '<span class="b-door-who">' + esc(a[0].head) + '</span><span class="b-door-say">' + esc(a[0].body) + '</span>' +
+          '<span class="b-door-go">' + esc(a[0].verb) + svg('go') + '</span></button>' : '') +
+        (isClient() ? '' : '<button class="b-door" type="button"' + goAttr({ on: 'reports' }) + '><span class="b-door-cap">Reports</span>' +
+          '<span class="b-door-fig">' + (avgSent(reqs) != null ? avgSent(reqs) : '·') + '<span class="b-door-of">days</span></span>' +
+          '<span class="b-door-say">to send the first profile, on average</span><span class="b-door-go">Open the reports' + svg('go') + '</span></button>') +
+      '</div>';
+  }
   function paintRail() {
+    if (!isRec()) { paintDeskRail(); return; }
     const d = decisions();
     const open = myOpen();
     const people = open.reduce((n, q) => n + activeOf(q).length, 0);
@@ -998,7 +1411,7 @@
         ' called and got nobody' + (tc.filter((x) => x.why === 'callback').length ? ', and <b>' + plural(tc.filter((x) => x.why === 'callback').length, 'callback') + '</b> ' +
         (tc.filter((x) => x.why === 'callback').length === 1 ? 'is' : 'are') + ' due today.' : '.'));
     }
-    const ready = d.filter((c) => c.stage === 'tech' && reqOf(c).tpl === 'client');
+    const ready = d.filter((c) => c.stage === 'tech' && reqOf(c).tpl !== 'internal');
     const starts = [
       { k: 'decide', label: 'Decide the oldest one', n: d.length, why: oldest ? oldest.name + ', ' + lower(STAGE[oldest.stage].label) : 'nothing is waiting' },
       { k: 'send', label: 'Send profiles', n: ready.length, why: ready.length ? 'technical results are in for ' + plural(ready.length, 'candidate') : 'none ready yet' },
@@ -1021,11 +1434,20 @@
   /* ── The switcher: the heading is the navigation, as in Sales. ── */
   function switcher(here) {
     const open = myOpen().length;
-    const tabs = [
-      { k: '', label: 'Today' },
-      { k: 'reqs', label: 'Requisitions', n: open },
-      { k: 'calls', label: 'Calls', n: toCall().length },
-    ];
+    /* Each desk's row is the work that desk does (Sales: a surface belongs
+       to whoever does the verb on it). */
+    const all = {
+      '': { label: 'Today' },
+      reqs: { label: 'Requisitions', n: open },
+      calls: { label: 'Calls', n: isRec() ? toCall().length : null },
+      find: { label: 'Find candidates' },
+      asmts: { label: 'Assessments' },
+      templates: { label: 'Templates' },
+      reports: { label: 'Reports' },
+    };
+    const row = isRec() ? ['', 'reqs', 'calls', 'find', 'asmts', 'reports'] : isHM() ? ['', 'reqs', 'reports']
+      : isHR() ? ['', 'reqs', 'asmts', 'templates', 'reports'] : ['', 'reqs'];
+    const tabs = row.map((k) => Object.assign({ k: k }, all[k]));
     return '<h2 class="b-switch">' + tabs.map((t) => '<button class="b-switch-btn' + (t.k === here ? ' is-on' : '') + '" type="button"' +
       goAttr(t.k ? { on: t.k } : {}) + (t.k === here ? ' aria-current="page"' : '') + '>' + esc(t.label) +
       (t.n != null ? '<span class="b-switch-n">' + t.n + '</span>' : '') + '</button>').join('') +
@@ -1114,6 +1536,7 @@
     { k: 'mine',   label: 'Waiting on you',     test: (q) => activeOf(q).some((c) => MEETS[c.stage] && c.fb) },
     { k: 'hold',   label: 'On hold',            test: (q) => q.state === 'hold' },
     { k: 'closed', label: 'Closed',             test: (q) => !!CLOSED[q.state] },
+    { k: 'draft',  label: 'Drafts',             test: (q) => q.state === 'draft' },
   ];
   const findHit = (q, f) => {
     if (!f) return true;
@@ -1122,18 +1545,21 @@
       DB.byReq[q.id].some((c) => c.name.toLowerCase().indexOf(s) >= 0);
   };
   function reqsPage() {
-    const cut = CUTS.filter((c) => c.k === S.q)[0] || CUTS[0];
+    /* A client sees open and closed requests; the internal cuts are ours. */
+    const cuts = isClient() ? CUTS.filter((c) => c.k === 'all' || c.k === 'closed') : CUTS;
+    const cut = cuts.filter((c) => c.k === S.q)[0] || cuts[0];
     const all = mine();
     const list = all.filter(cut.test).filter((q) => findHit(q, S.find))
       .sort((a, b) => (stateOf(b) === 'risk') - (stateOf(a) === 'risk') || a.target - b.target);
     return '<div class="s-home">' +
-      topBrief() +
+      (isRec() ? topBrief() : '') +
       '<section class="s-block s-block-wide">' +
         '<div class="s-camp-list-head">' + switcher('reqs') +
           '<label class="b-find">' + svg('find', 14) +
             '<input type="text" data-find value="' + esc(S.find || '') + '" placeholder="Find a requisition, an account or a candidate" spellcheck="false" aria-label="Find a requisition, an account or a candidate"></label>' +
+          (isClient() ? '<button class="b-ghost" type="button" data-client-request>Ask for a hire</button>' : '<button class="b-ghost" type="button" data-new-req>New requisition</button>') +
         '</div>' +
-        '<div class="b-cuts b-cuts-row">' + CUTS.map((c) => '<button class="filter-chip' + (c === cut ? ' active' : '') + '" type="button" data-q="' + c.k + '">' +
+        '<div class="b-cuts b-cuts-row">' + cuts.map((c) => '<button class="filter-chip' + (c === cut ? ' active' : '') + '" type="button" data-q="' + c.k + '">' +
           esc(c.label) + '<span class="b-cut-n">' + all.filter(c.test).length + '</span></button>').join('') + '</div>' +
         (list.length ? '<div class="b-grid">' + list.map((q, i) => '<div class="b-slot">' + reqCard(q, i) + '</div>').join('') + '</div>' +
           '<p class="b-vfoot">' + (list.length === all.filter(cut.test).length ? plural(list.length, 'requisition') + ', all shown.' : plural(list.length, 'requisition') + ' match “' + esc(S.find) + '”.') + '</p>'
@@ -1149,15 +1575,18 @@
     const sent = act.filter((c) => c.stage === 'sent' || c.stage === 'client').length;
     const f = funnel(q);
     const ws = worstStep(f);
-    const clock = CLOSED[q.state] ? 'closed' : q.state === 'hold' ? 'paused' : h.left >= 0 ? days(h.left) + ' left' : days(-h.left) + ' past the target';
-    const read = CLOSED[q.state]
+    const clock = q.state === 'draft' ? 'not open yet' : CLOSED[q.state] ? 'closed' : q.state === 'hold' ? 'paused' : h.left >= 0 ? days(h.left) + ' left' : days(-h.left) + ' past the target';
+    const sentTo = DB.byReq[q.id].filter((c) => rank(q, 'sent') >= 0 && rank(q, c.maxAt) >= rank(q, 'sent'));
+    const read = q.state === 'draft' ? 'A draft. Nothing happens until it is opened.'
+      : isClient() ? (sentTo.length ? 'We sent <b>' + plural(sentTo.length, 'profile') + '</b>; you met ' + sentTo.filter((c) => rank(q, c.maxAt) >= rank(q, 'client')).length + '.' : 'No profiles sent yet.')
+      : CLOSED[q.state]
       ? (q.state === 'filled' || q.state === 'started' ? plural(q.seats, 'seat') + ' filled, from ' + DB.byReq[q.id].length + ' candidates.' : 'Closed before anyone was hired.')
       : ws ? '<b>' + ws.m + ' of ' + ws.n + '</b> moved on from the ' + esc(lower(STAGE[ws.from].label)) + ', the biggest drop here.'
       : 'Too early to say where people drop.';
     return '<article class="type-card s-card b-qcard" data-open="req:' + q.id + '" style="--i:' + Math.min(i, 8) + '">' +
       '<div class="tc-head">' + tag(st.label, st.tone) + '<span class="b-kind">' + esc(clock) + '</span>' +
         '<span class="tc-type b-fact">' + svg('acc') + '<span>' + esc(accOf(q).name) + '</span></span></div>' +
-      '<button class="tc-title s-card-title" type="button" data-req="' + q.id + '">' + esc(q.title) + '</button>' +
+      '<button class="tc-title s-card-title" type="button" data-req="' + q.id + '">' + esc(q.title || 'Untitled draft') + '</button>' +
       '<p class="tc-summary b-qcard-what b-fact">' + svg('goal') + '<span>' +
         esc(plural(q.seats, 'seat')) + ' · ' + esc(q.kind === 'replacement' ? 'a replacement' : 'a new role') + ' · ' + esc(q.level) + '</span></p>' +
       '<div class="b-qcard-why">' + (CLOSED[q.state] ? 'Opened ' + sayDay(q.opened)
@@ -1171,6 +1600,11 @@
   /* ── ONE REQUISITION ── the campaign record, as a requisition. */
   function reqPage() {
     const q = DB.reqById[S.req];
+    if (!q || (isClient() && q.acc !== me().acc)) return '<div class="s-home"><section class="s-block s-block-wide"><p class="s-none">This requisition is not one of yours.</p></section></div>';
+    /* A draft is always open for editing; anything else is edited behind
+       Edit, and atomic things (published, on hold) are one press on the
+       record itself (Sales's inline-versus-Edit rule). */
+    if (q.state === 'draft' || (S.edit && canEditReq(q))) return reqEditPage(q);
     const st = REQ_STATE[stateOf(q)];
     const h = health(q);
     const t = tplOf(q);
@@ -1179,23 +1613,28 @@
     const f = funnel(q);
     const ws = worstStep(f);
     const cutK = S.q && (S.q === 'all' || S.q === 'out' || STAGE[S.q]) ? S.q : 'all';
-    const people = cutK === 'all' ? act : cutK === 'out' ? all.filter((c) => c.exit) : act.filter((c) => c.stage === cutK);
+    const pool = cutK === 'all' ? act : cutK === 'out' ? all.filter((c) => c.exit) : act.filter((c) => c.stage === cutK);
+    const people = pool.filter(sees);
+    const hidden = pool.length - people.length;
     people.sort((a, b) => t.indexOf(b.stage) - t.indexOf(a.stage) || b.since - a.since);
     const sentN = all.filter((c) => rank(q, c.maxAt) >= rank(q, 'sent')).length;
     const metN = all.filter((c) => rank(q, c.maxAt) >= rank(q, 'client')).length;
     const backTo = TRAIL && (TRAIL.on || !TRAIL.req) ? (TRAIL.on === 'reqs' ? 'Requisitions' : 'Today') : 'Requisitions';
 
     const lead = CLOSED[q.state] ? { n: q.seats, of: q.seats, say: 'seats filled. This requisition is closed.' }
-      : q.tpl === 'client' && sentN ? { n: metN, of: sentN, say: (sentN === 1 ? 'profile sent got' : 'profiles sent got') + ' a client interview' + (h ? ', with ' + days(Math.max(0, h.left)) + ' to the target.' : '.') }
+      : rank(q, 'sent') >= 0 && sentN ? { n: metN, of: sentN, say: (sentN === 1 ? 'profile sent got' : 'profiles sent got') + ' a client interview' + (h ? ', with ' + days(Math.max(0, h.left)) + ' to the target.' : '.') }
       : { n: act.length, of: all.length, say: (all.length === 1 ? 'candidate is' : 'candidates are') + ' still in progress' + (h ? ', with ' + days(Math.max(0, h.left)) + ' to the target.' : '.') };
     const deck = h && h.risk ? riskSay(q, h).replace(/<\/?b>/g, '') + ' Moving the date changes the forecast, not the work.'
       : ws ? 'The biggest drop is after the ' + lower(STAGE[ws.from].label) + ': ' + ws.m + ' of ' + ws.n + ' moved on.'
       : 'Nothing stands out yet.';
 
     return '<div class="s-home">' +
-      '<div class="b-topbar s-block-wide"><button class="s-back" type="button" data-trail>' + svg('back', 14) + 'Back to ' + backTo + '</button></div>' +
+      '<div class="b-topbar s-block-wide"><button class="s-back" type="button" data-trail>' + svg('back', 14) + 'Back to ' + backTo + '</button>' +
+        reqActs(q) + '</div>' +
       '<section class="s-rec-head s-block-wide">' +
-        '<span class="s-rec-kind b-kinds">' + fact('req', 'Requisition') + fact('acc', accOf(q).name) + fact('pin', q.place) +
+        '<span class="s-rec-kind b-kinds">' + fact('req', 'Requisition') +
+          (isClient() ? fact('acc', accOf(q).name) : '<button class="b-fact t-fact-link" type="button" data-acc="' + q.acc + '">' + svg('acc') + '<span>' + esc(accOf(q).name) + '</span></button>') +
+          fact('pin', q.place) +
           fact('users', plural(q.seats, 'seat')) + fact('cal', sayDay(q.opened) + ' to ' + sayDay(q.target)) + '</span>' +
         '<div class="s-rec-title"><h1 class="s-rec-name">' + esc(q.title) + '</h1>' +
           '<span class="s-meta-st tone-' + st.tone + '">' + esc(st.label) + '</span>' +
@@ -1211,18 +1650,20 @@
         '<div class="b-cmeta b-said">' +
           '<div class="b-cmeta-part"><div class="b-draft-caprow"><span class="b-cmeta-cap">Success profile</span></div><div class="b-cmeta-say">' +
             q.must.map((m) => '<p class="b-cmeta-p">' + esc(m) + '</p>').join('') + '</div></div>' +
-          '<div class="b-cmeta-part"><div class="b-draft-caprow"><span class="b-cmeta-cap">Notes</span></div><div class="b-cmeta-say"><p class="b-cmeta-p b-draft-none">Nothing written.</p></div></div>' +
+          '<div class="b-cmeta-part"><div class="b-draft-caprow"><span class="b-cmeta-cap">About the role</span></div><div class="b-cmeta-say">' +
+            (q.desc ? '<p class="b-cmeta-p">' + esc(q.desc) + '</p>' : '<p class="b-cmeta-p b-draft-none">Nothing written.</p>') + '</div></div>' +
         '</div>' +
       '</section>' +
+      (isClient() ? '' : reqStrip(q)) +
       '<section class="s-insight is-lead s-block-wide" aria-label="Where this requisition is">' +
         '<div class="s-lead-mark"><svg class="s-insight-mark" viewBox="0 0 18 20" width="14" height="14" aria-hidden="true"><use href="#aimy-logo-small"/></svg>' +
           '<span class="work-state ws-detected">Read off the record</span></div>' +
         '<div class="s-lead-line"><span class="s-lead-n">' + lead.n + '</span><span class="s-lead-say">of the <span class="s-lead-of">' + lead.of + '</span> ' + esc(lead.say) + '</span></div>' +
         '<p class="s-lead-deck">' + esc(deck) + '</p>' +
       '</section>' +
-      funnelBlock(q, f, ws) +
+      (isClient() ? '' : funnelBlock(q, f, ws)) +
       '<section class="s-block s-block-wide" aria-label="Candidates">' +
-        '<div class="s-camp-list-head"><h2 class="s-block-h">The candidates on it</h2>' +
+        '<div class="s-camp-list-head"><h2 class="s-block-h">' + (isClient() ? 'Profiles sent to you' : 'The candidates on it') + '</h2>' +
           '<span class="s-block-say">' + act.length + ' in progress · ' + all.filter((c) => c.exit).length + ' left</span></div>' +
         '<div class="b-cuts b-cuts-row">' +
           '<button class="filter-chip' + (cutK === 'all' ? ' active' : '') + '" type="button" data-q="all">In progress<span class="b-cut-n">' + act.length + '</span></button>' +
@@ -1231,8 +1672,9 @@
           '<button class="filter-chip' + (cutK === 'out' ? ' active' : '') + '" type="button" data-q="out">Left<span class="b-cut-n">' + all.filter((c) => c.exit).length + '</span></button>' +
         '</div>' +
         (people.length ? '<div class="b-grid">' + people.map((c, i) => '<div class="b-slot">' + candCard(c, i) + '</div>').join('') + '</div>' +
-          '<p class="b-vfoot">' + plural(people.length, 'candidate') + ', all shown.</p>'
-          : '<p class="s-none">Nobody is here.</p>') +
+          '<p class="b-vfoot">' + plural(people.length, 'candidate') + ', all shown.' +
+            (hidden ? ' ' + hidden + ' more ' + (hidden === 1 ? 'is' : 'are') + ' with the recruiter and not advanced yet.' : '') + '</p>'
+          : '<p class="s-none">' + (hidden ? hidden + ' ' + (hidden === 1 ? 'person is' : 'people are') + ' with the recruiter. You see them once they are advanced.' : 'Nobody is here.') + '</p>') +
       '</section>' +
     '</div>';
   }
@@ -1269,19 +1711,39 @@
         : c.fb ? 'Interviewed ' + sayWhen(c.meet) + '. The result is in: proceed.'
         : 'Interviewed ' + sayWhen(c.meet) + '. ' + waitWho(c) + ' has not sent the result.')
       : STAGE[c.stage].say.charAt(0).toUpperCase() + STAGE[c.stage].say.slice(1) + ', ' + days(c.since) + '.';
-    const canMove = !c.exit && nx && (w === 'me' || w === 'client' || w === 'candidate' || c.stage === 'sourced');
-    const outK = c.stage === 'sent' || c.stage === 'client' ? 'clientno' : c.stage === 'offer' ? 'offerno' : 'out';
+    const canMove = !c.exit && nx && (w === 'me' || w === 'client' || w === 'candidate' || c.stage === 'sourced') && (isRec() || isHR());
+    const outK = c.stage === 'sent' || c.stage === 'client' || c.stage === 'ctech' ? 'clientno' : c.stage === 'offer' ? 'offerno' : 'out';
+    const foot = (l, r) => '<div class="tc-gov b-qcard-foot">' + l + r + '</div>';
+    const ghostOut = '<button class="b-ghost" type="button" data-out="' + c.id + '|' + outK + '">' + esc(EXIT[outK].label) + '</button>';
+    const s = sendOf(c), o = offerOf(c);
+    /* Each stage's one verb: a test to send or read, an interview to book,
+       a first contact to approve, an offer to prepare, send or answer. */
+    let special = null;
+    if (!c.exit && (isRec() || isHR())) {
+      if (c.stage === 'sourced' && !c.contactOk) special = foot(ghostOut, '<button class="s-insight-lnk primary" type="button" data-contact-ok="' + c.id + '">Approve first contact</button>');
+      else if (c.stage === 'assess' && !s) special = foot(ghostOut, '<button class="s-insight-lnk primary" type="button" data-send-asmt="' + c.id + '">Send the assessment</button>');
+      else if (c.stage === 'assess' && s.status === 'sent') special = foot(ghostOut, '<span class="b-kind">Waiting on their test, sent ' + esc(sayWhen(s.day)) + '</span>');
+      else if (MEETS[c.stage] && !ivNow(c) && c.meet == null) special = foot(ghostOut, '<button class="s-insight-lnk primary" type="button" data-cand="' + c.id + '">Book the interview</button>');
+      else if (c.stage === 'offer' && !o) special = foot(ghostOut, '<button class="s-insight-lnk primary" type="button" data-offer-new="' + c.id + '">Prepare the offer</button>');
+      else if (c.stage === 'offer' && o.status === 'approving') special = foot(ghostOut, o.hm === 'ok' && o.bu === 'ok'
+        ? '<button class="s-insight-lnk primary" type="button" data-offer-send="' + o.id + '">Send the offer</button>'
+        : '<span class="b-kind">With the approvers: ' + [o.hm === 'ok' ? null : hmOf(q).name, o.bu === 'ok' ? null : BU_DIRECTOR].filter(Boolean).join(' and ') + '</span>');
+      else if (c.stage === 'offer' && o.status === 'sent') special = foot('<button class="b-ghost" type="button" data-offer-res="' + o.id + '|declined">They declined</button>',
+        '<button class="s-insight-lnk primary" type="button" data-offer-res="' + o.id + '|accepted">They accepted</button>');
+    }
+    if (!c.exit && isClient() && c.stage === 'sent') special = foot('<button class="b-ghost" type="button" data-out="' + c.id + '|clientno">Pass</button>',
+      '<button class="s-insight-lnk primary" type="button" data-move="' + c.id + '|client">Meet them</button>');
     return '<article class="type-card s-card b-qcard" style="--i:' + Math.min(i, 8) + '">' +
       '<div class="tc-head">' + stageTag(c) + '<span class="b-kind">' + esc(c.source) + '</span></div>' +
       '<div class="b-qcard-top"><button class="tc-title s-card-title" type="button" data-cand="' + c.id + '">' + esc(c.name) + '</button></div>' +
       '<p class="tc-summary b-qcard-role">' + esc(c.at) + '</p>' +
       '<p class="b-qcard-where">' + fact('job', plural(c.years, 'year') + ' of experience') + fact('pin', c.place) + '</p>' +
       '<p class="b-qcard-where">' + fact('lang', c.langs.join(', ')) + '</p>' +
-      aimyBlock({ text: esc(say) + ' ' + evSay(c) + '.', from: 'the CV, read against the success profile' }) +
+      aimyBlock({ text: esc(say) + ' ' + evSay(c) + '.' + (s && s.status === 'done' ? ' Assessment ' + s.score + '%.' : ''), from: 'the CV, read against the success profile' }) +
       /* AT THE SCREEN, THE CALL IS THE MOVE. Someone who applied or is due a
          phone screen moves forward by being called and the call being
          logged, so the card's one verb is Call, not a stage button. */
-      (!c.exit && (c.stage === 'applied' || c.stage === 'phone') ? '<div class="tc-gov b-qcard-foot">' +
+      (special ? special : !c.exit && isRec() && (c.stage === 'applied' || c.stage === 'phone') ? '<div class="tc-gov b-qcard-foot">' +
         '<button class="b-ghost" type="button" data-out="' + c.id + '|out">' + esc(EXIT.out.label) + '</button>' +
         (canCall(c) ? '<button class="s-insight-lnk primary" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call ' + esc(first(c.name)) + '</button>'
           : '<span class="b-kind">' + esc(c.dnc ? 'Asked not to be called' : 'Number did not work') + '</span>') +
@@ -1976,57 +2438,1641 @@
       '</section></div>';
   }
 
-  /* ── ONE CANDIDATE ── the contact record, as a candidate: who they are,
-     what they said on calls, the evidence against the success profile, and
-     every call. */
+  /* ── ONE CANDIDATE ── Sales's contact record, as a candidate. Who they
+     are and how to reach them, what they said on calls, each must-have with
+     what the CV says next to what interviews found, every application this
+     person has, the assessment, the interviews, the offer, and everything
+     that happened, newest first. A note typed here goes on that history
+     (New Operations list: interviews held outside AiMY are still recorded). */
   const EVW = { m: 'Met', p: 'Partly met', n: 'Not evidenced' };
+  const profileLink = (c) => 'talent.flairstech.com/me/' + c.pid;
   function candPage() {
     const c = DB.byId[S.cand];
+    if (!c || !sees(c)) return '<div class="s-home"><section class="s-block s-block-wide"><p class="s-none">This candidate has not been sent to you.</p></section></div>';
+    if (S.edit && !isClient()) return candEditPage(c);
     const q = reqOf(c);
     const nx = nextOf(c);
     const calls = callsOf(c.id);
-    const silent = q.must.filter((m, i) => c.ev[i] === 'n');
+    const v = verified(c);
+    const ok = v.filter((x) => x.state === 'verified').length;
+    const differs = v.filter((x) => x.state === 'differs');
     const early = !c.exit && rank(q, c.stage) <= rank(q, 'phone');
-    const outK = c.stage === 'sent' || c.stage === 'client' ? 'clientno' : c.stage === 'offer' ? 'offerno' : 'out';
+    const outK = c.stage === 'sent' || c.stage === 'client' || c.stage === 'ctech' ? 'clientno' : c.stage === 'offer' ? 'offerno' : 'out';
     const w = waitsOn(c);
+    const works = isRec() || isHR();
+    const others = apps(c).filter((x) => x.id !== c.id);
+    const part = (cap, body) => '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">' + esc(cap) + '</h2><div class="b-cmeta-say">' + body + '</div></div>';
+    const p = (t) => '<p class="b-cmeta-p">' + t + '</p>';
     return '<div class="s-home">' +
-      '<div class="b-topbar s-block-wide"><button class="s-back" type="button" data-req="' + q.id + '">' + svg('back', 14) + 'Back to ' + esc(q.title) + '</button></div>' +
+      '<div class="b-topbar s-block-wide"><button class="s-back" type="button" data-req="' + q.id + '">' + svg('back', 14) + 'Back to ' + esc(q.title) + '</button>' +
+        (works ? '<span class="b-draft-acts"><button class="b-ghost" type="button" data-edit-cand="' + c.id + '">Edit</button>' +
+          '<span class="b-menu-wrap"><button class="b-ghost b-menu-open" type="button" data-pickopen="addTo' + c.id + '" aria-haspopup="menu">Add to another requisition' + svg('down', 14) + '</button>' +
+            '<div class="b-menu" id="addTo' + c.id + '" role="menu" hidden><span class="b-menu-cap">Open requisitions</span>' +
+              DB.reqs.filter((x) => isOpen(x) && !apps(c).some((y) => y.req === x.id) && (isHR() || x.rec === DESK)).slice(0, 12).map((x) =>
+                '<button class="b-menu-item" type="button" role="menuitem" data-add-app="' + c.id + '|' + x.id + '"><span class="b-menu-name">' + esc(x.title) + '</span><span class="tel-menu-cc">' + esc(accOf(x).name) + '</span></button>').join('') +
+            '</div></span></span>' : '') + '</div>' +
       '<section class="s-rec-head s-block-wide">' +
-        '<span class="s-rec-kind b-kinds">' + fact('user', 'Candidate') + fact('req', q.title) + fact('acc', accOf(q).name) + fact('pin', c.place) + '</span>' +
+        '<span class="s-rec-kind b-kinds">' + fact('user', 'Candidate') + fact('req', q.title) + (isClient() ? '' : fact('acc', accOf(q).name)) + fact('pin', c.place) + '</span>' +
         '<div class="s-rec-title"><h1 class="s-rec-name">' + esc(c.name) + '</h1>' +
           '<span class="s-meta-st tone-' + (c.exit ? 'neutral' : 'ok') + '">' + esc(c.exit ? EXIT[c.exit].label : STAGE[c.stage].label) + '</span>' +
-          '<span class="b-kind">' + esc(c.source) + '</span></div>' +
+          (isClient() ? '' : '<span class="b-kind">' + esc(c.source) + ', ' + esc(sayWhen(c.applied != null ? c.applied : -3)) + '</span>') + '</div>' +
         '<div class="b-cmeta">' +
-          '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Now</h2><div class="b-cmeta-say"><p class="b-cmeta-p">' + esc(c.at) + '</p>' +
-            '<p class="b-cmeta-p">' + esc(plural(c.years, 'year')) + ' of experience · ' + esc(c.langs.join(', ')) + '</p></div></div>' +
-          '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Phone</h2><div class="b-cmeta-say"><p class="b-cmeta-p"><b>' + esc(c.phone) + '</b></p>' +
-            '<p class="b-cmeta-p">' + esc(c.dnc ? 'Asked not to be called again.' : c.badNumber ? 'This number did not work.' : c.callback != null && c.callback <= 0 ? 'Asked to be called back today.' : plural(calls.length, 'call') + ' so far.') + '</p></div></div>' +
-          '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Said on calls</h2><div class="b-cmeta-say">' +
-            (c.notice || c.salary ? (c.notice ? '<p class="b-cmeta-p">' + esc(c.notice.charAt(0).toUpperCase() + c.notice.slice(1)) + '</p>' : '') +
-              (c.salary ? '<p class="b-cmeta-p">Expects ' + esc(c.salary) + '</p>' : '')
-              : '<p class="b-cmeta-p b-draft-none">Nothing yet. The phone screen asks.</p>') + '</div></div>' +
+          part('Now', p(esc(c.at)) + p(esc(plural(c.years, 'year')) + ' of experience')) +
+          (isClient() ? '' : part('Reach them', p('<b>' + esc(c.phone || 'No phone yet') + '</b>') + p(esc(c.email || '')) +
+            p(esc(c.dnc ? 'Asked not to be called again.' : c.badNumber ? 'This number did not work.' : c.callback != null && c.callback <= 0 ? 'Asked to be called back today.' : plural(calls.length, 'call') + ' so far.')))) +
+          part('Languages and skills', p(esc(c.langs.join(', '))) + p(esc((c.skills || []).join(', ')))) +
+          (isClient() ? '' : part('Said on calls', c.notice || c.salary ? (c.notice ? p(esc(c.notice.charAt(0).toUpperCase() + c.notice.slice(1))) : '') +
+            (c.salary ? p('Expects ' + esc(c.salary)) : '') : '<p class="b-cmeta-p b-draft-none">Nothing yet. The phone screen asks.</p>')) +
         '</div>' +
-        '<div class="b-cmeta b-said"><div class="b-cmeta-part"><div class="b-draft-caprow"><span class="b-cmeta-cap">Against the success profile</span></div>' +
-          '<div class="b-cmeta-say">' + q.must.map((m, i) => '<p class="b-cmeta-p">' + esc(m) + ' <span class="s-meta-st tone-' +
-            (c.ev[i] === 'm' ? 'ok' : c.ev[i] === 'p' ? 'warn' : 'neutral') + '">' + esc(EVW[c.ev[i]]) + '</span></p>').join('') +
-          '</div></div></div>' +
+        '<div class="b-cmeta b-said">' +
+          '<div class="b-cmeta-part"><div class="b-draft-caprow"><span class="b-cmeta-cap">Summary</span></div><div class="b-cmeta-say">' + p(esc(c.summary || '')) + '</div></div>' +
+          (works ? '<div class="b-cmeta-part"><div class="b-draft-caprow"><span class="b-cmeta-cap">Their own profile</span>' +
+            '<button class="b-draft-ai" type="button" data-copy="' + esc('https://' + profileLink(c)) + '">Copy the link</button></div>' +
+            '<div class="b-cmeta-say">' + p('<b class="t-link-text">' + esc(profileLink(c)) + '</b>') +
+            p('They open it with a one-time code sent to their phone, see where they stand, update their details and take any test sent to them. <button class="t-inline-link" type="button"' + goAttr({ me: c.pid }) + '>See what they see</button>') + '</div></div>' : '') +
+        '</div>' +
       '</section>' +
       '<section class="s-insight is-lead s-block-wide" aria-label="Where they are">' +
         '<div class="s-lead-mark"><svg class="s-insight-mark" viewBox="0 0 18 20" width="14" height="14" aria-hidden="true"><use href="#aimy-logo-small"/></svg>' +
           '<span class="work-state ws-detected">Read off the record</span></div>' +
-        '<div class="s-lead-line"><span class="s-lead-n">' + evMet(c) + '</span><span class="s-lead-say">of the <span class="s-lead-of">' + c.ev.length + '</span> must-haves met in the CV.</span></div>' +
+        '<div class="s-lead-line"><span class="s-lead-n">' + ok + '</span><span class="s-lead-say">of the <span class="s-lead-of">' + v.length + '</span> must-haves verified in interview. The CV meets ' + evMet(c) + '.</span></div>' +
         '<p class="s-lead-deck">' + esc(c.exit ? EXIT[c.exit].say.charAt(0).toUpperCase() + EXIT[c.exit].say.slice(1) + '.'
-          : silent.length ? 'The CV is silent on: ' + silent.join('; ') + '. ' + (early ? 'Ask on the phone screen.' : 'The interview kit should probe it.')
-          : 'Every must-have has something in the CV behind it.') + '</p>' +
-        (c.exit ? '' : '<div class="s-lead-acts">' +
-          (canCall(c) ? '<button class="s-insight-lnk' + (early ? ' primary' : '') + '" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call ' + esc(first(c.name)) + '</button>' : '') +
-          (nx && !early && (w === 'me' || w === 'client' || w === 'candidate') ? '<button class="s-insight-lnk primary" type="button" data-move="' + c.id + '|' + nx + '">' + esc(goSay(c)) + '</button>' : '') +
+          : differs.length ? 'The CV and the interview differ on ' + differs.map((x) => x.must).join('; ') + '. Worth asking about in the next round.'
+          : !ok ? (early ? 'Nothing is checked in an interview yet. The phone screen comes first.' : 'Nothing is checked in an interview yet.')
+          : 'What the CV says has held up in interview so far.') + '</p>' +
+        (c.exit || !works ? '' : '<div class="s-lead-acts">' +
+          (isRec() && canCall(c) ? '<button class="s-insight-lnk' + (early ? ' primary' : '') + '" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call ' + esc(first(c.name)) + '</button>' : '') +
+          (nx && !early && (w === 'me' || w === 'client' || w === 'candidate') && c.stage !== 'offer' ? '<button class="s-insight-lnk primary" type="button" data-move="' + c.id + '|' + nx + '">' + esc(goSay(c)) + '</button>' : '') +
           '<button class="b-ghost" type="button" data-out="' + c.id + '|' + outK + '">' + esc(EXIT[outK].label) + '</button>' +
         '</div>') +
       '</section>' +
-      '<section class="s-block s-block-wide" aria-label="Calls with them">' +
+      verifiedBlock(c, v) +
+      (others.length ? appsBlock(c, others) : '') +
+      (isClient() ? '' : asmtBlock(c)) +
+      ivBlock(c) +
+      (isClient() ? '' : offerBlock(c)) +
+      (isClient() ? '' : historyBlock(c)) +
+      (isClient() || !calls.length ? '' : '<section class="s-block s-block-wide" aria-label="Calls with them">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">Calls with them</h2><span class="s-block-say">' + plural(calls.length, 'call') + ' · newest first</span></div>' +
-        (calls.length ? '<div class="b-log">' + logDays(calls, (t, i) => callRow(t, i, false)) + '</div>' : '<p class="b-vfoot">Nobody has called them yet.</p>') +
+        '<div class="b-log">' + logDays(calls, (t, i) => callRow(t, i, false)) + '</div></section>') +
+    '</div>';
+  }
+
+  /* Each must-have: what the CV says, and what each interview found. */
+  function verifiedBlock(c, v) {
+    return '<section class="s-block s-block-wide" aria-label="Against the success profile">' +
+      '<div class="s-camp-list-head"><h2 class="s-block-h">Against the success profile</h2>' +
+        '<span class="s-block-say">the CV, then each interview that rated it</span></div>' +
+      '<div class="t-vlist">' + v.map((x) => {
+        const s = VSTATE[x.state];
+        const iv = x.seen[0];
+        return '<div class="t-vrow">' +
+          '<span class="t-vmust">' + esc(x.must) + '</span>' +
+          '<span class="t-vcol"><span class="t-vcap">CV says</span><span class="s-meta-st tone-' + (x.cv === 'm' ? 'ok' : x.cv === 'p' ? 'warn' : 'neutral') + '">' + EVW[x.cv] + '</span></span>' +
+          '<span class="t-vcol"><span class="t-vcap">Interview found</span>' + (iv
+            ? '<span class="s-meta-st tone-' + (iv.r === 'm' ? 'ok' : iv.r === 'p' ? 'warn' : 'neutral') + '">' + RATE[iv.r] + '</span><span class="t-vnote">' + esc(iv.note) + ' ' + esc(iv.by) + '.</span>'
+            : '<span class="t-vnote">Not asked yet.</span>') + '</span>' +
+          '<span class="tag tag-' + s.tone + '">' + esc(s.label) + '</span>' +
+        '</div>';
+      }).join('') + '</div>' +
+    '</section>';
+  }
+
+  /* Every other application this person has made, or been put on. */
+  function appsBlock(c, others) {
+    return '<section class="s-block s-block-wide" aria-label="Other applications">' +
+      '<div class="s-camp-list-head"><h2 class="s-block-h">Their other applications</h2><span class="s-block-say">' + others.length + '</span></div>' +
+      '<div class="b-log">' + others.map((x, i) => logRow({ tone: '', ico: svg('req'), who: reqOf(x).title,
+        meta: logMeta([accOf(reqOf(x)).name, x.exit ? EXIT[x.exit].label : STAGE[x.stage].label, x.source]),
+        act: 'data-cand="' + x.id + '"', go: 'Open' }, i)).join('') + '</div>' +
+    '</section>';
+  }
+
+  /* ── The assessment on this application ── */
+  function asmtBlock(c) {
+    const q = reqOf(c);
+    const s = sendOf(c);
+    if (!s && !q.asmt) return '';
+    const a = asmtOf(s ? s.asmt : q.asmt);
+    const works = isRec() || isHR();
+    let body;
+    if (!s) body = '<p class="b-cmeta-p">Not sent yet.</p>' + (works ? '<p class="b-cmeta-p t-acts"><button class="s-insight-lnk primary" type="button" data-send-asmt="' + c.id + '">Send the assessment</button></p>' : '');
+    else if (s.status === 'sent') body = '<p class="b-cmeta-p">Sent ' + esc(sayWhen(s.day)) + '. Not taken yet.</p>' +
+      (works ? '<p class="b-cmeta-p t-acts"><button class="s-insight-lnk" type="button" data-copy="' + esc('https://talent.flairstech.com/test/' + s.id) + '">Copy their test link</button>' +
+        '<button class="s-insight-lnk" type="button"' + goAttr({ take: s.id }) + '>Open it as them</button></p>' : '');
+    else body = '<p class="b-cmeta-p"><b>' + s.score + '%</b>, ' + (s.score >= a.pass ? 'a pass' : 'under the ' + a.pass + '% pass mark') + '. Scored by AiMY ' + esc(sayWhen(s.doneDay != null ? s.doneDay : s.day)) + '.</p>' +
+      '<div class="t-qlist">' + a.questions.map((qq, i) => '<p class="t-q"><span class="tag tag-' + (s.answers[i] ? 'ok' : 'neutral') + '">' + (s.answers[i] ? 'Right' : 'Missed') + '</span>' +
+        '<span>Q' + (i + 1) + '. ' + esc(qq.q) + '</span></p>').join('') + '</div>';
+    return '<section class="s-block s-block-wide" aria-label="Assessment">' +
+      '<div class="s-camp-list-head"><h2 class="s-block-h">Assessment</h2><span class="s-block-say"><button class="t-inline-link" type="button" data-asmt="' + a.id + '">' + esc(a.title) + '</button></span></div>' +
+      body + '</section>';
+  }
+
+  /* ── Interviews: book, debrief, recording ── */
+  const SLOT_DAYS = [1, 2, 3];
+  const SLOT_TIMES = ['10:00', '12:30', '15:00'];
+  function ivBlock(c) {
+    const list = ivsOf(c).filter((v) => !isClient() || v.stage === 'client' || v.stage === 'ctech');
+    const q = reqOf(c);
+    const needsBooking = !c.exit && MEETS[c.stage] && !ivNow(c) && (isRec() || isHR() || (isClient() && (c.stage === 'client' || c.stage === 'ctech')));
+    if (!list.length && !needsBooking) return '';
+    const tpl = tplFor(c.stage);
+    return '<section class="s-block s-block-wide" aria-label="Interviews">' +
+      '<div class="s-camp-list-head"><h2 class="s-block-h">Interviews</h2><span class="s-block-say">' + plural(list.length, 'interview') + '</span></div>' +
+      (needsBooking ? '<div class="t-book"><p class="b-tocall"><b>' + esc(STAGE[c.stage].label) + '</b> is next. Pick a time from ' + esc(interviewerFor(q, c.stage)) + '’s free slots on Bookings. AiMY tells ' + esc(first(c.name)) + ' from the booking.</p>' +
+        '<div class="b-cuts t-slots">' + SLOT_DAYS.map((d) => SLOT_TIMES.map((t) => '<button class="filter-chip" type="button" data-book="' + c.id + '|' + d + '|' + t + '">' + esc(sayWhen(d)) + ', ' + t + '</button>').join('')).join('') + '</div>' +
+        (tpl ? '<p class="b-vfoot">The kit follows the ' + esc(tpl.title) + ' template, plus what the CV is silent on.</p>' : '') + '</div>' : '') +
+      (list.length ? '<div class="t-ivs">' + list.map((v) => ivRow(c, v)).join('') + '</div>' : '') +
+    '</section>';
+  }
+  function ivRow(c, v) {
+    const st = v.status === 'booked' ? (v.day === 0 ? 'Today at ' + v.slot : sayWhen(v.day) + ' at ' + v.slot)
+      : v.status === 'owed' ? 'Held ' + sayWhen(v.day) + '. The result is owed.'
+      : 'Held ' + sayWhen(v.day) + '. ' + (v.verdict === 'yes' ? 'Proceed.' : 'Do not proceed.');
+    const works = isRec() || isHR() || isClient();
+    const rec = v.recording;
+    return '<div class="t-iv t-acc" data-acc-open="false">' +
+      '<div class="t-iv-head">' +
+        '<span class="t-iv-main"><b>' + esc(STAGE[v.stage].label) + '</b><span class="b-kind">' + esc(v.by) + ' · ' + esc(IV_MODES[v.mode]) + '</span><span class="t-iv-st">' + esc(st) + '</span></span>' +
+        '<span class="t-acts">' +
+          (v.status !== 'done' && works ? '<button class="s-insight-lnk' + (v.status === 'owed' ? ' primary' : '') + '" type="button"' + goAttr({ debrief: v.id }) + '>' + (v.status === 'owed' ? 'Open the debrief' : 'The debrief link') + '</button>' : '') +
+          (v.status === 'owed' && (isRec() || isHR()) ? '<button class="b-ghost" type="button" data-nudge-iv="' + v.id + '">' + (v.nudged ? 'Nudged' : 'Nudge ' + esc(first(v.by))) + '</button>' : '') +
+          (v.status !== 'booked' && !rec && works && !isClient() ? '<button class="b-ghost" type="button" data-rec-up="' + v.id + '">Upload the recording</button>' : '') +
+          (v.status === 'done' || rec ? '<button class="b-ghost t-acc-head" type="button" aria-expanded="false" data-acc-toggle>Details<span class="t-acc-chevron">' + svg('down', 14) + '</span></button>' : '') +
+        '</span>' +
+      '</div>' +
+      (v.status === 'done' || rec ? '<div class="t-acc-panel"><div class="t-acc-panel-inner">' +
+        (v.ratings ? '<div class="t-qlist">' + reqOf(c).must.map((m, i) => '<p class="t-q"><span class="tag tag-' + (v.ratings[i] === 'm' ? 'ok' : v.ratings[i] === 'p' ? 'warn' : 'neutral') + '">' + RATE[v.ratings[i]] + '</span>' +
+          '<span>' + esc(m) + '. ' + esc(v.notes ? v.notes[i] : '') + '</span></p>').join('') + '</div>' : '') +
+        (rec ? '<div class="t-rec">' + aimyBlock({ text: '<b>Recording, ' + rec.mins + ' minutes, transcribed.</b> ' + esc(rec.summary || 'Summarised and matched to the success profile.'), from: 'the recording, read by AiMY' }) +
+          (rec.lines ? '<div class="s-said-lines">' + rec.lines.map((l) => '<p class="call-line ' + (l[0] === 'them' ? 'is-them' : 'is-you') + '"><span class="call-who">' + esc(l[0] === 'them' ? first(c.name) : first(v.by)) + '</span>' + esc(l[1]) + '</p>').join('') + '</div>' : '') +
+          (rec.suggests ? '<p class="b-vfoot">AiMY’s read of the recording, kept apart from the interviewer’s own rating: ' + reqOf(c).must.map((m, i) => esc(m) + ', ' + RATE[rec.suggests[i]].toLowerCase()).join('; ') + '.</p>' : '') +
+        '</div>' : '') +
+      '</div></div>' : '') +
+    '</div>';
+  }
+
+  /* ── The offer, its approvals, and day one ── */
+  function offerBlock(c) {
+    const o = offerOf(c);
+    const q = reqOf(c);
+    const works = isRec() || isHR();
+    if (!o && c.stage !== 'offer') return '';
+    if (!o) return '<section class="s-block s-block-wide" aria-label="Offer"><div class="s-camp-list-head"><h2 class="s-block-h">Offer</h2></div>' +
+      '<p class="b-tocall">The client said yes. AiMY drafts the packet from the requisition, the interviews and what ' + esc(first(c.name)) + ' said on the phone.</p>' +
+      (works ? '<p class="t-acts"><button class="s-insight-lnk primary" type="button" data-offer-new="' + c.id + '">Prepare the offer</button></p>' : '') + '</section>';
+    const appr = (who, label, k) => '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">' + esc(label) + '</h2><div class="b-cmeta-say">' +
+      '<p class="b-cmeta-p"><b>' + esc(who) + '</b></p><p class="b-cmeta-p"><span class="s-meta-st tone-' + (o[k] === 'ok' ? 'ok' : o[k] === 'back' ? 'warn' : 'neutral') + '">' +
+      (o[k] === 'ok' ? 'Approved' : o[k] === 'back' ? 'Sent back' : 'Waiting') + '</span></p>' +
+      (o.status === 'approving' && o[k] !== 'ok' ? '<p class="b-cmeta-p"><button class="t-inline-link" type="button"' + goAttr({ approve: o.id, by: k }) + '>Open their approval page</button></p>' : '') + '</div></div>';
+    const inBand = q.budget && o.salary >= q.budget.min && o.salary <= q.budget.max;
+    const both = o.hm === 'ok' && o.bu === 'ok';
+    return '<section class="s-block s-block-wide" aria-label="Offer">' +
+      '<div class="s-camp-list-head"><h2 class="s-block-h">Offer</h2><span class="s-block-say">' + esc(OFFER_ST[o.status]) + '</span></div>' +
+      '<div class="b-cmeta">' +
+        '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Monthly gross</h2><div class="b-cmeta-say">' +
+          (works && (o.status === 'approving' || o.status === 'draft')
+            ? '<span class="t-step"><button class="b-ghost" type="button" data-offer-step="' + o.id + '|-500" aria-label="Less">−</button><b class="t-step-n">' + money(o.salary) + '</b>' +
+              '<button class="b-ghost" type="button" data-offer-step="' + o.id + '|500" aria-label="More">+</button></span>'
+            : '<p class="b-cmeta-p"><b>' + money(o.salary) + '</b></p>') +
+          '<p class="b-cmeta-p">' + (q.budget ? 'Budget ' + money(q.budget.min) + ' to ' + money(q.budget.max).replace('EGP ', '') + (inBand ? ', inside it.' : ', outside it.') : '') + '</p>' +
+          (o.expects ? '<p class="b-cmeta-p">They expect ' + esc(o.expects) + '.</p>' : '') + '</div></div>' +
+        '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Notice and start</h2><div class="b-cmeta-say"><p class="b-cmeta-p">' + esc(o.notice.charAt(0).toUpperCase() + o.notice.slice(1)) + '</p>' +
+          (o.joinDay != null ? '<p class="b-cmeta-p">' + (o.status === 'joined' ? 'Joined ' : 'Joins ') + esc(sayDay(o.joinDay)) + '</p>' : '') + '</div></div>' +
+        appr(hmOf(q).name, 'Hiring manager: fit and salary', 'hm') +
+        appr(BU_DIRECTOR, 'BU Director: send', 'bu') +
+      '</div>' +
+      (o.status === 'approving' ? aimyBlock({ text: 'Both approve the same packet at the same time. Changing the salary asks them again.', from: 'how offers are approved' }) : '') +
+      (works ? '<p class="t-acts">' +
+        (o.status === 'approving' && both ? '<button class="s-insight-lnk primary" type="button" data-offer-send="' + o.id + '">Send the offer</button>' : '') +
+        (o.status === 'sent' ? '<button class="s-insight-lnk primary" type="button" data-offer-res="' + o.id + '|accepted">They accepted</button>' +
+          '<button class="b-ghost" type="button" data-offer-res="' + o.id + '|declined">They declined</button>' : '') +
+      '</p>' : '') +
+      (o.status === 'accepted' || o.status === 'joined' ? onboardHtml(c, o) : '') +
+    '</section>';
+  }
+  const OFFER_ST = { draft: 'Drafted', approving: 'With the approvers', sent: 'Sent, waiting on their answer', accepted: 'Accepted, not started', joined: 'Joined', declined: 'Declined', back: 'Sent back' };
+  /* Onboarding through day 90 (overview): tracked steps with owners, then
+     the 30 and 90 day check-ins. */
+  const ONBOARD = [
+    ['IT access, as a Freshdesk ticket to the IT team', 'IT'],
+    ['Contract signed', 'HR'],
+    ['Documents collected on WhatsApp', 'AiMY'],
+    ['A buddy on the team', 'Hiring manager'],
+    ['The day-one schedule sent', 'AiMY'],
+  ];
+  function onboardHtml(c, o) {
+    const done = c.onb || [];
+    const works = isRec() || isHR();
+    return '<div class="t-onb"><h3 class="b-month">Before day one</h3>' +
+      ONBOARD.map((x, i) => '<p class="t-q"><button class="t-check' + (done[i] ? ' is-on' : '') + '" type="button" ' + (works ? 'data-onb="' + c.id + '|' + i + '"' : 'disabled') +
+        ' aria-pressed="' + !!done[i] + '" aria-label="' + esc(x[0]) + '">' + (done[i] ? svg('check', 12) : '') + '</button><span>' + esc(x[0]) + '</span><span class="b-kind">' + esc(x[1]) + '</span></p>').join('') +
+      '<h3 class="b-month">Check-ins</h3>' +
+      '<p class="t-q"><span class="tag tag-neutral">Day 30</span><span>With ' + esc(hmOf(reqOf(c)).name) + ' and with ' + esc(first(c.name)) + ', separately. Kept apart from any probation review.</span></p>' +
+      '<p class="t-q"><span class="tag tag-neutral">Day 90</span><span>The second check-in, and whether they stayed. Then Employee Self-Service takes over.</span></p>' +
+    '</div>';
+  }
+
+  /* ── The history, and a line to add to it ── */
+  function historyBlock(c) {
+    const h = historyOf(c);
+    const ICO = { apply: 'user', call: 'phone', asmt: 'goal', iv: 'users', offer: 'job', move: 'go', out: 'go', note: 'req' };
+    let day = null;
+    const sug = c.histSug ? DB.events.filter((e) => e.id === c.histSug)[0] : null;
+    return '<section class="s-block s-block-wide" aria-label="History">' +
+      '<div class="s-camp-list-head"><h2 class="s-block-h">History</h2><span class="s-block-say">everything, newest first</span></div>' +
+      ((isRec() || isHR() || isHM()) ? '<div class="t-addnote"><input class="dial-input" id="histNote" type="text" autocomplete="off" spellcheck="false" ' +
+          'placeholder="Add something that happened, like: interviewed by the client on Teams, they said yes" aria-label="Add to their history">' +
+        '<button class="btn btn-brand btn-sm" type="button" data-hist-add="' + c.id + '">Add</button></div>' : '') +
+      (sug && sug.read && !c.exit ? '<div class="t-sug">' + aimyBlock({ text: 'I read “' + esc(sug.text) + '” as <b>' + (sug.read === 'yes' ? 'they passed' : 'they did not pass') + '</b>.', from: 'your note' }) +
+        '<p class="t-acts">' + (sug.read === 'yes' && nextOf(c) ? '<button class="s-insight-lnk primary" type="button" data-move="' + c.id + '|' + nextOf(c) + '">Move them to ' + esc(lower(STAGE[nextOf(c)].label)) + '</button>'
+          : sug.read === 'no' ? '<button class="s-insight-lnk primary" type="button" data-out="' + c.id + '|out">Mark as not progressing</button>' : '') +
+        '<button class="b-ghost" type="button" data-sug-no="' + c.id + '">Leave it</button></p></div>' : '') +
+      '<div class="b-log">' + h.map((x, i) => {
+        const head = x.day !== day ? '<h3 class="b-month">' + esc(dayLabel(x.day)) + '</h3>' : '';
+        day = x.day;
+        return head + logRow({ tone: '', ico: svg(ICO[x.kind] || 'req'), who: x.text, meta: logMeta([x.time, x.by && DESKS[x.by] ? DESKS[x.by].name : null]) }, i);
+      }).join('') + '</div>' +
+    '</section>';
+  }
+  /* A note says someone passed or did not, in plain words. */
+  const readNote = (t) => /\b(not|didn'?t|did not|no)\b.{0,20}\b(pass|proceed|fit|good)|\bsaid no\b|\brejected\b|\bnot a fit\b/i.test(t) ? 'no'
+    : /\b(passed|proceed|said yes|liked (him|her|them)|good fit|move (him|her|them) on|approved)\b/i.test(t) ? 'yes' : null;
+
+  /* ── Editing a candidate's details ── */
+  function candEditPage(c) {
+    const f = editBuf('cand', c, () => ({ name: c.name, phone: c.phone || '', email: c.email || '', at: c.at, years: c.years, place: c.place,
+      langs: c.langs.join(', '), skills: (c.skills || []).join(', '), summary: c.summary || '' }));
+    const part = (cap, k, wide) => '<div class="b-cmeta-part' + (wide ? ' t-wide' : '') + '"><h2 class="b-cmeta-cap">' + esc(cap) + '</h2><div class="b-cmeta-say">' +
+      '<input class="b-draft-in" type="text" data-ed="' + k + '" value="' + esc(f[k]) + '" aria-label="' + esc(cap) + '"></div></div>';
+    return '<div class="s-home">' +
+      '<div class="b-topbar s-block-wide"><button class="s-back" type="button" data-cancel-edit>' + svg('back', 14) + 'Back to ' + esc(c.name) + '</button>' +
+        '<span class="b-draft-acts"><button class="b-ghost" type="button" data-cancel-edit>Cancel</button>' +
+        '<button class="btn btn-brand btn-sm" type="button" data-save-cand="' + c.id + '">Save</button></span></div>' +
+      '<section class="s-rec-head s-block-wide">' +
+        '<span class="s-rec-kind b-kinds">' + fact('user', 'Editing the candidate') + '</span>' +
+        '<div class="t-input-wrap" id="wrapName"><input class="b-draft-name t-input" type="text" data-ed="name" value="' + esc(f.name) + '" aria-label="Name" spellcheck="false">' +
+          '<p class="t-error-msg">A candidate needs a name.</p></div>' +
+        '<div class="b-cmeta t-edit-grid">' + part('Phone', 'phone') + part('Email', 'email') + part('Now', 'at', true) + part('Years of experience', 'years') +
+          part('Where they live', 'place') + part('Languages, comma between', 'langs', true) + part('Skills, comma between', 'skills', true) + '</div>' +
+        '<div class="b-cmeta b-said"><div class="b-cmeta-part"><div class="b-draft-caprow"><span class="b-cmeta-cap">Summary</span></div><div class="b-cmeta-say">' +
+          '<textarea class="b-draft-in b-draft-area t-area" rows="3" data-ed="summary" aria-label="Summary">' + esc(f.summary) + '</textarea></div></div></div>' +
+      '</section>' +
+      aimyBlock({ text: 'What the candidate says about themselves stays theirs. Interview findings are not edited here; they come from the interviews.', from: 'how profiles work' }) +
+    '</div>';
+  }
+  function saveCand(c) {
+    const f = EDIT.f;
+    if (!String(f.name).trim()) { shake('wrapName'); return; }
+    const before = { name: c.name, phone: c.phone, email: c.email, at: c.at, years: c.years, place: c.place, langs: c.langs, skills: c.skills, summary: c.summary };
+    write(c, { name: String(f.name).trim(), phone: String(f.phone).trim(), email: String(f.email).trim(), at: String(f.at).trim(),
+      years: Number(f.years) || c.years, place: String(f.place).trim(), langs: String(f.langs).split(',').map((x) => x.trim()).filter(Boolean),
+      skills: String(f.skills).split(',').map((x) => x.trim()).filter(Boolean), summary: String(f.summary).trim() });
+    EDIT = null;
+    go({ cand: c.id }, true);
+    toast('Saved ' + first(c.name) + '’s details', () => { write(c, before); paint(); });
+  }
+  /* ══ ADDING A CANDIDATE FROM A CV ════════════════════════════════════════
+     Upload a CV, AiMY reads it, asks for what is missing, and makes the
+     profile (New Operations list). The CV is read as data about a person;
+     nothing written inside it is followed as an instruction. Reading is
+     fixture: a dropped file is matched to a sample person by its name. */
+  const SAMPLE_CVS = {
+    support: [
+      { name: 'Mariam Hosny', phone: '+20 10 2231 7754', email: 'mariam.hosny@gmail.com', at: 'Technical Support Agent at a SaaS company', years: 3, place: 'Heliopolis', langs: ['Arabic', 'English'], skills: ['Zendesk', 'SQL', 'Customer calls', 'Jira'], file: 'Mariam_Hosny_CV.pdf' },
+      { name: 'Ziad Fawzy', phone: null, email: 'ziad.fawzy@outlook.com', at: 'L2 Support Engineer at a fintech', years: 5, place: 'Maadi', langs: ['Arabic', 'English', 'German'], skills: ['Freshdesk', 'REST APIs', 'Log reading', 'SQL'], file: 'Ziad Fawzy - Resume.docx' },
+    ],
+    finance: [
+      { name: 'Nourhan Adel', phone: '+20 11 4420 9183', email: 'nourhan.adel@gmail.com', at: 'AR Accountant at a distributor', years: 4, place: 'Nasr City', langs: ['Arabic', 'English'], skills: ['NetSuite', 'Collections', 'Reconciliations', 'Excel'], file: 'Nourhan Adel CV.pdf' },
+      { name: 'Hazem Lotfy', phone: null, email: 'hazem.lotfy@yahoo.com', at: 'Junior Accountant at an audit firm', years: 2, place: 'Giza', langs: ['Arabic', 'English'], skills: ['Excel', 'Month-end close'], file: 'CV_Hazem_Lotfy.pdf' },
+    ],
+    ops: [
+      { name: 'Salma Ezzat', phone: '+20 12 7781 0045', email: 'salma.ezzat@gmail.com', at: 'Operations Coordinator at a logistics company', years: 3, place: 'New Cairo', langs: ['Arabic', 'English'], skills: ['Process mapping', 'Excel', 'Documentation'], file: 'Salma Ezzat Resume.pdf' },
+    ],
+  };
+  /* Each must-have, read against what a CV says. A years rule checks the
+     years; a language checks the languages; anything else needs one of the
+     person's skills named in it. */
+  function evFor(must, p) {
+    return must.map((m) => {
+      const t = m.toLowerCase();
+      const yr = /(\d+)\+?\s*years?/.exec(t);
+      if (/german/.test(t)) return p.langs.indexOf('German') >= 0 ? 'm' : 'n';
+      if (/english/.test(t) && !yr) return p.langs.indexOf('English') >= 0 ? 'm' : 'n';
+      const hit = p.skills.some((s) => t.indexOf(s.toLowerCase().split(' ')[0]) >= 0);
+      if (yr) return p.years >= Number(yr[1]) ? (hit || /support|account|operation|analyst/.test(t) ? 'm' : 'p') : 'p';
+      return hit ? 'm' : 'n';
+    });
+  }
+  let INTAKE = null;
+  const READ_STEPS = ['Reading the CV', 'Finding their contact details', 'Reading their experience against the success profile', 'Checking whether they are already in the pool'];
+  function addPage() {
+    const q = S.req ? DB.reqById[S.req] : null;
+    if (!q) {
+      const open = myOpen();
+      return '<div class="s-home"><div class="b-topbar s-block-wide"><button class="s-back" type="button" data-trail>' + svg('back', 14) + 'Back</button></div>' +
+        '<section class="s-block s-block-wide"><div class="s-camp-list-head"><h2 class="s-block-h">Add a candidate</h2></div>' +
+        '<p class="b-tocall">Which requisition is this person for?</p>' +
+        '<div class="b-cuts b-cuts-row">' + open.map((x) => '<button class="filter-chip" type="button"' + goAttr({ on: 'add', req: x.id }) + '>' + esc(x.title) + ' · ' + esc(accOf(x).name) + '</button>').join('') + '</div>' +
+        (open.length ? '' : '<p class="s-none">You have no open requisitions.</p>') + '</section></div>';
+    }
+    if (!INTAKE || INTAKE.req !== q.id) INTAKE = { req: q.id, step: 'attach', i: 0 };
+    const top = '<div class="b-topbar s-block-wide"><button class="s-back" type="button" data-req="' + q.id + '">' + svg('back', 14) + 'Back to ' + esc(q.title) + '</button></div>';
+    let body;
+    if (INTAKE.step === 'attach') {
+      body = '<label class="t-drop" for="cvFile">' + svg('upload', 22) + '<b>Drop a CV here, or choose a file</b><span>PDF or Word. AiMY reads it as information about the person; nothing written in it is followed as an instruction.</span>' +
+        '<input class="t-file" id="cvFile" type="file" accept=".pdf,.doc,.docx" data-cv-file></label>' +
+        '<p class="t-acts"><button class="s-insight-lnk" type="button" data-intake-sample>Use a sample CV</button></p>';
+    } else if (INTAKE.step === 'reading') {
+      body = '<div class="t-steps">' + READ_STEPS.map((s, i) => '<p class="t-stepline' + (i < INTAKE.i ? ' is-done' : i === INTAKE.i ? ' is-now' : '') + '">' +
+        '<span class="t-stepmark">' + (i < INTAKE.i ? svg('check', 12) : '') + '</span>' +
+        (i === INTAKE.i ? '<span class="t-shimmer" data-text="' + esc(s) + '">' + esc(s) + '</span>' : '<span>' + esc(s) + '</span>') + '</p>').join('') + '</div>' +
+        '<p class="b-vfoot">' + esc(INTAKE.file) + '</p>';
+    } else {
+      const f = INTAKE.f;
+      const ev = evFor(q.must, { langs: String(f.langs).split(',').map((x) => x.trim()), skills: String(f.skills).split(',').map((x) => x.trim()), years: Number(f.years) || 0 });
+      const dup = DB.cands.filter((c) => c.name.toLowerCase() === String(f.name).trim().toLowerCase() || (f.phone && c.phone && c.phone.replace(/\D/g, '').slice(-9) === String(f.phone).replace(/\D/g, '').slice(-9)))[0];
+      const fld = (cap, k, wide) => '<div class="b-cmeta-part' + (wide ? ' t-wide' : '') + '"><h2 class="b-cmeta-cap">' + esc(cap) + '</h2><div class="b-cmeta-say">' +
+        '<input class="b-draft-in" type="text" data-in="' + k + '" value="' + esc(f[k] == null ? '' : f[k]) + '" aria-label="' + esc(cap) + '"' + (k === 'phone' && !f.phone ? ' placeholder="Not in the CV. Add it so we can call."' : '') + '></div></div>';
+      body = '<div class="t-skel-in">' +
+        aimyBlock({ text: 'Read from <b>' + esc(INTAKE.file) + '</b>. ' + (INTAKE.cv.phone ? 'Everything the profile needs was in it.' : '<b>The CV has no phone number.</b> Add one below so we can call them.') + ' Check the rest and change anything I got wrong.', from: 'the CV' }, false) +
+        '<div class="t-input-wrap" id="wrapIntakeName"><input class="b-draft-name t-input" type="text" data-in="name" value="' + esc(f.name) + '" aria-label="Name"><p class="t-error-msg">A candidate needs a name.</p></div>' +
+        '<div class="b-cmeta t-edit-grid">' + fld('Phone', 'phone') + fld('Email', 'email') + fld('Now', 'at', true) + fld('Years of experience', 'years') + fld('Where they live', 'place') +
+          fld('Languages, comma between', 'langs', true) + fld('Skills, comma between', 'skills', true) + '</div>' +
+        '<h3 class="b-month">Against the success profile</h3>' +
+        '<div class="t-qlist">' + q.must.map((m, i) => '<p class="t-q"><span class="tag tag-' + (ev[i] === 'm' ? 'ok' : ev[i] === 'p' ? 'warn' : 'neutral') + '">' + EVW[ev[i]] + '</span><span>' + esc(m) + '</span></p>').join('') + '</div>' +
+        (dup ? aimyBlock({ text: '<b>' + esc(dup.name) + '</b> is already in the pool, for ' + esc(reqOf(dup).title) + ' (' + esc(dup.exit ? EXIT[dup.exit].label.toLowerCase() : STAGE[dup.stage].label.toLowerCase()) + '). The new profile is kept as another application by the same person.', from: 'the talent pool' }) : '') +
+        '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-intake-create>Create the profile</button><button class="b-ghost" type="button" data-intake-reset>Start again</button></p>' +
+      '</div>';
+    }
+    return '<div class="s-home">' + top +
+      '<section class="s-rec-head s-block-wide"><span class="s-rec-kind b-kinds">' + fact('user', 'New candidate') + fact('req', q.title) + fact('acc', accOf(q).name) + '</span>' +
+        '<div class="s-rec-title"><h1 class="s-rec-name">Add a candidate</h1></div></section>' +
+      '<section class="s-block s-block-wide" aria-label="CV">' + body + '</section></div>';
+  }
+  function intakeRead(fileName) {
+    const q = DB.reqById[INTAKE.req];
+    const list = SAMPLE_CVS[q.fam];
+    let h = 0;
+    String(fileName || '').split('').forEach((ch) => { h = (h * 31 + ch.charCodeAt(0)) >>> 0; });
+    const cv = fileName ? list[h % list.length] : list[INTAKE.n = ((INTAKE.n || 0) + 1) % list.length];
+    INTAKE.cv = cv;
+    INTAKE.file = fileName || cv.file;
+    INTAKE.step = 'reading';
+    INTAKE.i = 0;
+    paint();
+    clearInterval(INTAKE.timer);
+    INTAKE.timer = setInterval(() => {
+      if (!INTAKE || INTAKE.step !== 'reading') { clearInterval(INTAKE && INTAKE.timer); return; }
+      INTAKE.i++;
+      if (INTAKE.i >= READ_STEPS.length) {
+        clearInterval(INTAKE.timer);
+        INTAKE.step = 'review';
+        INTAKE.f = { name: cv.name, phone: cv.phone || '', email: cv.email, at: cv.at, years: cv.years, place: cv.place, langs: cv.langs.join(', '), skills: cv.skills.join(', ') };
+      }
+      if (S.on === 'add') paint();
+    }, 650);
+  }
+  function intakeCreate() {
+    const q = DB.reqById[INTAKE.req];
+    const f = INTAKE.f;
+    if (!String(f.name).trim()) { shake('wrapIntakeName'); return; }
+    const p = { langs: String(f.langs).split(',').map((x) => x.trim()).filter(Boolean), skills: String(f.skills).split(',').map((x) => x.trim()).filter(Boolean), years: Number(f.years) || 1 };
+    const dup = DB.cands.filter((c) => c.name.toLowerCase() === String(f.name).trim().toLowerCase())[0];
+    const id = uid('k');
+    const c = { id: id, pid: dup ? dup.pid : id, name: String(f.name).trim(), req: q.id, stage: 'applied', exit: null, since: 0, meet: null, fb: false,
+      nudged: null, years: p.years, at: String(f.at).trim(), place: String(f.place).trim(), langs: p.langs, skills: p.skills, source: 'Added by the recruiter',
+      ev: evFor(q.must, p), maxAt: 'applied', phone: String(f.phone).trim() || null, email: String(f.email).trim(), fate: 'pass', dnc: false, badNumber: false,
+      callback: null, applied: 0, summary: p.years + ' years, now ' + String(f.at).charAt(0).toLowerCase() + String(f.at).slice(1) + '. Strongest in ' + p.skills.slice(0, 2).join(' and ') + '.' };
+    addCand(c);
+    const e = note(c, 'apply', 'Profile made from ' + INTAKE.file + ' by ' + me().name + '.');
+    INTAKE = null;
+    go({ cand: c.id }, true);
+    toast('Added ' + c.name + ' to ' + q.title, () => { unmake('events', e); dropCand(c); go({ req: q.id }, true); },
+      'Applied. Send them their profile link from their page.');
+  }
+
+  /* ── Booking, nudging and recordings ── */
+  function bookIv(c, d, slot) {
+    const q = reqOf(c);
+    const tpl = tplFor(c.stage);
+    const v = make('ivs', { id: uid('iv'), cand: c.id, stage: c.stage, day: d, slot: slot, by: interviewerFor(q, c.stage), mode: 'person',
+      status: 'booked', ratings: null, notes: null, verdict: null, recording: null, tpl: tpl ? tpl.id : null });
+    const was = { meet: c.meet, slot: c.slot, fb: c.fb };
+    write(c, { meet: d, slot: slot, fb: false });
+    const e = note(c, 'iv', 'Booked the ' + lower(STAGE[c.stage].label) + ' with ' + v.by + ', ' + sayWhen(d) + ' at ' + slot + '.');
+    paint();
+    toast('Booked ' + sayWhen(d) + ' at ' + slot, () => { unmake('ivs', v); unmake('events', e); write(c, was); paint(); },
+      'On Bookings. AiMY tells ' + first(c.name) + ' from the booking and sends the interviewer the kit.');
+  }
+  /* A recording is uploaded, transcribed and matched to the success
+     profile. AiMY's reading is kept apart from the interviewer's own rating,
+     so it can never stand in for it (audit, "independent feedback"). */
+  const REC_BUSY = {};
+  const ANSWER = {
+    m: 'I did that every week in my last job. For example, I took the hardest cases and wrote down how I solved them.',
+    p: 'I have done some of it, mostly with help from my team lead.',
+    n: 'I have not done that yet, but I would like to learn it.',
+  };
+  function uploadRec(v) {
+    if (REC_BUSY[v.id] || v.recording) return;
+    REC_BUSY[v.id] = true;
+    paint();
+    toast('Uploading the recording', null, 'Transcribing it and matching what was said to the success profile.');
+    setTimeout(() => {
+      delete REC_BUSY[v.id];
+      const c = DB.byId[v.cand];
+      const q = reqOf(c);
+      const sug = c.ev.map((x, i) => (i % 3 === 2 && x === 'm' ? 'p' : x === 'n' && i % 2 ? 'p' : x));
+      const lines = [];
+      q.must.forEach((m, i) => { lines.push(['you', 'Tell me about ' + m.charAt(0).toLowerCase() + m.slice(1) + '.']); lines.push(['them', ANSWER[sug[i]]]); });
+      const strong = q.must.filter((m, i) => sug[i] === 'm'), weak = q.must.filter((m, i) => sug[i] !== 'm');
+      put('ivs', v, { recording: { mins: 26 + (v.id.length % 17), at: 0, lines: lines,
+        summary: (strong.length ? 'Clear examples on ' + strong.join('; ') + '. ' : '') + (weak.length ? 'Less to go on for ' + weak.join('; ') + '.' : ''), suggests: sug } });
+      note(c, 'iv', 'Recording of the ' + lower(STAGE[v.stage].label) + ' uploaded and transcribed.');
+      paint();
+      toast('Transcribed', null, 'It is on the interview, with AiMY’s read of it beside the interviewer’s.');
+    }, 2600);
+  }
+
+  /* ── The interviewer's debrief, from a link ── outside the product, no
+     shell. Two minutes: a rating per must-have with a line, and a verdict.
+     Nobody else's feedback shows until this one is in. */
+  let DEBRIEF = null;
+  function outsideHead(title, sub) {
+    return '<header class="t-out-head"><span class="t-out-mark">' + mark(22) + '</span><span><b>' + esc(title) + '</b><span>' + esc(sub) + '</span></span></header>';
+  }
+  function debriefPage() {
+    const v = DB.ivs.filter((x) => x.id === S.debrief)[0];
+    if (!v) return '<div class="t-out">' + outsideHead('Interview debrief', 'FlairsTech') + '<p class="s-none">This link has expired.</p></div>';
+    const c = DB.byId[v.cand], q = reqOf(c);
+    if (!DEBRIEF || DEBRIEF.id !== v.id) DEBRIEF = { id: v.id, r: v.ratings ? v.ratings.slice() : [], n: v.notes ? v.notes.slice() : [], v: v.verdict, sent: false };
+    if (DEBRIEF.sent || (v.status === 'done' && v.verdict)) {
+      return '<div class="t-out">' + outsideHead('Interview debrief', 'For ' + v.by) +
+        '<section class="t-out-card t-done">' + successCheck() + '<h1 class="t-out-h">Thank you. It is with the recruiter.</h1>' +
+          '<p>You said <b>' + (v.verdict === 'yes' ? 'proceed' : 'do not proceed') + '</b> for ' + esc(c.name) + '. The decision is ' + esc(first(DESKS.omar.name)) + '’s.</p></section></div>';
+    }
+    const tpl = tplById(v.tpl) || tplFor(v.stage);
+    const gaps = q.must.filter((m, i) => c.ev[i] !== 'm');
+    const rec = v.recording;
+    return '<div class="t-out">' + outsideHead('Interview debrief', 'For ' + v.by) +
+      '<section class="t-out-card">' +
+        '<p class="t-out-kicker">' + esc(STAGE[v.stage].label) + ' · ' + esc(sayWhen(v.day)) + ' at ' + esc(v.slot) + '</p>' +
+        '<h1 class="t-out-h">' + esc(c.name) + '</h1>' +
+        '<p>' + esc(q.title) + ' for ' + esc(accOf(q).name) + '. About two minutes. Your answers are quoted back as you wrote them.</p>' +
+        (tpl ? '<h2 class="t-out-sub">The agenda</h2><ol class="t-out-list">' + tpl.items.map((x) => '<li>' + esc(x) + '</li>').join('') + '</ol>' : '') +
+        (gaps.length ? '<h2 class="t-out-sub">What the CV is silent on</h2>' + aimyBlock({ text: 'Ask for an example of: ' + esc(gaps.join('; ')) + '.', from: 'the CV against the success profile' }) : '') +
+        '<h2 class="t-out-sub">How did they do?</h2>' +
+        '<div class="t-input-wrap" id="wrapDebrief"><div class="t-input">' + q.must.map((m, i) => '<div class="t-dr">' +
+          '<p class="t-dr-must">' + esc(m) + (rec && rec.suggests ? '<span class="b-kind">The recording suggests ' + RATE[rec.suggests[i]].toLowerCase() + '</span>' : '') + '</p>' +
+          '<div class="b-cuts">' + ['m', 'p', 'n'].map((k) => '<button class="filter-chip' + (DEBRIEF.r[i] === k ? ' active' : '') + '" type="button" data-dr="' + i + '|' + k + '">' + RATE[k] + '</button>').join('') + '</div>' +
+          '<input class="dial-input" type="text" data-drn="' + i + '" value="' + esc(DEBRIEF.n[i] || '') + '" placeholder="One line on what you saw" aria-label="What you saw on ' + esc(m) + '">' +
+        '</div>').join('') + '</div><p class="t-error-msg">Rate every line, then say proceed or not.</p></div>' +
+        '<h2 class="t-out-sub">Your call</h2>' +
+        '<div class="b-cuts">' + [['yes', 'Proceed'], ['no', 'Do not proceed']].map((x) => '<button class="filter-chip' + (DEBRIEF.v === x[0] ? ' active' : '') + '" type="button" data-dv="' + x[0] + '">' + x[1] + '</button>').join('') + '</div>' +
+        '<p class="b-vfoot">Other interviewers’ feedback stays hidden until yours is in.</p>' +
+        '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-debrief-submit>Send my debrief</button>' +
+          (rec ? '' : '<button class="b-ghost" type="button" data-rec-up="' + v.id + '">' + (REC_BUSY[v.id] ? 'Transcribing…' : 'Upload the recording') + '</button>') + '</p>' +
+      '</section></div>';
+  }
+  function debriefSubmit() {
+    const v = DB.ivs.filter((x) => x.id === DEBRIEF.id)[0];
+    const c = DB.byId[v.cand], q = reqOf(c);
+    if (q.must.some((m, i) => !DEBRIEF.r[i]) || !DEBRIEF.v) { shake('wrapDebrief'); return; }
+    put('ivs', v, { status: 'done', ratings: DEBRIEF.r.slice(), notes: q.must.map((m, i) => DEBRIEF.n[i] || IV_NOTE[DEBRIEF.r[i]][0]), verdict: DEBRIEF.v,
+      day: v.status === 'booked' && v.day > 0 ? 0 : v.day });
+    if (c.stage === v.stage && !c.exit) write(c, { fb: true, meet: Math.min(0, c.meet == null ? 0 : c.meet) });
+    note(c, 'iv', v.by + ' sent the debrief: ' + (DEBRIEF.v === 'yes' ? 'proceed.' : 'do not proceed.'), { by: null });
+    DEBRIEF.sent = true;
+    paint();
+  }
+  /* transitions.dev success check, for a person outside the team finishing
+     the one thing they came to do. */
+  const successCheck = () => '<span class="t-success-check" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path class="t-success-path" d="M20 6 9 17l-5-5"/></svg></span>';
+
+  /* ── Offers ── */
+  function offerNew(c) {
+    const q = reqOf(c);
+    const lo = q.budget ? q.budget.min : 20000, hi = q.budget ? q.budget.max : 30000;
+    const exp = c.salary ? Number(String(c.salary).replace(/[^\d]/g, '')) : null;
+    const salary = Math.round(Math.min(hi, Math.max(lo, exp || (lo + hi) / 2)) / 500) * 500;
+    const o = make('offers', { id: uid('o'), cand: c.id, salary: salary, notice: c.notice || 'one month’s notice', expects: c.salary || null,
+      hm: 'waiting', bu: 'waiting', sentDay: null, status: 'approving', joinDay: null, note: null });
+    const e = note(c, 'offer', 'Offer prepared at ' + money(salary) + ' and sent to ' + hmOf(q).name + ' and ' + BU_DIRECTOR + ' to approve, at the same time.');
+    paint();
+    toast('Offer packet ready', () => { unmake('offers', o); unmake('events', e); paint(); }, hmOf(q).name + ' and ' + BU_DIRECTOR + ' approve it in parallel. A person sends it.');
+  }
+  function offerStep(o, d) {
+    const re = o.hm === 'ok' || o.bu === 'ok';
+    const before = { salary: o.salary, hm: o.hm, bu: o.bu };
+    put('offers', o, { salary: o.salary + d, hm: re ? 'waiting' : o.hm, bu: re ? 'waiting' : o.bu });
+    paint();
+    if (re) toast('Salary changed to ' + money(o.salary), () => { put('offers', o, before); paint(); }, 'Both approvers are asked again.');
+  }
+  function offerSend(o) {
+    const c = DB.byId[o.cand];
+    put('offers', o, { status: 'sent', sentDay: 0 });
+    const e = note(c, 'offer', 'Offer sent by ' + me().name + '.');
+    paint();
+    toast('Offer sent to ' + first(c.name), () => { put('offers', o, { status: 'approving', sentDay: null }); unmake('events', e); paint(); },
+      'AiMY answers their questions from the offer facts on WhatsApp. Anything about money comes to you.');
+  }
+  function offerRes(o, k) {
+    const c = DB.byId[o.cand];
+    const was = { stage: c.stage, since: c.since, exit: c.exit, maxAt: c.maxAt };
+    const months = /two/.test(o.notice) ? 2 : /three/.test(o.notice) ? 3 : /right away/.test(o.notice) ? 0 : 1;
+    if (k === 'accepted') {
+      put('offers', o, { status: 'accepted', joinDay: months ? months * 30 : 7 });
+      write(c, { stage: 'accepted', since: 0, maxAt: 'accepted' });
+    } else {
+      put('offers', o, { status: 'declined' });
+      write(c, { exit: 'offerno', since: 0 });
+    }
+    const e = note(c, 'offer', k === 'accepted' ? 'Accepted the offer. Joins ' + sayDay(o.joinDay) + '.' : 'Declined the offer.');
+    paint();
+    toast(k === 'accepted' ? first(c.name) + ' accepted' : first(c.name) + ' declined', () => { put('offers', o, { status: 'sent', joinDay: null }); write(c, was); unmake('events', e); paint(); },
+      k === 'accepted' ? 'Onboarding opens from the role template.' : 'The requisition stays open; the next candidate is on it.');
+  }
+  /* The approver's page, from a link: one packet, one question. */
+  let APPROVE_DONE = null;
+  function approvePage() {
+    const o = DB.offers.filter((x) => x.id === S.approve)[0];
+    const by = S.by === 'bu' ? 'bu' : 'hm';
+    if (!o) return '<div class="t-out">' + outsideHead('Offer approval', 'FlairsTech') + '<p class="s-none">This link has expired.</p></div>';
+    const c = DB.byId[o.cand], q = reqOf(c);
+    const who = by === 'hm' ? hmOf(q).name : BU_DIRECTOR;
+    const other = by === 'hm' ? o.bu : o.hm;
+    const otherWho = by === 'hm' ? BU_DIRECTOR : hmOf(q).name;
+    if (APPROVE_DONE === o.id + by || (o[by] === 'ok' && o.status !== 'approving')) {
+      return '<div class="t-out">' + outsideHead('Offer approval', 'For ' + who) + '<section class="t-out-card t-done">' + successCheck() +
+        '<h1 class="t-out-h">' + (o[by] === 'ok' ? 'Approved.' : 'Sent back to the recruiter.') + '</h1>' +
+        '<p>' + (o[by] === 'ok' ? (other === 'ok' ? 'Both approvals are in. ' + esc(first(DESKS.omar.name)) + ' sends the offer.' : 'Waiting on ' + esc(otherWho) + ' too. A person sends it once you both approve.') : 'Nothing goes to ' + esc(first(c.name)) + '.') + '</p></section></div>';
+    }
+    const ivs = ivsOf(c).filter((v) => v.status === 'done');
+    const v = verified(c);
+    return '<div class="t-out">' + outsideHead('Offer approval', 'For ' + who) +
+      '<section class="t-out-card">' +
+        '<p class="t-out-kicker">' + esc(by === 'hm' ? 'Your call: the fit and the salary' : 'Your call: can this offer be sent') + '</p>' +
+        '<h1 class="t-out-h">' + esc(c.name) + '</h1>' +
+        '<p>' + esc(q.title) + ' for ' + esc(accOf(q).name) + '. ' + esc(otherWho) + ' approves the same packet at the same time' + (other === 'ok' ? ', and already has.' : '.') + '</p>' +
+        '<div class="b-cmeta t-out-meta">' +
+          '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Monthly gross</h2><div class="b-cmeta-say"><p class="b-cmeta-p"><b>' + money(o.salary) + '</b></p>' +
+            (q.budget ? '<p class="b-cmeta-p">Budget ' + money(q.budget.min) + ' to ' + money(q.budget.max).replace('EGP ', '') + '</p>' : '') +
+            (o.expects ? '<p class="b-cmeta-p">They expect ' + esc(o.expects) + '</p>' : '') + '</div></div>' +
+          '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Notice</h2><div class="b-cmeta-say"><p class="b-cmeta-p">' + esc(o.notice) + '</p></div></div>' +
+          '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Interviews</h2><div class="b-cmeta-say"><p class="b-cmeta-p">' + plural(ivs.length, 'interview') + ', ' +
+            ivs.filter((x) => x.verdict === 'yes').length + ' said proceed</p><p class="b-cmeta-p">' + v.filter((x) => x.state === 'verified').length + ' of ' + v.length + ' must-haves verified</p></div></div>' +
+        '</div>' +
+        '<input class="dial-input" id="apprNote" type="text" placeholder="A line for the recruiter, if you send it back" aria-label="Note">' +
+        '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-appr="' + o.id + '|' + by + '|ok">Approve</button>' +
+          '<button class="b-ghost" type="button" data-appr="' + o.id + '|' + by + '|back">Send it back</button></p>' +
+      '</section></div>';
+  }
+  function approve(o, by, k) {
+    const c = DB.byId[o.cand];
+    const n = byId('apprNote') ? byId('apprNote').value.trim() : '';
+    put('offers', o, { [by]: k });
+    note(c, 'offer', (by === 'hm' ? hmOf(reqOf(c)).name : BU_DIRECTOR) + (k === 'ok' ? ' approved the offer.' : ' sent the offer back' + (n ? ': ' + n : '.')));
+    APPROVE_DONE = o.id + by;
+    paint();
+  }
+
+  /* ── Sending an assessment ── */
+  function sendAsmt(c) {
+    const q = reqOf(c);
+    const a = asmtOf(q.asmt || 'a1');
+    const s = make('sends', { id: uid('s'), asmt: a.id, cand: c.id, day: 0, status: 'sent', answers: null, score: null, doneDay: null });
+    const e = note(c, 'asmt', 'Sent the ' + a.title + ' assessment.');
+    paint();
+    toast('Sent the assessment to ' + first(c.name), () => { unmake('sends', s); unmake('events', e); paint(); },
+      'By WhatsApp and email, with their link. AiMY scores it when they finish.');
+  }
+
+  /* ══ FINDING CANDIDATES ══════════════════════════════════════════════════
+     Search by a job description, a CV ("someone like this"), a list of
+     skills, or an open requisition; across our own pool and the web,
+     Apollo and SignalHire (New Operations list). Every result carries its
+     score as its own explanation: "3 of 4 must-haves met", with Why behind
+     it, never a bare percentage (audit, decision 2). People found outside
+     have not applied, so first contact needs a person's approval. */
+  const FIND_SOURCES = [
+    { k: 'pool', label: 'Our talent pool', say: 'People who applied before', tag: 'Talent pool' },
+    { k: 'web', label: 'The web', say: 'LinkedIn, GitHub and portfolios', tag: 'Found on the web' },
+    { k: 'apollo', label: 'Apollo', say: 'Work emails and phones', tag: 'Apollo' },
+    { k: 'signal', label: 'SignalHire', say: 'Mobile numbers', tag: 'SignalHire' },
+  ];
+  const KEYS_TO_MUST = [
+    [/german/i, 'German at C1 or above'], [/english/i, 'Fluent English'], [/\bsql\b/i, 'SQL to read logs and data'],
+    [/zendesk|freshdesk|ticket/i, 'Ticketing tools (Zendesk or Freshdesk)'], [/support|helpdesk|customer/i, 'Software support experience'],
+    [/netsuite|erp|oracle/i, 'NetSuite or a similar ERP'], [/receivable|collection/i, 'Accounts receivable and collections'],
+    [/excel/i, 'Advanced Excel'], [/reconcil/i, 'Bank reconciliations'], [/process|operation/i, 'Process documentation'],
+    [/jira/i, 'Jira'], [/api/i, 'REST APIs'],
+  ];
+  let FIND = { q: '', req: null, src: { pool: true, web: true, apollo: true, signal: false }, step: 'ask', i: 0, res: [], done: {} };
+  function findCriteria() {
+    if (FIND.req && DB.reqById[FIND.req]) return DB.reqById[FIND.req].must.slice();
+    const t = FIND.q || '';
+    const out = KEYS_TO_MUST.filter((x) => x[0].test(t)).map((x) => x[1]);
+    const y = /(\d+)\+?\s*years?/i.exec(t);
+    if (y) out.unshift(y[1] + '+ years of experience');
+    return out.slice(0, 6);
+  }
+  const WEB_AT = ['Support Engineer at a payments startup', 'Customer Success Specialist at a SaaS company', 'Accountant at a logistics group',
+    'Operations Analyst at an e-commerce company', 'Technical Support Lead at a telecom', 'AR Specialist at a hospital group', 'Helpdesk Engineer at a bank'];
+  function runFind() {
+    const crit = findCriteria();
+    if (!crit.length) { shake('wrapFind'); return; }
+    FIND.crit = crit;
+    FIND.step = 'searching';
+    FIND.i = 0;
+    FIND.done = {};
+    let h = 7;
+    (FIND.q + '|' + (FIND.req || '')).split('').forEach((ch) => { h = (h * 33 + ch.charCodeAt(0)) >>> 0; });
+    const r = rng(h);
+    const fam = FIND.req ? DB.reqById[FIND.req].fam : famOf(FIND.q);
+    const res = [];
+    const fromPerson = (p, src, extra) => {
+      const ev = evFor(crit, { langs: p.langs, skills: p.skills || [], years: p.years });
+      res.push(Object.assign({ src: src, name: p.name, at: p.at, place: p.place, years: p.years, langs: p.langs, skills: p.skills || [], ev: ev,
+        score: ev.filter((x) => x === 'm').length + ev.filter((x) => x === 'p').length * 0.5, phone: p.phone || null, email: p.email || null }, extra || {}));
+    };
+    if (FIND.src.pool) {
+      const seen = {};
+      DB.cands.filter((c) => (c.exit === 'out' || c.exit === 'clientno' || c.exit === 'withdrew') && reqOf(c).fam === fam).forEach((c) => {
+        if (seen[c.pid] || res.length > 6) return;
+        seen[c.pid] = 1;
+        fromPerson(c, 'pool', { pid: c.pid, was: reqOf(c).title + ', ' + EXIT[c.exit].label.toLowerCase(), consent: c.exit === 'withdrew' ? 'Withdrew last time. Ask before calling.' : 'Applied before and agreed to hear about other roles.' });
+      });
+    }
+    const make1 = (src, n) => {
+      for (let i = 0; i < n; i++) {
+        const woman = chance(r, 0.5);
+        const p = { name: pick(r, woman ? WOMEN : MEN) + ' ' + pick(r, LAST), at: pick(r, WEB_AT), place: pick(r, PLACES), years: between(r, 1, 9),
+          langs: chance(r, 0.25) ? ['Arabic', 'English', 'German'] : ['Arabic', 'English'], skills: SKILLS[fam].filter(() => chance(r, 0.45)).slice(0, 4) };
+        fromPerson(p, src, {
+          phone: src === 'signal' || (src === 'apollo' && chance(r, 0.6)) ? '+20 1' + pick(r, ['0', '1', '2']) + ' ' + between(r, 1000, 9999) + ' ' + between(r, 1000, 9999) : null,
+          email: src === 'apollo' ? p.name.toLowerCase().split(' ').join('.') + '@company.com' : null,
+          link: src === 'web' ? pick(r, ['linkedin.com/in/', 'github.com/', 'behance.net/']) + p.name.toLowerCase().split(' ').join('') : null,
+          consent: 'Has not applied. First contact needs your approval.' });
+      }
+    };
+    if (FIND.src.web) make1('web', between(r, 5, 8));
+    if (FIND.src.apollo) make1('apollo', between(r, 2, 4));
+    if (FIND.src.signal) make1('signal', between(r, 2, 3));
+    res.sort((a, b) => b.score - a.score);
+    res.forEach((x, i) => { x.i = i; });
+    FIND.res = res;
+    paint();
+    clearInterval(FIND.timer);
+    const steps = findSteps();
+    FIND.timer = setInterval(() => {
+      FIND.i++;
+      if (FIND.i >= steps.length) { clearInterval(FIND.timer); FIND.step = 'results'; FIND.reveal = true; }
+      if (S.on === 'find') paint();
+    }, 620);
+  }
+  const findSteps = () => ['Reading what to look for'].concat(FIND_SOURCES.filter((s) => FIND.src[s.k]).map((s) => 'Searching ' + s.label.charAt(0).toLowerCase() + s.label.slice(1)))
+    .concat(['Reading each profile against the criteria']);
+  function findPage() {
+    if (S.req && S.req !== FIND.req && FIND.step !== 'results') FIND.req = S.req;
+    const open = DB.reqs.filter(isOpen).filter((q) => isHR() || q.rec === DESK);
+    const crit = findCriteria();
+    let body = '';
+    if (FIND.step === 'searching') {
+      const steps = findSteps();
+      body = '<div class="t-steps">' + steps.map((s, i) => '<p class="t-stepline' + (i < FIND.i ? ' is-done' : i === FIND.i ? ' is-now' : '') + '">' +
+        '<span class="t-stepmark">' + (i < FIND.i ? svg('check', 12) : '') + '</span>' +
+        (i === FIND.i ? '<span class="t-shimmer" data-text="' + esc(s) + '">' + esc(s) + '</span>' : '<span>' + esc(s) + '</span>') + '</p>').join('') + '</div>' +
+        '<div class="b-grid">' + [0, 1, 2].map(() => '<div class="b-slot"><div class="b-skel s-skel-card"><div class="s-skel-line skeleton"></div><div class="s-skel-line skeleton"></div><div class="s-skel-line skeleton"></div><div class="s-skel-line skeleton"></div></div></div>').join('') + '</div>';
+    } else if (FIND.step === 'results') {
+      const bySrc = (k) => FIND.res.filter((x) => x.src === k).length;
+      const added = Object.keys(FIND.done).length;
+      body = aimyBlock({ text: '<b>' + plural(FIND.res.length, 'person', 'people') + '</b> found: ' + FIND_SOURCES.filter((s) => FIND.src[s.k]).map((s) => bySrc(s.k) + ' from ' + s.label.charAt(0).toLowerCase() + s.label.slice(1)).join(', ') +
+        '. Sorted by how many of the ' + FIND.crit.length + ' must-haves each one meets.' + (added ? ' ' + plural(added, 'person', 'people') + ' added so far.' : ''), from: 'the sources you picked' }) +
+        '<div class="b-cuts">' + FIND.crit.map((m) => '<span class="filter-chip t-static">' + esc(m) + '</span>').join('') + '</div>' +
+        '<p class="t-acts">' + (FIND.req ? '<button class="s-insight-lnk primary" type="button" data-find-top>Add the 5 strongest to ' + esc(DB.reqById[FIND.req].title) + '</button>' : '') +
+          '<button class="b-ghost" type="button" data-find-again>Search again</button></p>' +
+        '<div class="b-grid' + (FIND.reveal ? ' t-reveal' : '') + '">' + FIND.res.map((x, i) => '<div class="b-slot">' + findCard(x, i) + '</div>').join('') + '</div>';
+      FIND.reveal = false;
+    }
+    return '<div class="s-home">' +
+      (isRec() ? '' : '<div class="b-topbar s-block-wide"><button class="s-back" type="button" data-trail>' + svg('back', 14) + 'Back</button></div>') +
+      '<section class="s-block s-block-wide" aria-label="Find candidates">' +
+        '<div class="s-camp-list-head">' + switcher('find') + '</div>' +
+        '<div class="t-input-wrap" id="wrapFind"><textarea class="dial-input t-area t-input t-findq" rows="3" data-find-q aria-label="What to look for" ' +
+          'placeholder="Paste a job description or a CV, or list skills: German, Zendesk, SQL, 3 years">' + esc(FIND.q) + '</textarea>' +
+          '<p class="t-error-msg">Tell me what to look for, or pick a requisition.</p></div>' +
+        '<p class="b-tocall">Or look for people who fit an open requisition:</p>' +
+        '<div class="b-cuts">' + open.map((q) => '<button class="filter-chip' + (FIND.req === q.id ? ' active' : '') + '" type="button" data-find-req="' + q.id + '">' + esc(q.title) + ' · ' + esc(accOf(q).name) + '</button>').join('') + '</div>' +
+        '<p class="b-tocall">Where to look:</p>' +
+        '<div class="b-cuts">' + FIND_SOURCES.map((s) => '<button class="filter-chip' + (FIND.src[s.k] ? ' active' : '') + '" type="button" data-find-src="' + s.k + '" aria-pressed="' + !!FIND.src[s.k] + '">' + esc(s.label) + '<span class="b-cut-n">' + esc(s.say) + '</span></button>').join('') + '</div>' +
+        (crit.length ? '<p class="b-vfoot">Read against: ' + esc(crit.join('; ')) + '.</p>' : '') +
+        '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-find-go>' + (FIND.step === 'results' ? 'Search again' : 'Find candidates') + '</button></p>' +
+        body +
+      '</section></div>';
+  }
+  function findCard(x, i) {
+    const src = FIND_SOURCES.filter((s) => s.k === x.src)[0];
+    const met = x.ev.filter((e) => e === 'm').length;
+    const added = FIND.done[x.i];
+    const open = DB.reqs.filter(isOpen).filter((q) => isHR() || q.rec === DESK);
+    return '<article class="type-card s-card b-qcard" style="--i:' + Math.min(i, 8) + '">' +
+      '<div class="tc-head">' + tag(src.tag, x.src === 'pool' ? 'ok' : 'neutral') + (x.was ? '<span class="b-kind">' + esc(x.was) + '</span>' : x.link ? '<span class="b-kind">' + esc(x.link) + '</span>' : '') + '</div>' +
+      '<div class="b-qcard-top"><span class="tc-title s-card-title">' + esc(x.name) + '</span></div>' +
+      '<p class="tc-summary b-qcard-role">' + esc(x.at) + '</p>' +
+      '<p class="b-qcard-where">' + fact('job', plural(x.years, 'year')) + fact('pin', x.place) + fact('lang', x.langs.join(', ')) + '</p>' +
+      '<div class="t-acc" data-acc-open="false">' +
+        '<div class="b-aimy"><svg class="b-aimy-mark" width="13" height="15" viewBox="0 0 18 20" aria-hidden="true"><use href="#aimy-logo-small"/></svg>' +
+          '<span class="b-aimy-say"><b>' + met + ' of ' + x.ev.length + '</b> must-haves met' + (x.ev.filter((e) => e === 'p').length ? ', ' + x.ev.filter((e) => e === 'p').length + ' partly' : '') + '. ' +
+          '<button class="t-inline-link t-acc-head" type="button" aria-expanded="false" data-acc-toggle>Why<span class="t-acc-chevron">' + svg('down', 12) + '</span></button></span></div>' +
+        '<div class="t-acc-panel"><div class="t-acc-panel-inner"><div class="t-qlist">' + FIND.crit.map((m, k) => '<p class="t-q"><span class="tag tag-' + (x.ev[k] === 'm' ? 'ok' : x.ev[k] === 'p' ? 'warn' : 'neutral') + '">' + EVW[x.ev[k]] + '</span>' +
+          '<span>' + esc(m) + (x.ev[k] !== 'n' ? '. Their profile names ' + esc((x.skills.filter((s) => m.toLowerCase().indexOf(s.toLowerCase().split(' ')[0]) >= 0)[0]) || (x.years + ' years')) + '.' : '. Their profile says nothing about it.') + '</span></p>').join('') + '</div></div></div>' +
+      '</div>' +
+      '<p class="b-vfoot">' + esc(x.consent) + (x.phone ? ' Phone found.' : '') + (x.email ? ' Email found.' : '') + '</p>' +
+      '<div class="tc-gov b-qcard-foot">' +
+        (added ? '<span class="b-kind">Added to ' + esc(added) + '</span>'
+          : FIND.req ? '<button class="s-insight-lnk primary" type="button" data-find-add="' + x.i + '|' + FIND.req + '">Add to ' + esc(DB.reqById[FIND.req].title) + '</button>'
+          : '<span class="b-menu-wrap"><button class="s-insight-lnk primary b-menu-open" type="button" data-pickopen="fa' + x.i + '" aria-haspopup="menu">Add to a requisition' + svg('down', 14) + '</button>' +
+            '<div class="b-menu" id="fa' + x.i + '" role="menu" hidden>' + open.map((q) => '<button class="b-menu-item" type="button" role="menuitem" data-find-add="' + x.i + '|' + q.id + '"><span class="b-menu-name">' + esc(q.title) + '</span><span class="tel-menu-cc">' + esc(accOf(q).name) + '</span></button>').join('') + '</div></span>') +
+      '</div>' +
+    '</article>';
+  }
+  function findAdd(i, reqId, quiet) {
+    const x = FIND.res[i];
+    const q = DB.reqById[reqId];
+    if (!x || !q || FIND.done[i]) return null;
+    const id = uid('k');
+    const c = { id: id, pid: x.pid || id, name: x.name, req: q.id, stage: 'sourced', exit: null, since: 0, meet: null, fb: false, nudged: null,
+      years: x.years, at: x.at, place: x.place, langs: x.langs, skills: x.skills, source: x.src === 'pool' ? 'From the talent pool' : 'Found on ' + (x.src === 'web' ? 'the web' : FIND_SOURCES.filter((s) => s.k === x.src)[0].label),
+      ev: evFor(q.must, x), maxAt: 'sourced', phone: x.phone, email: x.email, fate: 'pass', dnc: false, badNumber: false, callback: null, applied: 0,
+      contactOk: x.src === 'pool' && x.consent.indexOf('Withdrew') < 0, summary: x.years + ' years, now ' + x.at.charAt(0).toLowerCase() + x.at.slice(1) + '.' };
+    addCand(c);
+    FIND.done[i] = q.title;
+    if (!quiet) { paint(); toast('Added ' + x.name + ' to ' + q.title, () => { dropCand(c); delete FIND.done[i]; paint(); }, c.contactOk ? 'Sourced. They agreed to hear about roles, so you can call.' : 'Sourced. First contact waits for your approval.'); }
+    return c;
+  }
+
+  /* ══ ASSESSMENTS ═════════════════════════════════════════════════════════
+     Build them by hand or with AiMY, share a link, AiMY scores the answers,
+     and the questions everyone fails come back as something to fix (New
+     Operations list: "people have always been failing Q5"). */
+  const ASMT_KIND = { quiz: 'Questionnaire', live: 'Live with the AiMY agent' };
+  const resultsOf = (a) => DB.sends.filter((s) => s.asmt === a.id && s.status === 'done');
+  /* The share of people who got each question right, out of those who took it. */
+  function qRates(a) {
+    const r = resultsOf(a);
+    return a.questions.map((q, i) => { const n = r.filter((s) => s.answers && s.answers[i] != null).length; return n ? Math.round(r.filter((s) => s.answers[i]).length / n * 100) : null; });
+  }
+  function asmtsPage() {
+    const list = DB.asmts;
+    return '<div class="s-home">' +
+      '<section class="s-block s-block-wide" aria-label="Assessments">' +
+        '<div class="s-camp-list-head">' + switcher('asmts') + '<span class="b-draft-acts"><button class="b-ghost" type="button" data-asmt-new>New assessment</button></span></div>' +
+        aimyBlock({ text: 'Tests a candidate takes from a link before the phone screen. AiMY scores them; a person decides.', from: 'how assessments work' }, false) +
+        '<div class="b-grid">' + list.map((a, i) => {
+          const r = resultsOf(a), rates = qRates(a);
+          const worst = rates.reduce((w, x, k) => (x != null && (w == null || x < rates[w]) ? k : w), null);
+          const avg = r.length ? Math.round(r.reduce((n, s) => n + s.score, 0) / r.length) : null;
+          const used = DB.reqs.filter((q) => q.asmt === a.id && isOpen(q)).length;
+          return '<div class="b-slot"><article class="type-card s-card b-qcard" data-open="asmt:' + a.id + '" style="--i:' + Math.min(i, 8) + '">' +
+            '<div class="tc-head">' + tag(ASMT_KIND[a.kind]) + '<span class="b-kind">' + a.mins + ' minutes</span></div>' +
+            '<button class="tc-title s-card-title" type="button" data-asmt="' + a.id + '">' + esc(a.title) + '</button>' +
+            '<p class="tc-summary b-qcard-what b-fact">' + svg('goal') + '<span>' + plural(a.questions.length, 'question') + ' · pass mark ' + a.pass + '%</span></p>' +
+            '<div class="b-qcard-why"><b>' + r.length + '</b> taken' + (avg != null ? ', average ' + avg + '%' : '') + ' · on ' + plural(used, 'open requisition') + '</div>' +
+            (worst != null && rates[worst] < 40 ? aimyBlock({ text: 'Only <b>' + rates[worst] + '%</b> get Q' + (worst + 1) + ' right. Worth rewording.', from: 'every result' }) : '') +
+            '<div class="tc-gov b-qcard-foot"><span class="b-kind">' + (a.kind === 'live' ? 'Spoken, then transcribed' : 'Written') + '</span><button class="s-insight-lnk primary" type="button" data-asmt="' + a.id + '">Open it</button></div>' +
+          '</article></div>';
+        }).join('') + '</div>' +
+      '</section></div>';
+  }
+  function newAsmt(fromReq) {
+    const q = fromReq ? DB.reqById[fromReq] : null;
+    const a = make('asmts', { id: uid('a'), title: q ? q.title + ' check' : 'New assessment', kind: 'quiz', fam: q ? q.fam : 'support', pass: 70, mins: 15,
+      questions: q ? q.must.map((m) => ({ q: 'Give an example from your work of: ' + m.charAt(0).toLowerCase() + m.slice(1) + '.', type: 'open', points: ['a real example', 'what they did themselves', 'the result'], fails: 0 })) : [] });
+    EDIT = null;
+    go({ asmt: a.id, edit: '1' });
+    if (q) toast('AiMY drafted ' + plural(a.questions.length, 'question') + ' from the success profile', () => { unmake('asmts', a); go({ on: 'asmts' }, true); }, 'One per must-have. Change any of them.');
+  }
+  function asmtPage() {
+    const a = asmtOf(S.asmt);
+    const edit = !!S.edit && (isRec() || isHR());
+    const r = resultsOf(a), rates = qRates(a);
+    const worst = rates.reduce((w, x, k) => (x != null && (w == null || x < rates[w]) ? k : w), null);
+    const link = 'talent.flairstech.com/test/' + a.id;
+    return '<div class="s-home">' +
+      '<div class="b-topbar s-block-wide"><button class="s-back" type="button"' + goAttr({ on: 'asmts' }) + '>' + svg('back', 14) + 'Back to Assessments</button>' +
+        (isRec() || isHR() ? '<span class="b-draft-acts">' + (edit ? '<button class="btn btn-brand btn-sm" type="button"' + goAttr({ asmt: a.id }) + '>Done</button>'
+          : '<button class="b-ghost" type="button"' + goAttr({ asmt: a.id, edit: '1' }) + '>Edit</button>') + '</span>' : '') + '</div>' +
+      '<section class="s-rec-head s-block-wide">' +
+        '<span class="s-rec-kind b-kinds">' + fact('goal', 'Assessment') + fact('clock', a.mins + ' minutes') + fact('req', ASMT_KIND[a.kind]) + '</span>' +
+        (edit ? '<input class="b-draft-name" type="text" data-aed="title" value="' + esc(a.title) + '" aria-label="Title">' : '<div class="s-rec-title"><h1 class="s-rec-name">' + esc(a.title) + '</h1></div>') +
+        '<div class="b-cmeta">' +
+          '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">How it is taken</h2><div class="b-cmeta-say">' + (edit
+            ? Object.keys(ASMT_KIND).map((k) => '<button class="filter-chip' + (a.kind === k ? ' active' : '') + '" type="button" data-aset="kind|' + k + '">' + ASMT_KIND[k] + '</button>').join('')
+            : '<p class="b-cmeta-p">' + esc(ASMT_KIND[a.kind]) + '</p>') + '</div></div>' +
+          '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Pass mark</h2><div class="b-cmeta-say">' + (edit
+            ? '<span class="t-step"><button class="b-ghost" type="button" data-aset="pass|-5" aria-label="Lower">−</button><b class="t-step-n">' + a.pass + '%</b><button class="b-ghost" type="button" data-aset="pass|5" aria-label="Higher">+</button></span>'
+            : '<p class="b-cmeta-p"><b>' + a.pass + '%</b></p>') + '</div></div>' +
+          '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Link to share</h2><div class="b-cmeta-say"><p class="b-cmeta-p"><b class="t-link-text">' + esc(link) + '</b></p>' +
+            '<p class="b-cmeta-p t-acts"><button class="s-insight-lnk" type="button" data-copy="https://' + esc(link) + '">Copy the link</button></p></div></div>' +
+        '</div>' +
+      '</section>' +
+      (worst != null && rates[worst] < 40 && !edit ? '<section class="s-insight is-lead s-block-wide" aria-label="What to fix">' +
+        '<div class="s-lead-mark"><svg class="s-insight-mark" viewBox="0 0 18 20" width="14" height="14" aria-hidden="true"><use href="#aimy-logo-small"/></svg><span class="work-state ws-detected">Read off every result</span></div>' +
+        '<div class="s-lead-line"><span class="s-lead-n">' + (100 - rates[worst]) + '%</span><span class="s-lead-say">of the people who took it got Q' + (worst + 1) + ' wrong.</span></div>' +
+        '<p class="s-lead-deck">When nearly everyone misses one question, the question is usually the problem. AiMY can reword it in plainer terms, or you can drop it. Either change is yours to approve.</p>' +
+        '<div class="s-lead-acts"><button class="s-insight-lnk primary" type="button" data-q-reword="' + a.id + '|' + worst + '">Reword it with AiMY</button>' +
+          '<button class="b-ghost" type="button" data-q-del="' + a.id + '|' + worst + '">Drop Q' + (worst + 1) + '</button></div></section>' : '') +
+      '<section class="s-block s-block-wide" aria-label="Questions">' +
+        '<div class="s-camp-list-head"><h2 class="s-block-h">Questions</h2><span class="s-block-say">' + plural(a.questions.length, 'question') + (r.length ? ' · share who got each right' : '') + '</span></div>' +
+        (a.questions.length ? '<div class="t-asq">' + a.questions.map((qq, i) => '<div class="t-asq-row">' +
+          '<span class="t-asq-n">Q' + (i + 1) + '</span>' +
+          '<div class="t-asq-main">' + (edit
+            ? '<textarea class="b-draft-in b-draft-area t-area" rows="2" data-qed="' + i + '|q" aria-label="Question ' + (i + 1) + '">' + esc(qq.q) + '</textarea>' +
+              '<div class="b-cuts">' + [['choice', 'One right answer'], ['open', 'Open answer, scored by AiMY']].map((x) => '<button class="filter-chip' + (qq.type === x[0] ? ' active' : '') + '" type="button" data-qtype="' + i + '|' + x[0] + '">' + x[1] + '</button>').join('') + '</div>' +
+              (qq.type === 'choice' ? (qq.options || []).map((o, k) => '<p class="t-q"><button class="t-check' + (qq.right === k ? ' is-on' : '') + '" type="button" data-qright="' + i + '|' + k + '" aria-pressed="' + (qq.right === k) + '" aria-label="Mark as the right answer">' + (qq.right === k ? svg('check', 12) : '') + '</button>' +
+                '<input class="b-draft-in" type="text" data-qopt="' + i + '|' + k + '" value="' + esc(o) + '" aria-label="Option ' + (k + 1) + '"></p>').join('')
+                : '<input class="b-draft-in" type="text" data-qpts="' + i + '" value="' + esc((qq.points || []).join(', ')) + '" aria-label="What a good answer covers">') +
+              '<p class="t-acts"><button class="b-ghost" type="button" data-q-del="' + a.id + '|' + i + '">Remove</button></p>'
+            : '<p class="t-asq-q">' + esc(qq.q) + '</p>' +
+              (qq.type === 'choice' ? '<p class="b-vfoot">Right answer: ' + esc(qq.options[qq.right]) + '</p>' : '<p class="b-vfoot">A good answer covers: ' + esc((qq.points || []).join('; ')) + '</p>')) +
+          '</div>' +
+          (rates[i] != null && !edit ? '<span class="t-asq-rate' + (rates[i] < 40 ? ' is-low' : '') + '"><b>' + rates[i] + '%</b> right</span>' : '') +
+        '</div>').join('') + '</div>' : '<p class="s-none">No questions yet.</p>') +
+        (edit ? '<p class="t-acts"><button class="s-insight-lnk" type="button" data-q-add="' + a.id + '">Add a question</button></p>' : '') +
+      '</section>' +
+      (r.length && !edit ? '<section class="s-block s-block-wide" aria-label="Results"><div class="s-camp-list-head"><h2 class="s-block-h">Results</h2><span class="s-block-say">' + r.length + ', newest first</span></div>' +
+        '<div class="b-log">' + r.slice().sort((x, y) => (y.doneDay || 0) - (x.doneDay || 0)).slice(0, 20).map((s, i) => { const c = DB.byId[s.cand];
+          return c ? logRow({ tone: '', ico: svg('goal'), who: c.name, meta: logMeta([s.score + '%', s.score >= a.pass ? 'a pass' : 'under the pass mark', reqOf(c).title, sayWhen(s.doneDay != null ? s.doneDay : s.day)]),
+            act: 'data-cand="' + c.id + '"', go: 'Open' }, i) : ''; }).join('') + '</div></section>' : '') +
+    '</div>';
+  }
+  function asmtSet(a, fields, say) {
+    const before = JSON.parse(JSON.stringify({ title: a.title, kind: a.kind, pass: a.pass, questions: a.questions }));
+    put('asmts', a, fields);
+    paint();
+    if (say) toast(say, () => { put('asmts', a, before); paint(); });
+  }
+
+  /* The candidate's side: the test, from its link. */
+  let TAKE = null;
+  function portalTake() {
+    const s = DB.sends.filter((x) => x.id === S.take)[0];
+    if (!s) return '<div class="t-out">' + outsideHead('Assessment', 'FlairsTech careers') + '<p class="s-none">This link has expired.</p></div>';
+    const a = asmtOf(s.asmt), c = DB.byId[s.cand];
+    if (s.status === 'done') return '<div class="t-out">' + outsideHead('Assessment', 'FlairsTech careers') + '<section class="t-out-card t-done">' + successCheck() +
+      '<h1 class="t-out-h">Thank you, ' + esc(first(c.name)) + '. It is in.</h1><p>The recruiting team will be in touch about next steps. We do not share scores; a person reads every result.</p></section></div>';
+    if (!TAKE || TAKE.id !== s.id) TAKE = { id: s.id, a: [] };
+    return '<div class="t-out">' + outsideHead('Assessment', 'FlairsTech careers') +
+      '<section class="t-out-card">' +
+        '<p class="t-out-kicker">' + esc(ASMT_KIND[a.kind]) + ' · about ' + a.mins + ' minutes</p>' +
+        '<h1 class="t-out-h">' + esc(a.title) + '</h1>' +
+        '<p>For ' + esc(reqOf(c).title) + '. ' + (a.kind === 'live' ? 'AiMY asks each question; answer in your own words, out loud or typed.' : 'Answer every question. There is no trick to it.') + '</p>' +
+        '<div class="t-input-wrap" id="wrapTake"><div class="t-input">' + a.questions.map((qq, i) => '<div class="t-dr">' +
+          '<p class="t-dr-must">' + (a.kind === 'live' ? mark(12) + ' ' : '') + 'Q' + (i + 1) + '. ' + esc(qq.q) + '</p>' +
+          (qq.type === 'choice' ? '<div class="b-cuts t-col">' + qq.options.map((o, k) => '<button class="filter-chip' + (TAKE.a[i] === k ? ' active' : '') + '" type="button" data-ans="' + i + '|' + k + '">' + esc(o) + '</button>').join('') + '</div>'
+            : '<textarea class="dial-input t-area" rows="3" data-anstext="' + i + '" aria-label="Your answer">' + esc(TAKE.a[i] || '') + '</textarea>') +
+        '</div>').join('') + '</div><p class="t-error-msg">Answer every question first.</p></div>' +
+        '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-take-submit>Send my answers</button></p>' +
+      '</section></div>';
+  }
+  function takeSubmit() {
+    const s = DB.sends.filter((x) => x.id === TAKE.id)[0];
+    const a = asmtOf(s.asmt), c = DB.byId[s.cand];
+    if (a.questions.some((qq, i) => TAKE.a[i] == null || TAKE.a[i] === '')) { shake('wrapTake'); return; }
+    /* A choice is right or wrong; an open answer is scored against what a
+       good answer covers (fixture: enough said, in enough words). */
+    const answers = a.questions.map((qq, i) => qq.type === 'choice' ? TAKE.a[i] === qq.right : String(TAKE.a[i]).trim().split(/\s+/).length >= 8);
+    const score = Math.round(answers.filter(Boolean).length / answers.length * 100);
+    put('sends', s, { status: 'done', answers: answers, score: score, doneDay: 0 });
+    note(c, 'asmt', 'Finished the ' + a.title + ' assessment: ' + score + '%.');
+    TAKE = null;
+    paint();
+  }
+
+  /* ══ TEMPLATES ═══════════════════════════════════════════════════════════
+     The HR Manager sets the stages each kind of requisition runs, and the
+     agenda each kind of interview follows (New Operations list). Stages are
+     switched on or off in their fixed order, one press each; nothing is
+     dragged. A stage with people on it cannot be switched off. */
+  function templatesPage() {
+    const busy = (k, s) => DB.reqs.some((q) => q.tpl === k && isOpen(q) && DB.byReq[q.id].some((c) => !c.exit && c.stage === s));
+    return '<div class="s-home">' +
+      '<section class="s-block s-block-wide" aria-label="Stage templates">' +
+        '<div class="s-camp-list-head">' + switcher('templates') + '</div>' +
+        aimyBlock({ text: 'Each account runs one of these. A requisition takes its account’s stages when it opens.', from: 'how stages work' }, false) +
+        Object.keys(TEMPLATE).map((k) => '<div class="t-tpl">' +
+          '<h3 class="b-month">' + esc(TEMPLATE_NAME[k] || k) + ' <span class="b-kind">' + ACCOUNTS.filter((a) => a.tpl === k).map((a) => a.name).join(', ') + '</span></h3>' +
+          '<div class="b-cuts">' + STAGE_ORDER.map((s) => {
+            const on = TEMPLATE[k].indexOf(s) >= 0;
+            const locked = STAGE_FIXED[s];
+            return '<button class="filter-chip' + (on ? ' active' : '') + '" type="button"' + (locked ? ' disabled title="Every pipeline needs this stage"' : ' data-tpl-toggle="' + k + '|' + s + '"') +
+              ' aria-pressed="' + on + '">' + esc(STAGE[s].label) + (busy(k, s) && on ? '<span class="b-cut-n">in use</span>' : '') + '</button>';
+          }).join('') + '</div></div>').join('') +
+      '</section>' +
+      '<section class="s-block s-block-wide" aria-label="Interview templates">' +
+        '<div class="s-camp-list-head"><h2 class="s-block-h">Interview templates</h2><span class="s-block-say">the agenda each interviewer follows · AiMY adds what the CV is silent on</span></div>' +
+        DB.ivtpls.map((t) => '<div class="t-tpl"><h3 class="b-month">' + esc(t.title) + '</h3>' +
+          t.items.map((x, i) => '<p class="t-q"><span class="t-asq-n">' + (i + 1) + '</span><input class="b-draft-in t-grow" type="text" data-tpled="' + t.id + '|' + i + '" value="' + esc(x) + '" aria-label="Agenda item ' + (i + 1) + '">' +
+            '<button class="b-ghost" type="button" data-tpl-del="' + t.id + '|' + i + '" aria-label="Remove">Remove</button></p>').join('') +
+          '<p class="t-acts"><button class="s-insight-lnk" type="button" data-tpl-add="' + t.id + '">Add an item</button></p></div>').join('') +
+      '</section></div>';
+  }
+  function toggleStage(k, s) {
+    const on = TEMPLATE[k].indexOf(s) >= 0;
+    if (on && DB.reqs.some((q) => q.tpl === k && isOpen(q) && DB.byReq[q.id].some((c) => !c.exit && c.stage === s))) {
+      toast('Somebody is at the ' + lower(STAGE[s].label) + ' on an open requisition', null, 'Move them on first, then switch the stage off.');
+      return;
+    }
+    const before = TEMPLATE[k].slice();
+    TEMPLATE[k] = STAGE_ORDER.filter((x) => (x === s ? !on : TEMPLATE[k].indexOf(x) >= 0));
+    D.tpl[k] = TEMPLATE[k].slice();
+    save();
+    paint();
+    toast((on ? 'Switched off: ' : 'Added: ') + STAGE[s].label, () => { TEMPLATE[k] = before; D.tpl[k] = before.slice(); save(); paint(); }, 'For ' + (TEMPLATE_NAME[k] || k) + '.');
+  }
+
+  /* ══ REPORTS ═════════════════════════════════════════════════════════════
+     Every number the Recruitment dashboard shows today, with one definition
+     each, so moving off it loses nothing (audit, "insights"). Scoped to the
+     desk: a recruiter sees their own, a hiring manager theirs, the HR
+     Manager everyone's. */
+  function reportsPage() {
+    const reqs = deskReqs().filter((q) => q.state !== 'draft');
+    const cands = reqs.reduce((l, q) => l.concat(DB.byReq[q.id]), []);
+    const reached = (k) => cands.filter((c) => { const q = reqOf(c); return rank(q, k) >= 0 && rank(q, c.maxAt) >= rank(q, k); }).length;
+    const n = (k) => reqs.filter((q) => q.state === k).length;
+    const seats = reqs.reduce((s, q) => s + q.seats, 0);
+    const hiredSeats = reqs.filter((q) => q.state === 'filled' || q.state === 'started').reduce((s, q) => s + q.seats, 0);
+    const offers = DB.offers.filter((o) => DB.byId[o.cand] && reqs.indexOf(reqOf(DB.byId[o.cand])) >= 0);
+    const hiredO = offers.filter((o) => o.status === 'accepted' || o.status === 'joined');
+    const toHire = hiredO.length ? Math.round(hiredO.reduce((s, o) => s + (o.sentDay - reqOf(DB.byId[o.cand]).opened), 0) / hiredO.length) : null;
+    const toJoin = hiredO.length ? Math.round(hiredO.reduce((s, o) => s + (o.joinDay - reqOf(DB.byId[o.cand]).opened), 0) / hiredO.length) : null;
+    const sendAvg = avgSent(reqs);
+    const pct = (a, b) => (b ? Math.round(a / b * 100) + '%' : 'none yet');
+    const phones = reached('hr') + cands.filter((c) => c.stage === 'phone' && c.exit).length;
+    const tiles = [
+      ['Requisitions', reqs.length, n('cclient') + ' cancelled by the client, ' + n('cmgr') + ' by the manager'],
+      ['Seats', seats, hiredSeats + ' hired, ' + reqs.filter(isOpen).reduce((s, q) => s + q.seats, 0) + ' still open'],
+      ['Days to send profiles', sendAvg != null ? sendAvg : '·', 'from opening to the first profile sent, on average'],
+      ['Days to hire', toHire != null ? toHire : '·', 'from opening to the offer, on average'],
+      ['Days to join', toJoin != null ? toJoin : '·', 'from opening to day one, on average'],
+      ['HR after the phone screen', pct(reached('hr'), phones), 'of people who passed the call went on to HR'],
+      ['Technical after HR', pct(reached('tech'), reached('hr')), 'of people past HR reached the technical round'],
+      ['Client after technical', pct(reached('client'), reached('sent')), 'of profiles sent got a client interview'],
+    ];
+    const byAcc = ACCOUNTS.map((a) => ({ a: a, n: reqs.filter((q) => q.acc === a.id).length, open: reqs.filter((q) => q.acc === a.id && isOpen(q)).length,
+      hired: reqs.filter((q) => q.acc === a.id && (q.state === 'filled' || q.state === 'started')).length })).filter((x) => x.n).sort((x, y) => y.n - x.n);
+    const maxAcc = Math.max(1, ...byAcc.map((x) => x.n));
+    const titles = {};
+    reqs.forEach((q) => { titles[q.title] = (titles[q.title] || 0) + 1; });
+    const byTitle = Object.keys(titles).map((t) => ({ t: t, n: titles[t] })).sort((x, y) => y.n - x.n).slice(0, 8);
+    const f = ['phone', 'hr', 'tech', 'sent', 'client', 'offer', 'accepted'].map((k) => ({ k: k, n: k === 'phone' ? phones : reached(k) }));
+    const dropped = offers.filter((o) => o.status === 'declined').length;
+    const repl = reqs.filter((q) => q.kind === 'replacement').length;
+    const bill = reqs.filter((q) => q.billable).length;
+    const bar = (v, max, tone) => '<span class="t-fn-track"><span class="t-fn-fill' + (tone ? ' ' + tone : '') + '" style="width:' + (v / max * 100).toFixed(1) + '%"></span></span>';
+    return '<div class="s-home">' +
+      '<section class="s-block s-block-wide" aria-label="Reports">' +
+        '<div class="s-camp-list-head">' + switcher('reports') + '<span class="s-block-say">' + esc(isHR() ? 'Everyone’s requisitions' : isHM() ? 'The requisitions you asked for' : 'Your requisitions') + '</span></div>' +
+        '<div class="t-kpis">' + tiles.map((t) => '<div class="t-kpi"><span class="t-kpi-cap">' + esc(t[0]) + '</span><b class="t-kpi-n">' + esc(t[1]) + '</b><span class="t-kpi-say">' + esc(t[2]) + '</span></div>').join('') + '</div>' +
+      '</section>' +
+      '<section class="s-block s-block-wide" aria-label="Funnel"><div class="s-camp-list-head"><h2 class="s-block-h">The funnel</h2><span class="s-block-say">everyone who reached each stage · share of the stage before</span></div>' +
+        '<div class="t-funnel">' + f.map((s, i) => '<div class="t-fn-row' + (i && f[i - 1].n && s.n / f[i - 1].n < 0.4 ? ' is-leak' : '') + '"><span class="t-fn-label">' + esc(STAGE[s.k].label) + '</span>' +
+          bar(s.n, Math.max(1, f[0].n)) + '<span class="t-fn-n"><b>' + s.n + '</b>' + (i && f[i - 1].n ? ' · ' + Math.round(s.n / f[i - 1].n * 100) + '%' : '') + '</span></div>').join('') + '</div>' +
+        aimyBlock({ text: 'The biggest drop is at the client: <b>' + pct(reached('client'), reached('sent')) + '</b> of profiles sent got an interview. ' + dropped + ' offers were declined. ' +
+          repl + ' of ' + reqs.length + ' requests were replacements, and ' + bill + ' are billable.', from: 'every requisition in view' }) +
+      '</section>' +
+      '<section class="s-block s-block-wide" aria-label="By account"><div class="s-camp-list-head"><h2 class="s-block-h">By account</h2><span class="s-block-say">requests · open · filled</span></div>' +
+        '<div class="t-funnel">' + byAcc.map((x) => '<button class="t-fn-row t-fn-btn" type="button" data-acc="' + x.a.id + '"><span class="t-fn-label">' + esc(x.a.name) + '</span>' + bar(x.n, maxAcc) +
+          '<span class="t-fn-n"><b>' + x.n + '</b> · ' + x.open + ' · ' + x.hired + '</span></button>').join('') + '</div>' +
+      '</section>' +
+      '<section class="s-block s-block-wide" aria-label="By role"><div class="s-camp-list-head"><h2 class="s-block-h">By role</h2><span class="s-block-say">requests</span></div>' +
+        '<div class="t-funnel">' + byTitle.map((x) => '<div class="t-fn-row"><span class="t-fn-label">' + esc(x.t) + '</span>' + bar(x.n, byTitle[0].n) + '<span class="t-fn-n"><b>' + x.n + '</b></span></div>').join('') + '</div>' +
+      '</section>' +
+      (isHR() ? '<section class="s-block s-block-wide" aria-label="By recruiter"><div class="s-camp-list-head"><h2 class="s-block-h">By recruiter</h2><span class="s-block-say">open requisitions · people in progress · days to send profiles</span></div>' +
+        aimyBlock({ text: 'Per-person numbers, as the dashboard shows them today. Whether these move to AiMY QA is still a decision for the team.', from: 'the audit, decision 5' }) +
+        '<div class="t-funnel">' + RECRUITERS.map((rc) => { const mineR = DB.reqs.filter((q) => q.rec === rc.id);
+          const act = mineR.filter(isOpen).reduce((s, q) => s + activeOf(q).length, 0);
+          return '<div class="t-fn-row"><span class="t-fn-label">' + esc(rc.name) + '</span>' + bar(mineR.filter(isOpen).length, 8) + '<span class="t-fn-n"><b>' + mineR.filter(isOpen).length + '</b> · ' + act + ' · ' + (avgSent(mineR) != null ? avgSent(mineR) : '·') + '</span></div>'; }).join('') + '</div>' +
+      '</section>' : '') +
+    '</div>';
+  }
+
+  /* ══ THE OTHER DESKS ═════════════════════════════════════════════════════ */
+  function deskHome() { return isHM() ? hmHome() : isHR() ? hrHome() : isClient() ? clientHome() : homePage(); }
+  /* What waits on this desk, each with the one way to answer it. Feeds the
+     home page, the rail and the bell alike, so they cannot disagree. */
+  function asks() {
+    const out = [];
+    if (isHM()) {
+      DB.offers.filter((o) => o.status === 'approving' && o.hm !== 'ok' && DB.byId[o.cand] && reqOf(DB.byId[o.cand]).hm === DESK).forEach((o) => {
+        const c = DB.byId[o.cand];
+        out.push({ k: 'offer', c: c, head: 'Approve ' + first(c.name) + '’s offer', body: money(o.salary) + ' for ' + reqOf(c).title + '. ' + BU_DIRECTOR + ' approves the same packet at the same time.', go: { approve: o.id, by: 'hm' }, verb: 'Open the packet' });
+      });
+      DB.ivs.filter((v) => v.status === 'owed' && v.by.indexOf(me().name) === 0).forEach((v) => {
+        const c = DB.byId[v.cand];
+        out.push({ k: 'debrief', c: c, head: 'Your debrief on ' + c.name, body: STAGE[v.stage].label + ' ' + sayWhen(v.day) + '. About two minutes.', go: { debrief: v.id }, verb: 'Write it' });
+      });
+      deskReqs().filter(isOpen).forEach((q) => activeOf(q).filter((c) => c.stage === 'tech' && c.since <= 2).forEach((c) => {
+        out.push({ k: 'new', c: c, head: c.name + ' is on your shortlist', body: 'Advanced to the technical round for ' + q.title + '. ' + evMet(c) + ' of ' + c.ev.length + ' must-haves met in the CV.', go: { cand: c.id }, verb: 'See them' });
+      }));
+    } else if (isClient()) {
+      deskReqs().filter(isOpen).forEach((q) => activeOf(q).filter((c) => c.stage === 'sent').forEach((c) => {
+        out.push({ k: 'sent', c: c, head: c.name + ' for ' + q.title, body: 'Sent ' + days(c.since) + ' ago. ' + evMet(c) + ' of ' + c.ev.length + ' must-haves met, verified in our interviews.', go: { cand: c.id }, verb: 'Decide', yes: true });
+      }));
+      DB.ivs.filter((v) => v.status === 'owed' && (v.stage === 'client' || v.stage === 'ctech') && reqOf(DB.byId[v.cand]).acc === me().acc).forEach((v) => {
+        const c = DB.byId[v.cand];
+        out.push({ k: 'debrief', c: c, head: 'How did ' + first(c.name) + '’s interview go?', body: STAGE[v.stage].label + ' ' + sayWhen(v.day) + '. Your feedback goes to the recruiter.', go: { debrief: v.id }, verb: 'Give feedback' });
+      });
+    } else if (isHR()) {
+      DB.offers.filter((o) => o.status === 'approving').forEach((o) => {
+        const c = DB.byId[o.cand];
+        out.push({ k: 'offer', c: c, head: first(c.name) + '’s offer is waiting on ' + (o.hm !== 'ok' && o.bu !== 'ok' ? 'both approvers' : o.hm !== 'ok' ? hmOf(reqOf(c)).name : BU_DIRECTOR),
+          body: reqOf(c).title + ', ' + money(o.salary) + '.', go: { cand: c.id }, verb: 'See the offer' });
+      });
+    }
+    return out;
+  }
+  function deskBrief(title, lines, starts) {
+    return '<section class="slv s-block-wide">' +
+      '<div class="slv-head">' + mark(18) + '<h1 class="slv-title">' + esc(title) + '</h1><span class="slv-time">' + sayDay(0) + '</span></div>' +
+      '<div class="slv-body">' + lines.map((l) => '<p class="slv-line">' + l + '</p>').join('') + '</div>' +
+      (starts ? '<div class="s-starts-wrap"><span class="s-starts-cap">Start</span><div class="s-starts">' + starts.map((s) => '<button class="s-start" type="button"' + (s.go ? goAttr(s.go) : ' data-' + s.data) + '>' +
+        '<span class="s-start-top"><span class="s-start-label">' + esc(s.label) + '</span><span class="s-start-n">' + (s.n || '​') + '</span></span>' +
+        '<span class="s-start-why">' + esc(s.why) + '</span></button>').join('') + '</div></div>' : '') +
+    '</section>';
+  }
+  function askRows(list) {
+    return '<div class="b-owed">' + list.map((x, i) => '<div class="b-owed-row t-row" style="--i:' + Math.min(i, 8) + '">' +
+      '<span class="b-owed-sev" aria-hidden="true"></span>' +
+      '<button class="b-owed-main t-row-open" type="button"' + goAttr({ cand: x.c.id }) + '><span class="b-owed-head"><span class="b-owed-type">' + esc(x.head) + '</span></span>' +
+        '<span class="b-owed-body">' + esc(x.body) + '</span></button>' +
+      (x.yes ? '<span class="t-acts"><button class="b-ghost" type="button" data-out="' + x.c.id + '|clientno">Pass</button>' +
+        '<button class="b-owed-go t-row-go" type="button" data-move="' + x.c.id + '|client">Meet them</button></span>'
+        : '<button class="b-owed-go t-row-go" type="button"' + goAttr(x.go) + '>' + esc(x.verb) + '</button>') +
+    '</div>').join('') + '</div>';
+  }
+  function hmHome() {
+    const a = asks();
+    const reqs = deskReqs().filter((q) => q.state !== 'draft');
+    const open = reqs.filter(isOpen);
+    const risky = open.filter((q) => health(q).risk);
+    const accs = ACCOUNTS.filter((x) => open.some((q) => q.acc === x.id));
+    return '<div class="s-home">' +
+      deskBrief('Today', [
+        a.length ? '<b>' + plural(a.length, 'ask') + '</b> waiting on you: ' + ['offer', 'debrief', 'new'].map((k) => { const n = a.filter((x) => x.k === k).length; return n ? n + ' ' + { offer: n === 1 ? 'offer to approve' : 'offers to approve', debrief: n === 1 ? 'debrief' : 'debriefs', new: 'new on your shortlists' }[k] : null; }).filter(Boolean).join(', ') + '.' : 'Nothing waits on you today.',
+        '<b>' + plural(open.length, 'requisition') + '</b> open across ' + plural(accs.length, 'account') + (risky.length ? ', and <b>' + risky.length + '</b> ' + (risky.length === 1 ? 'is' : 'are') + ' likely to miss the date.' : '.'),
+        'You see candidates once the recruiter advances them; until then they are a count.',
+      ], [
+        { label: 'Approve offers', n: a.filter((x) => x.k === 'offer').length, why: 'one packet, approved in parallel', go: a.filter((x) => x.k === 'offer')[0] ? a.filter((x) => x.k === 'offer')[0].go : { on: 'reqs' } },
+        { label: 'Debriefs you owe', n: a.filter((x) => x.k === 'debrief').length, why: 'two minutes each', go: a.filter((x) => x.k === 'debrief')[0] ? a.filter((x) => x.k === 'debrief')[0].go : { on: 'reqs' } },
+        { label: 'Ask for a hire', why: 'or clone one you had before', data: 'new-req' },
+        { label: 'Reports', why: 'your requisitions, in numbers', go: { on: 'reports' } },
+      ]) +
+      '<section class="s-block s-block-wide"><div class="s-camp-list-head">' + switcher('') + '</div>' +
+        (a.length ? askRows(a) : '<p class="s-none">Nothing is waiting on you.</p>') + '</section>' +
+      accs.map((x) => '<section class="s-block s-block-wide" aria-label="' + esc(x.name) + '"><div class="s-camp-list-head"><h2 class="s-block-h">' + esc(x.name) + '</h2>' +
+        '<span class="s-block-say">' + plural(open.filter((q) => q.acc === x.id).length, 'open requisition') + '</span></div>' +
+        '<div class="b-grid">' + open.filter((q) => q.acc === x.id).map((q, i) => '<div class="b-slot">' + reqCard(q, i) + '</div>').join('') + '</div></section>').join('') +
+    '</div>';
+  }
+  function hrHome() {
+    const all = DB.reqs.filter((q) => q.state !== 'draft');
+    const open = all.filter(isOpen);
+    const risky = open.filter((q) => health(q).risk);
+    const owed = DB.ivs.filter((v) => v.status === 'owed').sort((x, y) => x.day - y.day);
+    const appr = DB.offers.filter((o) => o.status === 'approving');
+    const load = RECRUITERS.map((rc) => ({ rc: rc, n: DB.reqs.filter((q) => q.rec === rc.id && isOpen(q)).length,
+      p: DB.reqs.filter((q) => q.rec === rc.id && isOpen(q)).reduce((s, q) => s + activeOf(q).length, 0) })).sort((x, y) => y.n - x.n);
+    const avgLoad = load.reduce((s, x) => s + x.n, 0) / load.length;
+    const lp = DB.asmts.map((a) => { const r = qRates(a); const w = r.reduce((m, x, k) => (x != null && (m == null || x < r[m]) ? k : m), null); return w != null && r[w] < 40 ? { a: a, i: w, r: r[w] } : null; }).filter(Boolean);
+    return '<div class="s-home">' +
+      deskBrief('Today', [
+        '<b>' + risky.length + ' of ' + open.length + '</b> open requisitions are likely to miss their date.',
+        appr.length ? '<b>' + plural(appr.length, 'offer') + '</b> ' + (appr.length === 1 ? 'is' : 'are') + ' waiting on an approver. ' + (owed.length ? '<b>' + plural(owed.length, 'debrief') + '</b> ' + (owed.length === 1 ? 'is' : 'are') + ' owed, the oldest from ' + sayWhen(owed[0].day) + '.' : '') : 'No offer is waiting on an approver.',
+        load[0].n > avgLoad * 1.4 ? '<b>' + esc(load[0].rc.name) + '</b> carries ' + load[0].n + ' open requisitions against an average of ' + Math.round(avgLoad) + '.' : 'The load is even across the team.',
+      ], [
+        { label: 'At risk', n: risky.length, why: 'each with its reason', go: { on: 'reqs', q: 'risk' } },
+        { label: 'Templates', why: 'stages and interview agendas', go: { on: 'templates' } },
+        { label: 'Assessments', n: lp.length || null, why: lp.length ? 'questions most people fail' : 'all reading well', go: { on: 'asmts' } },
+        { label: 'Reports', why: 'every number from the dashboard', go: { on: 'reports' } },
+      ]) +
+      '<section class="s-block s-block-wide"><div class="s-camp-list-head">' + switcher('') + '<span class="s-block-say">likely to miss their date · the reason is on each row</span></div>' +
+        (risky.length ? '<div class="b-owed">' + risky.map((q, i) => '<div class="b-owed-row t-row" style="--i:' + Math.min(i, 8) + '"><span class="b-owed-sev" aria-hidden="true"></span>' +
+          '<button class="b-owed-main t-row-open" type="button"' + goAttr({ req: q.id }) + '><span class="b-owed-head"><span class="b-owed-type">' + esc(q.title) + '</span>' +
+            '<span class="b-owed-by">' + esc(accOf(q).name) + ' · ' + esc((RECRUITERS.filter((x) => x.id === q.rec)[0] || {}).name) + '</span>' + tag('At risk', 'warn') + '</span>' +
+            '<span class="b-owed-body">' + riskSay(q, health(q)) + '</span></button>' +
+          '<span class="t-acts">' + assignMenu(q) + '</span></div>').join('') + '</div>' : '<p class="s-none">Nothing is at risk.</p>') +
+      '</section>' +
+      (appr.length ? '<section class="s-block s-block-wide"><div class="s-camp-list-head"><h2 class="s-block-h">Offers waiting on an approver</h2><span class="s-block-say">' + appr.length + '</span></div>' + askRows(asks()) + '</section>' : '') +
+      (owed.length ? '<section class="s-block s-block-wide"><div class="s-camp-list-head"><h2 class="s-block-h">Feedback owed</h2><span class="s-block-say">items, not people · oldest first</span></div>' +
+        '<div class="b-log">' + owed.slice(0, 8).map((v, i) => { const c = DB.byId[v.cand]; return logRow({ tone: '', ico: svg('users'), who: STAGE[v.stage].label + ' for ' + reqOf(c).title,
+          meta: logMeta([v.by, 'held ' + sayWhen(v.day)]), act: 'data-cand="' + c.id + '"', go: 'Open' }, i); }).join('') + '</div></section>' : '') +
+      '<section class="s-block s-block-wide"><div class="s-camp-list-head"><h2 class="s-block-h">The team’s load</h2><span class="s-block-say">open requisitions · people in progress</span></div>' +
+        '<div class="t-funnel">' + load.map((x) => '<div class="t-fn-row"><span class="t-fn-label">' + esc(x.rc.name) + '</span><span class="t-fn-track"><span class="t-fn-fill" style="width:' + (x.n / Math.max(1, load[0].n) * 100).toFixed(1) + '%"></span></span>' +
+          '<span class="t-fn-n"><b>' + x.n + '</b> · ' + x.p + '</span></div>').join('') + '</div></section>' +
+      (lp.length ? '<section class="s-block s-block-wide"><div class="s-camp-list-head"><h2 class="s-block-h">Learning proposals</h2><span class="s-block-say">AiMY proposes, you approve</span></div>' +
+        '<div class="b-owed">' + lp.map((x, i) => '<div class="b-owed-row t-row" style="--i:' + i + '"><span class="b-owed-sev" aria-hidden="true"></span>' +
+          '<button class="b-owed-main t-row-open" type="button" data-asmt="' + x.a.id + '"><span class="b-owed-head"><span class="b-owed-type">Reword Q' + (x.i + 1) + ' of ' + esc(x.a.title) + '</span></span>' +
+          '<span class="b-owed-body">Only ' + x.r + '% get it right. When nearly everyone misses one question, the question is usually the problem.</span></button>' +
+          '<button class="b-owed-go t-row-go" type="button" data-q-reword="' + x.a.id + '|' + x.i + '">Reword it</button></div>').join('') + '</div></section>' : '') +
+    '</div>';
+  }
+  function clientHome() {
+    const a = asks();
+    const reqs = deskReqs();
+    const open = reqs.filter(isOpen);
+    const sent = a.filter((x) => x.k === 'sent');
+    const booked = DB.ivs.filter((v) => v.status === 'booked' && (v.stage === 'client' || v.stage === 'ctech') && reqOf(DB.byId[v.cand]).acc === me().acc);
+    return '<div class="s-home">' +
+      deskBrief('Today', [
+        sent.length ? '<b>' + plural(sent.length, 'profile') + '</b> ' + (sent.length === 1 ? 'waits' : 'wait') + ' on your answer. Meet them, or pass with a reason.' : 'No profiles are waiting on you.',
+        booked.length ? '<b>' + plural(booked.length, 'interview') + '</b> booked with your team, the next ' + sayWhen(booked.sort((x, y) => x.day - y.day)[0].day) + '.' : 'No interviews are booked with your team.',
+        '<b>' + plural(open.length, 'request') + '</b> open with us. Your account manager is ' + esc(hmOf(reqs[0] || { hm: 'rania' }).name) + '.',
+      ], [
+        { label: 'Profiles to decide', n: sent.length, why: 'meet them or pass', go: sent[0] ? sent[0].go : { on: 'reqs' } },
+        { label: 'Feedback owed', n: a.filter((x) => x.k === 'debrief').length, why: 'two minutes each', go: a.filter((x) => x.k === 'debrief')[0] ? a.filter((x) => x.k === 'debrief')[0].go : { on: 'reqs' } },
+        { label: 'Ask for a hire', why: 'your account manager talks it through', data: 'client-request' },
+      ]) +
+      '<section class="s-block s-block-wide"><div class="s-camp-list-head">' + switcher('') + '</div>' +
+        (a.length ? askRows(a) : '<p class="s-none">Nothing is waiting on you.</p>') + '</section>' +
+      '<section class="s-block s-block-wide"><div class="s-camp-list-head"><h2 class="s-block-h">Your requests</h2><span class="s-block-say">' + open.length + ' open</span></div>' +
+        '<div class="b-grid">' + open.map((q, i) => '<div class="b-slot">' + reqCard(q, i) + '</div>').join('') + '</div></section>' +
+    '</div>';
+  }
+
+  /* ══ THE CAREERS PAGE AND THE CANDIDATE'S OWN PROFILE ════════════════════
+     From the link a requisition carries once it is published. Only a
+     published role is shown, and a client-linked one never names the
+     client. The candidate applies by talking to AiMY: drop a CV, AiMY reads
+     it, asks only for what is missing, takes consent, and hands back a link
+     to their own profile (New Operations list). */
+  let APPLY = null;
+  function portalApply() {
+    const q = DB.reqById[S.apply];
+    const head = outsideHead('FlairsTech careers', 'Work with us');
+    if (!q || !q.published || !isOpen(q)) return '<div class="t-out">' + head + '<section class="t-out-card"><h1 class="t-out-h">This role is not open to applications.</h1>' +
+      '<p>It may have been filled or taken down. Other roles are on the careers page.</p></section></div>';
+    if (!APPLY || APPLY.req !== q.id) APPLY = { req: q.id, step: 'hello', i: 0, f: null, consent: false, wa: false };
+    const said = [];
+    const ai = (t) => said.push('<div class="t-chat-ai">' + mark(14) + '<p>' + t + '</p></div>');
+    const you = (t) => said.push('<div class="t-chat-you"><p>' + esc(t) + '</p></div>');
+    ai('Hi. I can take your application for <b>' + esc(q.title) + '</b> right here. Drop your CV in and I will read it; you only fill in what it does not say.');
+    let input = '';
+    if (APPLY.step === 'hello') {
+      input = '<label class="t-drop t-drop-sm" for="applyFile">' + svg('upload', 18) + '<b>Attach your CV</b><span>PDF or Word</span><input class="t-file" id="applyFile" type="file" accept=".pdf,.doc,.docx" data-apply-file></label>' +
+        '<p class="t-acts"><button class="s-insight-lnk" type="button" data-apply-sample>Use a sample CV</button></p>';
+    } else if (APPLY.step === 'reading') {
+      you(APPLY.file);
+      said.push('<div class="t-chat-ai">' + mark(14) + '<p><span class="t-shimmer" data-text="Reading your CV">Reading your CV</span></p></div>');
+    } else {
+      you(APPLY.file);
+      const f = APPLY.f;
+      ai('Thanks, ' + esc(first(f.name)) + '. I read ' + plural(f.years, 'year') + ' of experience, now ' + esc(f.at.charAt(0).toLowerCase() + f.at.slice(1)) + '.' +
+        (APPLY.cv.phone ? '' : ' <b>Your CV has no phone number.</b> Add one so the recruiter can call you.'));
+      if (APPLY.step === 'done') {
+        ai('Sent. A person on the recruiting team reads every application, and you will hear back either way.');
+        input = '<div class="t-done">' + successCheck() + '<p>Your own profile, to see where you stand and update your details:</p>' +
+          '<p><b class="t-link-text">' + esc(profileLink(DB.byId[APPLY.cand])) + '</b></p>' +
+          '<p class="t-acts"><button class="s-insight-lnk primary" type="button"' + goAttr({ me: DB.byId[APPLY.cand].pid }) + '>Open my profile</button></p></div>';
+      } else {
+        input = '<div class="t-apply-form">' +
+          '<label class="dial-cap" for="applyPhone">Phone</label><input class="dial-input" id="applyPhone" type="tel" data-apply-in="phone" value="' + esc(f.phone || '') + '" placeholder="+20 10 1234 5678">' +
+          '<label class="dial-cap" for="applyMail">Email</label><input class="dial-input" id="applyMail" type="email" data-apply-in="email" value="' + esc(f.email || '') + '">' +
+          '<div class="t-input-wrap" id="wrapConsent"><div class="t-input">' +
+            '<p class="t-q"><button class="t-check' + (APPLY.consent ? ' is-on' : '') + '" type="button" data-apply-consent="consent" aria-pressed="' + APPLY.consent + '" aria-label="Agree to the use of my CV">' + (APPLY.consent ? svg('check', 12) : '') + '</button>' +
+              '<span>I agree to my CV and details being used for this application. A person decides; AiMY organises. <b>Required</b></span></p>' +
+            '<p class="t-q"><button class="t-check' + (APPLY.wa ? ' is-on' : '') + '" type="button" data-apply-consent="wa" aria-pressed="' + APPLY.wa + '" aria-label="WhatsApp updates">' + (APPLY.wa ? svg('check', 12) : '') + '</button>' +
+              '<span>Also update me on WhatsApp about this application. Optional.</span></p>' +
+          '</div><p class="t-error-msg">Tick the first box to send your application.</p></div>' +
+          '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-apply-send>Send my application</button></p></div>';
+      }
+    }
+    return '<div class="t-out t-out-wide">' + head +
+      '<div class="t-careers">' +
+        '<section class="t-out-card">' +
+          '<p class="t-out-kicker">' + esc(q.level) + ' · ' + esc(q.place) + ' · ' + esc(q.acc === 'flairs' ? 'FlairsTech' : 'For a ' + q.domain.toLowerCase() + ' client') + '</p>' +
+          '<h1 class="t-out-h">' + esc(q.title) + '</h1>' +
+          '<p>' + esc(String(q.desc || '').replace(/ for [A-Z][\w ]+, a /, ' for a ')) + '</p>' +
+          '<h2 class="t-out-sub">What we look for</h2><ul class="t-out-list">' + q.must.map((m) => '<li>' + esc(m) + '</li>').join('') + '</ul>' +
+          '<p class="b-vfoot">No salary is published. The recruiter talks it through on the first call.</p>' +
+        '</section>' +
+        '<section class="t-out-card t-chat" aria-label="Apply with AiMY">' + said.join('') + input + '</section>' +
+      '</div></div>';
+  }
+  function applyRead(fileName) {
+    const q = DB.reqById[APPLY.req];
+    const list = SAMPLE_CVS[q.fam];
+    const cv = list[(fileName ? fileName.length : 1) % list.length];
+    APPLY.cv = cv;
+    APPLY.file = fileName || cv.file;
+    APPLY.step = 'reading';
+    paint();
+    setTimeout(() => {
+      if (!APPLY || APPLY.step !== 'reading') return;
+      APPLY.step = 'review';
+      APPLY.f = { name: cv.name, phone: cv.phone || '', email: cv.email, at: cv.at, years: cv.years, place: cv.place, langs: cv.langs, skills: cv.skills };
+      paint();
+    }, 1800);
+  }
+  function applySend() {
+    if (!APPLY.consent) { shake('wrapConsent'); return; }
+    const q = DB.reqById[APPLY.req];
+    const f = APPLY.f;
+    const dup = DB.cands.filter((c) => c.name === f.name)[0];
+    const id = uid('k');
+    const c = { id: id, pid: dup ? dup.pid : id, name: f.name, req: q.id, stage: 'applied', exit: null, since: 0, meet: null, fb: false, nudged: null,
+      years: f.years, at: f.at, place: f.place, langs: f.langs, skills: f.skills, source: 'Applied through the link', ev: evFor(q.must, f), maxAt: 'applied',
+      phone: String(f.phone || '').trim() || null, email: f.email, fate: 'pass', dnc: false, badNumber: false, callback: null, applied: 0, wa: APPLY.wa,
+      summary: f.years + ' years, now ' + f.at.charAt(0).toLowerCase() + f.at.slice(1) + '.' };
+    addCand(c);
+    note(c, 'apply', 'Applied on the careers page with AiMY. Consent given' + (APPLY.wa ? ', WhatsApp updates on.' : '.'));
+    APPLY.cand = c.id;
+    APPLY.step = 'done';
+    paint();
+  }
+
+  /* The candidate's own profile. A one-time code to their phone opens it
+     (fixture: any six digits). They see where they stand in plain words,
+     never a score; they can update what they told us, take a test sent to
+     them, or withdraw. */
+  let ME_OK = {};
+  const PLAIN = { sourced: 'We would like to talk to you', applied: 'Received, a recruiter reads it next', assess: 'An assessment is waiting for you', phone: 'A recruiter will call you',
+    hr: 'Interview with HR', tech: 'Technical interview', mgr: 'Interview with the manager', sent: 'Shared with the hiring team', client: 'Interview with the hiring team',
+    ctech: 'Technical interview with the hiring team', offer: 'Offer stage', accepted: 'Offer accepted', joined: 'You have started' };
+  function portalMe() {
+    const list = DB.cands.filter((c) => c.pid === S.me);
+    const head = outsideHead('Your profile', 'FlairsTech careers');
+    if (!list.length) return '<div class="t-out">' + head + '<p class="s-none">This link has expired.</p></div>';
+    const p = list[0];
+    if (!ME_OK[S.me]) return '<div class="t-out">' + head + '<section class="t-out-card">' +
+      '<h1 class="t-out-h">Hi ' + esc(first(p.name)) + '</h1><p>We sent a six-digit code to ' + esc(p.phone ? p.phone.replace(/\d(?=\d{4})/g, '•') : 'your email') + '. Enter it to open your profile.</p>' +
+      '<div class="t-input-wrap" id="wrapCode"><input class="dial-input t-input t-code" id="meCode" type="text" inputmode="numeric" maxlength="6" placeholder="6 digits" aria-label="Code">' +
+      '<p class="t-error-msg">That needs six digits.</p></div>' +
+      '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-me-code>Open my profile</button></p>' +
+      '<p class="b-vfoot">This prototype accepts any six digits.</p></section></div>';
+    const send = (c) => DB.sends.filter((x) => x.cand === c.id && x.status === 'sent')[0];
+    return '<div class="t-out">' + head +
+      '<section class="t-out-card"><h1 class="t-out-h">' + esc(p.name) + '</h1><p>' + esc(p.at) + '</p>' +
+        '<h2 class="t-out-sub">Your applications</h2>' +
+        list.map((c) => '<div class="t-me-app"><p><b>' + esc(reqOf(c).title) + '</b></p>' +
+          '<p>' + esc(c.exit ? (c.exit === 'withdrew' ? 'You withdrew' : 'Not going further this time. Thank you for your time.') : PLAIN[c.stage]) + '</p>' +
+          (send(c) ? '<p class="t-acts"><button class="s-insight-lnk primary" type="button"' + goAttr({ take: send(c).id }) + '>Take the assessment</button></p>' : '') +
+          (!c.exit && c.stage !== 'joined' && c.stage !== 'accepted' ? '<p class="t-acts"><button class="b-ghost" type="button" data-me-withdraw="' + c.id + '">Withdraw this application</button></p>' : '') +
+        '</div>').join('') +
+        '<h2 class="t-out-sub">What you told us</h2>' +
+        '<div class="t-apply-form">' +
+          '<label class="dial-cap" for="mePhone">Phone</label><input class="dial-input" id="mePhone" type="tel" data-me-in="phone" value="' + esc(p.phone || '') + '">' +
+          '<label class="dial-cap" for="meMail">Email</label><input class="dial-input" id="meMail" type="email" data-me-in="email" value="' + esc(p.email || '') + '">' +
+          '<label class="dial-cap" for="mePlace">Where you live</label><input class="dial-input" id="mePlace" type="text" data-me-in="place" value="' + esc(p.place || '') + '">' +
+          '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-me-save>Save my details</button></p></div>' +
+        '<p class="b-vfoot">You can ask us to delete your profile at any time by replying to any message from us.</p>' +
+      '</section></div>';
+  }
+
+  /* ══ AiMY IN THE BAR ═════════════════════════════════════════════════════
+     The New Operations list asks for every record to be made through an
+     agent as well as the interface. The bar reads what was typed and does
+     it, answering in the card above itself (Sales's peek): open a
+     requisition, find candidates, add one from a CV, draft an assessment,
+     call someone, or say what needs you. Anything else is a search. */
+  function peek(html, acts) {
+    byId('peekBody').innerHTML = html;
+    byId('peekActs').innerHTML = (acts || []).map((a) => '<button class="s-insight-lnk' + (a.primary ? ' primary' : '') + '" type="button"' +
+      (a.go ? goAttr(a.go) : ' data-' + a.data) + ' data-peek-close>' + esc(a.label) + '</button>').join('');
+    byId('aimyPeek').hidden = false;
+  }
+  const peekHide = () => { byId('aimyPeek').hidden = true; };
+  function ask(text) {
+    const t = text.trim();
+    if (!t) return;
+    const lc = t.toLowerCase();
+    const reqMatch = DB.reqs.filter((q) => q.state !== 'draft' && lc.indexOf(q.title.toLowerCase()) >= 0)[0];
+    const role = ROLES.filter((r) => lc.indexOf(r.title.toLowerCase()) >= 0)[0];
+    const accMatch = ACCOUNTS.filter((a) => lc.indexOf(a.name.toLowerCase().split(' ')[0]) >= 0)[0];
+    if (/\b(open|new|create|start|raise|draft)\b.*\b(requisition|req|role|position|vacancy)\b|^(we need|i need|hire)\b/.test(lc) && !isClient()) {
+      const seats = /(\d+)\s*(people|seats|hires|agents|engineers)/.exec(lc);
+      const q = newReq({ title: role ? role.title : '', acc: accMatch ? accMatch.id : undefined, seats: seats ? Number(seats[1]) : 1 });
+      if (q && role) { const f = { title: role.title, seats: q.seats }; aiDraft(f); put('reqs', q, { must: f.must.split('\n'), desc: f.desc }); EDIT = null; paint(); }
+      peek('I drafted <b>' + esc(role ? role.title : 'a new requisition') + '</b>' + (accMatch ? ' for ' + esc(accMatch.name) : '') + '. ' +
+        (role ? 'Press Write it with AiMY for the description and success profile, check them, then open it.' : 'Name the role, then I can write the rest.'), []);
+      return;
+    }
+    if (/\b(find|search|source|look for|looking for)\b/.test(lc) && (isRec() || isHR())) {
+      FIND.q = t; FIND.req = reqMatch ? reqMatch.id : null; FIND.step = 'ask';
+      go({ on: 'find' });
+      runFind();
+      peekHide();
+      return;
+    }
+    if (/\b(add|upload)\b.*\b(cv|candidate|resume)\b/.test(lc) && (isRec() || isHR())) { go({ on: 'add', req: reqMatch ? reqMatch.id : undefined }); return; }
+    if (/\b(assessment|test|quiz)\b/.test(lc) && /\b(draft|create|make|new|write)\b/.test(lc) && (isRec() || isHR())) { newAsmt(reqMatch ? reqMatch.id : null); return; }
+    if (/^call\b/.test(lc) && isRec()) {
+      const who = DB.cands.filter((c) => lc.indexOf(c.name.toLowerCase()) >= 0 || lc.indexOf(first(c.name).toLowerCase() + ' ') >= 0)[0];
+      if (who && startCall(who.id)) { peekHide(); return; }
+    }
+    if (/what needs me|what is waiting|today|my day|waiting on me/.test(lc)) {
+      if (isRec()) {
+        const d = decisions(), tc = toCall(), m = missed();
+        peek('<b>' + plural(d.length, 'decision') + '</b> wait on you, <b>' + plural(tc.length, 'person', 'people') + '</b> to call, and <b>' + plural(m.length, 'missed call') + '</b>.' +
+          (d[0] ? ' The oldest decision is ' + esc(d[0].name) + ', ' + esc(lower(STAGE[d[0].stage].label)) + '.' : ''),
+          [d[0] ? { label: 'Open ' + first(d[0].name), go: { cand: d[0].id }, primary: true } : null, tc.length ? { label: 'Call them in order', data: 'call-all' } : null].filter(Boolean));
+      } else {
+        const a = asks();
+        peek(a.length ? '<b>' + plural(a.length, 'thing') + '</b> wait on you. First: ' + esc(a[0].head) + '.' : 'Nothing waits on you today.', a[0] ? [{ label: a[0].verb, go: a[0].go, primary: true }] : []);
+      }
+      return;
+    }
+    /* A search: names first, then requisitions. */
+    const people = DB.cands.filter((c) => sees(c) && c.name.toLowerCase().indexOf(lc) >= 0 && (isHR() || deskReqs().indexOf(reqOf(c)) >= 0));
+    const reqs = deskReqs().filter((q) => (q.title + ' ' + accOf(q).name).toLowerCase().indexOf(lc) >= 0);
+    if (people.length === 1 && !reqs.length) { go({ cand: people[0].id }); peekHide(); return; }
+    if (!people.length && !reqs.length) { peek('Nothing matches “' + esc(t) + '”. Try a name, a role or an account, or ask me to open a requisition or find candidates.', []); return; }
+    peek('<b>' + plural(people.length, 'candidate') + '</b> and <b>' + plural(reqs.length, 'requisition') + '</b> match “' + esc(t) + '”.',
+      [people[0] ? { label: 'Open ' + people[0].name, go: { cand: people[0].id }, primary: true } : null, { label: 'See the requisitions', go: { on: 'reqs', find: t } }].filter(Boolean));
+  }
+
+  /* After every paint: the accordions keep their state across a repaint
+     only where a person opened them, so nothing to do there; the reveal
+     classes are added a frame late so the transition has a start. */
+  function afterPaint() {
+    document.querySelectorAll('.t-reveal').forEach((el) => { void el.offsetWidth; el.classList.add('is-revealed'); });
+  }
+
+  /* ══ REQUISITIONS: CREATE, EDIT, PUBLISH, CLOSE ═════════════════════════
+     Through the interface or through AiMY (New Operations list). A new one
+     starts as a draft; Open puts it live. Prose sits behind Edit, atomic
+     things (published, on hold) are one press on the record with Undo. */
+  let EDIT = null;
+  function editBuf(kind, rec, init) {
+    if (!EDIT || EDIT.kind !== kind || EDIT.id !== rec.id) EDIT = { kind: kind, id: rec.id, f: init() };
+    return EDIT.f;
+  }
+  const ROLE_BLURB = {
+    support: 'You will answer customers by ticket and phone, work out what broke, and fix it or hand it on with everything the next person needs.',
+    finance: 'You will keep the books straight for a growing client: invoices, collections, reconciliations and a clean month-end close.',
+    ops: 'You will keep the work moving: write down how things are done, spot what slows the team, and fix it with them.',
+  };
+  const LEVELS = ['Junior', 'Mid-level', 'Senior', 'Manager'];
+  const BUDGETS = { Junior: [14000, 20000], 'Mid-level': [20000, 32000], Senior: [32000, 48000], Manager: [40000, 60000] };
+  const famOf = (title) => /account|ledger|payable|receivable|financ|payroll|audit/i.test(title) ? 'finance'
+    : /operation|analyst|process|coordinator/i.test(title) ? 'ops' : 'support';
+  const canEditReq = (q) => !isClient() && (isRec() || isHR() || (isHM() && q.hm === DESK));
+  const money = (n) => 'EGP ' + Number(n).toLocaleString('en-US');
+
+  /* A new requisition's date starts where its stages can actually finish,
+     rounded to a week, so it is not at risk the day it opens. */
+  function expDays(tpl) {
+    const t = TEMPLATE[tpl];
+    let n = 0;
+    for (let i = 0; i < t.indexOf('accepted'); i++) n += STAGE[t[i]].exp;
+    return Math.max(30, Math.ceil(n / 7) * 7);
+  }
+  function newReq(o) {
+    o = o || {};
+    if (isClient()) return;
+    const acc = ACCOUNTS.filter((a) => a.id === (o.acc || (isHM() ? (ACCOUNTS.filter((x) => x.hm === DESK)[0] || {}).id : 'northwind')))[0] || ACCOUNTS[0];
+    const title = o.title || '';
+    const fam = o.fam || famOf(title);
+    const level = o.level || 'Mid-level';
+    const q = {
+      id: uid('r'), title: title, fam: fam, level: level, must: o.must || [], acc: acc.id, tpl: acc.tpl, hm: acc.hm,
+      rec: isRec() ? DESK : 'omar', seats: o.seats || 1, kind: o.kind || 'new', billable: acc.id !== 'flairs',
+      state: 'draft', opened: 0, target: o.target || expDays(acc.tpl), place: o.place || 'Nasr City office', plan: null,
+      domain: acc.domain, published: false, budget: { min: BUDGETS[level][0], max: BUDGETS[level][1] },
+      desc: o.desc || '', asmt: TEMPLATE[acc.tpl].indexOf('assess') >= 0 ? (fam === 'finance' ? 'a3' : fam === 'ops' ? 'a4' : 'a1') : null,
+      askedBy: DESK,
+    };
+    make('reqs', q);
+    EDIT = null;
+    go({ req: q.id });
+    return q;
+  }
+  function cloneReq(q) {
+    const c = newReq({ acc: q.acc, title: q.title, fam: q.fam, level: q.level, must: q.must.slice(), seats: q.seats,
+      kind: 'replacement', place: q.place, desc: q.desc });
+    if (c) toast('Cloned ' + q.title, null, 'A draft with the same profile. Change what is different, then open it.');
+  }
+  /* AiMY drafts the description and the success profile from the title,
+     the level and similar roles filled before. */
+  /* Returns false when nothing like the title was filled before: AiMY then
+     writes from the title alone and says so, rather than borrowing a
+     support profile for a role that is not support. */
+  function aiDraft(f) {
+    const title = String(f.title || '').trim();
+    const exact = ROLES.filter((x) => x.title.toLowerCase() === title.toLowerCase())[0];
+    const known = !title || exact || /support|help ?desk|agent/i.test(title) || famOf(title) !== 'support';
+    const lead = (n) => (f.seats === 1 || n === 1 ? 'a ' : f.seats + ' people as ');
+    if (!known) {
+      f.must = [(f.level === 'Senior' || f.level === 'Manager' ? '5+' : f.level === 'Junior' ? '1+' : '3+') + ' years as a ' + title,
+        'Shows the core skills of the role in work they can point to', 'Fluent English, spoken and written', 'Works well with a remote client team'].join('\n');
+      f.desc = 'We are hiring ' + lead() + title + '. You will join the team as one of them and own your part of the work from the first week.';
+      return false;
+    }
+    const role = exact || ROLES.filter((x) => x.fam === famOf(title))[0];
+    f.must = role.must.join('\n');
+    f.desc = 'We are hiring ' + lead() + (title || role.title) + '. ' + ROLE_BLURB[famOf(title || role.title)];
+    if (!title) f.title = role.title;
+    return true;
+  }
+
+  function reqActs(q) {
+    if (isClient()) return '';
+    return '<span class="b-draft-acts">' +
+      (canEditReq(q) ? '<button class="b-ghost" type="button" data-edit-req="' + q.id + '">Edit</button>' : '') +
+      '<button class="b-ghost" type="button" data-clone="' + q.id + '">Clone it</button>' +
+      (isRec() || isHR() ? '<button class="b-ghost" type="button"' + goAttr({ on: 'find', req: q.id }) + '>Find candidates</button>' +
+        '<button class="b-ghost" type="button"' + goAttr({ on: 'add', req: q.id }) + '>Add a candidate</button>' : '') +
+    '</span>';
+  }
+  const jobLink = (q) => 'talent.flairstech.com/jobs/' + q.id;
+
+  /* Where the requisition is posted, what state it is in, and who works it. */
+  function reqStrip(q) {
+    const closed = !!CLOSED[q.state];
+    const a = q.asmt ? asmtOf(q.asmt) : null;
+    const rec = RECRUITERS.filter((x) => x.id === q.rec)[0];
+    return '<section class="s-block s-block-wide" aria-label="Posting and state">' +
+      '<div class="b-cmeta t-strip">' +
+        '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">On the careers page</h2><div class="b-cmeta-say">' +
+          (q.published
+            ? '<p class="b-cmeta-p"><b class="t-link-text">' + esc(jobLink(q)) + '</b></p><p class="b-cmeta-p">Anyone with the link can read it and apply. Post it on LinkedIn as it is.</p>' +
+              '<p class="b-cmeta-p t-acts"><button class="s-insight-lnk" type="button" data-copy="' + esc('https://' + jobLink(q)) + '">Copy the link</button>' +
+              '<button class="s-insight-lnk" type="button"' + goAttr({ apply: q.id }) + '>Open the page</button>' +
+              (closed ? '' : '<button class="b-ghost" type="button" data-publish="' + q.id + '">Unpublish</button>') + '</p>'
+            : '<p class="b-cmeta-p">Not published. Nobody outside the team can see it.</p>' +
+              (closed ? '' : '<p class="b-cmeta-p t-acts"><button class="s-insight-lnk primary" type="button" data-publish="' + q.id + '">Publish it</button></p>')) +
+        '</div></div>' +
+        '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">State</h2><div class="b-cmeta-say">' +
+          '<p class="b-cmeta-p"><b>' + esc(REQ_STATE[q.state].label) + '</b>' + (q.state === 'open' ? ' since ' + esc(sayDay(q.opened)) : '') + '</p>' +
+          (canEditReq(q) ? '<p class="b-cmeta-p t-acts">' +
+            (q.state === 'open' ? '<button class="b-ghost" type="button" data-req-state="' + q.id + '|hold">Put on hold</button>' : '') +
+            (q.state === 'hold' || closed ? '<button class="b-ghost" type="button" data-req-state="' + q.id + '|open">Reopen</button>' : '') +
+            (!closed ? '<span class="b-menu-wrap"><button class="b-ghost b-menu-open" type="button" data-pickopen="closeMenu' + q.id + '" aria-haspopup="menu">Close it' + svg('down', 14) + '</button>' +
+              '<div class="b-menu" id="closeMenu' + q.id + '" role="menu" hidden>' +
+                [['filled', 'Filled'], ['cclient', 'Cancelled by the client'], ['cmgr', 'Cancelled by the manager']].map((x) =>
+                  '<button class="b-menu-item" type="button" role="menuitem" data-req-state="' + q.id + '|' + x[0] + '"><span class="b-menu-name">' + x[1] + '</span></button>').join('') +
+              '</div></span>' : '') + '</p>' : '') +
+        '</div></div>' +
+        '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Recruiter</h2><div class="b-cmeta-say">' +
+          '<p class="b-cmeta-p"><b>' + esc(rec ? rec.name : 'Not assigned') + '</b></p>' +
+          (isHR() ? '<p class="b-cmeta-p t-acts">' + assignMenu(q) + '</p>' : '') +
+        '</div></div>' +
+        (a ? '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Assessment</h2><div class="b-cmeta-say">' +
+          '<p class="b-cmeta-p"><button class="t-inline-link" type="button" data-asmt="' + a.id + '">' + esc(a.title) + '</button></p>' +
+          '<p class="b-cmeta-p">' + (a.kind === 'live' ? 'A live interview with the AiMY agent' : 'A questionnaire') + ', before the phone screen. Pass mark ' + a.pass + '%.</p>' +
+        '</div></div>' : '') +
+      '</div>' +
+    '</section>';
+  }
+
+  /* THE HR MANAGER ASSIGNS, with AiMY's pick and its reason (Sales's CEO
+     desk: Assign, a menu of every person with what they already carry). */
+  function assignMenu(q) {
+    const load = (id) => DB.reqs.filter((x) => x.rec === id && isOpen(x)).length;
+    const pickId = RECRUITERS.filter((x) => x.id !== q.rec).sort((a, b) => load(a.id) - load(b.id))[0].id;
+    return '<span class="b-menu-wrap"><button class="b-ghost b-menu-open" type="button" data-pickopen="asgn' + q.id + '" aria-haspopup="menu">Reassign' + svg('down', 14) + '</button>' +
+      '<div class="b-menu" id="asgn' + q.id + '" role="menu" hidden><span class="b-menu-cap">Open requisitions each carries</span>' +
+        RECRUITERS.map((x) => '<button class="b-menu-item' + (x.id === q.rec ? ' is-on' : '') + '" type="button" role="menuitem" data-assign="' + q.id + '|' + x.id + '">' +
+          '<span class="b-menu-name">' + esc(x.name) + (x.id === pickId ? ' · AiMY’s pick' : '') + '</span><span class="tel-menu-cc">' + load(x.id) + '</span></button>').join('') +
+      '</div></span>';
+  }
+
+  /* The editor. One page for a draft and for Edit on a live requisition. */
+  function reqEditPage(q) {
+    const isDraft = q.state === 'draft';
+    const f = editBuf('req', q, () => ({ title: q.title, desc: q.desc || '', must: q.must.join('\n'), level: q.level, seats: q.seats,
+      target: q.target, place: q.place, acc: q.acc, tpl: q.tpl, bmin: q.budget ? q.budget.min : '', bmax: q.budget ? q.budget.max : '',
+      kind: q.kind, billable: q.billable, asmt: q.asmt || null }));
+    const chip = (k, v, label) => '<button class="filter-chip' + (String(f[k]) === String(v) ? ' active' : '') + '" type="button" data-set="' + k + '|' + v + '">' + esc(label) + '</button>';
+    const stepper = (k, step, say) => '<span class="t-step"><button class="b-ghost" type="button" data-step="' + k + '|' + (-step) + '" aria-label="Less">−</button>' +
+      '<b class="t-step-n">' + esc(say) + '</b><button class="b-ghost" type="button" data-step="' + k + '|' + step + '" aria-label="More">+</button></span>';
+    const part = (cap, body, wide) => '<div class="b-cmeta-part' + (wide ? ' t-wide' : '') + '"><h2 class="b-cmeta-cap">' + esc(cap) + '</h2><div class="b-cmeta-say">' + body + '</div></div>';
+    const hasAssess = TEMPLATE[f.tpl].indexOf('assess') >= 0;
+    return '<div class="s-home">' +
+      '<div class="b-topbar s-block-wide">' +
+        (isDraft ? '<button class="s-back" type="button" data-trail>' + svg('back', 14) + 'Back</button>'
+          : '<button class="s-back" type="button" data-cancel-edit>' + svg('back', 14) + 'Back to the requisition</button>') +
+        '<span class="b-draft-acts">' +
+          (isDraft ? '<button class="b-ghost" type="button" data-discard-req="' + q.id + '">Discard the draft</button>' +
+              '<button class="btn btn-brand btn-sm" type="button" data-open-req="' + q.id + '">Open the requisition</button>'
+            : '<button class="b-ghost" type="button" data-cancel-edit>Cancel</button>' +
+              '<button class="btn btn-brand btn-sm" type="button" data-save-edit="' + q.id + '">Save</button>') +
+        '</span></div>' +
+      '<section class="s-rec-head s-block-wide">' +
+        '<span class="s-rec-kind b-kinds">' + fact('req', isDraft ? 'New requisition' : 'Editing the requisition') + '</span>' +
+        '<div class="t-input-wrap" id="wrapTitle"><input class="b-draft-name t-input" type="text" data-ed="title" value="' + esc(f.title) + '" ' +
+          'placeholder="Name the role, like Technical Support Engineer" aria-label="Role title" spellcheck="false">' +
+          '<p class="t-error-msg">Give the role a name first.</p></div>' +
+        '<div class="b-cmeta t-edit-grid">' +
+          part('Account', (isDraft || isHR() ? ACCOUNTS.map((a) => chip('acc', a.id, a.name)).join('') : '<p class="b-cmeta-p"><b>' + esc(accOf(q).name) + '</b></p>'), true) +
+          part('Level', LEVELS.map((l) => chip('level', l, l)).join('')) +
+          part('Seats', stepper('seats', 1, plural(f.seats, 'seat'))) +
+          part('Target date', stepper('target', 7, sayDay(f.target)) + '<p class="b-cmeta-p">' + days(Math.max(0, f.target)) + ' from today</p>') +
+          part('Replacement or new', chip('kind', 'replacement', 'Replacement') + chip('kind', 'new', 'New role')) +
+          part('Billing', chip('billable', true, 'Billable') + chip('billable', false, 'Not billable')) +
+          part('Where', '<input class="b-draft-in" type="text" data-ed="place" value="' + esc(f.place) + '" aria-label="Where the job is">') +
+          part('Budget, EGP a month', '<span class="t-range"><input class="b-draft-in t-num" type="text" inputmode="numeric" data-ed="bmin" value="' + esc(f.bmin) + '" aria-label="Lowest">' +
+            '<span>to</span><input class="b-draft-in t-num" type="text" inputmode="numeric" data-ed="bmax" value="' + esc(f.bmax) + '" aria-label="Highest"></span>') +
+          part('Stages', Object.keys(TEMPLATE).map((k) => chip('tpl', k, TEMPLATE_NAME[k] || k)).join('') +
+            '<p class="b-cmeta-p">' + esc(TEMPLATE[f.tpl].filter((k) => k !== 'joined').map((k) => STAGE[k].label).join(' → ')) + '</p>', true) +
+          (hasAssess ? part('Assessment', DB.asmts.map((a) => chip('asmt', a.id, a.title)).join(''), true) : '') +
+        '</div>' +
+        '<div class="b-cmeta b-said">' +
+          '<div class="b-cmeta-part"><div class="b-draft-caprow"><span class="b-cmeta-cap">About the role</span>' +
+            '<button class="b-draft-ai" type="button" data-ai-draft>' + mark(12) + 'Write it with AiMY</button></div>' +
+            '<div class="b-cmeta-say"><textarea class="b-draft-in b-draft-area t-area" rows="3" data-ed="desc" aria-label="About the role" placeholder="What the person will do, in two or three sentences">' + esc(f.desc) + '</textarea></div></div>' +
+          '<div class="b-cmeta-part"><div class="b-draft-caprow"><span class="b-cmeta-cap">Success profile, one must-have per line</span></div>' +
+            '<div class="b-cmeta-say t-input-wrap" id="wrapMust"><textarea class="b-draft-in b-draft-area t-area t-input" rows="5" data-ed="must" aria-label="Must-haves" placeholder="2+ years of L2 software support">' + esc(f.must) + '</textarea>' +
+            '<p class="t-error-msg">Add at least one must-have. Candidates are read against these.</p></div></div>' +
+        '</div>' +
+      '</section>' +
+      aimyBlock({ text: isDraft ? 'Nothing goes live until you open it, and it stays off the careers page until somebody publishes it.' : 'Saving changes the requisition for everyone on it. Candidates are re-read against a changed success profile.', from: 'how requisitions work' }) +
+    '</div>';
+  }
+  /* The editor's buffer, back onto the requisition. */
+  function reqFromBuf(q, f) {
+    const must = String(f.must).split('\n').map((x) => x.trim()).filter(Boolean);
+    const acc = ACCOUNTS.filter((a) => a.id === f.acc)[0];
+    return { title: String(f.title).trim(), desc: String(f.desc).trim(), must: must, level: f.level, seats: f.seats, target: f.target,
+      place: f.place, acc: f.acc, hm: acc.hm, domain: acc.domain, tpl: f.tpl, kind: f.kind, billable: f.billable === true || f.billable === 'true',
+      fam: famOf(f.title), asmt: TEMPLATE[f.tpl].indexOf('assess') >= 0 ? (f.asmt || 'a1') : null,
+      budget: { min: Number(String(f.bmin).replace(/\D/g, '')) || BUDGETS[f.level][0], max: Number(String(f.bmax).replace(/\D/g, '')) || BUDGETS[f.level][1] } };
+  }
+  /* A field that is wrong shakes and says why (transitions.dev error
+     shake), then settles back on its own. */
+  function shake(wrapId) {
+    const wrap = byId(wrapId);
+    if (!wrap) return;
+    const input = wrap.querySelector('.t-input');
+    wrap.classList.add('is-error');
+    input.classList.add('is-error');
+    input.classList.remove('is-shaking');
+    void input.offsetWidth;
+    input.classList.add('is-shaking');
+    setTimeout(() => input.classList.remove('is-shaking'), 300);
+    clearTimeout(wrap._revert);
+    wrap._revert = setTimeout(() => { wrap.classList.remove('is-error'); input.classList.remove('is-error'); }, 3300);
+    input.focus();
+  }
+  function saveReq(q, open) {
+    const f = EDIT.f;
+    const v = reqFromBuf(q, f);
+    if (!v.title) { shake('wrapTitle'); return; }
+    if (!v.must.length) { shake('wrapMust'); return; }
+    const before = JSON.parse(JSON.stringify({ title: q.title, desc: q.desc, must: q.must, level: q.level, seats: q.seats, target: q.target,
+      place: q.place, acc: q.acc, hm: q.hm, domain: q.domain, tpl: q.tpl, kind: q.kind, billable: q.billable, fam: q.fam, asmt: q.asmt, budget: q.budget, state: q.state, opened: q.opened }));
+    if (open) Object.assign(v, { state: 'open', opened: 0, target: v.target > 0 ? v.target : 30 });
+    put('reqs', q, v);
+    /* Candidates already on it are read again against the new profile. */
+    DB.byReq[q.id].forEach((c) => { if (c.ev.length !== q.must.length) write(c, { ev: q.must.map((m, i) => c.ev[i] || 'n') }); });
+    EDIT = null;
+    go({ req: q.id }, true);
+    toast(open ? 'Opened ' + q.title : 'Saved', () => { put('reqs', q, before); paint(); },
+      open ? 'It is live for the team and not on the careers page yet. Publish it when you want applications.' : null);
+  }
+  function setReqState(q, k) {
+    const before = { state: q.state, published: q.published };
+    const f = { state: k };
+    if (CLOSED[k]) f.published = false;
+    put('reqs', q, f);
+    paint();
+    toast(k === 'open' ? 'Reopened' : k === 'hold' ? 'Put on hold' : 'Closed: ' + REQ_STATE[k].label.toLowerCase(),
+      () => { put('reqs', q, before); paint(); }, CLOSED[k] ? 'Taken off the careers page. Candidates still on it are told by a person, not by AiMY.' : null);
+  }
+
+  /* ── ONE ACCOUNT ── Sales's account record, as a client account: what
+     they asked for, what we sent, and how much of it they took. */
+  function accPage() {
+    const a = ACCOUNTS.filter((x) => x.id === S.acc)[0] || ACCOUNTS[0];
+    const reqs = DB.reqs.filter((q) => q.acc === a.id && q.state !== 'draft');
+    const open = reqs.filter(isOpen);
+    const cands = reqs.reduce((l, q) => l.concat(DB.byReq[q.id]), []);
+    const sent = cands.filter((c) => { const q = reqOf(c); return rank(q, 'sent') >= 0 && rank(q, c.maxAt) >= rank(q, 'sent'); }).length;
+    const met = cands.filter((c) => { const q = reqOf(c); return rank(q, 'client') >= 0 && rank(q, c.maxAt) >= rank(q, 'client'); }).length;
+    const hm = HMS.filter((h) => h.id === a.hm)[0];
+    const avg = avgSent(reqs);
+    const n = (k) => reqs.filter((q) => q.state === k).length;
+    return '<div class="s-home">' +
+      '<div class="b-topbar s-block-wide"><button class="s-back" type="button" data-trail>' + svg('back', 14) + 'Back</button>' +
+        (canEditReq({ hm: a.hm }) || isRec() || isHR() ? '<span class="b-draft-acts"><button class="b-ghost" type="button" data-new-req="' + a.id + '">New requisition</button></span>' : '') + '</div>' +
+      '<section class="s-rec-head s-block-wide">' +
+        '<span class="s-rec-kind b-kinds">' + fact('acc', 'Account') + fact('job', a.domain) + fact('cal', 'Client since ' + a.since) + '</span>' +
+        '<div class="s-rec-title"><h1 class="s-rec-name">' + esc(a.name) + '</h1></div>' +
+        '<div class="b-cmeta">' +
+          '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Account manager</h2><div class="b-cmeta-say"><p class="b-cmeta-p"><b>' + esc(hm ? hm.name : '') + '</b></p></div></div>' +
+          '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Stages they run</h2><div class="b-cmeta-say"><p class="b-cmeta-p">' + esc(TEMPLATE_NAME[a.tpl]) + '</p></div></div>' +
+          '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Requests</h2><div class="b-cmeta-say"><p class="b-cmeta-p"><b>' + reqs.length + '</b>: ' +
+            open.length + ' open, ' + (n('filled') + n('started')) + ' filled, ' + n('cclient') + ' cancelled by them, ' + n('hold') + ' on hold</p></div></div>' +
+        '</div>' +
+      '</section>' +
+      (sent ? '<section class="s-insight is-lead s-block-wide" aria-label="How much they take">' +
+        '<div class="s-lead-mark"><svg class="s-insight-mark" viewBox="0 0 18 20" width="14" height="14" aria-hidden="true"><use href="#aimy-logo-small"/></svg><span class="work-state ws-detected">Read off the record</span></div>' +
+        '<div class="s-lead-line"><span class="s-lead-n">' + met + '</span><span class="s-lead-say">of the <span class="s-lead-of">' + sent + '</span> profiles we sent got a client interview.</span></div>' +
+        '<p class="s-lead-deck">' + (avg != null ? 'It takes ' + days(avg) + ' on average to send their first profile on a requisition.' : '') + '</p></section>' : '') +
+      '<section class="s-block s-block-wide"><div class="s-camp-list-head"><h2 class="s-block-h">Open requisitions</h2><span class="s-block-say">' + open.length + '</span></div>' +
+        (open.length ? '<div class="b-grid">' + open.map((q, i) => '<div class="b-slot">' + reqCard(q, i) + '</div>').join('') + '</div>' : '<p class="s-none">Nothing open for them right now.</p>') +
       '</section>' +
     '</div>';
   }
@@ -2057,18 +4103,45 @@
   }
 
   function paint() {
+    /* Somebody outside the team gets the page alone, with none of the
+       product's chrome (the careers page, a profile, a test, a debrief). */
+    document.body.classList.toggle('is-portal', outside());
+    if (outside()) {
+      byId('wbStage').innerHTML = S.apply ? portalApply() : S.me ? portalMe() : S.take ? portalTake()
+        : S.debrief ? debriefPage() : approvePage();
+      requestAnimationFrame(afterPaint);
+      return;
+    }
     paintWho();
-    byId('wbStage').innerHTML = S.cand ? candPage() : S.req ? reqPage() : S.on === 'reqs' ? reqsPage()
-      : S.on === 'calls' ? callsPage() : homePage();
+    /* Adding someone carries the requisition they are for, so it is asked
+       before the requisition's own page. */
+    byId('wbStage').innerHTML = S.on === 'add' && isRec() ? addPage() : S.cand ? candPage() : S.req ? reqPage() : S.asmt ? asmtPage() : S.acc ? accPage()
+      : S.on === 'reqs' ? reqsPage() : S.on === 'calls' && isRec() ? callsPage() : S.on === 'find' ? findPage()
+      : S.on === 'asmts' ? asmtsPage() : S.on === 'templates' ? templatesPage()
+      : S.on === 'reports' ? reportsPage() : deskHome();
     paintRail();
     paintBell();
     paintProto();
     paintDial();
     requestAnimationFrame(placeSwitchBar);
+    requestAnimationFrame(afterPaint);
   }
 
   /* ── The bell: what is waiting on a person, every row ending in a record. */
   function paintBell() {
+    if (!isRec()) {
+      const a = asks();
+      byId('ntfList').innerHTML = a.length ? a.slice(0, 8).map((x) => '<li class="ntf-row">' +
+        '<span class="ntf-sev p2" aria-hidden="true"></span>' +
+        '<div class="ntf-row-main"><div class="ntf-row-head"><span class="ntf-row-type">' + esc(x.head) + '</span></div>' +
+        '<p class="ntf-row-body">' + esc(x.body) + '</p>' +
+        '<button class="ntf-row-cta" type="button"' + goAttr(x.go) + '>' + esc(x.verb) + '</button></div></li>').join('')
+        : '<li class="ntf-empty">Nothing waiting on you.</li>';
+      byId('ntfDot').hidden = !a.length || !!D.read;
+      byId('ntfCount').hidden = !a.length;
+      byId('ntfCount').textContent = a.length;
+      return;
+    }
     const w = waits(), d = decisions();
     /* Sales's bell row (sev, head, body, one way in), drawn as a string. */
     const items = missed().filter((t) => DB.byId[t.cand]).slice(0, 3).map((t) => ({ c: DB.byId[t.cand], sev: 'p1', type: 'Missed call', when: t.time,
@@ -2132,16 +4205,31 @@
       meet: MEETS[to] ? 2 : null, slot: c.slot || '11:00',
       maxAt: rank(q, to) > rank(q, c.maxAt) ? to : c.maxAt };
     write(c, fields);
+    /* AiMY books the next interview inside the interviewer's free slots and
+       tells the candidate from the booking (do and notify). */
+    const tpl = tplFor(to);
+    const iv = MEETS[to] ? make('ivs', { id: uid('iv'), cand: c.id, stage: to, day: 2, slot: fields.slot, by: interviewerFor(q, to), mode: 'person',
+      status: 'booked', ratings: null, notes: null, verdict: null, recording: null, tpl: tpl ? tpl.id : null }) : null;
+    const o = offerOf(c);
+    const oWas = o ? { status: o.status, joinDay: o.joinDay } : null;
+    if (to === 'joined' && o) put('offers', o, { status: 'joined', joinDay: 0 });
+    const e = note(c, 'move', 'Moved to ' + lower(STAGE[to].label) + ' by ' + me().name + '.');
     paint();
-    toast('Moved ' + first(c.name) + ' to ' + lower(STAGE[to].label), () => { write(c, was); paint(); toast('Put back', null, c.name + ' is at ' + lower(STAGE[was.stage].label) + ' again.'); },
-      MEETS[to] ? 'Booked for ' + sayDay(2) + '. AiMY tells them from the booking.' : to === 'sent' ? 'Sent to ' + accOf(q).name + '. They will be asked once, and nudged if they go quiet.' : null);
+    toast('Moved ' + first(c.name) + ' to ' + lower(STAGE[to].label), () => {
+      write(c, was); if (iv) unmake('ivs', iv); if (o) put('offers', o, oWas); unmake('events', e); paint();
+      toast('Put back', null, c.name + ' is at ' + lower(STAGE[was.stage].label) + ' again.');
+    },
+      MEETS[to] ? 'AiMY booked it for ' + sayDay(2) + ' with ' + interviewerFor(q, to) + ' and tells them from the booking.'
+        : to === 'sent' ? 'Sent to ' + accOf(q).name + '. They will be asked once, and nudged if they go quiet.'
+        : to === 'offer' ? 'Prepare the offer from their card.' : to === 'assess' ? 'Send the assessment from their card.' : null);
   }
   function out(c, k) {
     const was = { exit: c.exit, since: c.since };
     write(c, { exit: k, since: 0 });
+    const e = note(c, 'out', EXIT[k].label + ', marked by ' + me().name + '.');
     paint();
-    toast(first(c.name) + ': ' + EXIT[k].label.toLowerCase(), () => { write(c, was); paint(); toast('Put back', null, c.name + ' is in progress again.'); },
-      k === 'out' ? 'Nothing is sent to them until a person approves the message.' : null);
+    toast(first(c.name) + ': ' + EXIT[k].label.toLowerCase(), () => { write(c, was); unmake('events', e); paint(); toast('Put back', null, c.name + ' is in progress again.'); },
+      k === 'out' ? 'Nothing is sent to them until a person approves the message.' : k === 'clientno' && isClient() ? 'The recruiter sees your answer at once.' : null);
   }
   function nudge(c) {
     if (c.nudged != null) return;
@@ -2153,7 +4241,7 @@
   function start(k) {
     const d = decisions();
     if (k === 'decide' && d[0]) return go({ req: d[0].req, q: d[0].stage });
-    if (k === 'send') { const c = d.filter((x) => x.stage === 'tech' && reqOf(x).tpl === 'client')[0]; return c ? go({ req: c.req, q: 'tech' }) : go({ on: 'reqs', q: 'mine' }); }
+    if (k === 'send') { const c = d.filter((x) => x.stage === 'tech' && reqOf(x).tpl !== 'internal')[0]; return c ? go({ req: c.req, q: 'tech' }) : go({ on: 'reqs', q: 'mine' }); }
     if (k === 'screen') { const l = toCall(); return l.length ? callAll(l.map((x) => x.c.id)) : go({ on: 'calls' }); }
     if (k === 'risk') return go({ on: 'reqs', q: 'risk' });
     go({});
@@ -2164,6 +4252,210 @@
     const at = (sel) => t.closest(sel);
     let el;
     if ((el = at('[data-undo]'))) { const u = UNDO; toastGone(); if (u) u(); return; }
+    if (at('[data-peek-close]') || at('#peekClose')) peekHide();
+    if (at('#peekClose')) return;
+    const val = (name) => el.getAttribute(name);
+    const two = (name) => val(name).split('|');
+    /* ── Desks ── */
+    if ((el = at('[data-as]'))) { EDIT = null; byId('asPanel').hidden = true; go({ as: val('data-as') === 'omar' ? undefined : val('data-as') }); return; }
+    /* ── Requisitions ── */
+    if ((el = at('[data-new-req]'))) { newReq({ acc: val('data-new-req') || undefined }); return; }
+    if ((el = at('[data-client-request]'))) { clientRequest(); return; }
+    if ((el = at('[data-clone]'))) { cloneReq(DB.reqById[val('data-clone')]); return; }
+    if ((el = at('[data-edit-req]'))) { EDIT = null; go({ req: val('data-edit-req'), edit: '1' }); return; }
+    if ((el = at('[data-cancel-edit]'))) { EDIT = null; const n = Object.assign({}, S); delete n.edit; go(n, true); return; }
+    if ((el = at('[data-save-edit]'))) { saveReq(DB.reqById[val('data-save-edit')], false); return; }
+    if ((el = at('[data-open-req]'))) { saveReq(DB.reqById[val('data-open-req')], true); return; }
+    if ((el = at('[data-discard-req]'))) {
+      const q = DB.reqById[val('data-discard-req')];
+      const copy = JSON.parse(JSON.stringify(q));
+      unmake('reqs', q); EDIT = null; go({ on: 'reqs' });
+      toast('Draft discarded', () => { make('reqs', copy); go({ req: copy.id }); });
+      return;
+    }
+    if ((el = at('[data-set]'))) {
+      const p = two('data-set'), f = EDIT.f;
+      f[p[0]] = p[1] === 'true' ? true : p[1] === 'false' ? false : p[1];
+      if (p[0] === 'acc') f.tpl = ACCOUNTS.filter((a) => a.id === p[1])[0].tpl;
+      if (p[0] === 'level') { f.bmin = BUDGETS[p[1]][0]; f.bmax = BUDGETS[p[1]][1]; }
+      paint(); return;
+    }
+    if ((el = at('[data-step]'))) {
+      const p = two('data-step'), f = EDIT.f;
+      f[p[0]] = Math.max(1, Number(f[p[0]]) + Number(p[1]));
+      paint(); return;
+    }
+    if ((el = at('[data-ai-draft]'))) {
+      const known = aiDraft(EDIT.f); paint();
+      toast('AiMY wrote the description and the success profile', null, known ? 'From the role and the ones like it you filled before. Change anything.'
+        : 'From the title alone: nothing like it was filled here before. Check the success profile before you open it.');
+      return;
+    }
+    if ((el = at('[data-publish]'))) {
+      const q = DB.reqById[val('data-publish')];
+      const was = q.published;
+      put('reqs', q, { published: !was }); paint();
+      toast(was ? 'Taken off the careers page' : 'Published', () => { put('reqs', q, { published: was }); paint(); },
+        was ? 'The link stops taking applications.' : 'On the careers page now. Copy the link to post it on LinkedIn.');
+      return;
+    }
+    if ((el = at('[data-copy]'))) {
+      const t = val('data-copy');
+      const done = () => toast('Copied the link', null, t);
+      try { navigator.clipboard.writeText(t).then(done, () => toast('Copy this link', null, t)); } catch (err) { toast('Copy this link', null, t); }
+      return;
+    }
+    if ((el = at('[data-req-state]'))) { const p = two('data-req-state'); setReqState(DB.reqById[p[0]], p[1]); return; }
+    if ((el = at('[data-assign]'))) {
+      const p = two('data-assign'), q = DB.reqById[p[0]], was = q.rec;
+      if (was === p[1]) return;
+      put('reqs', q, { rec: p[1] }); paint();
+      toast('Assigned to ' + RECRUITERS.filter((x) => x.id === p[1])[0].name, () => { put('reqs', q, { rec: was }); paint(); },
+        'They are told in their bell, with the reason: the lightest load on the team.');
+      return;
+    }
+    if ((el = at('[data-acc]'))) { go({ acc: val('data-acc') }); return; }
+    if ((el = at('[data-asmt]'))) { go({ asmt: val('data-asmt') }); return; }
+    /* ── Candidates ── */
+    if ((el = at('[data-edit-cand]'))) { EDIT = null; go({ cand: val('data-edit-cand'), edit: '1' }); return; }
+    if ((el = at('[data-save-cand]'))) { saveCand(DB.byId[val('data-save-cand')]); return; }
+    if ((el = at('[data-add-app]'))) {
+      const p = two('data-add-app'), c0 = DB.byId[p[0]], q = DB.reqById[p[1]];
+      const c = Object.assign({}, c0, { id: uid('k'), req: q.id, stage: 'applied', exit: null, since: 0, meet: null, fb: false, nudged: null,
+        maxAt: 'applied', callback: null, source: 'Added by the recruiter', ev: evFor(q.must, c0), applied: 0, contactOk: true, onb: null, histSug: null });
+      addCand(c);
+      const e = note(c, 'apply', 'Added to ' + q.title + ' from their profile by ' + me().name + '.');
+      byId('addTo' + c0.id).hidden = true;
+      paint();
+      toast('Added ' + first(c.name) + ' to ' + q.title, () => { unmake('events', e); dropCand(c); paint(); }, 'Same person, another application. Both show on their profile.');
+      return;
+    }
+    if ((el = at('[data-contact-ok]'))) {
+      const c = DB.byId[val('data-contact-ok')];
+      write(c, { contactOk: true });
+      const e = note(c, 'note', 'First contact approved by ' + me().name + '.');
+      paint();
+      toast('First contact approved', () => { write(c, { contactOk: false }); unmake('events', e); paint(); },
+        'AiMY sends one short message on LinkedIn or by email, naming the role. Nothing about pay.');
+      return;
+    }
+    if ((el = at('[data-send-asmt]'))) { sendAsmt(DB.byId[val('data-send-asmt')]); return; }
+    if ((el = at('[data-book]'))) { const p = two('data-book'); bookIv(DB.byId[p[0]], Number(p[1]), p[2]); return; }
+    if ((el = at('[data-nudge-iv]'))) {
+      const v = DB.ivs.filter((x) => x.id === val('data-nudge-iv'))[0];
+      if (v.nudged) return;
+      put('ivs', v, { nudged: true }); paint();
+      toast('Nudged ' + v.by.split(',')[0], () => { put('ivs', v, { nudged: false }); paint(); }, 'With the debrief link. Logged on the interview.');
+      return;
+    }
+    if ((el = at('[data-rec-up]'))) { uploadRec(DB.ivs.filter((x) => x.id === val('data-rec-up'))[0]); return; }
+    if ((el = at('[data-acc-toggle]'))) {
+      const box = el.closest('.t-acc');
+      const open = box.getAttribute('data-acc-open') === 'true';
+      box.setAttribute('data-acc-open', String(!open));
+      el.setAttribute('aria-expanded', String(!open));
+      return;
+    }
+    if ((el = at('[data-offer-new]'))) { offerNew(DB.byId[val('data-offer-new')]); return; }
+    if ((el = at('[data-offer-step]'))) { const p = two('data-offer-step'); offerStep(DB.offers.filter((o) => o.id === p[0])[0], Number(p[1])); return; }
+    if ((el = at('[data-offer-send]'))) { offerSend(DB.offers.filter((o) => o.id === val('data-offer-send'))[0]); return; }
+    if ((el = at('[data-offer-res]'))) { const p = two('data-offer-res'); offerRes(DB.offers.filter((o) => o.id === p[0])[0], p[1]); return; }
+    if ((el = at('[data-onb]'))) {
+      const p = two('data-onb'), c = DB.byId[p[0]];
+      const onb = (c.onb || []).slice(); onb[Number(p[1])] = !onb[Number(p[1])];
+      write(c, { onb: onb }); paint(); return;
+    }
+    if ((el = at('[data-hist-add]'))) { histAdd(DB.byId[val('data-hist-add')]); return; }
+    if ((el = at('[data-sug-no]'))) { write(DB.byId[val('data-sug-no')], { histSug: null }); paint(); return; }
+    /* ── Intake ── */
+    if ((el = at('[data-intake-sample]'))) { intakeRead(null); return; }
+    if ((el = at('[data-intake-create]'))) { intakeCreate(); return; }
+    if ((el = at('[data-intake-reset]'))) { INTAKE = null; paint(); return; }
+    /* ── Finding ── */
+    if ((el = at('[data-find-req]'))) { const k = val('data-find-req'); FIND.req = FIND.req === k ? null : k; FIND.step = 'ask'; paint(); return; }
+    if ((el = at('[data-find-src]'))) { const k = val('data-find-src'); FIND.src[k] = !FIND.src[k]; paint(); return; }
+    if ((el = at('[data-find-go]'))) { runFind(); return; }
+    if ((el = at('[data-find-again]'))) { FIND.step = 'ask'; paint(); return; }
+    if ((el = at('[data-find-add]'))) { const p = two('data-find-add'); findAdd(Number(p[0]), p[1]); return; }
+    if ((el = at('[data-find-top]'))) {
+      const made = FIND.res.filter((x) => !FIND.done[x.i]).slice(0, 5).map((x) => ({ i: x.i, c: findAdd(x.i, FIND.req, true) })).filter((x) => x.c);
+      paint();
+      toast('Added ' + plural(made.length, 'person', 'people') + ' to ' + DB.reqById[FIND.req].title, () => { made.forEach((x) => { dropCand(x.c); delete FIND.done[x.i]; }); paint(); },
+        'Sourced. People found outside wait for your approval before first contact.');
+      return;
+    }
+    /* ── Assessments ── */
+    if ((el = at('[data-asmt-new]'))) { newAsmt(null); return; }
+    if ((el = at('[data-aset]'))) {
+      const p = two('data-aset'), a = asmtOf(S.asmt);
+      if (p[0] === 'pass') asmtSet(a, { pass: Math.max(30, Math.min(100, a.pass + Number(p[1]))) });
+      else asmtSet(a, { kind: p[1] });
+      return;
+    }
+    if ((el = at('[data-qtype]'))) {
+      const p = two('data-qtype'), a = asmtOf(S.asmt), qs = JSON.parse(JSON.stringify(a.questions)), qq = qs[Number(p[0])];
+      qq.type = p[1];
+      if (p[1] === 'choice' && !qq.options) { qq.options = ['', '', '', '']; qq.right = 0; }
+      if (p[1] === 'open' && !qq.points) qq.points = ['a real example'];
+      asmtSet(a, { questions: qs }); return;
+    }
+    if ((el = at('[data-qright]'))) { const p = two('data-qright'), a = asmtOf(S.asmt), qs = JSON.parse(JSON.stringify(a.questions)); qs[Number(p[0])].right = Number(p[1]); asmtSet(a, { questions: qs }); return; }
+    if ((el = at('[data-q-add]'))) {
+      const a = asmtOf(val('data-q-add')), qs = JSON.parse(JSON.stringify(a.questions));
+      qs.push({ q: '', type: 'choice', options: ['', '', '', ''], right: 0, fails: 0 });
+      asmtSet(a, { questions: qs }); return;
+    }
+    if ((el = at('[data-q-del]'))) {
+      const p = two('data-q-del'), a = asmtOf(p[0]), qs = JSON.parse(JSON.stringify(a.questions));
+      qs.splice(Number(p[1]), 1);
+      /* Results keep their answers in question order, so they drop the same one. */
+      DB.sends.filter((s) => s.asmt === a.id && s.answers).forEach((s) => { const an = s.answers.slice(); an.splice(Number(p[1]), 1); put('sends', s, { answers: an }); });
+      asmtSet(a, { questions: qs }, 'Removed Q' + (Number(p[1]) + 1)); return;
+    }
+    if ((el = at('[data-q-reword]'))) {
+      const p = two('data-q-reword'), a = asmtOf(p[0]), qs = JSON.parse(JSON.stringify(a.questions)), i = Number(p[1]);
+      const qq = qs[i];
+      qq.q = qq.type === 'choice' ? 'In one line: ' + qq.q.replace(/^what does /i, 'what does ').replace(/\?$/, '') + '? Pick the closest answer.' : qq.q + ' Answer with one example from your own work.';
+      if (qq.type === 'choice' && qq.options) qq.options = qq.options.map((o, k) => (k === qq.right ? o + ' (the most common cause)' : o));
+      DB.sends.filter((s) => s.asmt === a.id && s.answers).forEach((s) => { const an = s.answers.slice(); an[i] = null; put('sends', s, { answers: an }); });
+      asmtSet(a, { questions: qs }, 'AiMY reworded Q' + (i + 1));
+      if (!S.asmt) go({ asmt: a.id });
+      return;
+    }
+    /* ── Templates ── */
+    if ((el = at('[data-tpl-toggle]'))) { const p = two('data-tpl-toggle'); toggleStage(p[0], p[1]); return; }
+    if ((el = at('[data-tpl-add]'))) { const t = tplById(val('data-tpl-add')); put('ivtpls', t, { items: t.items.concat(['']) }); paint(); return; }
+    if ((el = at('[data-tpl-del]'))) {
+      const p = two('data-tpl-del'), t = tplById(p[0]), was = t.items.slice(), items = t.items.slice();
+      items.splice(Number(p[1]), 1); put('ivtpls', t, { items: items }); paint();
+      toast('Removed from the ' + t.title + ' agenda', () => { put('ivtpls', t, { items: was }); paint(); });
+      return;
+    }
+    /* ── Outside: debrief, approval, test, careers page, profile ── */
+    if ((el = at('[data-dr]'))) { const p = two('data-dr'); DEBRIEF.r[Number(p[0])] = p[1]; paint(); return; }
+    if ((el = at('[data-dv]'))) { DEBRIEF.v = val('data-dv'); paint(); return; }
+    if ((el = at('[data-debrief-submit]'))) { debriefSubmit(); return; }
+    if ((el = at('[data-appr]'))) { const p = two('data-appr'); approve(DB.offers.filter((o) => o.id === p[0])[0], p[1], p[2]); return; }
+    if ((el = at('[data-ans]'))) { const p = two('data-ans'); TAKE.a[Number(p[0])] = Number(p[1]); paint(); return; }
+    if ((el = at('[data-take-submit]'))) { takeSubmit(); return; }
+    if ((el = at('[data-apply-sample]'))) { applyRead(null); return; }
+    if ((el = at('[data-apply-consent]'))) { const k = val('data-apply-consent'); APPLY[k] = !APPLY[k]; paint(); return; }
+    if ((el = at('[data-apply-send]'))) { applySend(); return; }
+    if ((el = at('[data-me-code]'))) { meCode(); return; }
+    if ((el = at('[data-me-withdraw]'))) {
+      const c = DB.byId[val('data-me-withdraw')];
+      write(c, { exit: 'withdrew', since: 0 });
+      const e = note(c, 'out', 'Withdrew on their own profile.');
+      paint();
+      toast('Withdrawn', () => { write(c, { exit: null }); unmake('events', e); paint(); }, 'The recruiter is told. You can apply again any time.');
+      return;
+    }
+    if ((el = at('[data-me-save]'))) {
+      const f = { phone: byId('mePhone').value.trim(), email: byId('meMail').value.trim(), place: byId('mePlace').value.trim() };
+      DB.cands.filter((c) => c.pid === S.me).forEach((c) => { write(c, f); });
+      paint(); toast('Saved your details', null, 'The recruiting team sees them now.');
+      return;
+    }
     /* ── The call ── */
     if ((el = at('[data-call]'))) { startCall(el.getAttribute('data-call')); return; }
     if ((el = at('[data-call-all]'))) { callAll(toCall().map((x) => x.c.id)); return; }
@@ -2236,7 +4528,60 @@
   });
 
   /* Find, as you type. The page repaints and the cursor stays where it was. */
+  /* A line typed onto someone's history. If it reads as a pass or a no,
+     AiMY offers the matching move beside it; it never makes it alone. */
+  function histAdd(c) {
+    const inp = byId('histNote');
+    const t = inp ? inp.value.trim() : '';
+    if (!t) { if (inp) inp.focus(); return; }
+    const read = readNote(t);
+    const e = note(c, 'note', t, { read: read });
+    const was = c.histSug;
+    write(c, { histSug: read ? e.id : null });
+    paint();
+    toast('Added to ' + first(c.name) + '’s history', () => { unmake('events', e); write(c, { histSug: was }); paint(); });
+  }
+  function meCode() {
+    const v = (byId('meCode') || {}).value || '';
+    if (!/^\d{6}$/.test(v.trim())) { shake('wrapCode'); return; }
+    ME_OK[S.me] = true;
+    paint();
+  }
+  /* A client asks for a hire; it lands with their account manager as a
+     draft, to be talked through before it opens (Sales's client request). */
+  function clientRequest() {
+    const acc = ACCOUNTS.filter((a) => a.id === me().acc)[0];
+    const q = make('reqs', { id: uid('r'), title: '', fam: 'support', level: 'Mid-level', must: [], acc: acc.id, tpl: acc.tpl, hm: acc.hm, rec: 'omar', seats: 1,
+      kind: 'new', billable: true, state: 'draft', opened: 0, target: 30, place: 'Nasr City office', plan: null, domain: acc.domain, published: false,
+      budget: { min: BUDGETS['Mid-level'][0], max: BUDGETS['Mid-level'][1] }, desc: 'Asked for by ' + me().name + ' at ' + acc.name + '.', asmt: null, askedBy: DESK });
+    paint();
+    toast('Sent to ' + HMS.filter((h) => h.id === acc.hm)[0].name + ', your account manager', () => { unmake('reqs', q); paint(); },
+      'She talks it through with you before it opens.');
+  }
+  document.addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (e.target.matches('[data-cv-file]')) intakeRead(f ? f.name : null);
+    if (e.target.matches('[data-apply-file]')) applyRead(f ? f.name : null);
+  });
   document.addEventListener('input', (e) => {
+    const t = e.target;
+    const g = (n) => t.getAttribute(n);
+    if (t.matches('[data-ed]') && EDIT) { EDIT.f[g('data-ed')] = t.value; return; }
+    if (t.matches('[data-in]') && INTAKE && INTAKE.f) { INTAKE.f[g('data-in')] = t.value; return; }
+    if (t.matches('[data-find-q]')) { FIND.q = t.value; return; }
+    if (t.matches('[data-drn]') && DEBRIEF) { DEBRIEF.n[Number(g('data-drn'))] = t.value; return; }
+    if (t.matches('[data-anstext]') && TAKE) { TAKE.a[Number(g('data-anstext'))] = t.value; return; }
+    if (t.matches('[data-apply-in]') && APPLY && APPLY.f) { APPLY.f[g('data-apply-in')] = t.value; return; }
+    if (t.matches('[data-aed]')) { put('asmts', asmtOf(S.asmt), { title: t.value }); return; }
+    if (t.matches('[data-qed], [data-qopt], [data-qpts]')) {
+      const a = asmtOf(S.asmt), qs = JSON.parse(JSON.stringify(a.questions));
+      if (t.matches('[data-qed]')) qs[Number(g('data-qed').split('|')[0])].q = t.value;
+      if (t.matches('[data-qopt]')) { const p = g('data-qopt').split('|'); qs[Number(p[0])].options[Number(p[1])] = t.value; }
+      if (t.matches('[data-qpts]')) qs[Number(g('data-qpts'))].points = t.value.split(',').map((x) => x.trim()).filter(Boolean);
+      put('asmts', a, { questions: qs });
+      return;
+    }
+    if (t.matches('[data-tpled]')) { const p = g('data-tpled').split('|'), tp = tplById(p[0]), items = tp.items.slice(); items[Number(p[1])] = t.value; put('ivtpls', tp, { items: items }); return; }
     /* The dialer reads the number as you type it (Sales). */
     if (e.target.id === 'dialNum') {
       DIAL_NUM = e.target.value;
@@ -2274,18 +4619,20 @@
     if (e.key !== 'Enter') return;
     const v = e.target.value.trim();
     e.target.value = '';
-    go({ on: 'reqs', find: v || undefined });
+    ask(v);
   });
   byId('floatSend').addEventListener('click', () => {
     const v = byId('floatInput').value.trim();
     byId('floatInput').value = '';
-    go({ on: 'reqs', find: v || undefined });
+    ask(v);
   });
   document.addEventListener('keydown', (e) => {
     const typing = /input|textarea/i.test((document.activeElement || {}).tagName || '');
     /* Enter means the obvious next thing at every state of a call (Sales):
        start it, log it. 1 to 8 pick the outcome while logging. */
     if (e.target.id === 'dialNum' && e.key === 'Enter') { e.preventDefault(); dialGo(); return; }
+    if (e.target.id === 'histNote' && e.key === 'Enter') { e.preventDefault(); histAdd(DB.byId[S.cand]); return; }
+    if (e.target.id === 'meCode' && e.key === 'Enter') { e.preventDefault(); meCode(); return; }
     if (CALL && CALL.state === 'logging') {
       if (e.key === 'Enter' && (e.target.id === 'callNote' || !typing) && !/button/i.test(e.target.tagName)) { e.preventDefault(); logCall(); return; }
       if (!typing && /^[1-8]$/.test(e.key)) { CALL.lit = OUTCOMES[Number(e.key) - 1].k; paintCall(); return; }

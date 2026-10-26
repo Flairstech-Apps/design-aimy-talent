@@ -62,7 +62,7 @@
        copied unedited like sales.css. talent.css is this product's appendix:
        only what neither of them already says. -->
   <link rel="stylesheet" href="assets/bdr.css?v=1" />
-  <link rel="stylesheet" href="assets/talent.css?v=4" />
+  <link rel="stylesheet" href="assets/talent.css?v=5" />
   <link rel="stylesheet" href="assets/aimy-responsive.css?v=1" />
   <script src="assets/aimy-viewport.js?v=1"></script>
 
@@ -267,17 +267,20 @@
       </div>
     </div>
 
-    <!-- WHO THE SURFACE THINKS YOU ARE. One desk so far, the recruiter's, so
-         this states who you are and opens nothing. Sales's chevron and its
-         desk menu come back with the second desk. -->
-    <div class="ntf-anchor">
-      <span class="topnav-user" id="asBtn">
-        <span class="topnav-avatar" id="userAvatar">··</span>
+    <!-- WHO THE SURFACE THINKS YOU ARE (Sales). It changes what is on
+         screen, so it is stated in the chrome; the chevron opens the desks:
+         recruiter, hiring manager, HR Manager and client. -->
+    <div class="ntf-anchor b-menu-wrap">
+      <button class="topnav-user" id="asBtn" type="button"
+              data-pickopen="asPanel" aria-haspopup="menu" aria-controls="asPanel">
+        <span class="topnav-avatar" id="userAvatar"></span>
         <span class="topnav-user-info">
-          <span class="topnav-user-name" id="userName">—</span>
-          <span class="topnav-user-role" id="userRole">—</span>
+          <span class="topnav-user-name" id="userName"></span>
+          <span class="topnav-user-role" id="userRole"></span>
         </span>
-      </span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="b-menu" id="asPanel" role="menu" hidden></div>
     </div>
   </div>
 </div>
@@ -368,7 +371,24 @@
          Fixed and centred on the WINDOW, not on the main column. ══ -->
     <div class="aimy-float-wrap" id="aimyFloatWrap">
 
-      <!-- The peek card (an answer above the bar) comes with the canvas. -->
+      <!-- ══ THE ANSWER ARRIVES HERE FIRST (Sales's peek card) ══════════════
+           Ask AiMY in the bar and the answer lands in a card above it, with
+           the one or two things you can do about it. -->
+      <div class="b-peek" id="aimyPeek" hidden>
+        <div class="b-peek-card">
+          <div class="b-peek-lip">
+            <span class="b-peek-grip-bar" aria-hidden="true"></span>
+            <button class="b-peek-x" type="button" id="peekClose" aria-label="Dismiss this answer">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <div class="b-peek-main">
+            <span class="b-peek-body" id="peekBody" role="status" aria-live="polite"></span>
+            <span class="b-peek-acts" id="peekActs"></span>
+          </div>
+        </div>
+      </div>
       <div class="filter-tray" id="floatFilterTray">
         <div class="filter-tray-inner">
           <button class="filter-chip" type="button" data-quick="risk">At risk</button>
@@ -387,7 +407,7 @@
           <svg width="18" height="20" viewBox="0 0 18 20"><use href="#aimy-logo-small"/></svg>
         </button>
         <input class="aimy-float-input" id="floatInput" type="text"
-               placeholder="Find a requisition, an account or a candidate…"
+               placeholder="Ask AiMY, or find a requisition or a candidate…"
                autocomplete="off" spellcheck="false" aria-label="Drive the surface" />
         <button class="aimy-float-send" id="floatSend" aria-label="Run">
           <svg class="send-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>
@@ -442,6 +462,6 @@
 </div>
 
 <script src="assets/aimy-ds.js"></script>
-<script src="assets/talent.js?v=15"></script>
+<script src="assets/talent.js?v=19"></script>
 </body>
 </html>

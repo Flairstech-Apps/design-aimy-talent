@@ -72,3 +72,313 @@ body.is-calling .proto { right: calc(var(--call-width, 320px) + 16px); }
    no hover ground, no pointer. */
 .t-log-static { cursor: default; }
 .t-log-static:hover { background: none; }
+
+/* ══ 4. MOTION, FROM TRANSITIONS.DEV ═══════════════════════════════════════
+   Four pieces, each with a reason to move: a wrong field shakes and says
+   why; work AiMY is doing shimmers while it holds; details open in place;
+   a finished outside task draws its check. Durations sit on the shell's own
+   scale (aimy-ds.css --t-*, --ease-out). Every one stops under reduced
+   motion. */
+:root {
+  --shake-distance: 6px;
+  --shake-overshoot: 4px;
+  --shake-dur-a: 80ms;
+  --shake-dur-b: 60ms;
+  --shake-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --revert-dur: 280ms;
+  --shimmer-dur: 2000ms;
+  --shimmer-band: 400%;
+  --acc-dur: 250ms;
+  --reveal-dur: 400ms;
+  --reveal-blur: 2px;
+  --stagger: 40ms;
+}
+
+/* Error state shake. */
+.t-input-wrap { min-width: 0; }
+.t-input { transition: border-color 150ms ease-out; will-change: transform; }
+.t-input.is-error { border-color: var(--err); transition: border-color var(--revert-dur) ease-out; }
+div.t-input { border: 1px solid transparent; border-radius: var(--r-md); padding: 4px 10px; margin: 0 -11px; }
+.t-error-msg {
+  margin: 6px 0 0; font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--err-text);
+  opacity: 0; visibility: hidden;
+  transition: opacity var(--revert-dur) ease-out, visibility 0s linear var(--revert-dur);
+}
+.t-input-wrap.is-error .t-error-msg {
+  opacity: 1; visibility: visible;
+  transition: opacity var(--revert-dur) ease-out, visibility 0s linear 0s;
+}
+.t-input.is-shaking { animation: t-input-shake calc(var(--shake-dur-a) * 2 + var(--shake-dur-b) * 2) linear; }
+@keyframes t-input-shake {
+  0%      { transform: translateX(0);                                 animation-timing-function: var(--shake-ease); }
+  28.57%  { transform: translateX(var(--shake-distance));             animation-timing-function: var(--shake-ease); }
+  57.14%  { transform: translateX(calc(var(--shake-distance) * -1)); animation-timing-function: var(--shake-ease); }
+  78.57%  { transform: translateX(var(--shake-overshoot));            animation-timing-function: var(--shake-ease); }
+  100%    { transform: translateX(0); }
+}
+
+/* Shimmer text: the step AiMY is on. The base stays at reading ink; the
+   band is the accent passing over it, never a fade into grey. */
+.t-shimmer { position: relative; display: inline-block; color: var(--d50); }
+.t-shimmer::before {
+  content: attr(data-text);
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: linear-gradient(90deg, transparent 0%, transparent 40%, var(--accent-text) 50%, transparent 60%, transparent 100%);
+  background-size: var(--shimmer-band) 100%;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent; -webkit-text-fill-color: transparent;
+  animation: t-shimmer var(--shimmer-dur) linear infinite;
+}
+@keyframes t-shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0% 0; } }
+
+/* Accordion. The state is data-acc-open, not data-open: data-open is the
+   card door's verb in this app. */
+.t-acc-panel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--acc-dur) var(--ease-out); }
+.t-acc[data-acc-open="true"] .t-acc-panel { grid-template-rows: 1fr; }
+.t-acc-panel-inner {
+  overflow: hidden; min-height: 0; opacity: 0; filter: blur(2px);
+  transition: opacity var(--acc-dur) var(--ease-out), filter var(--acc-dur) var(--ease-out);
+}
+.t-acc[data-acc-open="true"] .t-acc-panel-inner { opacity: 1; filter: blur(0); }
+.t-acc-head { gap: 6px; }
+.t-acc-chevron { display: inline-flex; transform: scaleY(1); transition: transform var(--acc-dur) var(--ease-out); }
+.t-acc-chevron svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+.t-acc-chevron path { vector-effect: non-scaling-stroke; }
+.t-acc[data-acc-open="true"] .t-acc-chevron { transform: scaleY(-1); }
+
+/* Success check: drawn once, when the outside page says it is done. The
+   path is 22.6 long, so 24 covers it. */
+.t-success-check {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: rgba(var(--accent-rgb), 0.14); color: var(--ok-text);
+  transform-origin: center; opacity: 0; will-change: transform, opacity, filter;
+  animation:
+    t-check-fade 500ms var(--ease-out) forwards,
+    t-check-rotate 500ms var(--ease-out) forwards,
+    t-check-blur 500ms var(--ease-out) forwards,
+    t-check-bob 500ms cubic-bezier(0.34, 1.35, 0.64, 1) forwards;
+}
+.t-success-check svg { display: block; overflow: visible; }
+.t-success-check .t-success-path { stroke-dasharray: 24; stroke-dashoffset: 24; animation: t-check-draw 500ms var(--ease-out) 80ms forwards; }
+@keyframes t-check-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes t-check-rotate { from { transform: rotate(80deg); } to { transform: rotate(0deg); } }
+@keyframes t-check-blur { from { filter: blur(8px); } to { filter: blur(0); } }
+@keyframes t-check-bob { from { translate: 0 30px; } to { translate: 0 0; } }
+@keyframes t-check-draw { to { stroke-dashoffset: 0; } }
+
+/* Reveal: what AiMY just read or found arrives with a short cross-blur, the
+   cards one after another (skeleton reveal and texts reveal). */
+.t-skel-in { animation: t-reveal-in var(--reveal-dur) ease-in-out both; }
+.t-reveal > * { opacity: 0; filter: blur(var(--reveal-blur)); transform: translateY(8px); }
+.t-reveal.is-revealed > * {
+  opacity: 1; filter: blur(0); transform: none;
+  transition: opacity var(--reveal-dur) ease-in-out, filter var(--reveal-dur) ease-in-out, transform var(--reveal-dur) var(--ease-out);
+}
+.t-reveal.is-revealed > :nth-child(2) { transition-delay: calc(var(--stagger) * 1); }
+.t-reveal.is-revealed > :nth-child(3) { transition-delay: calc(var(--stagger) * 2); }
+.t-reveal.is-revealed > :nth-child(4) { transition-delay: calc(var(--stagger) * 3); }
+.t-reveal.is-revealed > :nth-child(5) { transition-delay: calc(var(--stagger) * 4); }
+.t-reveal.is-revealed > :nth-child(n+6) { transition-delay: calc(var(--stagger) * 5); }
+@keyframes t-reveal-in { from { opacity: 0; filter: blur(var(--reveal-blur)); } to { opacity: 1; filter: blur(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .t-input { animation: none !important; transform: none !important; }
+  .t-shimmer::before { animation: none !important; }
+  .t-acc-panel, .t-acc-panel-inner, .t-acc-chevron { transition: none !important; }
+  .t-success-check { animation: none !important; opacity: 1; }
+  .t-success-check .t-success-path { animation: none !important; stroke-dashoffset: 0 !important; }
+  .t-skel-in { animation: none; }
+  .t-reveal > *, .t-reveal.is-revealed > * { opacity: 1; filter: none; transform: none; transition: none; }
+}
+
+/* ══ 5. SMALL PARTS THE PAGES SHARE ═══════════════════════════════════════ */
+.t-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0 0; }
+.t-wide { grid-column: 1 / -1; }
+.t-wide .b-draft-in { max-width: none; }
+.t-area { resize: vertical; line-height: var(--lh-base); max-width: none; }
+textarea.dial-input.t-area { height: auto; padding: 10px 12px; }
+.t-edit-grid { margin-top: 12px; }
+.t-static { cursor: default; }
+.t-col { flex-direction: column; align-items: stretch; }
+.t-col .filter-chip { justify-content: flex-start; text-align: left; white-space: normal; height: auto; min-height: 36px; padding-top: 8px; padding-bottom: 8px; }
+.t-inline-link, .t-fact-link {
+  font: inherit; color: var(--accent-text); background: none; border: 0; padding: 0; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px;
+}
+.t-fact-link { text-decoration: none; }
+.t-inline-link:hover { text-decoration-thickness: 2px; }
+.t-fact-link:hover span { text-decoration: underline; text-underline-offset: 3px; }
+.t-inline-link:focus-visible, .t-fact-link:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
+.t-link-text { overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.t-range { display: inline-flex; align-items: center; gap: 8px; }
+.t-num { width: 9ch; font-variant-numeric: tabular-nums; }
+.t-grow { flex: 1; max-width: none; }
+.t-step { display: inline-flex; align-items: center; gap: 8px; }
+.t-step .b-ghost { min-width: 32px; justify-content: center; }
+.t-step-n { min-width: 10ch; text-align: center; color: var(--d50); font-variant-numeric: tabular-nums; }
+.t-strip { margin-top: 12px; }
+
+/* A list of short lines with a mark first: test answers, agenda items, the
+   success profile against a CV, onboarding steps. */
+.t-qlist { display: grid; gap: 8px; margin: 8px 0 0; }
+.t-q { display: flex; align-items: center; gap: 10px; margin: 0; font-size: var(--fs-sm); color: var(--d100); line-height: var(--lh-base); }
+.t-q > .tag { flex-shrink: 0; min-width: 64px; justify-content: center; }
+.t-q > span:not(.tag):not(.t-asq-n) { min-width: 0; }
+
+/* A one-press checkbox (onboarding). It fills, then the tick draws. */
+.t-check {
+  flex-shrink: 0; width: 20px; height: 20px; border-radius: 5px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1.5px solid var(--card-border-hover); background: none; color: var(--card-bg); cursor: pointer;
+  transition: background-color var(--t-fast) var(--ease-out), border-color var(--t-fast) var(--ease-out);
+}
+.t-check svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 3; opacity: 0; }
+.t-check.is-on { background: var(--ok); border-color: var(--ok); }
+.t-check.is-on svg { opacity: 1; }
+.t-check.is-on svg path { stroke-dasharray: 24; stroke-dashoffset: 24; animation: t-check-draw 250ms var(--ease-out) 60ms forwards; }
+.t-check:disabled { cursor: default; }
+.t-check:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .t-check.is-on svg path { animation: none; stroke-dashoffset: 0; } }
+.t-onb { margin-top: 20px; }
+
+/* ══ 6. THE CANDIDATE RECORD ═══════════════════════════════════════════════ */
+/* Skills, verified: each must-have, what the CV says, what an interview found. */
+.t-vlist { display: grid; gap: 0; margin: 4px 0 0; }
+.t-vrow {
+  display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 1.6fr);
+  gap: 16px; align-items: start; padding: 12px 0; border-top: 1px solid var(--card-border);
+}
+.t-vrow:first-child { border-top: 0; padding-top: 4px; }
+.t-vmust { color: var(--d50); font-weight: var(--fw-semibold); font-size: var(--fs-sm); line-height: var(--lh-snug); }
+.t-vcol { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.t-vcap { font-size: var(--t-micro); font-weight: var(--fw-medium); letter-spacing: 0.08em; text-transform: uppercase; color: var(--d100); }
+.t-vnote { font-size: var(--fs-sm); color: var(--d100); line-height: var(--lh-base); }
+@media (max-width: 720px) {
+  .t-vrow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .t-vmust { grid-column: 1 / -1; }
+}
+
+/* Interviews: one row each, details open in place. */
+.t-ivs { display: grid; gap: 8px; margin: 8px 0 0; }
+.t-iv { border: 1px solid var(--card-border); border-radius: var(--r-lg); background: var(--card-bg); padding: 12px 14px; }
+.t-iv-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.t-iv-main { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: var(--fs-sm); }
+.t-iv-main b { color: var(--d50); font-weight: var(--fw-semibold); }
+.t-iv-st { color: var(--d100); }
+.t-acc-panel-inner > :first-child { margin-top: 12px; }
+.t-rec .b-aimy { margin: 0; }
+.t-book { margin: 12px 0 0; }
+.t-slots { margin-top: 8px; }
+.t-sug { margin: 12px 0 0; }
+.t-sug .b-aimy { margin: 0; }
+.t-addnote { display: flex; gap: 8px; margin: 12px 0 0; }
+.t-addnote .dial-input { flex: 1; }
+
+/* ══ 7. ADDING SOMEONE FROM A CV ══════════════════════════════════════════ */
+.t-drop {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center;
+  padding: 40px 24px; border: 1.5px dashed var(--card-border-hover); border-radius: var(--r-lg);
+  background: var(--card-bg); color: var(--d100); cursor: pointer;
+  transition: border-color var(--t-fast) var(--ease-out), background-color var(--t-fast) var(--ease-out);
+}
+.t-drop svg { width: 22px; height: 22px; fill: none; stroke: var(--accent-text); stroke-width: 2; }
+.t-drop b { color: var(--d50); font-weight: var(--fw-semibold); font-size: var(--t-body); }
+.t-drop span { font-size: var(--fs-sm); max-width: 52ch; line-height: var(--lh-base); }
+.t-drop:hover, .t-drop:focus-within { border-color: var(--accent); background: rgba(var(--accent-rgb), 0.06); }
+.t-drop-sm { padding: 16px; flex-direction: row; gap: 10px; text-align: left; }
+.t-drop-sm svg { width: 18px; height: 18px; }
+.t-file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.t-steps { display: grid; gap: 12px; padding: 8px 0; }
+.t-stepline { display: flex; align-items: center; gap: 12px; margin: 0; font-size: var(--t-body); color: var(--d100); }
+.t-stepline.is-now { color: var(--d50); font-weight: var(--fw-semibold); }
+.t-stepmark {
+  flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1.5px solid var(--card-border-hover);
+}
+.t-stepline.is-done .t-stepmark { background: var(--ok); border-color: var(--ok); color: var(--card-bg); }
+.t-stepline.is-now .t-stepmark { border-color: var(--accent); }
+.t-stepmark svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 3; }
+.t-skel-in > .t-input-wrap { margin-top: 16px; }
+
+/* ══ 8. FINDING, ASSESSMENTS, TEMPLATES, REPORTS ═══════════════════════════ */
+.t-findq { min-height: 84px; font-size: var(--t-body); }
+.t-asq { display: grid; gap: 0; margin: 8px 0 0; }
+.t-asq-row { display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; border-top: 1px solid var(--card-border); }
+.t-asq-row:first-child { border-top: 0; }
+.t-asq-n {
+  flex-shrink: 0; min-width: 28px; height: 22px; padding: 0 6px; border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: var(--fs-xs); font-weight: var(--fw-bold); font-variant-numeric: tabular-nums;
+  background: rgba(var(--accent-rgb), 0.12); color: var(--d50);
+}
+.t-asq-main { flex: 1; min-width: 0; display: grid; gap: 8px; }
+.t-asq-main .b-draft-in { max-width: none; }
+.t-asq-q { margin: 0; color: var(--d50); font-size: var(--t-body); line-height: var(--lh-base); }
+.t-asq-rate { flex-shrink: 0; font-size: var(--fs-sm); color: var(--d100); white-space: nowrap; }
+.t-asq-rate b { color: var(--d50); font-variant-numeric: tabular-nums; }
+.t-asq-rate.is-low, .t-asq-rate.is-low b { color: var(--warn-text); }
+.t-tpl { padding: 16px 0; border-top: 1px solid var(--card-border); }
+.t-tpl:first-child { border-top: 0; padding-top: 4px; }
+.t-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 12px; margin: 4px 0 20px; }
+.t-kpi { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border: 1px solid var(--card-border); border-radius: var(--r-lg); background: var(--card-bg); }
+.t-kpi-cap { font-size: var(--t-micro); font-weight: var(--fw-medium); letter-spacing: 0.08em; text-transform: uppercase; color: var(--d100); }
+.t-kpi-n { font-family: var(--font-display); font-size: 28px; line-height: 1.1; font-weight: var(--fw-bold); color: var(--d50); font-variant-numeric: tabular-nums; }
+.t-kpi-say { font-size: var(--fs-sm); color: var(--d100); line-height: var(--lh-snug); }
+.t-fn-btn {
+  width: 100%; background: none; border: 0; padding: 4px 6px; margin: 0 -6px; font: inherit; color: inherit;
+  text-align: left; border-radius: 6px; cursor: pointer; box-sizing: content-box;
+  transition: background-color var(--t-fast) var(--ease-out);
+}
+.t-fn-btn:hover { background: rgba(var(--accent-rgb), 0.06); }
+.t-fn-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* ══ 9. PAGES OPENED FROM A LINK ══════════════════════════════════════════
+   The careers page, a candidate's own profile, a test, an interviewer's
+   debrief, an approval. Whoever opens them is not in the product, so the
+   product's chrome steps away and one column stays. */
+body.is-portal .app-topnav,
+body.is-portal .app-rail,
+body.is-portal .rail-scrim,
+body.is-portal .aimy-float-wrap,
+body.is-portal .app-call,
+body.is-portal .b-ring-host { display: none !important; }
+.t-out { max-width: 680px; margin: 0 auto; padding: 32px 16px 80px; display: grid; gap: 16px; align-content: start; }
+.t-out-wide { max-width: 1000px; }
+.t-out-head { display: flex; align-items: center; gap: 12px; padding-bottom: 8px; }
+.t-out-head > span:last-child { display: flex; flex-direction: column; gap: 2px; }
+.t-out-head b { color: var(--d50); font-weight: var(--fw-bold); font-size: var(--t-body); }
+.t-out-head > span:last-child > span { color: var(--d100); font-size: var(--fs-sm); }
+.t-out-mark { display: inline-flex; width: 36px; height: 36px; border-radius: 10px; align-items: center; justify-content: center; background: rgba(var(--accent-rgb), 0.12); }
+.t-out-card { border: 1px solid var(--card-border); border-radius: var(--r-lg); background: var(--card-bg); padding: 24px; display: grid; gap: 12px; align-content: start; }
+.t-out-h { margin: 0; font-family: var(--font-display); font-size: 24px; line-height: 1.2; font-weight: var(--fw-bold); color: var(--d50); text-wrap: balance; }
+.t-out-kicker { margin: 0; font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--accent-text); }
+.t-out-sub { margin: 8px 0 0; font-size: var(--t-micro); font-weight: var(--fw-medium); letter-spacing: 0.08em; text-transform: uppercase; color: var(--d100); }
+.t-out-list { margin: 0; padding-left: 20px; display: grid; gap: 6px; color: var(--d100); font-size: var(--fs-sm); line-height: var(--lh-base); }
+.t-out-meta { margin-top: 4px; }
+.t-out .b-aimy { margin: 0; }
+.t-done { justify-items: center; text-align: center; padding: 40px 24px; }
+.t-done p { color: var(--d100); max-width: 46ch; margin: 0; line-height: var(--lh-base); }
+.t-dr { display: grid; gap: 8px; padding: 12px 0; border-top: 1px solid var(--card-border); }
+.t-dr:first-child { border-top: 0; }
+.t-dr-must { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; color: var(--d50); font-weight: var(--fw-semibold); font-size: var(--fs-sm); }
+.t-dr-must .b-kind { font-weight: var(--fw-medium); }
+.t-code { max-width: 180px; font-size: 18px; letter-spacing: 0.3em; text-align: center; }
+.t-me-app { padding: 12px 0; border-top: 1px solid var(--card-border); }
+.t-me-app:first-child { border-top: 0; }
+.t-me-app p { margin: 0 0 4px; color: var(--d100); font-size: var(--fs-sm); }
+.t-me-app p b { color: var(--d50); font-size: var(--t-body); }
+.t-careers { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .t-careers { grid-template-columns: minmax(0, 1fr); } }
+.t-chat { gap: 14px; }
+.t-chat-ai, .t-chat-you { display: flex; gap: 10px; align-items: flex-start; }
+.t-chat-ai p, .t-chat-you p { margin: 0; padding: 10px 14px; border-radius: 14px; font-size: var(--fs-sm); line-height: var(--lh-base); max-width: 52ch; }
+.t-chat-ai p { background: rgba(var(--accent-rgb), 0.10); color: var(--d50); border-top-left-radius: 4px; }
+.t-chat-you { justify-content: flex-end; }
+.t-chat-you p { background: var(--card-bg-raised); color: var(--d50); border: 1px solid var(--card-border); border-top-right-radius: 4px; }
+.t-chat > :last-child { animation: t-reveal-in var(--reveal-dur) ease-in-out both; }
+.t-apply-form { display: grid; gap: 10px; }
+@media (prefers-reduced-motion: reduce) { .t-chat > :last-child { animation: none; } }
