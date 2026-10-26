@@ -125,6 +125,8 @@
     skip: '<polygon points="5 4 15 12 5 20 5 4"/><line x1="19" x2="19" y1="5" y2="19"/>',
     check: '<path d="M20 6 9 17l-5-5"/>',
     upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>',
+    plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+    trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
     link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
   };
   const svg = (k, px) => '<svg viewBox="0 0 24 24"' + (px ? ' width="' + px + '" height="' + px + '"' : '') +
@@ -1275,6 +1277,9 @@
     /* A row in the bell is a way somewhere; once you are there it closes. */
     byId('ntfPanel').hidden = true;
     peekHide();
+    /* Opening a record closes the canvas; the mark on the bar reopens the
+       same thread (Sales). */
+    if (canvasShown()) closeCanvas();
     byId('ntfBell').setAttribute('aria-expanded', 'false');
     paint();
     byId('pageScroll').scrollTop = 0;
@@ -2560,7 +2565,7 @@
     else if (s.status === 'sent') body = '<p class="b-cmeta-p">Sent ' + esc(sayWhen(s.day)) + '. Not taken yet.</p>' +
       (works ? '<p class="b-cmeta-p t-acts"><button class="s-insight-lnk" type="button" data-copy="' + esc('https://talent.flairstech.com/test/' + s.id) + '">Copy their test link</button>' +
         '<button class="s-insight-lnk" type="button"' + goAttr({ take: s.id }) + '>Open it as them</button></p>' : '');
-    else body = '<p class="b-cmeta-p"><b>' + s.score + '%</b>, ' + (s.score >= a.pass ? 'a pass' : 'under the ' + a.pass + '% pass mark') + '. Scored by AiMY ' + esc(sayWhen(s.doneDay != null ? s.doneDay : s.day)) + '.</p>' +
+    else body = '<p class="b-cmeta-p"><b>' + s.score + '%</b>, ' + (s.score >= a.pass ? 'a pass' : 'under the ' + a.pass + '% pass mark') + '. Scored by AiMY ' + esc(sayWhen(s.doneDay != null ? s.doneDay : s.day)) + '.' + (s.probed && s.probed.length ? ' Taken live; AiMY asked for more on ' + s.probed.map((i) => 'Q' + (i + 1)).join(' and ') + '.' : '') + '</p>' +
       '<div class="t-qlist">' + a.questions.map((qq, i) => '<p class="t-q"><span class="tag tag-' + (s.answers[i] ? 'ok' : 'neutral') + '">' + (s.answers[i] ? 'Right' : 'Missed') + '</span>' +
         '<span>Q' + (i + 1) + '. ' + esc(qq.q) + '</span></p>').join('') + '</div>';
     return '<section class="s-block s-block-wide" aria-label="Assessment">' +
@@ -3323,6 +3328,7 @@
     if (s.status === 'done') return '<div class="t-out">' + outsideHead('Assessment', 'FlairsTech careers') + '<section class="t-out-card t-done">' + successCheck() +
       '<h1 class="t-out-h">Thank you, ' + esc(first(c.name)) + '. It is in.</h1><p>The recruiting team will be in touch about next steps. We do not share scores; a person reads every result.</p></section></div>';
     if (!TAKE || TAKE.id !== s.id) TAKE = { id: s.id, a: [] };
+    if (a.kind === 'live') return liveTake(s, a, c);
     return '<div class="t-out">' + outsideHead('Assessment', 'FlairsTech careers') +
       '<section class="t-out-card">' +
         '<p class="t-out-kicker">' + esc(ASMT_KIND[a.kind]) + ' · about ' + a.mins + ' minutes</p>' +
@@ -3338,6 +3344,70 @@
         '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-take-submit>Send my answers</button></p>' +
       '</section></div>';
   }
+  /* ══ LIVE WITH THE AIMY AGENT ══════════════════════════════════════════
+     The same questions as a short conversation: AiMY asks one at a time,
+     reads the answer, and asks once for more when an open answer is too
+     thin to score, the way an interviewer would. Scoring is the
+     questionnaire's (takeSubmit), so a live result reads like any other. */
+  const LIVE_ACK = ['Thank you.', 'Got it, thank you.', 'Clear. Next one.', 'Thank you, that helps.'];
+  function liveTake(s, a, c) {
+    const L = TAKE.live || (TAKE.live = { said: {}, probed: {}, done: {} });
+    const said = [];
+    const ai = (t) => said.push('<div class="t-chat-ai">' + mark(14) + '<p>' + t + '</p></div>');
+    const you = (t) => said.push('<div class="t-chat-you"><p>' + esc(t) + '</p></div>');
+    ai('Hi ' + esc(first(c.name)) + '. I will ask ' + plural(a.questions.length, 'question') + ', one at a time, for ' + esc(reqOf(c).title) +
+      '. Answer in your own words. If an answer is short I may ask for a little more; that is normal.');
+    let at = -1;
+    a.questions.forEach((qq, i) => {
+      if (at >= 0) return;
+      ai('<b>' + (i + 1) + ' of ' + a.questions.length + '.</b> ' + esc(qq.q));
+      const got = L.said[i] || [];
+      if (got[0] != null) you(got[0]);
+      if (L.probed[i]) { ai('Can you say a little more? One example from your own work is enough.'); if (got[1] != null) you(got[1]); }
+      if (L.done[i]) { if (i < a.questions.length - 1) ai(LIVE_ACK[i % LIVE_ACK.length]); } else at = i;
+    });
+    let input;
+    if (at < 0) {
+      ai('That is every question. Send your answers when you are ready; a person reads every result.');
+      input = '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-take-submit>Send my answers</button></p>';
+    } else if (a.questions[at].type === 'choice') {
+      const qq = a.questions[at];
+      input = '<div class="b-cuts t-col">' + qq.options.map((o, k, all) => { const j = (k + at * 3 + 1) % all.length;
+        return '<button class="filter-chip" type="button" data-live-pick="' + at + '|' + j + '">' + esc(all[j]) + '</button>'; }).join('') + '</div>';
+    } else {
+      input = '<div class="t-input-wrap" id="wrapLive"><textarea class="dial-input t-area t-input" id="liveIn" rows="3" aria-label="Your answer" placeholder="Type your answer. Enter sends it."></textarea>' +
+        '<p class="t-error-msg">Type an answer first.</p></div>' +
+        '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-live-send>Send</button></p>';
+    }
+    return '<div class="t-out">' + outsideHead('Assessment', 'FlairsTech careers') +
+      '<section class="t-out-card">' +
+        '<p class="t-out-kicker">' + esc(ASMT_KIND[a.kind]) + ' · about ' + a.mins + ' minutes</p>' +
+        '<h1 class="t-out-h">' + esc(a.title) + '</h1></section>' +
+      '<section class="t-out-card t-chat" aria-label="Assessment with AiMY">' + said.join('') + input + '</section></div>';
+  }
+  function liveAt() {
+    const a = asmtOf(DB.sends.filter((x) => x.id === TAKE.id)[0].asmt);
+    return { a: a, i: a.questions.findIndex((qq, i) => !TAKE.live.done[i]) };
+  }
+  function liveSend() {
+    const box = byId('liveIn');
+    const v = box ? box.value.trim() : '';
+    if (!v) { shake('wrapLive'); return; }
+    const p = liveAt(), L = TAKE.live, i = p.i;
+    (L.said[i] = L.said[i] || []).push(v);
+    const all = L.said[i].join(' ');
+    if (all.split(/\s+/).length < 8 && !L.probed[i]) L.probed[i] = true;
+    else { L.done[i] = true; TAKE.a[i] = all; }
+    paint();
+    const next = byId('liveIn'); if (next) next.focus();
+  }
+  function livePick(i, j) {
+    const p = liveAt(), qq = p.a.questions[i];
+    TAKE.live.said[i] = [qq.options[j]];
+    TAKE.live.done[i] = true;
+    TAKE.a[i] = j;
+    paint();
+  }
   function takeSubmit() {
     const s = DB.sends.filter((x) => x.id === TAKE.id)[0];
     const a = asmtOf(s.asmt), c = DB.byId[s.cand];
@@ -3346,7 +3416,7 @@
        good answer covers (fixture: enough said, in enough words). */
     const answers = a.questions.map((qq, i) => qq.type === 'choice' ? TAKE.a[i] === qq.right : String(TAKE.a[i]).trim().split(/\s+/).length >= 8);
     const score = Math.round(answers.filter(Boolean).length / answers.length * 100);
-    put('sends', s, { status: 'done', answers: answers, score: score, doneDay: 0 });
+    put('sends', s, { status: 'done', answers: answers, score: score, doneDay: 0, probed: TAKE.live ? Object.keys(TAKE.live.probed).map(Number) : null });
     note(c, 'asmt', 'Finished the ' + a.title + ' assessment: ' + score + '%.');
     TAKE = null;
     paint();
@@ -3744,13 +3814,123 @@
      it, answering in the card above itself (Sales's peek): open a
      requisition, find candidates, add one from a CV, draft an assessment,
      call someone, or say what needs you. Anything else is a search. */
+  const actBtn = (a) => '<button class="s-insight-lnk' + (a.primary ? ' primary' : '') + '" type="button"' +
+    (a.go ? goAttr(a.go) : ' data-' + a.data) + ' data-peek-close>' + esc(a.label) + '</button>';
+  /* An answer to something asked is also a turn in that desk's thread, so
+     the canvas holds every question and its answer. While the canvas is
+     open the answer lands there instead of in the card. */
   function peek(html, acts) {
+    if (ASKING) {
+      const ch = chatFor();
+      if (!ch.title) ch.title = ASKING.length > 56 ? ASKING.slice(0, 55) + '…' : ASKING;
+      ch.turns.push({ who: 'you', html: esc(ASKING) }, { who: 'aimy', html: html, acts: acts || [] });
+      ASKING = null;
+      saveChats();
+      if (canvasShown()) { paintThread(); return; }
+      UNREAD++;
+      paintBadge();
+    }
     byId('peekBody').innerHTML = html;
-    byId('peekActs').innerHTML = (acts || []).map((a) => '<button class="s-insight-lnk' + (a.primary ? ' primary' : '') + '" type="button"' +
-      (a.go ? goAttr(a.go) : ' data-' + a.data) + ' data-peek-close>' + esc(a.label) + '</button>').join('');
+    byId('peekActs').innerHTML = (acts || []).map(actBtn).join('');
     byId('aimyPeek').hidden = false;
   }
   const peekHide = () => { byId('aimyPeek').hidden = true; };
+
+  /* ══ THE AIMY CANVAS (Sales) ═════════════════════════════════════════════
+     The bar's answers, kept: one thread per conversation, the desk's
+     conversations in the column beside it, and the openers when a thread is
+     empty. Stored per browser like the rest of the delta, under its own key
+     so Reset in the prototype panel does not need to know about it. */
+  const CHAT_KEY = 'aimy-talent:chats';
+  const CHATS = (function () { try { return JSON.parse(localStorage.getItem(CHAT_KEY)) || []; } catch (e) { return []; } })();
+  let CHAT_AT = null, ASKING = null, THINK = null, UNREAD = 0, THREAD_SEEN = 0;
+  const saveChats = () => { try { localStorage.setItem(CHAT_KEY, JSON.stringify(CHATS.slice(-40))); } catch (e) {} };
+  const chatNow = () => CHATS.filter((x) => x.id === CHAT_AT && x.desk === DESK)[0] || null;
+  const canvasShown = () => byId('aimyOverlay').classList.contains('open');
+  function chatFor() {
+    let ch = chatNow();
+    if (!ch) { ch = { id: uid('ch'), desk: DESK, title: '', turns: [] }; CHATS.push(ch); CHAT_AT = ch.id; }
+    return ch;
+  }
+  const SUGG = {
+    rec: ['What needs me today?', 'Which requisitions are at risk?', 'Where do we lose people?', 'How long to send the first profile?'],
+    hm: ['What needs me today?', 'Which requisitions are at risk?', 'Where do we lose people?', 'Open a requisition for 2 Senior Accountants'],
+    hr: ['Which requisitions are at risk?', 'Where do we lose people?', 'How long to send the first profile?', 'How many dropped at the HR interview?'],
+    client: ['What needs me today?', 'We need two more support engineers'],
+  };
+  const msgAvatar = (who) => who === 'you'
+    ? '<div class="msg-avatar user-av">' + esc(me().name.split(' ').map((w) => w[0]).join('').slice(0, 2)) + '</div>'
+    : '<div class="msg-avatar aimy-av">' + mark(14) + '</div>';
+  const turnHtml = (t) => t.who === 'you'
+    ? '<div class="chat-msg user">' + msgAvatar('you') + '<div class="msg-bubble">' + t.html + '</div></div>'
+    : '<div class="chat-msg aimy">' + msgAvatar('aimy') + '<div class="msg-bubble">' + t.html +
+        (t.acts && t.acts.length ? '<p class="t-acts">' + t.acts.map(actBtn).join('') + '</p>' : '') + '</div></div>';
+  function paintThread() {
+    const host = byId('overlayThread'), ch = chatNow();
+    const turns = ch ? ch.turns : [];
+    if (!turns.length && !THINK) {
+      THREAD_SEEN = 0;
+      host.innerHTML = '<div class="overlay-suggestions">' + SUGG[me().fn].map((q) =>
+        '<button class="overlay-sugg-chip" type="button" data-ask="' + esc(q) + '">' + esc(q) + '</button>').join('') + '</div>';
+    } else {
+      host.innerHTML = turns.map(turnHtml).join('') + (THINK
+        ? turnHtml({ who: 'you', html: esc(THINK) }) + '<div class="chat-msg aimy is-thinking">' + msgAvatar('aimy') +
+          '<div class="msg-bubble"><span class="t-shimmer" data-text="Reading the requisitions">Reading the requisitions</span></div></div>' : '');
+      if (turns.length > THREAD_SEEN && host.lastElementChild) host.lastElementChild.classList.add('b-arrive');
+      THREAD_SEEN = turns.length;
+      host.scrollTop = host.scrollHeight;
+    }
+    paintChats();
+  }
+  function paintChats() {
+    const mine = CHATS.filter((x) => x.desk === DESK && x.turns.length).slice().reverse();
+    byId('overlayChats').innerHTML =
+      '<button class="btn btn-brand btn-sm ov-chat-new" type="button" data-newchat>' + svg('plus', 14) + 'New conversation</button>' +
+      (mine.length ? '<div class="ov-chat-group"><div class="ov-chat-cap">Recent</div>' + mine.map((r) =>
+        '<div class="ov-chat-row"><button class="ov-chat' + (r.id === CHAT_AT ? ' is-here' : '') + '" type="button" data-chat="' + r.id + '"' + (r.id === CHAT_AT ? ' aria-current="true"' : '') + '>' +
+          '<span class="ov-chat-lines"><span class="ov-chat-name">' + esc(r.title || 'New conversation') + '</span></span></button>' +
+        '<button class="ov-chat-more" type="button" data-chat-del="' + r.id + '" aria-label="Delete this conversation" title="Delete">' + svg('trash', 14) + '</button></div>').join('') + '</div>'
+        : '<p class="ov-chat-none">Nothing yet. Ask AiMY something and it lands here.</p>');
+  }
+  function paintBasis() {
+    const tags = [isHR() ? 'Every requisition' : isClient() ? accOf(deskReqs()[0] || DB.reqs[0]).name + '’s requisitions' : 'Your requisitions'];
+    if (S.req && DB.reqById[S.req]) tags.push(DB.reqById[S.req].title);
+    if (S.cand && DB.byId[S.cand] && sees(DB.byId[S.cand])) tags.push(DB.byId[S.cand].name);
+    byId('overlayContextTags').innerHTML = tags.map((t) => '<span class="overlay-context-tag">' + esc(t) + '</span>').join('');
+  }
+  function paintBadge() {
+    const b = document.querySelector('#canvasOpen .float-badge');
+    b.hidden = !UNREAD;
+    b.textContent = UNREAD;
+  }
+  function openCanvas() {
+    peekHide();
+    UNREAD = 0; paintBadge();
+    if (!chatNow()) { const last = CHATS.filter((x) => x.desk === DESK && x.turns.length).slice(-1)[0]; CHAT_AT = last ? last.id : null; }
+    byId('aimyOverlay').classList.add('open');
+    paintBasis();
+    paintThread();
+    byId('overlayInput').focus();
+  }
+  function closeCanvas() {
+    byId('aimyOverlay').classList.remove('open');
+    chatsDrawer(false);
+  }
+  function chatsDrawer(on) {
+    byId('overlayChats').classList.toggle('is-open', on);
+    byId('ovChatsScrim').classList.toggle('is-open', on);
+    byId('ovChatsToggle').setAttribute('aria-expanded', String(on));
+  }
+  /* Asked in the canvas: the question shows at once with AiMY reading under
+     it, then the answer replaces the reading. */
+  function canvasAsk(text) {
+    const t = String(text || '').trim();
+    if (!t || THINK) return;
+    byId('overlayInput').value = '';
+    THINK = t;
+    paintThread();
+    setTimeout(() => { THINK = null; ask(t); if (canvasShown()) paintThread(); }, 600);
+  }
   /* "2 Senior Accountants at Northwind", "we need two more support
      engineers": the role, its level and how many, read from plain words. */
   const NUMW = { a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6 };
@@ -3766,6 +3946,10 @@
     return { title: title, level: level, seats: n, role: role };
   }
   function ask(text) {
+    ASKING = String(text || '').trim() || null;
+    try { askNow(text); } finally { ASKING = null; }
+  }
+  function askNow(text) {
     const t = text.trim();
     if (!t) return;
     const lc = t.toLowerCase();
@@ -4312,6 +4496,22 @@
     const at = (sel) => t.closest(sel);
     let el;
     if ((el = at('[data-undo]'))) { const u = UNDO; toastGone(); if (u) u(); return; }
+    /* ── The canvas ── */
+    if (at('#canvasOpen')) { if (canvasShown()) closeCanvas(); else openCanvas(); return; }
+    if (at('#peekOpen')) { openCanvas(); return; }
+    if (at('[data-overlay-close]')) { closeCanvas(); return; }
+    if (at('#ovChatsToggle')) { chatsDrawer(!byId('overlayChats').classList.contains('is-open')); return; }
+    if (at('#ovChatsScrim')) { chatsDrawer(false); return; }
+    if (at('#overlaySend')) { canvasAsk(byId('overlayInput').value); return; }
+    if ((el = at('[data-ask]'))) { if (!canvasShown()) openCanvas(); canvasAsk(el.getAttribute('data-ask')); return; }
+    if ((el = at('[data-newchat]'))) { CHAT_AT = null; THREAD_SEEN = 0; paintThread(); chatsDrawer(false); byId('overlayInput').focus(); return; }
+    if ((el = at('[data-chat-del]'))) {
+      const id = el.getAttribute('data-chat-del'), i = CHATS.findIndex((x) => x.id === id), ch = CHATS[i];
+      CHATS.splice(i, 1); if (CHAT_AT === id) CHAT_AT = null; saveChats(); paintThread();
+      toast('Conversation deleted', () => { CHATS.splice(i, 0, ch); saveChats(); paintThread(); });
+      return;
+    }
+    if ((el = at('[data-chat]'))) { CHAT_AT = el.getAttribute('data-chat'); THREAD_SEEN = 1e9; paintThread(); chatsDrawer(false); return; }
     if (at('[data-peek-close]') || at('#peekClose')) peekHide();
     if (at('#peekClose')) return;
     const val = (name) => el.getAttribute(name);
@@ -4498,6 +4698,8 @@
     if ((el = at('[data-appr]'))) { const p = two('data-appr'); approve(DB.offers.filter((o) => o.id === p[0])[0], p[1], p[2]); return; }
     if ((el = at('[data-ans]'))) { const p = two('data-ans'); TAKE.a[Number(p[0])] = Number(p[1]); paint(); return; }
     if ((el = at('[data-take-submit]'))) { takeSubmit(); return; }
+    if ((el = at('[data-live-send]'))) { liveSend(); return; }
+    if ((el = at('[data-live-pick]'))) { const p = two('data-live-pick'); livePick(Number(p[0]), Number(p[1])); return; }
     if ((el = at('[data-apply-sample]'))) { applyRead(null); return; }
     if ((el = at('[data-apply-consent]'))) { const k = val('data-apply-consent'); APPLY[k] = !APPLY[k]; paint(); return; }
     if ((el = at('[data-apply-send]'))) { applySend(); return; }
@@ -4705,6 +4907,9 @@
     if (e.target.id === 'dialNum' && e.key === 'Enter') { e.preventDefault(); dialGo(); return; }
     if (e.target.id === 'histNote' && e.key === 'Enter') { e.preventDefault(); histAdd(DB.byId[S.cand]); return; }
     if (e.target.id === 'meCode' && e.key === 'Enter') { e.preventDefault(); meCode(); return; }
+    if (e.target.id === 'overlayInput' && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); canvasAsk(e.target.value); return; }
+    if (e.target.id === 'liveIn' && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); liveSend(); return; }
+    if (e.key === 'Escape' && canvasShown()) { closeCanvas(); return; }
     if (CALL && CALL.state === 'logging') {
       if (e.key === 'Enter' && (e.target.id === 'callNote' || !typing) && !/button/i.test(e.target.tagName)) { e.preventDefault(); logCall(); return; }
       if (!typing && /^[1-8]$/.test(e.key)) { CALL.lit = OUTCOMES[Number(e.key) - 1].k; paintCall(); return; }

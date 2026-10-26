@@ -60,7 +60,7 @@ Recruiters make and take calls all day, so Sales's whole call model comes across
 - **Incoming calls** use Sales's ring widget, with the synthesised ringtone. You answer or decline. After 30 seconds unanswered, the call is logged as missed on the candidate's record. A stranger's name is read off the call, and one press adds them as a candidate on the requisition their words point at.
 - **Prototype panel:** "A candidate calls in", two kinds of stranger calling in, and a sound on/off switch.
 
-In Sales, the log is read back in the AiMY canvas. Talent has no canvas yet, so it's read back in the call panel.
+In Sales, the log is read back in the AiMY canvas. Talent keeps it in the call panel, which stays beside the page while you move around; the canvas holds the bar's questions.
 
 ## The rest of the requirements (built 26 Oct)
 
@@ -75,13 +75,13 @@ Everything in the New Operations list and the Product Overview now has a surface
 - **Stage templates** are per account and edited on the HR desk (`?on=templates`); a requisition takes its account's stages when it opens.
 - **Candidates are added from a CV** (`?on=add&req=r1`). AiMY reads it in four shown steps, asks only for what is missing (a phone number, usually), checks the pool for the same person, and creates the profile. A candidate can also be added to another requisition from their page, and their details edited behind Edit.
 - **Finding candidates** (`?on=find`) takes a brief or a requisition and searches the talent pool, the web, Apollo and SignalHire. Each result carries its must-haves met, as counts, with Why behind it. People found outside wait for a recruiter to approve first contact.
-- **Assessments** (`?on=asmts`, `?asmt=a1`) are questionnaires or live with the AiMY agent, with a pass mark, a link to share, AI scoring, per-question results, and the insight when one question fails most people ("74% got Q5 wrong") with Reword it with AiMY or Drop it. The candidate takes it at `?take=`.
+- **Assessments** (`?on=asmts`, `?asmt=a1`) are questionnaires or live with the AiMY agent, with a pass mark, a link to share, AI scoring, per-question results, and the insight when one question fails most people ("74% got Q5 wrong") with Reword it with AiMY or Drop it. The candidate takes it at `?take=`. A live assessment is a conversation: AiMY asks one question at a time, asks once for more when an open answer is too thin to score, and the recruiter's result says which questions it followed up on.
 - **Interviews** carry the template's agenda plus what the CV is silent on. The interviewer gets a link (`?debrief=`) to rate each must-have and say proceed or not; other interviewers' feedback stays hidden until theirs is in. A recording can be uploaded, transcribed and read against the success profile. The candidate page shows each must-have as CV says, then Interview found, with the deepest interview first.
 - **Offers** are prepared from the card, approved in parallel by the hiring manager and the BU director (`?approve=&by=hm|bu`), sent by a person, and answered. Accepted opens onboarding with its checklist and day-30 and day-90 check-ins.
 - **History** on every candidate: calls, moves, interviews, tests, offers and notes. A typed note that reads as a pass or a no gets the matching move offered beside it.
 - **The careers page** (`?apply=r1`) is an anonymous AiMY chat: drop a CV, fill in only what it lacks, consent, send. The candidate's own profile (`?me=`) opens with a one-time code, shows where each application stands, and lets them update details or withdraw.
 - **Reports** (`?on=reports`) for the recruiter, the hiring manager and HR, plus an account page (`?acc=`).
-- **The AiMY bar** answers in the peek card: what is waiting, which requisitions are at risk, where people drop (or at a named stage), how long it takes to send the first profile, and finds people and requisitions by name.
+- **The AiMY bar** answers in the card above it first, and every question and answer is also kept in **the AiMY canvas** (Sales's overlay): press the answer or the mark on the bar to open it. The canvas has each desk's conversations in a column (New conversation, delete with Undo), openers when a thread is empty, a "Based on" line naming what it reads, and a shimmering "Reading the requisitions" while it answers. The bar answers what is waiting, which requisitions are at risk, where people drop (or at a named stage), how long it takes to send the first profile, and finds people and requisitions by name.
 
 Motion uses transitions.dev pieces on the shell's own timing: the error shake on a wrong field, shimmer on the step AiMY is on, the accordion on interview details, the success check when an outside page is done, and a short reveal for results. All stop under reduced motion.
 
@@ -114,7 +114,6 @@ Omar's own ten requisitions are scripted, so Today always has its cases: one at 
 
 ## Not built yet
 
-- The AiMY canvas and voice. The bar answers in the peek card instead.
-- Real integrations: LinkedIn, Apollo, SignalHire, Teams recordings, WhatsApp and Freshdesk are fixtures.
+- Real integrations: LinkedIn, Apollo, SignalHire, Teams recordings, WhatsApp and Freshdesk are fixtures, as telephony is in Sales.
+- Voice: the live assessment and the canvas are typed.
 - Voicemail playback and video calls.
-- The live assessment agent itself; the questionnaire is real, the live mode is a stated mode.

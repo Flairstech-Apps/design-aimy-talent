@@ -62,7 +62,7 @@
        copied unedited like sales.css. talent.css is this product's appendix:
        only what neither of them already says. -->
   <link rel="stylesheet" href="assets/bdr.css?v=1" />
-  <link rel="stylesheet" href="assets/talent.css?v=8" />
+  <link rel="stylesheet" href="assets/talent.css?v=10" />
   <link rel="stylesheet" href="assets/aimy-responsive.css?v=1" />
   <script src="assets/aimy-viewport.js?v=1"></script>
 
@@ -384,7 +384,12 @@
             </button>
           </div>
           <div class="b-peek-main">
-            <span class="b-peek-body" id="peekBody" role="status" aria-live="polite"></span>
+            <!-- The press is the prose: it opens the answer in the canvas,
+                 with the thread it belongs to (Sales). -->
+            <button class="b-peek-open" type="button" id="peekOpen">
+              <span class="b-peek-body" id="peekBody" role="status" aria-live="polite"></span>
+              <span class="b-sr">Open in the AiMY canvas</span>
+            </button>
             <span class="b-peek-acts" id="peekActs"></span>
           </div>
         </div>
@@ -416,7 +421,46 @@
       </div>
     </div>
 
-    <!-- The AiMY canvas overlay (chat column, thread, input) lives here in Sales. It is ported with the chat, not before: an overlay nothing opens is dead markup. -->
+    <!-- ══ Canvas overlay (Sales) — opens for questions only. Not for
+         filtering, not for opening a known record, not for writes. The bar
+         answers in the card above it first; the card, or the mark on the
+         bar, opens the whole thread here. ══ -->
+    <div class="aimy-overlay" id="aimyOverlay" role="dialog" aria-label="AiMY Canvas">
+      <aside class="overlay-chats" id="overlayChats" aria-label="Conversations"></aside>
+      <button class="ov-chats-toggle" id="ovChatsToggle" type="button"
+              aria-expanded="false" aria-controls="overlayChats"
+              aria-label="Open conversations" title="Conversations">
+        <svg viewBox="0 0 24 24" aria-hidden="true" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>
+        </svg>
+      </button>
+      <div class="ov-chats-scrim" id="ovChatsScrim"></div>
+      <div class="overlay-main">
+        <button class="overlay-close" type="button" data-overlay-close aria-label="Close canvas">
+          <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"></line>
+            <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"></line>
+          </svg>
+        </button>
+        <div class="overlay-context-bar" id="overlayContextBar">
+          <span class="overlay-context-label">Based on</span>
+          <div class="overlay-context-tags" id="overlayContextTags"></div>
+        </div>
+        <div class="overlay-thread" id="overlayThread" aria-live="polite"></div>
+        <div class="overlay-input-wrap">
+          <div class="overlay-input-bar">
+            <span class="aimy-float-icon" aria-hidden="true">
+              <svg width="16" height="18" viewBox="0 0 18 20"><use href="#aimy-logo-small"/></svg>
+            </span>
+            <textarea class="overlay-input" id="overlayInput" placeholder="Ask AiMY anything…" rows="1"
+                      spellcheck="false" autocomplete="off" data-submit-on-enter aria-label="Ask AiMY"></textarea>
+            <button class="overlay-send" id="overlaySend" type="button" aria-label="Send">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </main>
 
   <!-- ══ THE CALL — a shell region, not a modal (Sales) ═══════════════════
@@ -462,6 +506,6 @@
 </div>
 
 <script src="assets/aimy-ds.js"></script>
-<script src="assets/talent.js?v=26"></script>
+<script src="assets/talent.js?v=28"></script>
 </body>
 </html>

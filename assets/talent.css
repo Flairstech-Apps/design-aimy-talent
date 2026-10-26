@@ -389,3 +389,15 @@ body.is-portal .b-ring-host { display: none !important; }
 .t-iv { min-width: 0; }
 .t-tpl .b-month { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
 .t-tpl .b-kind { white-space: normal; min-width: 0; }
+
+/* ══ 10. THE CANVAS AND THE LIVE TEST ═════════════════════════════════════
+   The canvas is Sales's, drawn by sales.css; these lines only keep it off
+   the pages opened from a link and give the delete control its icon size. */
+body.is-portal .aimy-overlay { display: none !important; }
+.ov-chat-more svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+.ov-chat-new svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+.chat-msg .t-acts { margin-top: 10px; }
+.t-chat .b-cuts.t-col { margin-left: 28px; }
+.t-apply-form .t-q { align-items: flex-start; }
+.t-apply-form .t-q .t-check { margin-top: 2px; }
+.t-apply-form .t-q + .t-q { margin-top: 10px; }
