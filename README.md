@@ -29,7 +29,38 @@ The recruiter's desk opens as **Omar Saeed**. It is the only desk so far.
   - The funnel, with the biggest drop marked.
   - The candidates on it, cut by stage. Each card has its next move and its exit, each with Undo.
 
-The rail shows what's waiting on you, plus two doors: the next interview, and your days to send profiles against the team's. The bell lists results that are in and answers that are owed. The composer finds: Enter takes you to the requisitions matching what you typed.
+- **Calls** (`?on=calls`) has three tabs:
+  - **To call:** callbacks someone asked for come first, then phone screens that are due, then people who applied and haven't been called. "Call them in order" calls down the list, with "Log it and call the next one" or "Log it and stop" after each call.
+  - **Missed:** people who called and got nobody. A missed call clears when you call them back, or when they call again and get you.
+  - **Today:** every call, grouped by day.
+- **One candidate** (`?cand=k20`) is Sales's contact record turned into a candidate:
+  - Who they are and their phone number.
+  - What they said on calls (notice period and salary).
+  - Their evidence against the success profile.
+  - A Call button, plus their next move and exit.
+  - Every call with them.
+
+The rail shows what's waiting on you, plus three doors: the next interview, your calls (to call, missed, callbacks due), and your days to send profiles against the team's. The bell lists missed calls, results that are in, and answers that are owed. The composer finds: Enter takes you to the requisitions matching what you typed.
+
+## Calls, from Sales
+
+Recruiters make and take calls all day, so Sales's whole call model comes across. Telephony is fixture, as in Sales: a transcript grows a line at a time from the candidate's own `fate`.
+
+- **The dialer** in the top bar has a From line picker (two Cairo lines). As you type a number it tells you whose it is; a number that belongs to a candidate puts the call on their record.
+- **The call panel** sits beside the page, not in a modal, and has four states:
+  - **Ready:** what to get on this call (notice, salary, and the must-haves the CV is silent on), plus the last call.
+  - **Connecting.**
+  - **Live:** a timer, record, mute, hold, hang up, and minimise.
+  - **Logging.**
+- **Recording needs consent.** Record asks whether the candidate has been told. Nothing is transcribed until you say they have.
+- **Logging is a sentence, not a form.** There are eight outcomes on one row, keys 1 to 8, with AiMY's reading of the call already selected. A note underneath is read as you type and overrides the transcript. One line says what Log will do.
+  - "Passed the screen" moves someone at or before the phone screen to the HR interview, and saves their notice and salary.
+  - The exits are Not a fit, Not interested, and Do not call. Wrong number marks the number as not working.
+  - Every log can be undone from its toast.
+- **Incoming calls** use Sales's ring widget, with the synthesised ringtone. You answer or decline. After 30 seconds unanswered, the call is logged as missed on the candidate's record. A stranger's name is read off the call, and one press adds them as a candidate on the requisition their words point at.
+- **Prototype panel:** "A candidate calls in", two kinds of stranger calling in, and a sound on/off switch.
+
+In Sales, the log is read back in the AiMY canvas. Talent has no canvas yet, so it's read back in the call panel.
 
 ## Rules carried over from Sales
 
@@ -63,7 +94,8 @@ Omar's own ten requisitions are scripted, so Today always has its cases: one at 
 These come with the surface that needs them:
 - The AiMY canvas, the answer card and voice.
 - Sourcing in chat.
-- The candidate page, with the phone screen read-back and CV intake.
+- CV intake.
+- Voicemail playback and video calls.
 - The account page.
 - The hiring manager, HR Manager and client desks.
 - The bell's follow-up lines.
