@@ -1,0 +1,4 @@
+# Local Obsidian vault: the repo root is opened as a vault holding the
+# knowledge map and market research. Kept out of git and the deploy.
+.obsidian/
+knowledge-vault/
