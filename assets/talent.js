@@ -5668,12 +5668,21 @@
       const v = t.v(st);
       const tv = WS.map((s) => (t.base && t.base(s) < TREND_MIN ? null : t.v(s, TREND_MIN)));
       const def = t.def(st).concat(t.tgt && !t.tgtV ? [['Target', TARGET_BY]] : [], [TREND_DEF]);
-      return '<div class="t-kpi"><span class="t-kpi-cap">' + esc(t.cap) + '</span><b class="t-kpi-n">' + esc(t.show(v)) + '</b>' +
-        (t.tgt ? tgtSay(t.tgt, t.tgtV ? t.tgtV(st) : v, t.tgtLead) : '') +
-        '<span class="t-kpi-say">' + esc(t.say(st)) + '</span>' +
-        '<span class="t-kpi-trend">' + spark(tv) + '<span>Month by month: ' + tv.map((x) => esc(t.show(x))).join(' → ') + '</span></span>' +
-        '<details class="t-kpi-def"><summary>How it is counted</summary><dl>' + def.map((d) => '<dt>' + esc(d[0]) + '</dt><dd>' + esc(d[1]) + '</dd>').join('') + '</dl></details></div>';
+      /* ONE SHAPE A CARD (Engy, 29 Oct: thirteen tiles of different heights
+         read as untidy). Every card has the same slots in the same order:
+         the measure, the number, its target, one line of what it counts,
+         and the trend pinned to the foot. The grid gives every card the same
+         height, and How it is counted opens over the card, not inside it. */
+      return '<div class="t-kpi t-kpi-eq">' +
+        '<span class="t-kpi-cap">' + esc(t.cap) + '</span>' +
+        '<b class="t-kpi-n">' + esc(t.show(v)) + '</b>' +
+        (t.tgt ? tgtSay(t.tgt, t.tgtV ? t.tgtV(st) : v, t.tgtLead) : '<span class="t-kpi-tgt">No target</span>') +
+        '<span class="t-kpi-say" title="' + esc(t.say(st)) + '">' + esc(t.say(st)) + '</span>' +
+        '<span class="t-kpi-trend">' + (spark(tv) || '<span class="t-spark-none" aria-hidden="true"></span>') + '<span>' + tv.map((x) => esc(t.show(x))).join(' → ') + '</span></span>' +
+        '<details class="t-kpi-def"><summary>How it is counted</summary><dl>' + def.map((d) => '<dt>' + esc(d[0]) + '</dt><dd>' + esc(d[1]) + '</dd>').join('') + '</dl></details>' +
+      '</div>';
     };
+    const board = (label, list) => '<div class="t-kpis t-kpis-eq" aria-label="' + esc(label) + '">' + list.map(tile).join('') + '</div>';
     /* The filters: the period as three chips, each with how many it holds,
        and the account as chips too, wrapping rather than scrolling (Sales's
        filter row), because a filter you cannot see is one you forget is on. */
@@ -5732,10 +5741,10 @@
     const maxLost = Math.max(1, ...lostRows.map((x) => x.d));
     return '<div class="s-home">' +
       '<section class="s-block s-block-wide" aria-label="Reports">' + head +
-        '<div class="t-kpis">' + tiles.map(tile).join('') + '</div>' +
+        board('Reports', tiles) +
       '</section>' +
       '<section class="s-block s-block-wide" aria-label="Staffing"><div class="s-camp-list-head"><h2 class="s-block-h">Staffing</h2><span class="s-block-say">what a hire takes, and what happens after it</span></div>' +
-        '<div class="t-kpis">' + staffing.map(tile).join('') + '</div>' +
+        board('Staffing', staffing) +
       '</section>' +
       (phones ? (function () {
         /* AiMY's one finding: a client's decline pattern waiting on a
