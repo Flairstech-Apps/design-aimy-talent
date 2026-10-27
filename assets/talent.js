@@ -858,6 +858,20 @@
     seedPeople(r);
     seedWork(r);
     seedLoop();
+    seedApproval();
+  }
+  /* One requisition waits on the BU Director, so the approver's desk has
+     its case: three new seats at once, not replacements. Built without
+     the random stream, so nothing else in the corpus moves. */
+  function seedApproval() {
+    const role = ROLES[4], acc = ACCOUNTS[0];
+    const q = { id: 'r' + (DB.reqs.length + 1) + 'a', title: role.title, fam: role.fam, level: role.level, must: role.must.slice(), acc: acc.id, tpl: acc.tpl, hm: acc.hm,
+      rec: ME, seats: 3, kind: 'new', billable: true, state: 'draft', opened: 0, target: 35, place: 'Nasr City office', plan: null, domain: acc.domain, published: false,
+      budget: { min: 14000, max: 20000 }, asmt: 'a1', askedBy: ME,
+      desc: 'We are hiring 3 people as Customer Support Agent for Northwind Software, a software client. You will answer customers by ticket and phone, work out what broke, and fix it or hand it on with everything the next person needs.' };
+    const ex = reqExceptions(q);
+    q.approval = { day: -1, by: ME, says: ex.map((x) => x.say(q)), wait: ex.map((x) => x.who).filter((x, i, a) => a.indexOf(x) === i), ok: [], back: null };
+    DB.reqs.push(q); DB.reqById[q.id] = q; DB.byReq[q.id] = [];
   }
 
   /* ── People, not just applications ──────────────────────────────────────
@@ -2121,7 +2135,8 @@
   }
 
   function reqCard(q, i) {
-    const st = REQ_STATE[stateOf(q)];
+    const wait = q.state === 'draft' && q.approval && !q.approval.back;
+    const st = wait ? { label: 'Waiting for approval', tone: 'warn' } : REQ_STATE[stateOf(q)];
     const h = health(q);
     const act = activeOf(q);
     const sent = act.filter((c) => c.stage === 'sent' || c.stage === 'client').length;
@@ -2129,7 +2144,9 @@
     const ws = worstStep(f);
     const clock = q.state === 'draft' ? 'not open yet' : CLOSED[q.state] ? 'closed' : q.state === 'hold' ? 'paused' : h.left >= 0 ? days(h.left) + ' left' : days(-h.left) + ' past the target';
     const sentTo = DB.byReq[q.id].filter((c) => rank(q, 'sent') >= 0 && rank(q, c.maxAt) >= rank(q, 'sent'));
-    const read = q.state === 'draft' ? 'A draft. Nothing happens until it is opened.'
+    const read = wait ? 'Waiting on ' + esc(namesOf(waitingOn(q.approval))) + ', because of ' + esc(q.approval.says.join(', and ')) + '.'
+      : q.state === 'draft' && q.approval && q.approval.back ? esc(DESKS[q.approval.back].name) + ' sent it back. Change it, then open it again.'
+      : q.state === 'draft' ? 'A draft. Nothing happens until it is opened.'
       : isClient() ? (sentTo.length ? 'We sent <b>' + plural(sentTo.length, 'profile') + '</b>; you met ' + sentTo.filter((c) => rank(q, c.maxAt) >= rank(q, 'client')).length + '.' : 'No profiles sent yet.')
       : CLOSED[q.state]
       ? (q.state === 'filled' || q.state === 'started' ? plural(q.seats, 'seat') + ' filled, from ' + DB.byReq[q.id].length + ' candidates.' : 'Closed before anyone was hired.')
@@ -2143,6 +2160,7 @@
         esc(plural(q.seats, 'seat')) + ' · ' + esc(q.kind === 'replacement' ? 'a replacement' : 'a new role') + ' · ' + esc(q.level) + '</span></p>' +
       '<div class="b-qcard-why">' + (CLOSED[q.state] ? 'Opened ' + sayDay(q.opened)
         : '<b>' + act.length + '</b> in progress' + (sent ? ', <b>' + sent + '</b> with the client' : '')) + '</div>' +
+      (h && !isClient() ? forecastHtml(q, h) : '') +
       aimyBlock({ text: read, from: 'this requisition’s own stages' }) +
       '<div class="tc-gov b-qcard-foot"><span class="b-qcard-num b-fact">' + svg('user') + '<span>' + esc(hmOf(q).name) + '</span></span>' +
         '<button class="s-insight-lnk primary" type="button" data-req="' + q.id + '">Open it</button></div>' +
@@ -5968,6 +5986,7 @@
         { label: 'Assessments', n: qProposals().length || null, why: qProposals().length ? 'questions most people fail' : 'all reading well', go: { on: 'asmts' } },
         { label: 'Reports', why: 'every number from the dashboard', go: { on: 'reports' } },
       ]) +
+      approvalsBlock() +
       '<section class="s-block s-block-wide"><div class="s-camp-list-head">' + switcher('') + '<span class="s-block-say">likely to miss their date · the reason is on each row</span></div>' +
         (risky.length ? '<div class="b-owed">' + risky.map((q, i) => '<div class="b-owed-row t-row" style="--i:' + Math.min(i, 8) + '"><span class="b-owed-sev" aria-hidden="true"></span>' +
           '<button class="b-owed-main t-row-open" type="button"' + goAttr({ req: q.id }) + '><span class="b-owed-head"><span class="b-owed-type">' + esc(q.title) + '</span>' +
@@ -6013,6 +6032,7 @@
       ]) +
       '<section class="s-block s-block-wide"><div class="s-camp-list-head">' + switcher('') + '<span class="s-block-say">offers waiting on your answer · oldest first</span></div>' +
         (a.length ? askRows(a) : '<p class="s-none">Nothing is waiting on you.</p>') + '</section>' +
+      approvalsBlock() +
       reasonsBlock(said, 'clients', null) +
     '</div>';
   }
@@ -6533,8 +6553,8 @@
       id: uid('r'), title: title, fam: fam, level: level, must: o.must || [], acc: acc.id, tpl: acc.tpl, hm: acc.hm,
       rec: isRec() ? DESK : 'omar', seats: o.seats || 1, kind: o.kind || 'new', billable: acc.id !== 'flairs',
       state: 'draft', opened: 0, target: o.target || expDays(acc.tpl), place: o.place || 'Nasr City office', plan: null,
-      domain: acc.domain, published: false, budget: { min: BUDGETS[level][0], max: BUDGETS[level][1] },
-      desc: o.desc || '', asmt: TEMPLATE[acc.tpl].indexOf('assess') >= 0 ? (fam === 'finance' ? 'a3' : fam === 'ops' ? 'a4' : 'a1') : null,
+      domain: acc.domain, published: false, budget: o.budget || { min: BUDGETS[level][0], max: BUDGETS[level][1] },
+      desc: o.desc || '', from: o.from || null, asmt: TEMPLATE[acc.tpl].indexOf('assess') >= 0 ? (fam === 'finance' ? 'a3' : fam === 'ops' ? 'a4' : 'a1') : null,
       askedBy: DESK,
     };
     make('reqs', q);
@@ -6547,6 +6567,198 @@
       kind: 'replacement', place: q.place, desc: q.desc });
     if (c) toast('Cloned ' + q.title, null, 'A draft with the same profile. Change what is different, then open it.');
   }
+  /* ══ WHERE A REQUISITION STARTS (Requisitions, 29 Oct) ══════════════════
+     82% of requests replace someone who left, so that is the first start:
+     the role, its must-haves and its account come from the person, and the
+     recruiter changes what is different. The second is the briefing, as
+     Greenhouse's kickoff and Workable's job brief agents do: the notes from
+     the call, pasted, read into a draft that says what it could not find.
+     Starting from nothing stays, as a link. */
+  const deskAccs = () => (isHR() ? ACCOUNTS : isHM() ? ACCOUNTS.filter((a) => a.hm === DESK) : ACCOUNTS.filter((a) => mine().some((q) => q.acc === a.id)));
+  function newReqPage() {
+    const accIn = ACCOUNTS.filter((a) => a.id === S.account)[0] || null;
+    const accs = deskAccs();
+    const left = DB.past.filter((p) => !p.stayed && (accIn ? p.acc === accIn.id : accs.some((a) => a.id === p.acc)));
+    const live = DB.reqs.filter((q) => q.state !== 'draft');
+    const share = Math.round(live.filter((q) => q.kind === 'replacement').length / Math.max(1, live.length) * 100);
+    return '<div class="s-home">' +
+      '<div class="b-topbar s-block-wide"><button class="s-back" type="button" data-trail>' + svg('back', 14) + 'Back</button></div>' +
+      '<section class="s-block s-block-wide" aria-label="New requisition">' +
+        '<div class="s-camp-list-head"><h2 class="s-block-h">New requisition' + (accIn ? ' for ' + esc(accIn.name) : '') + '</h2>' +
+          '<span class="s-block-say">' + share + '% of requests replace someone, so that comes first</span></div>' +
+        '<div class="t-starts">' +
+          '<div class="t-start">' +
+            '<h3 class="t-start-h">' + svg('loop', 16) + 'Replace someone who left</h3>' +
+            '<p class="t-start-say">The role, its must-haves and its account come from theirs. You change what is different.</p>' +
+            (left.length ? '<div class="b-log">' + left.map((p, i) => logRow({ tone: '', ico: svg('user'), who: p.name,
+                meta: logMeta([p.title, accOf(p).name, 'joined ' + sayDay(p.join)]), say: 'Why they left: ' + esc(lower(p.why)) + '.',
+                act: 'data-replace="' + p.id + '"', go: 'Replace' }, i)).join('') + '</div>'
+              : '<p class="s-none">Nobody has left on ' + (accIn ? esc(accIn.name) : 'these accounts') + '.</p>') +
+          '</div>' +
+          '<div class="t-start">' +
+            '<h3 class="t-start-h">' + svg('doc', 16) + 'From a briefing</h3>' +
+            '<p class="t-start-say">Paste the notes from the kickoff call or the hiring manager’s email. AiMY drafts it and says what it could not find.</p>' +
+            '<div class="t-input-wrap" id="wrapBrief"><textarea class="b-draft-in b-draft-area t-area t-input" id="briefText" rows="6" aria-label="The briefing" ' +
+              'placeholder="For example: Northwind needs two German-speaking support agents, C1, at least a year of software support, by mid-December. Budget up to 30,000."></textarea>' +
+              '<p class="t-error-msg">Paste or type the briefing first.</p></div>' +
+            '<p class="t-acts"><button class="s-insight-lnk primary" type="button" data-brief-read>' + mark(12) + 'Draft it from this</button></p>' +
+          '</div>' +
+        '</div>' +
+        '<p class="b-vfoot">Or <button class="t-inline-link" type="button" data-new-blank>start from nothing</button>.</p>' +
+      '</section></div>';
+  }
+  function replaceFrom(p) {
+    if (!p) return;
+    const role = ROLES.filter((x) => x.title === p.title)[0];
+    const fam = role ? role.fam : famOf(p.title);
+    /* The careers page never names the person who left. */
+    const q = newReq({ acc: p.acc, title: p.title, fam: fam, level: role ? role.level : 'Mid-level', must: role ? role.must.slice() : [], kind: 'replacement',
+      desc: 'We are hiring a ' + p.title + '. ' + ROLE_BLURB[fam],
+      from: { kind: 'replace', who: p.id, say: 'Drafted from ' + p.name + '’s role on ' + accOf(p).name + ': the same title, level and must-haves. They left: ' + lower(p.why) + '.' +
+        (/salary/i.test(p.why) ? ' Worth checking the budget before it opens.' : '') } });
+    if (q) toast('A draft to replace ' + first(p.name), () => { unmake('reqs', q); go({ on: 'newreq', account: S.account }, true); }, 'Change what is different, then open it.');
+  }
+  /* What a briefing says, read into fields; whatever it does not say is
+     named, not guessed silently. */
+  const MONTH_N = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+  function readBrief(text) {
+    const t = String(text), lc = t.toLowerCase();
+    const words = (x) => x.toLowerCase().replace(/[()]/g, '').split(/\s+/).filter((w) => w.length > 3);
+    const scored = ROLES.map((r) => ({ r: r, n: words(r.title).filter((w) => lc.indexOf(w) >= 0 || lc.indexOf(w.replace(/s$/, '')) >= 0).length })).sort((a, b) => b.n - a.n);
+    const role = scored[0].n >= 2 ? scored[0].r : null;
+    const title = role ? role.title : parseRole(t).title;
+    const acc = ACCOUNTS.filter((a) => lc.indexOf(a.name.toLowerCase().split(' ')[0]) >= 0)[0] || null;
+    const level = LEVELS.filter((l) => lc.indexOf(l.toLowerCase()) >= 0)[0] || null;
+    const sm = /\b(\d+|one|two|three|four|five|six)\s+(?:more\s+)?(?:[a-z-]+\s+){0,3}?(?:people|agents?|engineers?|specialists?|accountants?|analysts?|seats|hires|leads?)\b/i.exec(t);
+    const seats = sm ? (NUMW[sm[1].toLowerCase()] || Number(sm[1])) : null;
+    let target = null;
+    const mm = /\b(?:by|before)\s+(mid-?|end of |the end of |early )?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b/i.exec(t);
+    if (mm) {
+      const day = mm[1] && /mid/i.test(mm[1]) ? 15 : mm[1] && /end/i.test(mm[1]) ? 28 : 1;
+      let d = new Date(TODAY.getFullYear(), MONTH_N[mm[2].toLowerCase()], day);
+      if (d <= TODAY) d = new Date(TODAY.getFullYear() + 1, MONTH_N[mm[2].toLowerCase()], day);
+      target = Math.round((d - TODAY) / DAY_MS);
+    }
+    const wk = /\bin\s+(\d+|two|three|four|six)\s+weeks\b/i.exec(t);
+    if (target == null && wk) target = (NUMW[wk[1].toLowerCase()] || Number(wk[1])) * 7;
+    const bm = /\b(\d{2})[,.]?(\d{3})\b/.exec(t);
+    const budget = bm ? Number(bm[1] + bm[2]) : null;
+    const lang = ['German', 'French', 'Spanish', 'Italian', 'Dutch'].filter((l) => new RegExp('\\b' + l, 'i').test(t))[0] || null;
+    const cefr = /\b([ABC][12])\b/.exec(t);
+    const kind = /\b(replac|left|leaving|resign|backfill)/i.test(t) ? 'replacement' : /\b(new (seat|role|headcount|position)s?|additional|extra)\b/i.test(t) ? 'new' : null;
+    return { title: title, role: role, acc: acc, level: level, seats: seats, target: target, budget: budget, lang: lang, cefr: cefr ? cefr[1] : null, kind: kind };
+  }
+  function fromBrief(text) {
+    if (!String(text).trim()) { shake('wrapBrief'); return; }
+    const b = readBrief(text);
+    if (!b.title) { shake('wrapBrief'); toast('I could not find the role in it', null, 'Name it, like “two German-speaking support agents”.'); return; }
+    const acc = b.acc || deskAccs()[0] || ACCOUNTS[0];
+    const level = b.level || (b.role ? b.role.level : 'Mid-level');
+    const must = b.role ? b.role.must.slice() : [];
+    if (b.lang) {
+      const line = b.lang + ' at ' + (b.cefr || 'C1') + ' or above';
+      const at = must.findIndex((m) => m.indexOf(b.lang) === 0);
+      if (at >= 0) must[at] = line; else must.unshift(line);
+    }
+    const band = BUDGETS[level];
+    const got = [b.title, b.acc ? acc.name : null, b.seats ? plural(b.seats, 'seat') : null, b.level ? level.toLowerCase() : null,
+      b.target != null ? 'by ' + sayDay(b.target) : null, b.budget ? 'up to ' + money(b.budget) : null, b.lang ? b.lang + ' at ' + (b.cefr || 'C1') : null,
+      b.kind ? (b.kind === 'new' ? 'a new seat' : 'a replacement') : null].filter(Boolean);
+    const miss = [b.acc ? null : 'the account (set to ' + acc.name + ')', b.target != null ? null : 'a date (set to the usual ' + expDays(acc.tpl) + ' days)',
+      b.budget ? null : 'a budget (set to the ' + level.toLowerCase() + ' band)', b.kind ? null : 'whether it replaces someone (set as a replacement, the usual case)',
+      b.role ? null : 'must-haves AiMY knows for this role'].filter(Boolean);
+    const q = newReq({ acc: acc.id, title: b.title, fam: b.role ? b.role.fam : famOf(b.title), level: level, must: must, seats: b.seats || 1, kind: b.kind || 'replacement',
+      target: b.target != null ? b.target : undefined, budget: b.budget ? { min: Math.min(band[0], b.budget), max: b.budget } : undefined,
+      desc: 'We are hiring ' + (b.seats > 1 ? b.seats + ' people as ' : 'a ') + b.title + '. ' + ROLE_BLURB[b.role ? b.role.fam : famOf(b.title)],
+      from: { kind: 'brief', text: String(text).trim(), say: 'Read from your briefing: ' + got.join(', ') + '.' + (miss.length ? ' Not in it: ' + miss.join('; ') + '.' : '') } });
+    if (q) toast('Drafted from the briefing', () => { unmake('reqs', q); go({ on: 'newreq', account: S.account }, true); }, miss.length ? plural(miss.length, 'thing') + ' it did not say, set to the usual. Check ' + (miss.length === 1 ? 'it' : 'them') + ' before you open it.' : 'Check it, then open it.');
+  }
+
+  /* ══ APPROVAL BY EXCEPTION (Requisitions, 29 Oct) ════════════════════════
+     As Ashby and Lever do it: a requisition opens straight away unless
+     something about it is an exception, and only the person who answers for
+     that exception is asked. A replacement inside its band, billable, for
+     one or two seats, needs nobody. The rules are said where it opens. */
+  const REQ_RULES = [
+    { k: 'new', who: 'hesham', test: (v) => v.kind === 'new', say: () => 'a new seat, not a replacement' },
+    { k: 'seats', who: 'hesham', test: (v) => v.seats > 2, say: (v) => plural(v.seats, 'seat') + ' at once' },
+    { k: 'budget', who: 'hesham', test: (v) => !!v.budget && !!BUDGETS[v.level] && v.budget.max > BUDGETS[v.level][1],
+      say: (v) => 'a budget up to ' + money(v.budget.max) + ', above the ' + v.level.toLowerCase() + ' band of ' + money(BUDGETS[v.level][1]) },
+    { k: 'unbilled', who: 'dina', test: (v) => !v.billable && v.acc !== 'flairs', say: () => 'a client role that is not billable' },
+  ];
+  const reqExceptions = (v) => REQ_RULES.filter((r) => r.test(v));
+  const RULES_SAY = 'Only a new seat, more than two seats, a budget above its band or an unbilled client role needs approval.';
+  /* What a requisition that needs nobody is, said when it opens. */
+  const passSay = (v) => [v.kind === 'replacement' ? 'a replacement' : null, plural(v.seats, 'seat'),
+    v.budget && BUDGETS[v.level] && v.budget.max <= BUDGETS[v.level][1] ? 'inside the ' + v.level.toLowerCase() + ' band' : null,
+    v.acc === 'flairs' ? 'an internal role' : v.billable ? 'billable' : null].filter(Boolean).join(', ');
+  const waitingOn = (a) => a.wait.filter((w) => a.ok.indexOf(w) < 0);
+  const namesOf = (ids) => ids.map((w) => DESKS[w].name).join(' and ');
+  function approveReq(q) {
+    const a = q && q.approval;
+    if (!a || a.back || waitingOn(a).indexOf(DESK) < 0) return;
+    const before = { approval: a, state: q.state, opened: q.opened };
+    const ok = a.ok.concat(DESK), done = a.wait.every((w) => ok.indexOf(w) >= 0);
+    put('reqs', q, done ? { approval: Object.assign({}, a, { ok: ok, done: 0 }), state: 'open', opened: 0 } : { approval: Object.assign({}, a, { ok: ok }) });
+    const n = done ? tellDesk(a.by, { sev: 'p1', type: 'Requisition approved', body: me().name + ' approved ' + q.title + ' for ' + accOf(q).name + '. It is open now.', cta: 'Open it', go: { req: q.id } }) : null;
+    paint();
+    toast(done ? 'Approved and opened: ' + q.title : 'Approved. Still waiting on ' + namesOf(waitingOn(q.approval)), () => { put('reqs', q, before); untell(n); paint(); });
+  }
+  function backReq(q) {
+    const a = q && q.approval;
+    if (!a || a.back || waitingOn(a).indexOf(DESK) < 0) return;
+    const before = { approval: a };
+    put('reqs', q, { approval: Object.assign({}, a, { back: DESK }) });
+    const n = tellDesk(a.by, { sev: 'p1', type: 'Requisition sent back', body: me().name + ' sent back ' + q.title + ' for ' + accOf(q).name + ' because of ' + a.says.join(', and ') + '. Change it, or talk it through, then open it again.', cta: 'Open it', go: { req: q.id } });
+    paint();
+    toast('Sent back to ' + DESKS[a.by].name, () => { put('reqs', q, before); untell(n); paint(); }, 'It stays a draft until they open it again.');
+  }
+  /* The approval, said on the draft: who it waits on and why, with the two
+     answers for the person it waits on. */
+  function apprBanner(q) {
+    const a = q.approval;
+    if (!a || q.state !== 'draft') return '';
+    const mineToAnswer = !a.back && waitingOn(a).indexOf(DESK) >= 0;
+    const say = a.back ? '<b>' + esc(DESKS[a.back].name) + ' sent it back.</b> It needed approval because of ' + esc(a.says.join(', and ')) + '. Change that, or talk it through, then open it again.'
+      : '<b>' + (mineToAnswer ? 'Waiting on you.' : 'Waiting on ' + esc(namesOf(waitingOn(a))) + '.') + '</b> ' + esc(DESKS[a.by].name) + ' asked ' + esc(sayWhen(a.day)) +
+        '. It needs approval because of ' + esc(a.says.join(', and ')) + '. ' + RULES_SAY;
+    return '<section class="s-insight s-block-wide t-appr" aria-label="Approval">' +
+      '<div class="s-lead-mark"><svg class="s-insight-mark" viewBox="0 0 18 20" width="14" height="14" aria-hidden="true"><use href="#aimy-logo-small"/></svg>' +
+        '<span class="work-state ws-detected">' + (a.back ? 'Sent back' : 'Approval by exception') + '</span></div>' +
+      '<p class="s-lead-deck">' + say + '</p>' +
+      (mineToAnswer ? '<div class="s-lead-acts"><button class="s-insight-lnk primary" type="button" data-req-ok="' + q.id + '">Approve' + (waitingOn(a).length === 1 ? ' and open it' : '') + '</button>' +
+        '<button class="b-ghost" type="button" data-req-back="' + q.id + '">Send it back</button></div>' : '') +
+    '</section>';
+  }
+  /* For the approver's own desk: only the exceptions reach it. */
+  function approvalsBlock() {
+    const list = DB.reqs.filter((q) => q.state === 'draft' && q.approval && !q.approval.back && waitingOn(q.approval).indexOf(DESK) >= 0);
+    if (!list.length) return '';
+    return '<section class="s-block s-block-wide" aria-label="Requisitions to approve"><div class="s-camp-list-head"><h2 class="s-block-h">Requisitions to approve</h2>' +
+      '<span class="s-block-say">only the exceptions reach you</span></div>' +
+      '<div class="b-log">' + list.map((q, i) => logRow({ tone: '', ico: svg('req'), who: q.title + ', ' + accOf(q).name,
+        meta: logMeta([plural(q.seats, 'seat'), 'asked by ' + DESKS[q.approval.by].name, sayWhen(q.approval.day)]),
+        say: 'Needs you because of ' + esc(q.approval.says.join(', and ')) + '.', aimy: true, act: 'data-req="' + q.id + '"', go: 'Open it' }, i)).join('') + '</div></section>';
+  }
+
+  /* ══ THE FORECAST ON EACH CARD (Requisitions, 29 Oct; R6) ═══════════════
+     When it is likely to fill, against the date promised, and the days to
+     the first profile against the seven-day target the report uses. Rule
+     based, the same arithmetic as at risk: the usual days from the furthest
+     person's stage to an accepted offer. */
+  const FIRST_TARGET = 7;
+  function forecastHtml(q, h) {
+    const gap = h.left - h.need;
+    const rows = [['At this pace', sayDay(h.need), h.risk ? days(-gap) + ' after the ' + sayDay(q.target) + ' target' : gap ? days(gap) + ' before the ' + sayDay(q.target) + ' target' : 'on the target', h.risk]];
+    if (rank(q, 'sent') >= 0) {
+      const sd = sentDays(q), age = -q.opened;
+      rows.push(sd != null ? ['First profile', 'Day ' + sd, sd <= FIRST_TARGET ? 'inside the ' + FIRST_TARGET + '-day target' : days(sd - FIRST_TARGET) + ' past the ' + FIRST_TARGET + '-day target', sd > FIRST_TARGET]
+        : ['First profile', 'Not yet', 'day ' + age + (age > FIRST_TARGET ? ', ' + days(age - FIRST_TARGET) + ' past the ' + FIRST_TARGET + '-day target' : ' of ' + FIRST_TARGET), age > FIRST_TARGET]);
+    }
+    return '<div class="t-fc">' + rows.map((r) => '<div class="t-fc-row' + (r[3] ? ' is-late' : '') + '"><span class="t-fc-cap">' + esc(r[0]) + '</span><b class="t-fc-n">' + esc(r[1]) + '</b>' +
+      '<span class="t-fc-say">' + esc(r[2]) + '</span></div>').join('') + '</div>';
+  }
+
   /* AiMY drafts the description and the success profile from the title,
      the level and similar roles filled before. */
   /* Returns false when nothing like the title was filled before: AiMY then
@@ -6649,10 +6861,11 @@
           : '<button class="s-back" type="button" data-cancel-edit>' + svg('back', 14) + 'Back to the requisition</button>') +
         '<span class="b-draft-acts">' +
           (isDraft ? '<button class="b-ghost" type="button" data-discard-req="' + q.id + '">Discard the draft</button>' +
-              '<button class="btn btn-brand btn-sm" type="button" data-open-req="' + q.id + '">Open the requisition</button>'
+              (q.approval && !q.approval.back ? '<span class="b-kind">Waiting for approval</span>' : '<button class="btn btn-brand btn-sm" type="button" data-open-req="' + q.id + '">Open the requisition</button>')
             : '<button class="b-ghost" type="button" data-cancel-edit>Cancel</button>' +
               '<button class="btn btn-brand btn-sm" type="button" data-save-edit="' + q.id + '">Save</button>') +
         '</span></div>' +
+      apprBanner(q) +
       '<section class="s-rec-head s-block-wide">' +
         '<span class="s-rec-kind b-kinds">' + fact('req', isDraft ? 'New requisition' : 'Editing the requisition') + '</span>' +
         '<div class="t-input-wrap" id="wrapTitle"><input class="b-draft-name t-input" type="text" data-ed="title" value="' + esc(f.title) + '" ' +
@@ -6681,7 +6894,12 @@
             '<p class="t-error-msg">Add at least one must-have. Candidates are read against these.</p></div></div>' +
         '</div>' +
       '</section>' +
-      aimyBlock({ text: isDraft ? 'Nothing goes live until you open it, and it stays off the careers page until somebody publishes it.' : 'Saving changes the requisition for everyone on it. Candidates are re-read against a changed success profile.', from: 'how requisitions work' }) +
+      aimyBlock({ text: isDraft ? (q.from ? esc(q.from.say) + ' ' : '') + (q.approval && !q.approval.back ? '' : (function () {
+          const v = reqFromBuf(q, f), ex = reqExceptions(v).filter((r) => r.who !== DESK);
+          return ex.length ? 'Opening it sends it to ' + esc(namesOf(ex.map((r) => r.who).filter((x, i, a) => a.indexOf(x) === i))) + ' first, because of ' + esc(ex.map((r) => r.say(v)).join(', and ')) + '. '
+            : 'Opens straight away: ' + esc(passSay(v)) + '. ';
+        })()) + 'Nothing goes live until it opens, and it stays off the careers page until somebody publishes it.'
+        : 'Saving changes the requisition for everyone on it. Candidates are re-read against a changed success profile.', from: q.from && q.from.kind === 'brief' ? 'your briefing, and how requisitions work' : 'how requisitions work' }) +
     '</div>';
   }
   /* The editor's buffer, back onto the requisition. */
@@ -6715,15 +6933,29 @@
     if (!v.title) { shake('wrapTitle'); return; }
     if (!v.must.length) { shake('wrapMust'); return; }
     const before = JSON.parse(JSON.stringify({ title: q.title, desc: q.desc, must: q.must, level: q.level, seats: q.seats, target: q.target,
-      place: q.place, acc: q.acc, hm: q.hm, domain: q.domain, tpl: q.tpl, kind: q.kind, billable: q.billable, fam: q.fam, asmt: q.asmt, budget: q.budget, state: q.state, opened: q.opened }));
-    if (open) Object.assign(v, { state: 'open', opened: 0, target: v.target > 0 ? v.target : 30 });
+      place: q.place, acc: q.acc, hm: q.hm, domain: q.domain, tpl: q.tpl, kind: q.kind, billable: q.billable, fam: q.fam, asmt: q.asmt, budget: q.budget, state: q.state, opened: q.opened, approval: q.approval || null }));
+    /* An exception goes to whoever answers for it; an approver opening
+       their own exception is not asked to approve themselves. */
+    const ex = open ? reqExceptions(v).filter((r) => r.who !== DESK) : [];
+    if (ex.length) {
+      const wait = ex.map((r) => r.who).filter((x, i, a) => a.indexOf(x) === i);
+      v.approval = { day: 0, by: DESK, says: ex.map((r) => r.say(v)), wait: wait, ok: [], back: null };
+      put('reqs', q, v);
+      const ns = wait.map((w) => tellDesk(w, { sev: 'p1', type: 'Requisition to approve', cta: 'Open it', go: { req: q.id },
+        body: me().name + ' wants to open ' + v.title + ' for ' + accOf(v).name + '. It needs you because of ' + ex.filter((r) => r.who === w).map((r) => r.say(v)).join(', and ') + '.' }));
+      EDIT = null;
+      go({ req: q.id }, true);
+      toast('Sent to ' + namesOf(wait) + ' to approve', () => { put('reqs', q, before); ns.forEach(untell); paint(); }, 'Because of ' + v.approval.says.join(', and ') + '. Everything else opens without one.');
+      return;
+    }
+    if (open) Object.assign(v, { state: 'open', opened: 0, target: v.target > 0 ? v.target : 30, approval: q.approval ? Object.assign({}, q.approval, { done: 0 }) : null });
     put('reqs', q, v);
     /* Candidates already on it are read again against the new profile. */
     DB.byReq[q.id].forEach((c) => { if (c.ev.length !== q.must.length) write(c, { ev: q.must.map((m, i) => c.ev[i] || 'n') }); });
     EDIT = null;
     go({ req: q.id }, true);
     toast(open ? 'Opened ' + q.title : 'Saved', () => { put('reqs', q, before); paint(); },
-      open ? 'It is live for the team and not on the careers page yet. Publish it when you want applications.' : null);
+      open ? 'No approval needed: ' + passSay(v) + '. It is live for the team and not on the careers page yet.' : null);
   }
   function setReqState(q, k) {
     const before = { state: q.state, published: q.published };
@@ -6841,6 +7073,7 @@
     /* Adding someone carries the requisition they are for, so it is asked
        before the requisition's own page. */
     byId('wbStage').innerHTML = homeCrumb(capIcons(S.on === 'add' && isRec() ? addPage() : S.on === 'find' ? findPage()
+      : S.on === 'newreq' && !isClient() && !isBU() ? newReqPage()
       : S.on === 'draft' && (isRec() || isHR()) ? draftPage() : S.on === 'cands' && (isRec() || isHR()) && !S.cand ? candsPage() : S.cand ? candPage() : S.req ? reqPage() : S.asmt ? asmtPage() : S.acc ? accPage()
       : S.on === 'reqs' ? reqsPage() : S.on === 'calls' && isRec() ? callsPage()
       : S.on === 'asmts' ? asmtsPage() : S.on === 'templates' ? templatesPage()
@@ -7038,7 +7271,12 @@
     /* ── Desks ── */
     if ((el = at('[data-as]'))) { EDIT = null; byId('asPanel').hidden = true; go({ as: val('data-as') === 'omar' ? undefined : val('data-as') }); return; }
     /* ── Requisitions ── */
-    if ((el = at('[data-new-req]'))) { newReq({ acc: val('data-new-req') || undefined }); return; }
+    if ((el = at('[data-new-req]'))) { go({ on: 'newreq', account: val('data-new-req') || undefined }); return; }
+    if ((el = at('[data-new-blank]'))) { newReq({ acc: S.account || undefined }); return; }
+    if ((el = at('[data-replace]'))) { replaceFrom(DB.past.filter((p) => p.id === val('data-replace'))[0]); return; }
+    if ((el = at('[data-brief-read]'))) { fromBrief((byId('briefText') || {}).value || ''); return; }
+    if ((el = at('[data-req-ok]'))) { approveReq(DB.reqById[val('data-req-ok')]); return; }
+    if ((el = at('[data-req-back]'))) { backReq(DB.reqById[val('data-req-back')]); return; }
     if ((el = at('[data-client-request]'))) { clientRequest(); return; }
     if ((el = at('[data-clone]'))) { cloneReq(DB.reqById[val('data-clone')]); return; }
     if ((el = at('[data-edit-req]'))) { EDIT = null; go({ req: val('data-edit-req'), edit: '1' }); return; }
