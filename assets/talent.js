@@ -2355,7 +2355,7 @@
          AiMY line used to repeat is the number, a dot per must-have and
          the chip. */
       (function () { const unk = c.ev.filter((e) => e === 'n').length, part = c.ev.filter((e) => e === 'p').length;
-        return '<div class="rc t-cscore"><div class="t-score-line"><span class="big">' + evMet(c) + ' of ' + c.ev.length + '</span>' + fitPips(c, null) + '</div>' +
+        return '<div class="rc t-cscore"><div class="t-score-line"><span class="big">' + evMet(c) + ' of ' + c.ev.length + '</span>' + fitPips(c) + '</div>' +
           '<div class="row between" style="margin-top:4px;flex-wrap:wrap;gap:6px"><span class="sub">must-haves the CV shows</span>' +
           (unk ? rcChip(unk + ' not known yet', 'acc', 'qc') : part ? rcChip(part + ' partly', 'acc') : rcChip(fitLane(c)[0], 'acc')) + '</div></div>'; })() +
       '<p class="b-qcard-where t-cnow">' + fact('clock', say + (s && s.status === 'done' ? ' Assessment ' + scoreShort(asmtOf(s.asmt), s) + '.' : '')) + '</p>' +
@@ -2561,17 +2561,15 @@
   const FIT_ST = { verified: ['Confirmed', 'ok', 'okc'], differs: ['Differs', 'err', 'warnc'], partly: ['Partly shown', 'warn', 'warnc'], notshown: ['Not shown', '', 'warnc'] };
   const fitLane = (c) => { const met = evMet(c), unk = c.ev.filter((e) => e === 'n').length, all = c.ev.length;
     return met === all ? ['Strong fit', 'ok'] : met + unk === all ? ['Fit, to check', 'warn'] : met * 2 >= all ? ['Partial fit', 'warn'] : ['Weak fit', '']; };
-  /* ONE DOT A MUST-HAVE (Engy, 29 Oct: the full-width bars read as
-     clutter). Blue where the CV shows it, blue ringed where an interview
-     confirmed it, half purple where the CV partly shows it, a dashed
-     outline where nobody knows yet, amber where the interview differs.
-     The words beside them say the same; the dots are for the glance. */
-  const PIP = { c: 't-pip is-conf', m: 't-pip is-met', p: 't-pip is-part', n: 't-pip is-unk', d: 't-pip is-diff' };
-  const PIP_SAY = { c: 'confirmed in interview', m: 'shown on the CV', p: 'partly shown', n: 'not known yet', d: 'where the interview differs' };
-  function fitPips(c, v) {
-    const ks = c.ev.map((e, i) => { const st = v ? v[i].state : null; return st === 'differs' ? 'd' : st === 'verified' ? 'c' : e === 'm' ? 'm' : e === 'p' || st === 'partly' ? 'p' : 'n'; });
-    const said = Object.keys(PIP_SAY).map((k) => { const n = ks.filter((x) => x === k).length; return n ? n + ' ' + PIP_SAY[k] : null; }).filter(Boolean).join(', ');
-    return '<span class="t-pips" role="img" aria-label="' + esc(said) + '" title="' + esc(said) + '">' + ks.map((k) => '<i class="' + PIP[k] + '"></i>').join('') + '</span>';
+  /* ONE DOT A MUST-HAVE, ONE IDEA EVERYWHERE (Engy, 29 Oct). The dots
+     say the number beside them and nothing else: a full purple dot for
+     each must-have the CV shows, a dashed purple circle for each it does
+     not, full ones first. The same on the card and on the profile; what an
+     interview confirmed or found different is said in the rows below. */
+  function fitPips(c) {
+    const met = evMet(c), all = c.ev.length, said = met + ' of ' + all + ' must-haves shown on the CV';
+    return '<span class="t-pips" role="img" aria-label="' + esc(said) + '" title="' + esc(said) + '">' +
+      c.ev.map((e, i) => '<i class="' + (i < met ? 't-pip is-on' : 't-pip is-off') + '"></i>').join('') + '</span>';
   }
   function fitCard(c, v) {
     const q = reqOf(c), works = isRec() || isHR(), asks = c.asks || [];
@@ -2583,7 +2581,7 @@
     const lane = fitLane(c);
     return rcard({ cap: 'Scoring and matching', ico: 'listc', label: 'Against the success profile',
       body: rcHead(esc(c.name), esc(q.title) + ' · ' + esc(accOf(q).name), rcChip('Lane · ' + lane[0], lane[1])) +
-        '<div class="row between" style="margin-top:14px;align-items:flex-end;flex-wrap:wrap"><div><div class="t-score-line"><span class="big">' + met + ' of ' + all + '</span>' + fitPips(c, v) + '</div>' +
+        '<div class="row between" style="margin-top:14px;align-items:flex-end;flex-wrap:wrap"><div><div class="t-score-line"><span class="big">' + met + ' of ' + all + '</span>' + fitPips(c) + '</div>' +
           '<div class="sub" style="margin-top:4px">must-haves the CV shows, each quoted · ' + (conf ? conf + ' confirmed in interview' : 'none confirmed in interview yet') + '</div></div>' +
           '<span class="row" style="gap:6px">' + (diff ? rcChip(diff + (diff === 1 ? ' differs' : ' differ') + ' in interview', 'err') : '') + (open ? rcChip(open + ' not known yet', 'acc', 'qc') : '') + '</span></div>' +
         '<div style="margin-top:12px">' + q.must.map((m, i) => {

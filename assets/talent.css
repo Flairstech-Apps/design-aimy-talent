@@ -1059,8 +1059,8 @@ body.is-portal .aimy-overlay { display: none !important; }
 }
 
 /* ══ THE SCORE, IN BLUE AND PURPLE ═══════════════════════════════════════
-   The count beside one dot per must-have (talent.js fitPips), on the card
-   and on the profile alike: no full-width bar. The card's panel takes a
+   The count beside one dot per must-have (talent.js fitPips): full purple
+   for met, dashed purple for not, on the card and the profile alike. The card's panel takes a
    faint blue-to-purple wash from the brand pair, so the score reads as
    AiMY's reading of the CV rather than a status. */
 .rc.t-cscore {
@@ -1071,13 +1071,10 @@ body.is-portal .aimy-overlay { display: none !important; }
 .rc.t-cscore .big { font-size: 20px; }
 .rc.t-cscore .sub { color: var(--d100); }
 .t-score-line { display: flex; align-items: center; gap: 12px; }
-.t-pips { display: inline-flex; align-items: center; gap: 7px; }
+.t-pips { display: inline-flex; align-items: center; gap: 6px; }
 .t-pip { width: 10px; height: 10px; border-radius: 50%; flex: none; box-sizing: border-box; }
-.t-pip.is-met { background: var(--brand); }
-.t-pip.is-conf { background: var(--brand); box-shadow: 0 0 0 1.5px var(--card-bg), 0 0 0 3px var(--brand); }
-.t-pip.is-part { border: 1.5px solid var(--purple, #8b4ff4); background: linear-gradient(90deg, var(--purple, #8b4ff4) 50%, transparent 50%); }
-.t-pip.is-unk { border: 1.5px dashed color-mix(in srgb, var(--purple, #8b4ff4) 70%, var(--ink-muted)); }
-.t-pip.is-diff { border: 1.5px solid var(--warn); }
+.t-pip.is-on { background: var(--purple, #8b4ff4); }
+.t-pip.is-off { border: 1.5px dashed var(--purple, #8b4ff4); }
 .t-cnow { margin-top: 10px; }
 
 /* ══ ASSESSMENTS: CHECKS, INTEGRITY, CONSENT ══════════════════════════════
