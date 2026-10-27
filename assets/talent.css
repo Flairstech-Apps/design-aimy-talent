@@ -1112,3 +1112,9 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-consent-h { font-weight: var(--fw-semibold); color: var(--d50); }
 .t-consent-keep { font-size: var(--fs-xs); color: var(--ink-muted); }
 .t-practice { padding: 10px 12px; border: 1px dashed var(--card-border-hover); border-radius: var(--r-lg); }
+/* The preview carries its own send: what it says, then the button that sends it. */
+.t-msg-kicker { margin: 0; font-size: var(--t-micro); font-weight: var(--fw-medium); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+.t-msg-end { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.t-msg-end .t-msg-foot { flex: 1 1 280px; }
+.t-msg-end .s-insight-lnk { display: inline-flex; align-items: center; gap: 6px; }
+.t-msg-many { font-size: var(--fs-xs); color: var(--d100); }

@@ -1945,7 +1945,7 @@
           '<span class="s-block-say">' + plural(owed.length, 'person', 'people') + ' owed an answer · ' + (late.length ? late.length + ' past the ' + TELL_DAYS + '-day limit' : 'all inside the ' + TELL_DAYS + '-day limit') + '</span></div>' +
         srcNote([['Exits on each candidate', false], ['HR message templates', true]]) +
         aimyBlock({ text: 'Nobody waits more than ' + TELL_DAYS + ' days to hear back. A person sends the answer, under the HR Manager’s template; AiMY only suggests it.', from: 'how declines work here' }) +
-        msgPreview(DB.byId[Object.keys(SEL.tell)[0]] || owed[0]) +
+        msgPreview(DB.byId[Object.keys(SEL.tell)[0]] || owed[0], true) +
         '<div class="b-owed">' + topN('tell', owed).map((c, i) => '<div class="b-owed-row t-row" style="--i:' + Math.min(i, 8) + '">' + selBox('tell', c.id, c.name) +
           '<button class="b-owed-main t-row-open" type="button" data-cand="' + c.id + '"><span class="b-owed-head"><span class="b-owed-type">' + esc(c.name) + '</span>' +
             '<span class="b-owed-by">' + esc(reqOf(c).title) + ' · ' + esc(accOf(reqOf(c)).name) + '</span>' + tag(EXIT[c.exit].label, c.since >= TELL_DAYS ? 'warn' : 'neutral') + '</span>' +
@@ -2094,7 +2094,7 @@
         (narrowed ? '<p class="b-vfoot t-cf-on">Showing ' + (rqQ ? 'the people on ' + esc(rqQ.title) + ', ' + esc(accOf(rqQ).name) : 'everyone') + (S.find ? ' matching “' + esc(S.find) + '”' : '') + '. ' + clear + '</p>' : '') +
         /* Where the volume is, select many and act once (Batch bar, M7); the
            answer owed is shown as it will read (Message preview, M4). */
-        (cut === 'untold' && owed.length ? msgPreview(DB.byId[Object.keys(SEL.tell)[0]] || owed[0]) +
+        (cut === 'untold' && owed.length ? msgPreview(DB.byId[Object.keys(SEL.tell)[0]] || owed[0], true) +
           (selN('tell') ? batchBar('tell', '<button class="s-insight-lnk primary" type="button" data-tell-sel>Send the answer to ' + plural(selN('tell'), 'person', 'people') + '</button>')
             : '<p class="t-acts"><button class="b-ghost" type="button" data-sel-all="tell">Select all ' + owed.length + '</button></p>') : '') +
         (cut === 'new' && list.length ? trustCard(list.filter((c) => /^Found on/.test(c.source) && !c.contactOk)) : '') +
@@ -2690,17 +2690,22 @@
      to and by which channels on top, the words in a message bubble with
      the parts that change for each person marked, and the template and
      who approved it at the foot: the approval is why a person may send it. */
-  function msgPreview(c) {
+  function msgPreview(c, withSend) {
     const q = reqOf(c);
     const v = (t) => '<mark class="t-msg-var" title="Filled in for each person">' + esc(t) + '</mark>';
     const body = esc(TELL_TPL).replace('{first}', v(first(c.name))).replace('{role}', v(q.title)).replace('{me}', v(me().name));
     const ch = (ico, label, off) => '<span class="t-msg-ch' + (off ? ' is-off' : '') + '">' + svg(ico, 12) + esc(label) + '</span>';
     return '<div class="t-msg">' +
+      (withSend ? '<p class="t-msg-kicker">The answer ' + esc(first(c.name)) + ' gets · tick others below to preview theirs</p>' : '') +
       '<div class="t-msg-head"><span class="t-msg-to"><span class="t-msg-av" aria-hidden="true">' + esc(initials(c.name)) + '</span>' +
         '<span class="t-msg-who"><b>To ' + esc(c.name) + '</b><span>' + esc(q.title) + ' · ' + esc(accOf(q).name) + '</span></span></span>' +
         '<span class="t-msg-chs">' + (c.wa ? ch('msg', 'WhatsApp') : ch('msg', 'No WhatsApp opt-in', true)) + ch('mail', 'Email') + '</span></div>' +
       '<p class="t-msg-body">' + body + '</p>' +
-      '<p class="t-msg-foot">' + svg('shield', 12) + '<span>HR template “Decline, after screening”, approved by ' + esc(DESKS.dina.name) + '. The marked words change for each person.</span></p>' +
+      '<div class="t-msg-end"><p class="t-msg-foot">' + svg('shield', 12) + '<span>HR template “Decline, after screening”, approved by ' + esc(DESKS.dina.name) + '. The marked words change for each person.</span></p>' +
+        /* The send is on the message it sends. With people ticked below, the
+           bar sends to all of them and this says what that will look like. */
+        (withSend ? (selN('tell') > 1 ? '<span class="t-msg-many">Shown for ' + esc(first(c.name)) + '; each of the ' + selN('tell') + ' ticked gets their own.</span>'
+          : '<button class="s-insight-lnk primary" type="button" data-tell="' + c.id + '">' + svg('send', 14) + 'Send to ' + esc(first(c.name)) + '</button>') : '') + '</div>' +
     '</div>';
   }
   function tell(ids) {
