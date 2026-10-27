@@ -1776,7 +1776,8 @@
           '<span class="b-owed-by">' + esc(q.title) + ' · ' + esc(accOf(q).name) + '</span>' +
           stageTag(c) +
         '</span>' +
-        '<span class="b-owed-body">' + rowSay(c) + '</span>' +
+        '<span class="b-owed-body">' + rowSay(c) + (verb === 'nudge' ? ' <b>' + days(lostDays(c)) + '</b> past the usual time' +
+          (c.nudged != null ? ', nudged ' + esc(sayWhen(c.nudged)) + '.' : ', not nudged yet.') : '') + '</span>' +
       '</button>' +
       (verb === 'nudge'
         ? '<button class="b-owed-go t-row-go" type="button" data-nudge="' + c.id + '">' + (c.nudged != null ? 'Nudged' : esc(nudgeSay(c))) + '</button>'
@@ -1793,6 +1794,72 @@
     return esc(STAGE[c.stage].say) + ', ' + days(c.since) + '.';
   }
 
+  /* ── TODAY, A BRIEFING NOT A LIST (Sales: open on a briefing, not a
+     database; "show the one thing that matters, expand for the rest") ──
+     Each block shows its first three. The rest opens in place under them,
+     and where a tab holds the same set, a second link opens it there. */
+  const TODAY_N = 3;
+  const TODAY_MORE = {};
+  const topN = (k, list) => (TODAY_MORE[k] ? list : list.slice(0, TODAY_N));
+  function moreLinks(k, n, tab) {
+    if (n <= TODAY_N && !tab) return '';
+    return '<p class="t-acts t-more">' +
+      (n > TODAY_N ? '<button class="s-inline-btn" type="button" data-more="' + k + '" aria-expanded="' + !!TODAY_MORE[k] + '">' +
+        (TODAY_MORE[k] ? 'Show the first ' + TODAY_N + ' only' : 'Show the other ' + (n - TODAY_N)) + '</button>' : '') +
+      (tab ? '<button class="s-inline-btn" type="button"' + goAttr(tab.go) + '>' + esc(tab.label) + '</button>' : '') +
+    '</p>';
+  }
+  /* WHAT WAITING COSTS (R5: in FlairsTech's own data, 46 of 105 lost
+     requisition-days were spent waiting for feedback). The days past the
+     usual time for that step, said on each row and added up in the head. */
+  const lostDays = (c) => Math.max(0, MEETS[c.stage] && c.meet != null && c.meet < 0 ? -c.meet - 1 : c.since - STAGE[c.stage].exp);
+  /* ONE MOVE ON A REQUISITION THAT WILL MISS ITS DATE. Nobody far along:
+     the pipeline is thin, so find more people. Somebody far along but not
+     fast enough: the date is what is wrong, so ask the hiring manager to
+     move it to when an offer is likely. */
+  function riskAct(q, h) {
+    if (rank(q, h.furthest) < rank(q, 'tech')) return '<button class="b-owed-go t-row-go" type="button"' + goAttr({ on: 'find', req: q.id }) + '>Find more people</button>';
+    const hm = hmOf(q);
+    return q.askedMove != null ? '<span class="b-owed-go t-row-done">Asked ' + esc(first(hm.name)) + '</span>'
+      : '<button class="b-owed-go t-row-go" type="button" data-ask-date="' + q.id + '">Ask ' + esc(first(hm.name)) + ' to move it</button>';
+  }
+  function askMove(q) {
+    const h = health(q), hm = hmOf(q);
+    put('reqs', q, { askedMove: 0 });
+    const n = tellDesk(hm.id, { sev: 'p2', type: 'Target date', cta: 'Open ' + q.title, go: { req: q.id },
+      body: me().name + ' asks to move the target for ' + q.title + ' from ' + sayDay(q.target) + ' to ' + sayDay(h.need) + ': the furthest candidate is at the ' +
+        lower(STAGE[h.furthest].label) + ', and an accepted offer usually takes ' + days(h.need) + ' from there.' });
+    paint();
+    toast('Asked ' + first(hm.name) + ' to move the date', () => { put('reqs', q, { askedMove: null }); untell(n); paint(); },
+      'To ' + sayDay(h.need) + ', when an offer is likely. It is in their bell.');
+  }
+  /* ── PREPARE ME (Sales M1) ── the interview's brief, in the conversation:
+     who is in the room, the agenda, what to probe (what the CV is silent on
+     and no interview has confirmed), what is already confirmed, and what
+     they told us. The verdict stays the interviewer's. */
+  function prepMe(c) {
+    const q = reqOf(c), v = ivsOf(c).filter((x) => x.status === 'booked' && x.day === 0)[0];
+    const tpl = (v && tplById(v.tpl)) || tplFor(c.stage);
+    const ver = verified(c);
+    const probe = ver.filter((x) => x.state !== 'verified').map((x) => x.must + (x.cv === 'n' ? ' (the CV is silent)' : x.state === 'differs' ? ' (an interview found it differs)' : ''));
+    const done = ver.filter((x) => x.state === 'verified').map((x) => x.must + ', at the ' + lower(STAGE[x.seen[0].stage].label));
+    const last = lastCall(c);
+    const said = [c.notice ? c.notice : null, c.salary ? 'expects ' + c.salary : null].filter(Boolean);
+    const body = '<div class="b-prep">' +
+      '<p class="b-prep-id">' + esc(STAGE[c.stage].label) + ' at ' + esc(c.slot) + ' · ' + esc(q.title) + ' · ' + esc(accOf(q).name) +
+        (v ? ' · with ' + esc(v.by) + (v.mode === 'video' ? ', on Teams' : ', in person') : '') + '</p>' +
+      openQ('Open with', 'Say who is in the room and that it takes about 45 minutes. Ask if they are happy for it to be recorded; nothing is recorded until they agree.') +
+      (tpl ? openQ('The agenda · ' + tpl.title, tpl.items.map((x) => esc(x)).join('<br>')) : '') +
+      (probe.length ? openQ('Probe', esc(probe.join('; ')) + '. Ask for an example of each.') : '') +
+      (done.length ? openQ('Already confirmed', esc(done.join('; ')) + '. No need to cover it again.') : '') +
+      openQ('What they told us', said.length ? esc(said.join(', ')) + '.' : last ? esc(callSay(last)) : 'Nothing yet beyond the CV.') +
+      openQ('Your verdict', 'Rate each must-have, then say proceed or not. AiMY never fills it, and other interviewers’ feedback stays hidden until you send yours.') +
+    '</div>';
+    callChat(null, 'Before you interview ' + c.name);
+    callTurn({ who: 'aimy', html: answerBlock('Before you interview ' + c.name, body, plural(ivsOf(c).filter((x) => x.status === 'done').length, 'interview') + ' so far'),
+      acts: [{ label: 'Open their record', go: { cand: c.id } }] });
+  }
+
   /* ── TODAY ── */
   function homePage() {
     const d = decisions(), w = waits(), t = today();
@@ -1806,7 +1873,7 @@
         '<p class="b-tocall">' + (d.length ? '<b>' + plural(d.length, 'decision') + '</b> waiting on you, oldest first. Each is one press, and each can be undone.'
           : 'Nothing is waiting on your call.') + '</p>' +
         srcNote([['Debrief results', true], ['Assessment results', true]]) +
-        (d.length ? '<div class="b-owed">' + d.map((c, i) => workRow(c, i)).join('') + '</div>' : '') +
+        (d.length ? '<div class="b-owed">' + topN('decide', d).map((c, i) => workRow(c, i)).join('') + '</div>' + moreLinks('decide', d.length) : '') +
       '</section>' +
       (owed.length ? '<section class="s-block s-block-wide" aria-label="Not told yet">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">Not told yet</h2>' +
@@ -1814,12 +1881,13 @@
         srcNote([['Exits on each candidate', false], ['HR message templates', true]]) +
         aimyBlock({ text: 'Nobody waits more than ' + TELL_DAYS + ' days to hear back. A person sends the answer, under the HR Manager’s template; AiMY only suggests it.', from: 'how declines work here' }) +
         msgPreview(DB.byId[Object.keys(SEL.tell)[0]] || owed[0]) +
-        '<div class="b-owed">' + owed.map((c, i) => '<div class="b-owed-row t-row" style="--i:' + Math.min(i, 8) + '">' + selBox('tell', c.id, c.name) +
+        '<div class="b-owed">' + topN('tell', owed).map((c, i) => '<div class="b-owed-row t-row" style="--i:' + Math.min(i, 8) + '">' + selBox('tell', c.id, c.name) +
           '<button class="b-owed-main t-row-open" type="button" data-cand="' + c.id + '"><span class="b-owed-head"><span class="b-owed-type">' + esc(c.name) + '</span>' +
             '<span class="b-owed-by">' + esc(reqOf(c).title) + ' · ' + esc(accOf(reqOf(c)).name) + '</span>' + tag(EXIT[c.exit].label, c.since >= TELL_DAYS ? 'warn' : 'neutral') + '</span>' +
             '<span class="b-owed-body">' + esc(EXIT[c.exit].label) + ' ' + esc(sayWhen(-c.since)) + (c.decline ? ': ' + esc(lower(DECLINE_K[c.decline.why].label)) : '') + '. ' +
               (c.since >= TELL_DAYS ? '<b>Past the ' + TELL_DAYS + '-day limit.</b>' : 'Tell them by ' + esc(sayDay(TELL_DAYS - c.since)) + '.') + '</span></button>' +
           '<button class="b-owed-go t-row-go" type="button" data-tell="' + c.id + '">Send the answer</button></div>').join('') + '</div>' +
+        moreLinks('tell', owed.length, { label: 'Open all ' + owed.length + ' in Candidates', go: { on: 'cands', q: 'untold' } }) +
         (selN('tell') ? batchBar('tell', '<button class="s-insight-lnk primary" type="button" data-tell-sel>Send the answer to ' + plural(selN('tell'), 'person', 'people') + '</button>')
           : '<p class="t-acts"><button class="b-ghost" type="button" data-sel-all="tell">Select all ' + owed.length + '</button></p>') +
       '</section>' : '') +
@@ -1827,29 +1895,33 @@
         '<div class="s-camp-list-head"><h2 class="s-block-h">Interviews today</h2>' +
           '<span class="s-block-say">' + plural(t.length, 'interview') + ' · earliest first</span></div>' +
         srcNote([['Bookings calendar', false]]) +
-        '<div class="b-cal-agenda">' + t.map((c) => '<button class="b-cal-ev" type="button"' + goAttr({ req: c.req }) + '>' +
-          '<span class="b-cal-evtop"><span class="b-cal-dot k-meeting"></span><span class="b-cal-etime">' + esc(c.slot) + '</span>' +
-            '<span class="b-kind">' + esc(STAGE[c.stage].label) + '</span></span>' +
-          '<span class="b-cal-ename"><b>' + esc(c.name) + '</b><span class="b-cal-ewhat">' + esc(reqOf(c).title) + ' · ' + esc(accOf(reqOf(c)).name) + '</span></span>' +
-        '</button>').join('') + '</div>' +
+        '<div class="b-cal-agenda">' + topN('iv', t).map((c) => '<div class="b-cal-ev is-plain t-cal-ev">' +
+          '<button class="t-cal-open" type="button"' + goAttr({ cand: c.id }) + '>' +
+            '<span class="b-cal-evtop"><span class="b-cal-dot k-meeting"></span><span class="b-cal-etime">' + esc(c.slot) + '</span>' +
+              '<span class="b-kind">' + esc(STAGE[c.stage].label) + '</span></span>' +
+            '<span class="b-cal-ename"><b>' + esc(c.name) + '</b><span class="b-cal-ewhat">' + esc(reqOf(c).title) + ' · ' + esc(accOf(reqOf(c)).name) + '</span></span>' +
+          '</button>' +
+          '<button class="s-inline-btn t-prep-btn" type="button" data-prep="' + c.id + '">' + mark(12) + 'Prepare me</button>' +
+        '</div>').join('') + '</div>' + moreLinks('iv', t.length) +
       '</section>' : '') +
       (w.length ? '<section class="s-block s-block-wide" aria-label="Waiting on others">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">Waiting on others</h2>' +
-          '<span class="s-block-say">' + plural(w.length, 'candidate') + ' past the usual time · longest first</span></div>' +
+          '<span class="s-block-say">' + plural(w.length, 'candidate') + ' · <b>' + plural(w.reduce((n, c) => n + lostDays(c), 0), 'day') + '</b> past the usual time · longest first</span></div>' +
         srcNote([['Stage and date', false], ['Sendout record', true]]) +
-        aimyBlock({ text: 'Nudging is done for you and logged. Nothing is sent to a candidate.', from: 'how nudges work here' }) +
-        '<div class="b-owed">' + w.map((c, i) => workRow(c, i, 'nudge')).join('') + '</div>' +
+        aimyBlock({ text: 'Waiting is where requisitions lose the most time: in FlairsTech’s own data, 46 of 105 lost days were spent waiting for feedback. Nudging is done for you and logged; nothing is sent to a candidate.', from: 'the recruitment data, and how nudges work here' }) +
+        '<div class="b-owed">' + topN('wait', w).map((c, i) => workRow(c, i, 'nudge')).join('') + '</div>' + moreLinks('wait', w.length) +
       '</section>' : '') +
       (risky.length ? '<section class="s-block s-block-wide" aria-label="At risk">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">Likely to miss their date</h2>' +
           '<span class="s-block-say">rule-based · the reason is on each row</span></div>' +
         srcNote([['Target date', false], ['Stage and date', false]]) +
-        '<div class="b-owed">' + risky.map((x, i) => '<button class="b-owed-row" type="button"' + goAttr({ req: x.q.id }) + ' style="--i:' + i + '">' +
+        '<div class="b-owed">' + topN('risk', risky).map((x, i) => '<div class="b-owed-row t-row" style="--i:' + i + '">' +
           '<span class="b-owed-sev" aria-hidden="true"></span>' +
-          '<span class="b-owed-main"><span class="b-owed-head"><span class="b-owed-type">' + esc(x.q.title) + '</span>' +
+          '<button class="b-owed-main t-row-open" type="button"' + goAttr({ req: x.q.id }) + '><span class="b-owed-head"><span class="b-owed-type">' + esc(x.q.title) + '</span>' +
             '<span class="b-owed-by">' + esc(accOf(x.q).name) + '</span>' + tag('At risk', 'warn') + '</span>' +
-            '<span class="b-owed-body">' + riskSay(x.q, x.h) + '</span></span>' +
-          '<span class="b-owed-go">Open it</span></button>').join('') + '</div>' +
+            '<span class="b-owed-body">' + riskSay(x.q, x.h) + '</span></button>' +
+          riskAct(x.q, x.h) + '</div>').join('') + '</div>' +
+        moreLinks('risk', risky.length, { label: 'Open all ' + risky.length + ' in Requisitions', go: { on: 'reqs', q: 'risk' } }) +
       '</section>' : '') +
     '</div>';
   }
@@ -6868,6 +6940,9 @@
     }
     if ((el = at('[data-outcome]'))) { if (PENDING) { PENDING.lit = el.getAttribute('data-outcome'); paintThread(); } return; }
     if ((el = at('[data-sess-stop]'))) { stopRun(); return; }
+    if ((el = at('[data-more]'))) { const k = val('data-more'); TODAY_MORE[k] = !TODAY_MORE[k]; paint(); return; }
+    if ((el = at('[data-ask-date]'))) { askMove(DB.reqById[val('data-ask-date')]); return; }
+    if ((el = at('[data-prep]'))) { prepMe(DB.byId[val('data-prep')]); return; }
     if ((el = at('[data-cb]'))) { if (PENDING) { PENDING.read = PENDING.read || {}; PENDING.read.when = Number(val('data-cb')); paintThread(); } return; }
     if ((el = at('[data-coach]'))) { coachAnswer(val('data-coach')); return; }
     if ((el = at('[data-coachset]'))) { COACH_FORCE = val('data-coachset'); coachRescript(); paintProto(); return; }

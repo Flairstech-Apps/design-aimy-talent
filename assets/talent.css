@@ -828,3 +828,18 @@ body.is-portal .aimy-overlay { display: none !important; }
 .call-who-top:has(.call-x) .call-name { flex: 1 1 0; }
 .call-who-top:has(.call-x) .call-x { order: 1; }
 .call-who-top:has(.call-x) .call-head { order: 2; flex: 1 1 100%; margin-left: 0; }
+
+/* ══ TODAY, A BRIEFING NOT A LIST ═════════════════════════════════════════
+   Three a block, the rest in place under them (talent.js topN, moreLinks);
+   an interview on today's agenda carries Prepare me; an at-risk row carries
+   its one move, and the move once made says so in words. */
+.t-more { margin: 8px 0 0; gap: 16px; }
+.t-row-done { color: var(--ink-muted); font-weight: var(--fw-medium); cursor: default; }
+.t-cal-ev { gap: 6px; }
+.t-cal-open {
+  display: flex; flex-direction: column; align-items: stretch; gap: 3px; width: 100%;
+  text-align: left; padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer;
+}
+.t-cal-open:hover .b-cal-ename b { text-decoration: underline; }
+.t-cal-open:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
+.t-prep-btn { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; margin-left: 16px; }
