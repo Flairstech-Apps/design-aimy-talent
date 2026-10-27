@@ -7298,14 +7298,46 @@
     bar.style.transform = 'translate(' + on.offsetLeft + 'px, ' + (on.offsetTop + on.offsetHeight - 2) + 'px) scaleX(' + on.offsetWidth + ')';
   }
 
-  /* THE WAY HOME FROM ANYWHERE. A list page carries Today in its switcher;
-     a record (a candidate, a requisition, an account, a test) had only
-     Back, which goes one step and can lead deeper. Every page's top bar
-     now starts with Today, one press to the desk's front page. */
-  const homeCrumb = (html) => html.replace(/<div class="b-topbar s-block-wide">/g, (m, at) =>
-    /* Where Back already leads to Today, it is the way home on its own. */
-    html.slice(at, at + 600).indexOf('Back to Today</button>') >= 0 ? m
-      : m + '<button class="s-back t-home" type="button" data-home>' + svg('home', 14) + 'Today</button><span class="t-crumb" aria-hidden="true">/</span>');
+  /* WHERE YOU ARE, AND HOW YOU GOT THERE (Engy, 29 Oct). Every page's
+     top bar is a trail by the product's own hierarchy, not by history:
+     Today / Requisitions / AI Business Analyst / Rana Tawfik. Each step up
+     is a link; the page you are on is named last, set apart, and is not a
+     link. Where the old Back did more than move (leaving an edit unsaved,
+     a shortlist gate), the step it pointed to keeps its own handler. */
+  function crumbTrail(back) {
+    const up = [], add = (label, attr) => up.push({ label: label, attr: attr });
+    const reqs = () => add('Requisitions', goAttr({ on: 'reqs' }).trim());
+    const reqStep = (q, attr) => add(q.title || 'Untitled draft', attr || 'data-req="' + q.id + '"');
+    if (S.on === 'add') { const q = S.req && DB.reqById[S.req]; if (q) { reqs(); reqStep(q); } return { up: up, now: 'Add a candidate' }; }
+    if (S.on === 'find') return { up: up, now: 'Find candidates' };
+    if (S.on === 'newreq') { reqs(); const a = ACCOUNTS.filter((x) => x.id === S.account)[0]; return { up: up, now: 'New requisition' + (a ? ' for ' + a.name : '') }; }
+    if (S.on === 'draft') { add('Find candidates', goAttr({ on: 'find' }).trim()); const l = S.list ? D.lists.filter((x) => x.id === S.list)[0] : DRAFT; return { up: up, now: l ? l.name : 'Shortlist' }; }
+    if (S.cand && DB.byId[S.cand]) {
+      const c = DB.byId[S.cand], q = reqOf(c);
+      reqs(); reqStep(q);
+      if (S.edit) { add(c.name, back); return { up: up, now: 'Edit' }; }
+      return { up: up, now: c.name };
+    }
+    if (S.req && DB.reqById[S.req]) {
+      const q = DB.reqById[S.req];
+      reqs();
+      if (q.state === 'draft') return { up: up, now: q.title || 'New requisition' };
+      if (S.edit) { reqStep(q, back); return { up: up, now: 'Edit' }; }
+      return { up: up, now: q.title };
+    }
+    if (S.asmt) { const a = asmtOf(S.asmt); add('Assessments', goAttr({ on: 'asmts' }).trim()); if (S.edit && a) { add(a.title, goAttr({ asmt: a.id }).trim()); return { up: up, now: 'Edit' }; } return { up: up, now: a ? a.title : 'Assessment' }; }
+    if (S.acc) { const a = ACCOUNTS.filter((x) => x.id === S.acc)[0]; reqs(); return { up: up, now: a ? a.name : 'Account' }; }
+    return null;
+  }
+  /* The top bar's first Back becomes the trail; the bar's own actions stay. */
+  const homeCrumb = (html) => html.replace(/<div class="b-topbar s-block-wide">(?:<button class="s-back" type="button"([^>]*)>[\s\S]*?<\/button>)?/g, (m, attr) => {
+    const t = crumbTrail((attr || '').trim());
+    if (!t) return m;
+    return '<div class="b-topbar s-block-wide"><nav class="t-crumbs" aria-label="Where you are"><ol>' +
+      '<li><button class="t-crumb-link" type="button" data-home>' + svg('home', 14) + 'Today</button></li>' +
+      t.up.map((u) => '<li><button class="t-crumb-link" type="button" ' + u.attr + '>' + esc(u.label) + '</button></li>').join('') +
+      '<li><span class="t-crumb-now" aria-current="page">' + esc(t.now) + '</span></li></ol></nav>';
+  });
   function paint() {
     /* Somebody outside the team gets the page alone, with none of the
        product's chrome (the careers page, a profile, a test, a debrief). */

@@ -772,14 +772,27 @@ body.is-portal .aimy-overlay { display: none !important; }
    homeCrumb). The mark is a button now; it keeps the div's look. */
 .t-logo-home { cursor: pointer; border-radius: var(--r-md); }
 .t-logo-home:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
-.t-home > svg { width: 14px; height: 14px; flex: none; }
-.t-crumb { color: var(--ink-muted); margin: 0 -4px; }
-/* At phone width Today, Back and a record's verbs do not fit one line: the
-   verbs take the next one, so Back keeps its words on a readable width. */
+/* THE TRAIL (talent.js crumbTrail). Steps up are quiet links; the page you
+   are on is named last in the strong colour and is not a link; a slash
+   between each. A long name gives way with an ellipsis before the bar's
+   actions do, and at phone width the actions take their own line. */
+.t-crumbs { flex: 1 1 auto; min-width: 0; }
+.t-crumbs ol { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 0; margin: 0; padding: 0; list-style: none; }
+.t-crumbs li { display: inline-flex; align-items: center; min-width: 0; font-size: var(--fs-sm); }
+.t-crumbs li + li::before { content: '/'; margin: 0 8px; color: var(--ink-muted); }
+.t-crumb-link {
+  display: inline-flex; align-items: center; gap: 6px; max-width: 28ch; padding: 2px 0; border: 0; background: none; cursor: pointer;
+  font: inherit; color: var(--d100); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: color var(--t-fast);
+}
+.t-crumb-link > svg { width: 14px; height: 14px; flex: none; }
+.t-crumb-link:hover { color: var(--d50); text-decoration: underline; text-underline-offset: 3px; }
+.t-crumb-link:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
+.t-crumb-now { font-weight: var(--fw-semibold); color: var(--d50); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 36ch; }
 @media (max-width: 760px) {
   .b-topbar { flex-wrap: wrap; row-gap: 8px; }
-  .t-home { flex: none; white-space: nowrap; }
-  .b-topbar > .s-back:not(.t-home) { flex: 1 1 180px; min-width: 0; text-align: left; }
+  .t-crumbs { flex: 1 1 100%; }
+  .t-crumb-link { max-width: 18ch; }
   .b-topbar > .b-draft-acts { flex: 1 1 100%; }
 }
 /* A sourcing row at phone width: the person takes the line, and the chip,
