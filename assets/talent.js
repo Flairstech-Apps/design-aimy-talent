@@ -1344,8 +1344,17 @@
      recommendation for decision 2, pending the manager: a score that is its
      own explanation, never a percentage. */
   const evMet = (c) => c.ev.filter((e) => e === 'm').length;
-  const evSay = (c) => '<b>' + evMet(c) + ' of ' + c.ev.length + '</b> must-haves met' +
-    (c.ev.filter((e) => e === 'p').length ? ', ' + c.ev.filter((e) => e === 'p').length + ' partly' : '');
+  /* UNKNOWN IS SAID AS UNKNOWN (UI/UX plan; people follow an AI's pick
+     about nine times in ten, even when it is wrong). A must-have the CV is
+     silent on is not a must-have missed, so "0 of 4 met" was a rejection
+     the CV never made. With nothing met yet, the sentence leads with what
+     the CV does not say. */
+  const evSay = (c) => {
+    const all = c.ev.length, met = evMet(c);
+    const part = c.ev.filter((e) => e === 'p').length, unk = c.ev.filter((e) => e === 'n').length;
+    if (!met && unk) return 'The CV is silent on <b>' + unk + ' of ' + all + '</b> must-haves' + (part ? ', and partly shows ' + part : '') + '. Not known yet, not missing';
+    return '<b>' + met + ' of ' + all + '</b> must-haves met' + (part ? ', ' + part + ' partly' : '') + (unk ? ', ' + unk + ' not known yet' : '');
+  };
 
   /* ── The loop, derived (UI/UX plan) ── */
   const nth = (n) => n + (n % 10 === 1 && n % 100 !== 11 ? 'st' : n % 10 === 2 && n % 100 !== 12 ? 'nd' : n % 10 === 3 && n % 100 !== 13 ? 'rd' : 'th');
@@ -1679,7 +1688,10 @@
       '</div>';
   }
 
-  /* ── The briefing at the top of every page, as Sales draws it. ── */
+  /* ── The briefing, on Today only. Sales opens a desk on it; every other
+     tab's heading is its tab switcher, with cuts and cards under it (Sales
+     handoff, 'The page title is the tab switcher'). It stood above
+     Requisitions and Calls as well until 28 Oct. ── */
   function topBrief() {
     const d = decisions(), w = waits(), t = today();
     const risky = myOpen().filter((q) => health(q).risk);
@@ -1928,7 +1940,6 @@
     const list = all.filter(cut.test).filter((q) => findHit(q, S.find))
       .sort((a, b) => (stateOf(b) === 'risk') - (stateOf(a) === 'risk') || a.target - b.target);
     return '<div class="s-home">' +
-      (isRec() ? topBrief() : '') +
       '<section class="s-block s-block-wide">' +
         '<div class="s-camp-list-head">' + switcher('reqs') +
           '<label class="b-find">' + svg('find', 14) +
@@ -3853,7 +3864,7 @@
       body = shown.length ? '<div class="b-log">' + logDays(shown, (t, i) => callRow(t, i, true)) + '</div>' +
         '<p class="b-vfoot">The last ' + shown.length + ' of ' + log.length + ' calls.</p>' : '<p class="b-vfoot">No calls yet.</p>';
     }
-    return '<div class="s-home">' + topBrief() +
+    return '<div class="s-home">' +
       '<section class="s-block s-block-wide" aria-label="Calls">' +
         '<div class="s-camp-list-head">' + switcher('calls') + '</div>' +
         '<p class="t-scope">' + tag('Design target', 'warn') + '<span>Telephony for Talent is on hold with AiMY Phone. These calls show where it is going, not what ships first.</span></p>' +
@@ -4849,7 +4860,9 @@
     const q = FIND.req ? DB.reqById[FIND.req] : null;
     const asked = FIND.q.trim() ? FIND.q.trim().split('\n')[0] : q ? 'People who fit ' + q.title : 'Anyone who fits';
     const mails = web.filter((x) => x.emailFrom).length;
-    const known = (x) => x.ev.filter((e) => e === 'm').length + ' of ' + x.ev.length + ' known';
+    /* Met, and what their profile is silent on, said apart (unknown is not a no). */
+    const known = (x) => { const m = x.ev.filter((e) => e === 'm').length, u = x.ev.filter((e) => e === 'n').length;
+      return m + ' of ' + x.ev.length + ' met' + (u ? ', ' + u + ' not known yet' : ''); };
     const why = (x) => '<div class="reasons" style="grid-column:2 / -1;margin-top:0">' + FIND.crit.map((m, k) => rcChip(EVW[x.ev[k]] + ' · ' + m, x.ev[k] === 'm' ? 'ok' : x.ev[k] === 'p' ? 'warn' : 'dash')).join('') + '</div>';
     const row = (x, k, body, right) => '<div class="person"' + (k ? '' : ' style="border-top:0"') + '>' + body + '<div class="row" style="gap:8px">' + right +
       rcBtn(FIND.why[x.i] ? 'Hide why' : 'Why', 'data-find-why="' + x.i + '" aria-expanded="' + !!FIND.why[x.i] + '"', 'quiet') +
@@ -5241,15 +5254,30 @@
     const sendAvg = avgSent(reqs);
     const pct = (a, b) => (b ? Math.round(a / b * 100) + '%' : 'none yet');
     const phones = reached('hr') + cands.filter((c) => c.stage === 'phone' && c.exit).length;
+    const sentN0 = reqs.map(sentDays).filter((x) => x != null).length;
+    /* ONE DEFINITION PER FIGURE (R6, the metric dictionary): each tile says
+       its unit, where it starts and stops, and how many it rests on, behind
+       How it is counted. Days to send profiles and Days to hire are averaged
+       over different sets (requisitions that sent a profile, people with an
+       accepted offer), so one can read lower than the other; the tile says so
+       rather than leaving it to look like a mistake. */
     const tiles = [
-      ['Requisitions', reqs.length, n('cclient') + ' cancelled by the client, ' + n('cmgr') + ' by the manager'],
-      ['Seats', seats, hiredSeats + ' hired, ' + reqs.filter(isOpen).reduce((s, q) => s + q.seats, 0) + ' still open'],
-      ['Days to send profiles', sendAvg != null ? sendAvg : '·', 'from opening to the first profile sent, on average'],
-      ['Days to hire', toHire != null ? toHire : '·', 'from opening to the offer, on average'],
-      ['Days to join', toJoin != null ? toJoin : '·', 'from opening to day one, on average'],
-      ['HR after the phone screen', pct(reached('hr'), phones), 'of people who passed the call went on to HR'],
-      ['Technical after HR', pct(reached('tech'), reached('hr')), 'of people past HR reached the technical round'],
-      ['Client after technical', pct(reached('client'), reached('sent')), 'of profiles sent got a client interview'],
+      ['Requisitions', reqs.length, n('cclient') + ' cancelled by the client, ' + n('cmgr') + ' by the manager',
+        [['Unit', 'Requisition'], ['Counts', 'Every requisition in view, open or closed. Drafts are left out.'], ['Not to mix', 'Seats: one requisition can hold several.']]],
+      ['Seats', seats, hiredSeats + ' hired, ' + reqs.filter(isOpen).reduce((s, q) => s + q.seats, 0) + ' still open',
+        [['Unit', 'Seat, one vacancy'], ['Hired at', 'Its requisition is filled or its people have started'], ['Not to mix', 'People hired: an offer accepted counts a person, not a seat.']]],
+      ['Days to send profiles', sendAvg != null ? sendAvg : '·', 'from opening to the first profile sent, on average · ' + plural(sentN0, 'requisition'),
+        [['Unit', 'Requisition'], ['Starts', 'The requisition opens'], ['Stops', 'Its first profile is sent to the client'], ['Counts', plural(sentN0, 'requisition') + ' that have sent one. The rest are still waiting and are left out.']]],
+      ['Days to hire', toHire != null ? toHire : '·', 'from opening to the offer, on average · ' + plural(hiredO.length, 'person', 'people'),
+        [['Unit', 'Person'], ['Starts', 'Their requisition opens'], ['Stops', 'The offer is sent'], ['Counts', plural(hiredO.length, 'person', 'people') + ' with an accepted offer. Fewer than the requisitions above, so the two are not one timeline.']]],
+      ['Days to join', toJoin != null ? toJoin : '·', 'from opening to day one, on average · ' + plural(hiredO.length, 'person', 'people'),
+        [['Unit', 'Person'], ['Starts', 'Their requisition opens'], ['Stops', 'Their first day at work'], ['Counts', 'People with an accepted offer; a date not reached yet is the agreed start date.']]],
+      ['HR after the phone screen', pct(reached('hr'), phones), 'of people who passed the call went on to HR · ' + plural(phones, 'person', 'people'),
+        [['Unit', 'Person'], ['Of', plural(phones, 'person', 'people') + ' who finished a phone screen: went on to HR, or left at it'], ['Counts', 'Those who reached the HR interview']]],
+      ['Technical after HR', pct(reached('tech'), reached('hr')), 'of people past HR reached the technical round · ' + plural(reached('hr'), 'person', 'people'),
+        [['Unit', 'Person'], ['Of', plural(reached('hr'), 'person', 'people') + ' who reached the HR interview'], ['Counts', 'Those who reached the technical interview']]],
+      ['Client interview per profile sent', pct(reached('client'), reached('sent')), 'of profiles sent got a client interview · ' + plural(reached('sent'), 'profile'),
+        [['Unit', 'Person'], ['Of', plural(reached('sent'), 'profile') + ' sent to a client'], ['Counts', 'Those the client agreed to meet'], ['Norm', 'About 3 to 5 profiles per client interview is usual for agencies; a weak benchmark.']]],
     ];
     const byAcc = ACCOUNTS.map((a) => ({ a: a, n: reqs.filter((q) => q.acc === a.id).length, open: reqs.filter((q) => q.acc === a.id && isOpen(q)).length,
       hired: reqs.filter((q) => q.acc === a.id && (q.state === 'filled' || q.state === 'started')).length })).filter((x) => x.n).sort((x, y) => y.n - x.n);
@@ -5273,7 +5301,8 @@
     return '<div class="s-home">' +
       '<section class="s-block s-block-wide" aria-label="Reports">' +
         '<div class="s-camp-list-head">' + switcher('reports') + '<span class="s-block-say">' + esc(isHR() ? 'Everyone’s requisitions' : isHM() ? 'The requisitions you asked for' : 'Your requisitions') + '</span></div>' +
-        '<div class="t-kpis">' + tiles.map((t) => '<div class="t-kpi"><span class="t-kpi-cap">' + esc(t[0]) + '</span><b class="t-kpi-n">' + esc(t[1]) + '</b><span class="t-kpi-say">' + esc(t[2]) + '</span></div>').join('') + '</div>' +
+        '<div class="t-kpis">' + tiles.map((t) => '<div class="t-kpi"><span class="t-kpi-cap">' + esc(t[0]) + '</span><b class="t-kpi-n">' + esc(t[1]) + '</b><span class="t-kpi-say">' + esc(t[2]) + '</span>' +
+          '<details class="t-kpi-def"><summary>How it is counted</summary><dl>' + t[3].map((d) => '<dt>' + esc(d[0]) + '</dt><dd>' + esc(d[1]) + '</dd>').join('') + '</dl></details></div>').join('') + '</div>' +
       '</section>' +
       (phones ? (function () {
         /* AiMY's one finding: a client's decline pattern waiting on a

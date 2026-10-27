@@ -309,6 +309,19 @@ textarea.dial-input.t-area { height: auto; padding: 10px 12px; }
 .t-kpi-cap { font-size: var(--t-micro); font-weight: var(--fw-medium); letter-spacing: 0.08em; text-transform: uppercase; color: var(--d100); }
 .t-kpi-n { font-family: var(--font-display); font-size: 28px; line-height: 1.1; font-weight: var(--fw-bold); color: var(--d50); font-variant-numeric: tabular-nums; }
 .t-kpi-say { font-size: var(--fs-sm); color: var(--d100); line-height: var(--lh-snug); }
+/* How a figure is counted (R6, the metric dictionary): folded under the
+   tile, one press, its unit, start, stop and how many it rests on. */
+.t-kpi-def { margin-top: 6px; font-size: var(--fs-xs); color: var(--d100); }
+.t-kpi-def > summary { cursor: pointer; width: fit-content; color: var(--accent-label, var(--accent)); font-weight: var(--fw-medium); list-style: none; }
+.t-kpi-def > summary::-webkit-details-marker { display: none; }
+.t-kpi-def > summary:hover { text-decoration: underline; }
+.t-kpi-def > summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
+.t-kpi-def dl { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; margin: 8px 0 0; padding-top: 8px; border-top: 1px solid var(--card-border); line-height: var(--lh-snug); }
+.t-kpi-def dt { color: var(--ink-muted); font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px; }
+.t-kpi-def dt:first-child { margin-top: 0; }
+/* One tile opened does not stretch the rest of its row. */
+.t-kpis:has(.t-kpi-def) { align-items: start; }
+.t-kpi-def dd { margin: 0; color: var(--d50); }
 .t-fn-btn {
   width: 100%; background: none; border: 0; padding: 4px 6px; margin: 0 -6px; font: inherit; color: inherit;
   text-align: left; border-radius: 6px; cursor: pointer; box-sizing: content-box;
