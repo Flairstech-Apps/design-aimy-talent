@@ -612,11 +612,6 @@ body.is-portal .aimy-overlay { display: none !important; }
 .rc .ico.mute{color:var(--t3)}
 .rc .ico.acc{color:var(--accent-label)}
 .rc .ico.brand{color:#7ea7ff}
-.rc .segs{display:flex;gap:4px;margin-top:10px}
-.rc .segs i{flex:1;height:6px;border-radius:3px;background:var(--raised)}
-.rc .segs i.ok{background:var(--ok)}
-.rc .segs i.warn{background:var(--warn);opacity:.8}
-.rc .segs i.err{background:var(--err)}
 .rc .big{font-size:26px;font-weight:700;color:var(--t1);line-height:1}
 .rc .foot{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:11.5px;color:var(--t3)}
 .rc .tabs{display:flex;gap:22px;border-bottom:1px solid var(--line);margin:14px 0 4px}
@@ -1050,13 +1045,26 @@ body.is-portal .aimy-overlay { display: none !important; }
   .t-crit-x { grid-column: 2; grid-row: 1; }
 }
 
-/* ══ THE CANDIDATE CARD'S SCORE ═══════════════════════════════════════════
-   The scoring component's number, bar and chip, small, inside the card:
-   it replaces the AiMY line that said the same count in a sentence. Where
-   they stand is one line under it. */
-.rc.t-cscore { margin: 12px 0 0; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; }
+/* ══ THE SCORE, IN BLUE AND PURPLE ═══════════════════════════════════════
+   The count beside one dot per must-have (talent.js fitPips), on the card
+   and on the profile alike: no full-width bar. The card's panel takes a
+   faint blue-to-purple wash from the brand pair, so the score reads as
+   AiMY's reading of the CV rather than a status. */
+.rc.t-cscore {
+  margin: 12px 14px 0; padding: 10px 12px; border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--brand) 26%, transparent);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 12%, transparent), color-mix(in srgb, var(--purple, #8b4ff4) 12%, transparent));
+}
 .rc.t-cscore .big { font-size: 20px; }
-.rc.t-cscore .segs { margin-top: 8px; }
+.rc.t-cscore .sub { color: var(--d100); }
+.t-score-line { display: flex; align-items: center; gap: 12px; }
+.t-pips { display: inline-flex; align-items: center; gap: 7px; }
+.t-pip { width: 10px; height: 10px; border-radius: 50%; flex: none; box-sizing: border-box; }
+.t-pip.is-met { background: var(--brand); }
+.t-pip.is-conf { background: var(--brand); box-shadow: 0 0 0 1.5px var(--card-bg), 0 0 0 3px var(--brand); }
+.t-pip.is-part { border: 1.5px solid var(--purple, #8b4ff4); background: linear-gradient(90deg, var(--purple, #8b4ff4) 50%, transparent 50%); }
+.t-pip.is-unk { border: 1.5px dashed color-mix(in srgb, var(--purple, #8b4ff4) 70%, var(--ink-muted)); }
+.t-pip.is-diff { border: 1.5px solid var(--warn); }
 .t-cnow { margin-top: 10px; }
 
 /* ══ ASSESSMENTS: CHECKS, INTEGRITY, CONSENT ══════════════════════════════

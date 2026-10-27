@@ -2352,11 +2352,12 @@
       '<p class="b-qcard-where">' + fact('lang', c.langs.join(', ')) + '</p>' +
       (was ? '<p class="b-qcard-where t-before">' + fact('hist', beforeSay(was)) + '</p>' : '') +
       /* The score, as the scoring component draws it, said once: what the
-         AiMY line used to repeat is the number, the bar and the chip. */
+         AiMY line used to repeat is the number, a dot per must-have and
+         the chip. */
       (function () { const unk = c.ev.filter((e) => e === 'n').length, part = c.ev.filter((e) => e === 'p').length;
-        return '<div class="rc t-cscore"><div class="row between" style="align-items:flex-end"><div><div class="big">' + evMet(c) + ' of ' + c.ev.length + '</div>' +
-          '<div class="sub">must-haves the CV shows</div></div>' + (unk ? rcChip(unk + ' not known yet', 'warn', 'qc') : part ? rcChip(part + ' partly', 'warn') : rcChip(fitLane(c)[0], 'ok')) + '</div>' +
-          fitSegs(c, null) + '</div>'; })() +
+        return '<div class="rc t-cscore"><div class="t-score-line"><span class="big">' + evMet(c) + ' of ' + c.ev.length + '</span>' + fitPips(c, null) + '</div>' +
+          '<div class="row between" style="margin-top:4px;flex-wrap:wrap;gap:6px"><span class="sub">must-haves the CV shows</span>' +
+          (unk ? rcChip(unk + ' not known yet', 'acc', 'qc') : part ? rcChip(part + ' partly', 'acc') : rcChip(fitLane(c)[0], 'acc')) + '</div></div>'; })() +
       '<p class="b-qcard-where t-cnow">' + fact('clock', say + (s && s.status === 'done' ? ' Assessment ' + scoreShort(asmtOf(s.asmt), s) + '.' : '')) + '</p>' +
       (c.stage === 'sent' || (isClient() && c.exit === 'clientno') ? sendout(c) : '') +
       /* AT THE SCREEN, THE CALL IS THE MOVE. Someone who applied or is due a
@@ -2560,24 +2561,31 @@
   const FIT_ST = { verified: ['Confirmed', 'ok', 'okc'], differs: ['Differs', 'err', 'warnc'], partly: ['Partly shown', 'warn', 'warnc'], notshown: ['Not shown', '', 'warnc'] };
   const fitLane = (c) => { const met = evMet(c), unk = c.ev.filter((e) => e === 'n').length, all = c.ev.length;
     return met === all ? ['Strong fit', 'ok'] : met + unk === all ? ['Fit, to check', 'warn'] : met * 2 >= all ? ['Partial fit', 'warn'] : ['Weak fit', '']; };
-  /* The segments: green met (or confirmed), amber partly, red where the
-     interview differs, empty where nobody knows yet. */
-  const fitSegs = (c, v) => '<div class="segs" aria-hidden="true">' + c.ev.map((e, i) => {
-    const st = v ? v[i].state : null;
-    return st === 'differs' ? '<i class="err"></i>' : st === 'verified' || e === 'm' ? '<i class="ok"></i>' : e === 'p' || st === 'partly' ? '<i class="warn"></i>' : '<i></i>';
-  }).join('') + '</div>';
+  /* ONE DOT A MUST-HAVE (Engy, 29 Oct: the full-width bars read as
+     clutter). Blue where the CV shows it, blue ringed where an interview
+     confirmed it, half purple where the CV partly shows it, a dashed
+     outline where nobody knows yet, amber where the interview differs.
+     The words beside them say the same; the dots are for the glance. */
+  const PIP = { c: 't-pip is-conf', m: 't-pip is-met', p: 't-pip is-part', n: 't-pip is-unk', d: 't-pip is-diff' };
+  const PIP_SAY = { c: 'confirmed in interview', m: 'shown on the CV', p: 'partly shown', n: 'not known yet', d: 'where the interview differs' };
+  function fitPips(c, v) {
+    const ks = c.ev.map((e, i) => { const st = v ? v[i].state : null; return st === 'differs' ? 'd' : st === 'verified' ? 'c' : e === 'm' ? 'm' : e === 'p' || st === 'partly' ? 'p' : 'n'; });
+    const said = Object.keys(PIP_SAY).map((k) => { const n = ks.filter((x) => x === k).length; return n ? n + ' ' + PIP_SAY[k] : null; }).filter(Boolean).join(', ');
+    return '<span class="t-pips" role="img" aria-label="' + esc(said) + '" title="' + esc(said) + '">' + ks.map((k) => '<i class="' + PIP[k] + '"></i>').join('') + '</span>';
+  }
   function fitCard(c, v) {
     const q = reqOf(c), works = isRec() || isHR(), asks = c.asks || [];
-    const met = evMet(c), unk = c.ev.filter((e) => e === 'n').length, all = c.ev.length;
+    const met = evMet(c), all = c.ev.length;
     const conf = v.filter((x) => x.state === 'verified').length, diff = v.filter((x) => x.state === 'differs').length;
+    /* Silent on the CV but answered in an interview is known. */
+    const open = c.ev.filter((e, i) => e === 'n' && !v[i].seen.length).length;
     const last = v.reduce((d, x) => (x.seen[0] && (d == null || x.seen[0].day > d) ? x.seen[0].day : d), null);
     const lane = fitLane(c);
     return rcard({ cap: 'Scoring and matching', ico: 'listc', label: 'Against the success profile',
       body: rcHead(esc(c.name), esc(q.title) + ' · ' + esc(accOf(q).name), rcChip('Lane · ' + lane[0], lane[1])) +
-        '<div class="row between" style="margin-top:14px;align-items:flex-end;flex-wrap:wrap"><div><div class="big">' + met + ' of ' + all + '</div>' +
+        '<div class="row between" style="margin-top:14px;align-items:flex-end;flex-wrap:wrap"><div><div class="t-score-line"><span class="big">' + met + ' of ' + all + '</span>' + fitPips(c, v) + '</div>' +
           '<div class="sub" style="margin-top:4px">must-haves the CV shows, each quoted · ' + (conf ? conf + ' confirmed in interview' : 'none confirmed in interview yet') + '</div></div>' +
-          '<span class="row" style="gap:6px">' + (diff ? rcChip(diff + (diff === 1 ? ' differs' : ' differ') + ' in interview', 'err') : '') + (unk ? rcChip(unk + ' not known yet', 'warn', 'qc') : '') + '</span></div>' +
-        fitSegs(c, v) +
+          '<span class="row" style="gap:6px">' + (diff ? rcChip(diff + (diff === 1 ? ' differs' : ' differ') + ' in interview', 'err') : '') + (open ? rcChip(open + ' not known yet', 'acc', 'qc') : '') + '</span></div>' +
         '<div style="margin-top:12px">' + q.must.map((m, i) => {
           const e = c.ev[i], x = v[i], best = x.seen[0], st = best ? FIT_ST[x.state] : null;
           const cv = e === 'n' ? rcSay('The CV is silent here. Not the same as Not met.') : rcQuote('“' + esc(cvSays(c, m)) + '”');
