@@ -134,6 +134,29 @@
     plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
     trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
     link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+    /* For the research mockups (30 Research/UI): Lucide, as the rest. */
+    quote: '<path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/>',
+    okc: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+    qc: '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+    warnc: '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
+    tri: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+    lock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    eye: '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
+    eyeoff: '<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/>',
+    loop: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+    branch: '<line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>',
+    bars: '<line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/>',
+    listc: '<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>',
+    clip: '<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
+    pen: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>',
+    hist: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
+    shield: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
+    msg: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+    doc: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+    send: '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
+    info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+    arrow: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+    ring: '<circle cx="12" cy="12" r="10" stroke-dasharray="3 3"/>',
   };
   const svg = (k, px) => '<svg viewBox="0 0 24 24"' + (px ? ' width="' + px + '" height="' + px + '"' : '') +
     ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -1401,13 +1424,6 @@
       return { must: m, cv: cv, seen: seen, state: state };
     });
   }
-  const VSTATE = {
-    verified: { label: 'Confirmed', tone: 'ok' },
-    partly:   { label: 'Partly shown', tone: 'warn' },
-    notshown: { label: 'Not shown', tone: 'neutral' },
-    differs:  { label: 'CV and interview differ', tone: 'warn' },
-    unproven: { label: 'Not checked', tone: 'neutral' },
-  };
 
   /* EVERYTHING THAT HAPPENED TO ONE APPLICATION, newest first: applying,
      calls, assessments, interviews, offers, and what people did and wrote. */
@@ -2119,15 +2135,139 @@
     ? '<button class="' + (cls || 'b-ghost') + '" type="button" data-pass-open="' + c.id + '">' + (isClient() ? 'Pass' : esc(EXIT.clientno.label)) + '</button>'
     : '<button class="' + (cls || 'b-ghost') + '" type="button" data-out="' + c.id + '|' + k + '">' + esc(EXIT[k].label) + '</button>';
   const passOpen = (c) => !!PASSING && PASSING.id === c.id;
+
+  /* ══ THE RESEARCH MOCKUPS (30 Research/UI) ════════════════════════════════
+     The nine component cards drawn for the research, built as drawn: a caps
+     label with its icon above a rounded card; inside, a title "Thing ·
+     Person" with a muted line and one status pill; caps for each part; rows
+     led by an icon with the evidence quoted under a rule; AiMY's purple box;
+     an amber warning; lock and shield footnotes. The styles are talent.css
+     §THE RESEARCH MOCKUPS. */
+  /* Class names written out whole, so the audit can see each one used. */
+  const MC_TONE = { ok: 'mc-t-ok', warn: 'mc-t-warn', err: 'mc-t-err', accent: 'mc-t-accent', dashed: 'mc-t-dashed', line: 'mc-t-line', neutral: '' };
+  const MC_ICO = { ok: 'mc-i-ok', warn: 'mc-i-warn', err: 'mc-i-err', accent: 'mc-i-accent', muted: 'mc-i-muted' };
+  const MC_DOT = { ok: 'mc-d-ok', err: 'mc-d-err', wait: 'mc-d-wait' };
+  const MC_GRP = { Screen: 'mc-g-screen', Assess: 'mc-g-assess', Interview: 'mc-g-interview', Client: 'mc-g-client', Offer: 'mc-g-offer', Hired: 'mc-g-hired' };
+  const mcPill = (text, tone, ico) => '<span class="mc-pill ' + (MC_TONE[tone] || '') + '">' + (ico ? svg(ico, 15) : '') + '<span>' + esc(text) + '</span></span>';
+  const mcBtn = (label, attr, primary, ico) => '<button class="mc-btn' + (primary ? ' is-primary' : '') + '" type="button" ' + attr + '>' + (ico ? svg(ico, 16) : '') + '<span>' + esc(label) + '</span></button>';
+  const mcHead = (title, sub, right) => '<div class="mc-head"><div class="mc-head-t"><h2 class="mc-title">' + title + '</h2>' + (sub ? '<p class="mc-sub">' + sub + '</p>' : '') + '</div>' +
+    (right ? '<div class="mc-head-r">' + right + '</div>' : '') + '</div>';
+  const mcSec = (t, right) => '<p class="mc-sec"><span>' + esc(t) + '</span>' + (right ? '<span>' + esc(right) + '</span>' : '') + '</p>';
+  const mcAimy = (text, src, acts) => '<div class="mc-aimy">' + mark(22) + '<div class="mc-aimy-main"><p class="mc-aimy-t">' + text + '</p>' +
+    (src ? '<p class="mc-aimy-src">' + src + '</p>' : '') + (acts ? '<div class="mc-acts">' + acts + '</div>' : '') + '</div></div>';
+  const mcWarn = (html, acts) => '<div class="mc-warn">' + svg('tri', 20) + '<div class="mc-warn-main"><p>' + html + '</p>' + (acts ? '<div class="mc-acts">' + acts + '</div>' : '') + '</div></div>';
+  const mcNote = (ico, html) => '<p class="mc-note">' + svg(ico, 18) + '<span>' + html + '</span></p>';
+  const mcRow = (ico, tone, label, body, right) => '<div class="mc-row"><span class="mc-row-ico ' + (MC_ICO[tone] || '') + '">' + svg(ico, 24) + '</span>' +
+    '<div class="mc-row-main"><p class="mc-row-label">' + label + '</p>' + (body || '') + '</div>' + (right ? '<div class="mc-row-r">' + right + '</div>' : '') + '</div>';
+  const mcQuote = (html) => '<p class="mc-quote">' + html + '</p>';
+  const mcFoot = (left, right) => '<div class="mc-foot"><span>' + left + '</span>' + (right ? '<span>' + right + '</span>' : '') + '</div>';
+  function mcard(o) {
+    return '<section class="mc s-block-wide' + (o.cls ? ' ' + o.cls : '') + '" aria-label="' + esc(o.label || o.cap) + '">' +
+      (o.cap ? '<p class="mc-cap">' + svg(o.ico, 18) + '<span>' + esc(o.cap) + '</span></p>' : '') +
+      (o.cards || ['<div class="mc-card">' + o.body + '</div>']).join('') + '</section>';
+  }
+  const shortAcc = (a) => a.name.split(' ')[0];
+  /* What the CV says on one must-have, as a line to quote: the skill or
+     language it names, else the job it describes. Read as data. */
+  function cvSays(c, m) {
+    const ml = m.toLowerCase();
+    const sk = (c.skills || []).filter((s) => ml.indexOf(s.toLowerCase().split(' ')[0]) >= 0)[0];
+    const lg = (c.langs || []).filter((l) => ml.indexOf(l.toLowerCase()) >= 0)[0];
+    if (sk) return sk + ', in the CV';
+    if (lg) return lg + ', listed';
+    if (/year|experience/.test(ml)) return plural(c.years, 'year') + ', ' + lower(c.at);
+    return c.at;
+  }
+
+  /* ── THE REASON PICKER (P1) ── one reason from a fixed list, as pills; a
+     pressed reason is the pass, with Undo. Other takes one line. */
   function passPicker(c) {
     const other = PASSING.other;
-    return '<div class="t-reason" role="group" aria-label="Why ' + esc(isClient() ? 'you pass on ' : 'the client passed on ') + esc(c.name) + '">' +
-      '<p class="t-reason-q">' + (isClient() ? 'Pass on ' + esc(first(c.name)) + ' for one reason:' : 'The client passed for one reason:') + '</p>' +
-      '<div class="b-cuts">' + DECLINE.map((d) => '<button class="filter-chip' + (other && d.k === 'other' ? ' active' : '') + '" type="button" data-pass-why="' + c.id + '|' + d.k + '">' + esc(d.label) + '</button>').join('') + '</div>' +
+    return '<div class="mc-why" role="group" aria-label="Why ' + esc(isClient() ? 'you pass on ' : 'the client passed on ') + esc(c.name) + '">' +
+      mcSec(isClient() ? 'Why · pick one' : 'Why · the client picks one') +
+      '<div class="mc-picks">' + DECLINE.map((d) => '<button class="mc-pick' + (other && d.k === 'other' ? ' is-on' : '') + '" type="button" data-pass-why="' + c.id + '|' + d.k + '">' + esc(d.label) + '</button>').join('') + '</div>' +
       (other ? '<div class="t-addnote t-input-wrap" id="wrapPass"><input class="dial-input t-input" id="passNote" type="text" autocomplete="off" placeholder="One line on why" aria-label="Why, in one line" value="' + esc(PASSING.line || '') + '">' +
-        '<button class="btn btn-brand btn-sm" type="button" data-pass-other="' + c.id + '">Pass</button></div>' : '') +
-      '<p class="t-reason-foot">It feeds matching for ' + esc(accOf(reqOf(c)).name) + ' only. <button class="t-inline-link" type="button" data-pass-cancel>Keep ' + esc(first(c.name)) + ' in</button></p>' +
+        '<button class="mc-btn is-primary" type="button" data-pass-other="' + c.id + '"><span>Pass</span></button></div>' : '') +
+      '<p class="mc-why-foot">Reason codes · not free text · feeds matching for ' + esc(accOf(reqOf(c)).name) + ' only. <button class="t-inline-link" type="button" data-pass-cancel>Keep ' + esc(first(c.name)) + ' in</button></p>' +
     '</div>';
+  }
+
+  /* ── 1. THE SENDOUT, WITH THE CLIENT'S REASON (client-sendout-reason-codes) ── */
+  function sendoutCard(c) {
+    if (c.sentDay == null) return '';
+    const q = reqOf(c), a = accOf(q);
+    const passed = c.exit === 'clientno', met = !passed && c.decideDay != null;
+    const who = a.id === 'northwind' ? DESKS.jana.name : 'their hiring team';
+    const pill = passed ? mcPill(isClient() ? 'You declined' : 'Client declined', 'err') : met ? mcPill('Wants to meet', 'ok')
+      : c.openDay != null ? mcPill('Opened, no decision', 'warn') : mcPill('Not opened yet', 'neutral');
+    const step = (tone, head, rest) => '<li class="mc-tl-step ' + MC_DOT[tone] + '"><span class="mc-tl-dot" aria-hidden="true"></span><p><b>' + head + '</b>' + (rest ? ' · ' + rest : '') + '</p></li>';
+    const sentSay = isClient() ? 'by ' + esc(DESKS.omar.name) + ', FlairsTech' : (c.sentDay - q.opened) + ' days after the request opened · write-up approved by the recruiter';
+    const pick = passed && c.decline ? '<div class="mc-why">' + mcSec(isClient() ? 'Why · you picked one' : 'Why · the client picks one') +
+      '<div class="mc-picks">' + DECLINE.map((d) => '<span class="mc-pick' + (d.k === c.decline.why ? ' is-on is-err' : '') + '">' + (d.k === c.decline.why ? svg('check', 15) : '') + esc(d.label) + '</span>').join('') + '</div></div>' : '';
+    const n = passed && c.decline ? accDeclines(a.id, MONTH).filter((x) => x.decline.why === c.decline.why).length : 0;
+    return mcard({ cap: isClient() ? 'Your desk · The profile we sent' : 'Client desk · The sendout', ico: 'send', label: 'The sendout',
+      body: mcHead('Profile sent · ' + esc(c.name), 'to ' + esc(a.name) + ' · ' + esc(q.title), pill) +
+        '<ol class="mc-tl">' +
+          step('ok', 'Sent ' + esc(sayDay(c.sentDay)), sentSay) +
+          (c.openDay != null ? step('ok', 'Opened by the client ' + esc(sayDay(c.openDay)), esc(who)) : step('wait', 'Not opened yet', 'sent ' + esc(sayWhen(c.sentDay)))) +
+          (passed ? step('err', 'Declined ' + esc(sayDay(c.decideDay != null ? c.decideDay : 0)), c.decline && c.decline.note ? '“' + esc(c.decline.note) + '”' : esc(lower(DECLINE_K[c.decline ? c.decline.why : 'other'].label)))
+            : met ? step('ok', 'Wants to meet · ' + esc(sayDay(c.decideDay)), 'the client interview is next')
+            : c.openDay != null ? step('wait', 'Decision', 'waiting ' + days(-c.openDay)) : '') +
+        '</ol>' +
+        (passOpen(c) ? passPicker(c) : pick) +
+        (passed && c.decline ? mcAimy('This is the <b>' + nth(Math.max(1, n)) + '</b> ' + esc(shortAcc(a)) + ' decline this month for ' + esc(DECLINE_K[c.decline.why].say) + '. It now counts in ' + esc(shortAcc(a)) + '’s success profile as a learning signal.',
+          'Reason codes · not free text · feeds matching for this account only') : '') +
+        (isClient() && !c.exit && c.stage === 'sent' && !passOpen(c) ? '<div class="mc-acts">' + mcBtn('Invite to interview', 'data-move="' + c.id + '|client"', true, 'cal') + mcBtn('Decline with a reason', 'data-pass-open="' + c.id + '"') + '</div>' : '') });
+  }
+
+  /* ── 3. EVIDENCE PER CRITERION (scoring-evidence-per-criterion) ── the
+     count is the score, each criterion quoted, an unknown said as unknown
+     with one way to find out. Never a percentage (D2). */
+  function evidenceCard(c) {
+    const q = reqOf(c), works = isRec() || isHR();
+    const met = c.ev.filter((e) => e === 'm').length, unk = c.ev.filter((e) => e === 'n').length, part = c.ev.filter((e) => e === 'p').length, all = c.ev.length;
+    const lane = met === all ? ['Lane · Strong fit', 'ok'] : met + unk === all ? ['Lane · Fit, to check', 'warn'] : met * 2 >= all ? ['Lane · Partial fit', 'warn'] : ['Lane · Weak fit', 'neutral'];
+    const asks = c.asks || [];
+    return mcard({ cap: 'Scoring and matching', ico: 'listc', label: 'Against the success profile',
+      body: mcHead(esc(c.name), esc(q.title) + ' · ' + esc(accOf(q).name), mcPill(lane[0], lane[1])) +
+        '<div class="mc-score"><div><p class="mc-big">' + met + ' of ' + all + '</p><p class="mc-sub">required criteria met, each quoted</p></div>' +
+          (unk ? mcPill(unk + ' not known yet', 'warn', 'qc') : part ? mcPill(part + ' partly', 'warn') : '') + '</div>' +
+        '<div class="mc-seg" aria-hidden="true">' + c.ev.map((e) => '<span class="' + (e === 'm' ? 'mc-seg-ok' : 'mc-seg-warn') + '"></span>').join('') + '</div>' +
+        '<div class="mc-rows">' + q.must.map((m, i) => {
+          const e = c.ev[i];
+          if (e === 'n') return mcRow('qc', 'warn', esc(m), '<p class="mc-row-say">The CV is silent here. Not the same as Not met.</p>',
+            works && !c.exit ? (asks.indexOf(i) >= 0 ? mcPill('On the list', 'neutral') : mcBtn('Ask ' + first(c.name), 'data-ask-must="' + c.id + '|' + i + '"', false, 'msg')) : mcPill('Not known', 'dashed'));
+          return mcRow(e === 'm' ? 'okc' : 'warnc', e === 'm' ? 'ok' : 'warn', esc(m), mcQuote('“' + esc(cvSays(c, m)) + '”'), mcPill(EVW[e], e === 'm' ? 'ok' : 'warn'));
+        }).join('') + '</div>' +
+        mcFoot(svg('hist', 15) + 'Criteria v' + ((q.mustV || 0) + 1) + ' · set by ' + esc(hmOf(q).name) + ', ' + esc(sayDay(q.opened)), works ? 'Overridable · you decide' : 'Read against your success profile') });
+  }
+
+  /* ── 2. WHAT WE VERIFIED (candidate-verified-skills) ── CV says next to
+     interview found, each finding confirmed by the interviewer, with where
+     it was said. */
+  function verifiedCard(c, v) {
+    const works = isRec() || isHR();
+    const asks = c.asks || [];
+    const ivN = ivsOf(c).filter((x) => x.status === 'done').length, asN = DB.sends.filter((s) => s.cand === c.id && s.status === 'done').length;
+    const last = v.reduce((d, x) => (x.seen[0] && (d == null || x.seen[0].day > d) ? x.seen[0].day : d), null);
+    const STV = { verified: ['Confirmed', 'ok'], differs: ['Differs', 'warn'], partly: ['Partly shown', 'warn'], notshown: ['Not shown', 'neutral'], unproven: ['Not checked', 'dashed'] };
+    return mcard({ cap: 'Candidates and history', ico: 'okc', label: 'What we verified',
+      body: mcHead(esc(c.name) + ' · what we verified', 'Across ' + plural(ivN, 'interview') + ' and ' + plural(asN, 'assessment') + ' · every new requisition starts here',
+          last != null ? mcPill('Last checked ' + sayDay(last), 'accent', 'hist') : mcPill('Nothing checked yet', 'dashed')) +
+        '<div class="mc-vt" role="table" aria-label="What we verified">' +
+          '<div class="mc-vt-h" role="row"><span role="columnheader">Skill or experience</span><span role="columnheader">CV says</span><span role="columnheader">Interview found</span><span role="columnheader"></span><span role="columnheader">Evidence</span></div>' +
+          v.map((x, i) => {
+            const best = x.seen[0], s = STV[x.state];
+            const asked = asks.indexOf(i) >= 0;
+            return '<div class="mc-vt-r" role="row"><b role="cell">' + esc(x.must) + '</b>' +
+              '<span role="cell">' + esc(x.cv === 'n' ? 'Silent' : cvSays(c, x.must)) + '</span>' +
+              '<span role="cell">' + (best ? esc(best.note || RATE[best.r]) : 'Not asked yet') + '</span>' +
+              '<span role="cell">' + mcPill(s[0], s[1]) + '</span>' +
+              '<span role="cell" class="mc-vt-ev">' + (best ? svg('play', 18) + '<span>' + esc(STAGE[best.stage].label) + ', ' + esc(sayDay(best.day)) + '</span>'
+                : svg('ring', 18) + '<span>' + (asked ? 'On the list for the next interview' : works && !c.exit ? '<button class="t-inline-link" type="button" data-ask-must="' + c.id + '|' + i + '">Ask in the next interview</button>' : 'Not asked yet') + '</span>') + '</span></div>';
+          }).join('') +
+        '</div>' +
+        (isClient() ? '' : mcNote('info', 'AiMY suggests each finding from the transcript; the interviewer confirms it before it lands here. The candidate sees and edits only their own layer: what the CV says.')) });
   }
   function passWith(c, why, line) {
     const was = { exit: c.exit, since: c.since, decline: c.decline || null, decideDay: c.decideDay, told: c.told };
@@ -2184,16 +2324,16 @@
   /* ── AN INSIGHT: ONE SENTENCE, ONE ACTION (Insights layer, R6) ── the
      finding, the figure it rests on with its definition behind How it is
      counted (unit, start, stop), and the one thing to do about it. */
+  /* ── 5. THE INSIGHTS LAYER (insight-sentence-and-metric) ── one finding
+     in AiMY's box with one action, then each figure it rests on as a card:
+     the number, what it is of, and its unit, start and stop spelled out. */
   function insight(o) {
-    return '<section class="s-insight is-lead s-block-wide" aria-label="' + esc(o.label) + '">' +
-      '<div class="s-lead-mark"><svg class="s-insight-mark" viewBox="0 0 18 20" width="14" height="14" aria-hidden="true"><use href="#aimy-logo-small"/></svg>' +
-        '<span class="work-state ws-detected">' + esc(o.state) + '</span></div>' +
-      '<div class="s-lead-line"><span class="s-lead-n">' + o.n + '</span><span class="s-lead-say">' + o.say + '</span></div>' +
-      '<p class="s-lead-deck">' + o.deck + '</p>' +
-      '<div class="t-acc" data-acc-open="false"><div class="s-lead-acts">' + (o.act || '') +
-        '<button class="b-ghost t-acc-head" type="button" aria-expanded="false" data-acc-toggle>How it is counted<span class="t-acc-chevron">' + svg('down', 14) + '</span></button></div>' +
-        '<div class="t-acc-panel"><div class="t-acc-panel-inner"><dl class="t-def">' + o.def.map((d) => '<dt>' + esc(d[0]) + '</dt><dd>' + esc(d[1]) + '</dd>').join('') + '</dl></div></div></div>' +
-    '</section>';
+    return mcard({ cap: 'Insights layer', ico: 'bars', label: o.label, cards: [
+      mcAimy(o.say, o.src, o.act),
+      '<div class="mc-metrics">' + o.metrics.map((m) => '<div class="mc-card mc-metric"><p class="mc-metric-cap">' + esc(m.cap) + '</p>' +
+        '<p class="mc-metric-n"><b>' + esc(m.n) + '</b><span>' + esc(m.of) + '</span></p>' +
+        '<dl class="mc-def">' + m.def.map((d) => '<dt>' + esc(d[0]) + '</dt><dd>' + esc(d[1]) + '</dd>').join('') + '</dl></div>').join('') + '</div>',
+      o.foot ? mcNote('users', o.foot) : ''] });
   }
 
   /* ── WHAT A BLOCK READS (M8) ── the record each part of the briefing
@@ -3289,15 +3429,16 @@
           : 'What the CV says has held up in interview so far.') + '</p>' +
         /* Message preview (component library): what they will read, before Send. */
         (c.exit && c.told === false && works ? msgPreview(c) + '<div class="s-lead-acts"><button class="s-insight-lnk primary" type="button" data-tell="' + c.id + '">Send the answer</button></div>' : '') +
-        (c.exit || !works ? '' : passOpen(c) ? passPicker(c) : '<div class="s-lead-acts">' +
+        /* With a sendout, the reasons open inside its card instead. */
+        (c.exit || !works ? '' : passOpen(c) && c.sentDay == null ? passPicker(c) : '<div class="s-lead-acts">' +
           (isRec() && canCall(c) ? '<button class="s-insight-lnk' + (early ? ' primary' : '') + '" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call ' + esc(first(c.name)) + '</button>' : '') +
           (nx && !early && (w === 'me' || w === 'client' || w === 'candidate') && c.stage !== 'offer' ? '<button class="s-insight-lnk primary" type="button" data-move="' + c.id + '|' + nx + '">' + esc(goSay(c)) + '</button>' : '') +
           exitBtn(c, outK) +
         '</div>') +
       '</section>' +
-      (c.sentDay != null ? '<section class="s-block s-block-wide" aria-label="With the client"><div class="s-camp-list-head"><h2 class="s-block-h">With the client</h2>' +
-        '<span class="s-block-say">the sendout · each step dated</span></div>' + sendout(c) + '</section>' : '') +
-      verifiedBlock(c, v) +
+      sendoutCard(c) +
+      evidenceCard(c) +
+      verifiedCard(c, v) +
       (others.length ? appsBlock(c, others) : '') +
       (isClient() ? '' : asmtBlock(c)) +
       ivBlock(c) +
@@ -3307,39 +3448,6 @@
         '<div class="s-camp-list-head"><h2 class="s-block-h">Calls with them</h2><span class="s-block-say">' + plural(calls.length, 'call') + ' · newest first</span></div>' +
         '<div class="b-log">' + logDays(calls, (t, i) => callRow(t, i, false)) + '</div></section>') +
     '</div>';
-  }
-
-  /* Each must-have: what the CV says, and what each interview found. */
-  /* The verified skills record (R5's open ground): a person confirms each
-     finding in an interview before it lands here, AiMY's reading of a
-     recording stays a suggestion beside it, and anything nobody has checked
-     carries one way to find out. */
-  function verifiedBlock(c, v) {
-    const q = reqOf(c);
-    const works = isRec() || isHR();
-    const asks = c.asks || [];
-    return '<section class="s-block s-block-wide" aria-label="Against the success profile">' +
-      '<div class="s-camp-list-head"><h2 class="s-block-h">Against the success profile</h2>' +
-        '<span class="s-block-say">the CV, then the deepest interview that rated it · the profile as set ' + esc(sayDay(q.opened)) + '</span></div>' +
-      '<div class="t-vlist">' + v.map((x, i) => {
-        const s = VSTATE[x.state];
-        const iv = x.seen[0];
-        const asked = asks.indexOf(i) >= 0;
-        const canAsk = works && !c.exit && (x.state === 'unproven' || x.state === 'differs');
-        return '<div class="t-vrow">' +
-          '<span class="t-vmust">' + esc(x.must) + '</span>' +
-          '<span class="t-vcol"><span class="t-vcap">CV says</span><span class="s-meta-st tone-' + (x.cv === 'm' ? 'ok' : x.cv === 'p' ? 'warn' : 'neutral') + '">' + EVW[x.cv] + '</span>' +
-            (x.cv === 'n' ? '<span class="t-vnote">The CV is silent here.</span>' : '') + '</span>' +
-          '<span class="t-vcol"><span class="t-vcap">Interview found</span>' + (iv
-            ? '<span class="s-meta-st tone-' + (iv.r === 'm' ? 'ok' : iv.r === 'p' ? 'warn' : 'neutral') + '">' + RATE[iv.r] + '</span><span class="t-vnote">“' + esc(iv.note) + '” ' +
-              esc(STAGE[iv.stage].label) + ', ' + esc(sayWhen(iv.day)) + ', confirmed by ' + esc(iv.by.split(',')[0]) + '.</span>'
-            : '<span class="t-vnote">' + (asked ? 'On the list for the next call and interview.' : 'Not asked yet.') + '</span>') +
-            (canAsk && !asked ? '<button class="t-inline-link" type="button" data-ask-must="' + c.id + '|' + i + '">Ask them</button>' : '') + '</span>' +
-          '<span class="tag tag-' + s.tone + '">' + esc(s.label) + '</span>' +
-        '</div>';
-      }).join('') + '</div>' +
-      (isClient() ? '' : '<p class="b-vfoot">The candidate sees and edits only what their CV says. Interview findings come from the interviewers, confirmed one by one.</p>') +
-    '</section>';
   }
 
   /* Every other application this person has made, or been put on. */
@@ -3474,12 +3582,14 @@
     const due = o.joinDay != null ? o.joinDay + day : null;
     const works = isRec() || isHR() || isHM();
     const got = done ? opts.filter((x) => x[0] === done)[0] : null;
-    return '<div class="t-checkin"><span class="tag tag-' + (got ? got[2] : 'neutral') + '">Day ' + day + '</span>' +
-      '<span class="t-checkin-say">' + (day === 30 ? 'With ' + esc(hmOf(reqOf(c)).name) + ' and with ' + esc(first(c.name)) + ', separately. Kept apart from any probation review.'
-        : 'Whether they stayed, and why if not. Then Employee Self-Service takes over.') +
-        (got ? ' <b>' + esc(got[1]) + '.</b>' : due != null ? ' Due ' + esc(sayWhen(due)) + '.' : '') + '</span>' +
-      (!got && works && due != null && due <= 0 ? '<span class="b-cuts">' + opts.map((x) => '<button class="filter-chip" type="button" data-checkin="' + c.id + '|' + day + '|' + x[0] + '">' + esc(x[1]) + '</button>').join('') + '</span>' : '') +
-    '</div>';
+    /* A row of the day-90 card: the icon and pill carry the outcome. */
+    const good = got && (got[0] === 'well' || got[0] === 'stayed');
+    return mcRow(got ? (good ? 'okc' : 'warnc') : 'ring', got ? (good ? 'ok' : 'warn') : 'muted',
+      'Day ' + day + (day === 30 ? ' · how it is going' : ' · whether they stayed'),
+      '<p class="mc-row-say">' + (day === 30 ? 'With ' + esc(hmOf(reqOf(c)).name) + ' and with ' + esc(first(c.name)) + ', separately.' : 'And why, if not. Then Employee Self-Service takes over.') +
+        (got ? '' : due != null ? ' Due ' + esc(sayWhen(due)) + '.' : '') + '</p>' +
+        (!got && works && due != null && due <= 0 ? '<div class="mc-picks">' + opts.map((x) => '<button class="mc-pick" type="button" data-checkin="' + c.id + '|' + day + '|' + x[0] + '">' + esc(x[1]) + '</button>').join('') + '</div>' : ''),
+      got ? mcPill(got[0] === 'stayed' ? 'Still here' : got[1], good ? 'ok' : 'warn') : mcPill('Not yet', 'dashed'));
   }
   function onboardHtml(c, o) {
     const done = c.onb || [];
@@ -3488,13 +3598,26 @@
       ONBOARD.map((x, i) => '<p class="t-q"><button class="t-check' + (done[i] ? ' is-on' : '') + '" type="button" ' + (works ? 'data-onb="' + c.id + '|' + i + '"' : 'disabled') +
         ' aria-pressed="' + !!done[i] + '" aria-label="' + esc(x[0].replace('{via}', c.wa ? 'on WhatsApp' : 'by email')) + '">' + (done[i] ? svg('check', 12) : '') + '</button><span>' +
         esc(x[0].replace('{via}', c.wa ? 'on WhatsApp' : 'by email')) + '</span><span class="b-kind">' + esc(x[1]) + '</span></p>').join('') +
-      '<h3 class="b-month">Check-ins</h3>' +
-      checkRow(c, o, 30, CHECK30, c.d30) + checkRow(c, o, 90, CHECK90, c.d90) +
-      /* Sample gate (component library): the count under the check-ins. */
-      gate(checkins(), GATE, 'day-90 check-ins recorded', checkins() < GATE
-        ? 'AiMY proposes nothing from outcomes until there are ' + GATE + '. This one counts once its day-90 outcome is in.'
-        : 'Enough to read. Outcomes now feed the learning proposals the HR Manager approves.') +
-    '</div>';
+    '</div>' + dayNinety(c, o);
+  }
+  /* ── 6. DAY 90, AND THE LOOP IT FEEDS (day-90-learning-loop) ── the
+     check-ins as rows with their outcome, kept apart from probation; then
+     the learning proposal they feed, waiting behind its sample gate. */
+  function dayNinety(c, o) {
+    const q = reqOf(c), a = accOf(q);
+    const got = CHECK90.filter((x) => x[0] === c.d90)[0];
+    const pill = got ? mcPill(got[0] === 'stayed' ? 'Still here' : 'Left', got[0] === 'stayed' ? 'ok' : 'err')
+      : o.joinDay != null && o.joinDay + 90 <= 0 ? mcPill('Day 90 due', 'warn') : mcPill(o.joinDay != null && o.joinDay <= 0 ? 'Before day 90' : 'Not started yet', 'dashed');
+    const n = checkins(), pct = Math.min(100, Math.round(n / GATE * 100));
+    return mcard({ cap: 'Offers and onboarding · Day 90', ico: 'loop', label: 'Day-90 check-in', cards: [
+      '<div class="mc-card">' + mcHead('Day-90 check-in · ' + esc(c.name),
+          (o.joinDay != null ? (o.joinDay <= 0 ? 'Joined ' : 'Joins ') + esc(shortAcc(a)) + ' ' + esc(sayDay(o.joinDay)) + ' · ' : '') + 'asked of ' + esc(hmOf(q).name) + ' and of ' + esc(first(c.name)) + ', separately', pill) +
+        '<div class="mc-rows">' + checkRow(c, o, 30, CHECK30, c.d30) + checkRow(c, o, 90, CHECK90, c.d90) + '</div>' +
+        mcNote('shield', 'Separate from probation. Answers feed learning in aggregate only.') + '</div>',
+      '<div class="mc-card">' + mcHead('Learning Proposal · ' + esc(shortAcc(a)) + ' success profile', 'Weigh what day-90 outcomes show at screening',
+          n >= GATE ? mcPill('Enough data', 'ok') : mcPill('Waiting for data', 'dashed', 'lock')) +
+        '<div class="mc-prog" role="meter" aria-label="Day-90 check-ins recorded" aria-valuemin="0" aria-valuemax="' + GATE + '" aria-valuenow="' + Math.min(n, GATE) + '"><span style="width:' + pct + '%"></span></div>' +
+        '<p class="mc-prog-say"><span>' + n + ' of ' + GATE + ' day-90 check-ins needed before AiMY proposes</span><span>' + pct + '%</span></p></div>'] });
   }
 
   /* ── The history, and a line to add to it ── */
@@ -3747,31 +3870,32 @@
     const said = (i) => rec && rec.lines && rec.lines[i * 2 + 1] ? rec.lines[i * 2 + 1][1] : null;
     const heard = rec && rec.lines ? rec.lines.map((l) => l[1]).join(' ').toLowerCase() : '';
     const missedTopic = rec && rec.lines && tpl ? tpl.items.filter((x) => !x.toLowerCase().split(/[^a-z-]+/).some((w) => w.length > 4 && heard.indexOf(w) >= 0))[0] : null;
+    /* ── 4. THE DEBRIEF (interview-debrief) ── AI fills facts, the
+       interviewer gives the verdict: quotes marked Check it, the topic that
+       never came up, then ratings and a call that start empty. */
+    const quoted = q.must.map((m, i) => [m, said(i), i]).filter((x) => x[1]);
     return '<div class="t-out">' + outsideHead('Interview debrief', 'For ' + v.by) +
-      '<section class="t-out-card">' +
-        '<p class="t-out-kicker">' + esc(STAGE[v.stage].label) + ' · ' + esc(sayWhen(v.day)) + ' at ' + esc(v.slot) + '</p>' +
-        '<h1 class="t-out-h">' + esc(c.name) + '</h1>' +
-        '<p>' + esc(q.title) + ' for ' + esc(accOf(q).name) + '. About two minutes. Your answers are quoted back as you wrote them.</p>' +
-        (tpl ? '<h2 class="t-out-sub">The agenda</h2><ol class="t-out-list">' + tpl.items.map((x) => '<li>' + esc(x) + '</li>').join('') + '</ol>' : '') +
-        (missedTopic ? '<div class="t-gap">' + aimyBlock({ text: '<b>“' + esc(missedTopic) + '” never comes up in the recording.</b> It is on the agenda.', from: 'the recording against the agenda' }) +
-          '<p class="t-acts">' + (DEBRIEF.asked ? '<span class="b-kind">Asked ' + esc(first(c.name)) + ' ' + esc(viaSay(c)) + '. The answer lands on their record.</span>'
-            : '<button class="s-insight-lnk" type="button" data-gap-ask="' + v.id + '">Ask ' + esc(first(c.name)) + ' by message</button>') + '</p></div>' : '') +
-        (gaps.length ? '<h2 class="t-out-sub">What the CV is silent on</h2>' + aimyBlock({ text: 'Ask for an example of: ' + esc(gaps.join('; ')) + '.', from: 'the CV against the success profile' }) : '') +
-        '<h2 class="t-out-sub">How did they do?</h2>' +
-        (rec && rec.lines ? '<p class="b-vfoot">AiMY quotes what they said from the recording. Check each quote; the rating and the call are yours, and start empty.</p>' : '') +
-        '<div class="t-input-wrap" id="wrapDebrief"><div class="t-input">' + q.must.map((m, i) => '<div class="t-dr">' +
-          '<p class="t-dr-must">' + esc(m) + (rec && rec.suggests ? '<span class="b-kind">The recording suggests ' + RATE[rec.suggests[i]].toLowerCase() + '</span>' : '') + '</p>' +
-          (said(i) ? '<p class="t-quote"><span class="tag tag-warn">Check it</span><span>“' + esc(said(i)) + '”</span>' +
-            '<button class="t-inline-link" type="button" data-dr-quote="' + i + '">Use as my note</button></p>' : '') +
-          '<div class="b-cuts">' + ['m', 'p', 'n'].map((k) => '<button class="filter-chip' + (DEBRIEF.r[i] === k ? ' active' : '') + '" type="button" data-dr="' + i + '|' + k + '">' + RATE[k] + '</button>').join('') + '</div>' +
-          '<input class="dial-input" type="text" data-drn="' + i + '" value="' + esc(DEBRIEF.n[i] || '') + '" placeholder="One line on what you saw" aria-label="What you saw on ' + esc(m) + '">' +
-        '</div>').join('') + '</div><p class="t-error-msg">Rate every line, then say proceed or not.</p></div>' +
-        '<h2 class="t-out-sub">Your call</h2>' +
-        '<div class="b-cuts">' + [['yes', 'Proceed'], ['no', 'Do not proceed']].map((x) => '<button class="filter-chip' + (DEBRIEF.v === x[0] ? ' active' : '') + '" type="button" data-dv="' + x[0] + '">' + x[1] + '</button>').join('') + '</div>' +
-        '<p class="b-vfoot">Other interviewers’ feedback stays hidden until yours is in.</p>' +
-        '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-debrief-submit>Send my debrief</button>' +
-          (rec ? '' : '<button class="b-ghost" type="button" data-rec-up="' + v.id + '">' + (REC_BUSY[v.id] ? 'Transcribing…' : 'Upload the recording') + '</button>') + '</p>' +
-      '</section></div>';
+      mcard({ cap: 'Interviews · The debrief', ico: 'mic', label: 'The debrief', cls: 'mc-out',
+        body: mcHead(esc(STAGE[v.stage].label) + ' · ' + esc(c.name),
+            esc(sayDay(v.day)) + ' · ' + esc(v.slot) + (rec ? ' · ' + rec.mins + ' min · recorded with consent' : ' · not recorded') + ' · ' + esc(q.title) + ', ' + esc(accOf(q).name),
+            rec ? mcPill('Recording', 'line', 'play') : mcBtn(REC_BUSY[v.id] ? 'Transcribing…' : 'Upload the recording', 'data-rec-up="' + v.id + '"', false, 'upload')) +
+          (quoted.length ? mcSec('From the transcript · Check it') + '<div class="mc-rows">' + quoted.map((x) =>
+            mcRow('quote', 'accent', esc(x[0]), mcQuote('“' + esc(x[1]) + '”' + (rec && rec.suggests ? ' · the recording suggests ' + esc(RATE[rec.suggests[x[2]]].toLowerCase()) : '')),
+              '<button class="t-inline-link mc-edit" type="button" data-dr-quote="' + x[2] + '">Edit</button>')).join('') + '</div>' : '') +
+          (missedTopic ? mcWarn('The template asks about <b>' + esc(lower(missedTopic)) + '</b>, and it did not come up. Ask ' + esc(first(c.name)) + ' by message?',
+            DEBRIEF.asked ? '<span class="mc-done">Asked ' + esc(viaSay(c)) + '. The answer lands on their record.</span>' : mcBtn('Ask ' + first(c.name) + ' by message', 'data-gap-ask="' + v.id + '"', false, 'msg'))
+            : gaps.length ? mcWarn('The CV is silent on <b>' + esc(gaps.join('; ')) + '</b>. Ask for an example before you rate it.') : '') +
+          (tpl ? mcSec('The agenda · ' + tpl.title) + '<ol class="mc-agenda">' + tpl.items.map((x) => '<li>' + esc(x) + '</li>').join('') + '</ol>' : '') +
+          '<div class="t-input-wrap" id="wrapDebrief"><div class="t-input">' +
+            mcSec('Each must-have · your rating') + q.must.map((m, i) => '<div class="mc-rate"><p class="mc-row-label">' + esc(m) + '</p>' +
+              '<div class="mc-verdict">' + ['m', 'p', 'n'].map((k) => '<button class="mc-vbtn' + (DEBRIEF.r[i] === k ? ' is-on' : '') + '" type="button" data-dr="' + i + '|' + k + '">' + RATE[k] + '</button>').join('') + '</div>' +
+              '<input class="dial-input" type="text" data-drn="' + i + '" value="' + esc(DEBRIEF.n[i] || '') + '" placeholder="One line on what you saw" aria-label="What you saw on ' + esc(m) + '"></div>').join('') +
+            '<h3 class="mc-h3">Your verdict</h3>' +
+            '<div class="mc-verdict mc-verdict-2">' + [['yes', 'Proceed'], ['no', 'Do not proceed']].map((x) => '<button class="mc-vbtn' + (DEBRIEF.v === x[0] ? ' is-on' : '') + '" type="button" data-dv="' + x[0] + '">' + x[1] + '</button>').join('') + '</div>' +
+          '</div><p class="t-error-msg">Rate every line, then say proceed or not.</p></div>' +
+          mcNote('lock', 'AiMY never fills this. Other interviewers’ feedback stays hidden until you submit yours.') +
+          '<div class="mc-acts mc-acts-end">' + mcBtn('Submit debrief', 'data-debrief-submit', true) + '</div>' }) +
+    '</div>';
   }
   function debriefSubmit() {
     const v = DB.ivs.filter((x) => x.id === DEBRIEF.id)[0];
@@ -4322,16 +4446,7 @@
             '<p class="b-cmeta-p t-acts"><button class="s-insight-lnk" type="button" data-copy="https://' + esc(link) + '">Copy the link</button></p></div></div>' +
         '</div>' +
       '</section>' +
-      (worst != null && rates[worst] < 40 && !edit ? '<section class="s-insight is-lead s-block-wide" aria-label="What to fix">' +
-        '<div class="s-lead-mark"><svg class="s-insight-mark" viewBox="0 0 18 20" width="14" height="14" aria-hidden="true"><use href="#aimy-logo-small"/></svg><span class="work-state ws-detected">Read off every result</span></div>' +
-        '<div class="s-lead-line"><span class="s-lead-n">' + (100 - rates[worst]) + '%</span><span class="s-lead-say">of the people who took it got Q' + (worst + 1) + ' wrong.</span></div>' +
-        '<p class="s-lead-deck">When nearly everyone misses one question, the question is usually the problem. Changing a question changes AiMY’s own rules, so it is a Learning proposal: the HR Manager approves it, and the wording before is kept.</p>' +
-        qProposals(a.id).map((p) => propCard(p)).join('') + '</section>' : '') +
-      (r.length && !edit ? '<section class="s-block s-block-wide" aria-label="Does it predict anything">' +
-        '<div class="s-camp-list-head"><h2 class="s-block-h">Does it predict anything?</h2><span class="s-block-say">people sent to a client after taking it · split by each answer</span></div>' +
-        gate(Math.max.apply(null, qOutcomes(a).map((o) => o.n).concat([0])), GATE, 'people sent to a client after taking it',
-          'Below ' + GATE + ', no question is said to predict anything. Above it, each question shows how many who got it right met the client, against those who did not.') +
-      '</section>' : '') +
+      (r.length && !edit ? itemInsights(a, rates, outs, worst, link) : '') +
       '<section class="s-block s-block-wide" aria-label="Questions">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">Questions</h2><span class="s-block-say">' + plural(a.questions.length, 'question') + (r.length ? ' · share who got each right' : '') + '</span></div>' +
         (a.questions.length ? '<div class="t-asq">' + a.questions.map((qq, i) => '<div class="t-asq-row">' +
@@ -4357,6 +4472,36 @@
           return c ? logRow({ tone: '', ico: svg('goal'), who: c.name, meta: logMeta([s.score + '%', s.score >= a.pass ? 'a pass' : 'under the pass mark', reqOf(c).title, sayWhen(s.doneDay != null ? s.doneDay : s.day)]),
             act: 'data-cand="' + c.id + '"', go: 'Open' }, i) : ''; }).join('') + '</div></section>' : '') +
     '</div>';
+  }
+  /* ── 8. ITEM INSIGHTS (assessment-item-insights) ── each question's pass
+     rate against what happened next, and the question to fix as a learning
+     proposal an HR Manager approves. Nothing is named below the sample. */
+  function itemInsights(a, rates, outs, worst, link) {
+    const r = resultsOf(a);
+    const first0 = r.reduce((d, s) => Math.min(d, s.doneDay != null ? s.doneDay : s.day), 0);
+    const verdict = (o) => {
+      if (!o || o.n < GATE) return mcPill('Too few results yet', 'dashed');
+      const pr = o.right ? o.rightMet / o.right : 0, pw = o.wrong ? o.wrongMet / o.wrong : 0;
+      if (o.right < 5 || o.wrong < 5) return mcPill('Too few missed it to compare', 'dashed');
+      return pr - pw >= 0.2 ? mcPill('Predicts client acceptance', 'ok') : pw - pr >= 0.2 ? mcPill('Points the wrong way', 'err') : mcPill('Predicts nothing we measure', 'err');
+    };
+    const p = worst != null && rates[worst] < 40 ? qProposals(a.id)[0] : null;
+    const sentN = Math.max.apply(null, outs.map((o) => o.n).concat([0]));
+    const acts = p ? (isHR() ? mcBtn('Approve the rewording', 'data-prop="' + esc(p.key) + '|approve"', true) + mcBtn('Drop Q' + (p.i + 1) + ' instead', 'data-prop="' + esc(p.key) + '|drop"')
+        : p.rec && p.rec.state === 'waiting' ? '<span class="mc-done">Waiting on ' + esc(DESKS.dina.name) + '</span>'
+        : mcBtn('Review proposal', 'data-prop="' + esc(p.key) + '|send"', true)) + mcBtn('Keep Q' + (p.i + 1), 'data-prop="' + esc(p.key) + '|later"') : '';
+    return mcard({ cap: 'Assessments · Item insights', ico: 'clip', label: 'Item insights',
+      body: mcHead(esc(a.title), plural(r.length, 'taken', 'taken') + ' since ' + esc(sayDay(first0)) + ' · linked to what happened next',
+          '<button class="mc-pill mc-t-line mc-pill-btn" type="button" data-copy="https://' + esc(link) + '">' + svg('link', 15) + '<span>Shared by link</span></button>') +
+        '<div class="mc-qt" role="table" aria-label="Questions against later outcomes">' +
+          '<div class="mc-qt-h" role="row"><span role="columnheader">Question</span><span role="columnheader">Pass rate</span><span role="columnheader">Against later outcomes</span></div>' +
+          a.questions.map((qq, i) => '<div class="mc-qt-r" role="row"><span role="cell"><b>Q' + (i + 1) + '</b> · ' + esc(qq.q.length > 46 ? qq.q.slice(0, 45) + '…' : qq.q) + '</span>' +
+            '<span role="cell" class="mc-rate-c"><b>' + (rates[i] != null ? rates[i] + '%' : '·') + '</b><span class="mc-rbar"><span class="' + (rates[i] != null && rates[i] < 40 ? 'is-low' : '') + '" style="width:' + (rates[i] || 0) + '%"></span></span></span>' +
+            '<span role="cell">' + verdict(outs[i]) + '</span></div>').join('') +
+        '</div>' +
+        (sentN < GATE ? gate(sentN, GATE, 'people sent to a client after taking it', 'Below ' + GATE + ', no question is said to predict anything.') : '') +
+        (p ? mcAimy('<b>' + (100 - rates[worst]) + '%</b> get Q' + (worst + 1) + ' wrong. When nearly everyone misses one question, the question is usually the problem. Reword it: “' + esc(p.to) + '”?',
+          'Learning Proposal · from ' + plural(r.length, 'result') + ' and ' + plural(sentN, 'client decision') + ' · an HR Manager approves', acts) : '') });
   }
   function asmtSet(a, fields, say) {
     const before = JSON.parse(JSON.stringify({ title: a.title, kind: a.kind, pass: a.pass, questions: a.questions }));
@@ -4503,21 +4648,36 @@
      agenda each kind of interview follows (New Operations list). Stages are
      switched on or off in their fixed order, one press each; nothing is
      dragged. A stage with people on it cannot be switched off. */
+  /* ── 7. A STAGE TEMPLATE (pipeline-stage-template) ── each account names
+     its own stages, and each stage maps to one of six groups, so the funnel
+     compares across clients. Edit opens the stage switches in place. */
+  const STAGE_GROUP = { sourced: 'Screen', applied: 'Screen', phone: 'Screen', assess: 'Assess', hr: 'Interview', tech: 'Interview', mgr: 'Interview',
+    sent: 'Client', client: 'Client', ctech: 'Client', offer: 'Offer', accepted: 'Offer', joined: 'Hired' };
+  let TPL_EDIT = {};
   function templatesPage() {
     const busy = (k, s) => DB.reqs.some((q) => q.tpl === k && isOpen(q) && DB.byReq[q.id].some((c) => !c.exit && c.stage === s));
+    const only = (k, s) => Object.keys(TEMPLATE).filter((x) => TEMPLATE[x].indexOf(s) >= 0).length === 1;
     return '<div class="s-home">' +
       '<section class="s-block s-block-wide" aria-label="Stage templates">' +
         '<div class="s-camp-list-head">' + switcher('templates') + '</div>' +
-        aimyBlock({ text: 'Each account runs one of these. A requisition takes its account’s stages when it opens.', from: 'how stages work' }, false) +
-        Object.keys(TEMPLATE).map((k) => '<div class="t-tpl">' +
-          '<h3 class="b-month">' + esc(TEMPLATE_NAME[k] || k) + ' <span class="b-kind">' + ACCOUNTS.filter((a) => a.tpl === k).map((a) => a.name).join(', ') + '</span></h3>' +
-          '<div class="b-cuts">' + STAGE_ORDER.map((s) => {
-            const on = TEMPLATE[k].indexOf(s) >= 0;
-            const locked = STAGE_FIXED[s];
-            return '<button class="filter-chip' + (on ? ' active' : '') + '" type="button"' + (locked ? ' disabled title="Every pipeline needs this stage"' : ' data-tpl-toggle="' + k + '|' + s + '"') +
-              ' aria-pressed="' + on + '">' + esc(STAGE[s].label) + (busy(k, s) && on ? '<span class="b-cut-n">in use</span>' : '') + '</button>';
-          }).join('') + '</div></div>').join('') +
       '</section>' +
+      mcard({ cap: 'Positions and pipeline', ico: 'branch', label: 'Stage templates', cards: Object.keys(TEMPLATE).map((k) => {
+        const name = TEMPLATE_NAME[k] || k, accs = ACCOUNTS.filter((a) => a.tpl === k);
+        const used = DB.reqs.filter((q) => q.tpl === k && isOpen(q)).length;
+        return '<div class="mc-card">' + mcHead('Stage template · ' + esc(name), 'Set by the HR Manager · used by ' + plural(used, 'open requisition') + (accs.length ? ' · ' + esc(accs.map((a) => a.name).join(', ')) : ''),
+            mcBtn(TPL_EDIT[k] ? 'Done' : 'Edit', 'data-tpl-edit="' + k + '"', !!TPL_EDIT[k], TPL_EDIT[k] ? 'check' : 'pen')) +
+          (TPL_EDIT[k] ? '<div class="mc-picks">' + STAGE_ORDER.map((s) => {
+            const on = TEMPLATE[k].indexOf(s) >= 0, locked = STAGE_FIXED[s];
+            return '<button class="mc-pick' + (on ? ' is-on' : '') + '" type="button"' + (locked ? ' disabled title="Every pipeline needs this stage"' : ' data-tpl-toggle="' + k + '|' + s + '"') +
+              ' aria-pressed="' + on + '">' + (on ? svg('check', 14) : '') + esc(STAGE[s].label) + (busy(k, s) && on ? ' · in use' : '') + '</button>';
+          }).join('') + '</div>' : '') +
+          mcSec(name + '’s stages', 'One internal funnel') +
+          '<div class="mc-stages">' + TEMPLATE[k].map((s) => '<div class="mc-stage"><span class="mc-stage-name"><span>' + esc(STAGE[s].label) + '</span>' +
+              (only(k, s) ? '<span class="mc-stage-note">' + esc(name) + ' only</span>' : '') + '</span>' + svg('arrow', 18) +
+            '<span class="mc-grp ' + MC_GRP[STAGE_GROUP[s]] + '">' + STAGE_GROUP[s] + '</span></div>').join('') + '</div>' +
+          mcNote('info', 'Each client names its own stages. Every stage maps to one of six groups, so the funnel compares across clients. Exits (withdrew, client declined) are reasons, not stages.') +
+        '</div>';
+      }) }) +
       '<section class="s-block s-block-wide" aria-label="Interview templates">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">Interview templates</h2><span class="s-block-say">the agenda each interviewer follows · AiMY adds what the CV is silent on</span></div>' +
         DB.ivtpls.map((t) => '<div class="t-tpl"><h3 class="b-month">' + esc(t.title) + '</h3>' +
@@ -4595,16 +4755,27 @@
         '<div class="s-camp-list-head">' + switcher('reports') + '<span class="s-block-say">' + esc(isHR() ? 'Everyone’s requisitions' : isHM() ? 'The requisitions you asked for' : 'Your requisitions') + '</span></div>' +
         '<div class="t-kpis">' + tiles.map((t) => '<div class="t-kpi"><span class="t-kpi-cap">' + esc(t[0]) + '</span><b class="t-kpi-n">' + esc(t[1]) + '</b><span class="t-kpi-say">' + esc(t[2]) + '</span></div>').join('') + '</div>' +
       '</section>' +
-      (phones ? insight({ label: 'Where people are lost', state: 'Read off every requisition in view',
-        n: sentN, say: 'of the <span class="s-lead-of">' + phones + '</span> people screened by phone were sent to a client. Most people are lost before the client, not at it.',
-        deck: 'Clients met <b>' + metN + '</b> of them, about <b>' + (metN ? (sentN / metN).toFixed(1) : '·') + '</b> profiles for every client interview. ' +
-          versusNorm(metN ? sentN / metN : null) + ' That benchmark comes from vendor blogs and one 2018 survey, so read it loosely. ' +
-          (sendAvg != null ? 'The first profile takes <b>' + days(sendAvg) + '</b> to send, the step to shorten first.' : ''),
-        act: slow.length ? '<button class="s-insight-lnk primary" type="button"' + goAttr({ on: 'reqs', q: 'nosend' }) + '>Open the ' + plural(slow.length, 'requisition') + ' with no profile after ' + NOSEND_DAYS + ' days</button>' : '',
-        def: [['Screened by phone', 'Everyone who passed the phone screen, and everyone who left at it. Counted from the call being logged.'],
-          ['Sent to a client', 'Everyone whose profile reached a client, once per requisition. Counted from the sendout.'],
-          ['Profiles per client interview', 'Profiles sent, divided by the client interviews that followed them.'],
-          ['Days to send', 'From the requisition opening to its first profile sent, averaged over requisitions with one sent.']] }) : '') +
+      (phones ? (function () {
+        /* AiMY's one finding: a client's decline pattern waiting on a
+           person, if there is one; otherwise the honest line (P2). */
+        const dp = isRec() || isHR() ? dProposals()[0] : null;
+        const say = dp ? dp.evidence + ' ' + esc(dp.rule)
+          : '<b>' + sentN + ' of ' + phones + '</b> people screened by phone were sent to a client. Most are lost before the client, not at it' +
+            (sendAvg != null ? ', and the first profile takes <b>' + days(sendAvg) + '</b> to send.' : '.');
+        const act = dp ? (isHR() ? mcBtn('Approve the rule', 'data-prop="' + esc(dp.key) + '|approve"', true) : dp.rec && dp.rec.state === 'waiting' ? '<span class="mc-done">Waiting on ' + esc(DESKS.dina.name) + '</span>'
+            : mcBtn('Send it to ' + DESKS.dina.name, 'data-prop="' + esc(dp.key) + '|send"', true)) + mcBtn('Not now', 'data-prop="' + esc(dp.key) + '|later"')
+          : slow.length ? mcBtn('Open the ' + plural(slow.length, 'requisition') + ' with no profile after ' + NOSEND_DAYS + ' days', goAttr({ on: 'reqs', q: 'nosend' }).trim(), true) : '';
+        return insight({ label: 'Where people are lost', say: say, act: act,
+          src: dp ? 'Learning proposal · from ' + esc(dp.from) + ' in 90 days · reason codes · an HR Manager approves'
+            : 'Clients met ' + metN + ' of them, about ' + (metN ? (sentN / metN).toFixed(1) : '·') + ' profiles per client interview. ' + versusNorm(metN ? sentN / metN : null) + ' A weak benchmark: vendor blogs and one 2018 survey.',
+          metrics: [
+            { cap: 'Profiles sent → client interview', n: sentN ? (metN / sentN * 100).toFixed(1) + '%' : '·', of: metN + ' of ' + sentN + ' · the requisitions in view',
+              def: [['Unit', 'Person'], ['Starts', 'Profile sent'], ['Stops', 'Client accepts an interview']] },
+            { cap: 'Hired', n: String(hiredO.length), of: 'people · the requisitions in view',
+              def: [['Unit', 'Person'], ['Counts at', 'Offer accepted'], ['Not to mix', 'Vacancies filled: ' + hiredSeats]] },
+          ],
+          foot: isHR() ? 'Team and request views. Per-recruiter scorecards live in AiMY QA; the counts below are alphabetical, not a ranking.' : 'Team and request views only. Per-recruiter scorecards live in AiMY QA.' });
+      })() : '') +
       '<section class="s-block s-block-wide" aria-label="Funnel"><div class="s-camp-list-head"><h2 class="s-block-h">The funnel</h2><span class="s-block-say">everyone who reached each stage · share of the stage before</span></div>' +
         '<div class="t-funnel">' + f.map((s, i) => '<div class="t-fn-row' + (i === lossAt ? ' is-leak' : '') + '"><span class="t-fn-label">' + esc(STAGE[s.k].label) + '</span>' +
           bar(s.n, Math.max(1, f[0].n)) + '<span class="t-fn-n"><b>' + s.n + '</b>' + (i && f[i - 1].n ? ' · ' + Math.round(s.n / f[i - 1].n * 100) + '%' : '') + '</span></div>').join('') + '</div>' +
@@ -4813,6 +4984,32 @@
       reasonsBlock(said, 'clients', null) +
     '</div>';
   }
+  /* ── 9. WHAT THE CLIENT SEES (client-desk-view) ── the profiles sent to
+     them, each with its evidence as a count and two verbs; what they see
+     and never see, said on the page. */
+  function profilesForYou(list) {
+    const a = ACCOUNTS.filter((x) => x.id === me().acc)[0];
+    const titles = list.map((c) => reqOf(c).title).filter((t, i, all) => all.indexOf(t) === i);
+    const fresh = list.filter((c) => c.since <= 7).length;
+    return mcard({ cap: 'Client desk · What ' + shortAcc(a) + ' sees', ico: 'acc', label: 'Profiles for you',
+      body: mcHead('Profiles for you', esc(titles.join(', ')) + ' · ' + plural(fresh, 'new this week', 'new this week'), mcPill(me().name + ' · ' + a.name, 'line')) +
+        list.map((c) => {
+          const met = evMet(c), all = c.ev.length;
+          const v = verified(c).filter((x) => x.state === 'verified').map((x) => x.must);
+          return '<div class="mc-inner">' +
+            '<div class="mc-person"><span class="mc-av" aria-hidden="true">' + esc(c.name.split(' ').map((w) => w[0]).join('').slice(0, 2)) + '</span>' +
+              '<div class="mc-person-t"><button class="mc-person-name" type="button" data-cand="' + c.id + '">' + esc(c.name) + '</button>' +
+                '<p class="mc-sub">' + esc(c.at) + ', ' + plural(c.years, 'year') + ' · ' + esc(c.langs.join(', ')) + (v.length ? ' · ' + esc(v[0]) + ' (verified in interview)' : '') + (c.notice ? ' · ' + esc(c.notice) : '') + '</p></div>' +
+              mcPill(met + ' of ' + all + ' met', met === all ? 'ok' : 'warn') + '</div>' +
+            (passOpen(c) ? passPicker(c) : '<div class="mc-acts">' + mcBtn('Invite to interview', 'data-move="' + c.id + '|client"', true, 'cal') + mcBtn('Decline with a reason', 'data-pass-open="' + c.id + '"') + '</div>') +
+            mcNote('lock', 'Each person on your team decides on their own; nobody’s rating shows to the others until they have given theirs.') +
+          '</div>';
+        }).join('') +
+        '<div class="mc-seen">' +
+          '<p>' + svg('eye', 20) + '<span><b>You see</b>profiles we sent, evidence, interviews, status of your requests</span></p>' +
+          '<p>' + svg('eyeoff', 20) + '<span><b>You never see</b>salary, margin, internal notes, other clients</span></p>' +
+        '</div>' });
+  }
   function clientHome() {
     const a = asks();
     const reqs = deskReqs();
@@ -4830,7 +5027,9 @@
         { label: 'Ask for a hire', why: 'your account manager talks it through', data: 'client-request' },
       ]) +
       '<section class="s-block s-block-wide"><div class="s-camp-list-head">' + switcher('') + '</div>' +
-        (a.length ? askRows(a) : '<p class="s-none">Nothing is waiting on you.</p>') + '</section>' +
+        (a.filter((x) => x.k !== 'sent').length ? askRows(a.filter((x) => x.k !== 'sent'))
+          : sent.length ? '' : '<p class="s-none">Nothing is waiting on you.</p>') + '</section>' +
+      (sent.length ? profilesForYou(sent.map((x) => x.c)) : '') +
       outcomeStrip(me().acc, true) +
       '<section class="s-block s-block-wide"><div class="s-camp-list-head"><h2 class="s-block-h">Your requests</h2><span class="s-block-say">' + open.length + ' open</span></div>' +
         '<div class="b-grid">' + open.map((q, i) => '<div class="b-slot">' + reqCard(q, i) + '</div>').join('') + '</div></section>' +
@@ -5987,6 +6186,7 @@
     if ((el = at('[data-auto]'))) { const p = two('data-auto'); setAuto(p[0], p[1]); return; }
     /* ── Templates ── */
     if ((el = at('[data-tpl-toggle]'))) { const p = two('data-tpl-toggle'); toggleStage(p[0], p[1]); return; }
+    if ((el = at('[data-tpl-edit]'))) { const k = val('data-tpl-edit'); TPL_EDIT[k] = !TPL_EDIT[k]; paint(); return; }
     if ((el = at('[data-tpl-add]'))) { const t = tplById(val('data-tpl-add')); put('ivtpls', t, { items: t.items.concat(['']) }); paint(); return; }
     if ((el = at('[data-tpl-del]'))) {
       const p = two('data-tpl-del'), t = tplById(p[0]), was = t.items.slice(), items = t.items.slice();
