@@ -797,3 +797,19 @@ body.is-portal .aimy-overlay { display: none !important; }
   .t-iv-main .b-kind { white-space: normal; }
   .t-rungs { flex-wrap: wrap; max-width: 100%; }
 }
+
+/* ══ THE WAY HOME ═════════════════════════════════════════════════════════
+   The AiMY mark and every page's top bar lead to Today (talent.js
+   homeCrumb). The mark is a button now; it keeps the div's look. */
+.t-logo-home { cursor: pointer; border-radius: var(--r-md); }
+.t-logo-home:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.t-home > svg { width: 14px; height: 14px; flex: none; }
+.t-crumb { color: var(--ink-muted); margin: 0 -4px; }
+/* At phone width Today, Back and a record's verbs do not fit one line: the
+   verbs take the next one, so Back keeps its words on a readable width. */
+@media (max-width: 760px) {
+  .b-topbar { flex-wrap: wrap; row-gap: 8px; }
+  .t-home { flex: none; white-space: nowrap; }
+  .b-topbar > .s-back:not(.t-home) { flex: 1 1 180px; min-width: 0; text-align: left; }
+  .b-topbar > .b-draft-acts { flex: 1 1 100%; }
+}

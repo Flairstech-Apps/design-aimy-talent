@@ -65,7 +65,7 @@
        copied unedited like sales.css. talent.css is this product's appendix:
        only what neither of them already says. -->
   <link rel="stylesheet" href="assets/bdr.css?v=1" />
-  <link rel="stylesheet" href="assets/talent.css?v=16" />
+  <link rel="stylesheet" href="assets/talent.css?v=17" />
   <link rel="stylesheet" href="assets/aimy-responsive.css?v=1" />
   <link rel="stylesheet" href="assets/voice.css?v=1" />
   <script src="assets/aimy-viewport.js?v=1"></script>
@@ -161,9 +161,10 @@
         <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>
       </svg>
     </button>
-    <div class="topnav-logo-mark">
-      <svg width="140" height="43" viewBox="0 0 418.18 147.66" aria-label="AiMY"><use href="#aimy-logo-full"/></svg>
-    </div>
+    <!-- The mark goes home, as a product's mark does everywhere: Today. -->
+    <button class="topnav-logo-mark t-logo-home" type="button" data-home title="Today" aria-label="AiMY Talent, back to Today">
+      <svg width="140" height="43" viewBox="0 0 418.18 147.66" aria-hidden="true"><use href="#aimy-logo-full"/></svg>
+    </button>
 
     <!-- ══ THE PRODUCTS, WHERE THE STRIP CANNOT STAND ════════════════════
          Below 720 layout px the tab strip has no line to be on: the flanks
@@ -215,7 +216,7 @@
            front page, which is what a product strip does everywhere else.
            Marked, not restyled — the look of this row is deliberate. -->
       <button class="topnav-tab active" type="button" aria-current="page" data-home
-              title="Back to the briefing">
+              title="Back to Today">
         <svg width="18" height="20" viewBox="0 0 18 20"><use href="#aimy-logo-small"/></svg>
         Talent
       </button>
@@ -510,7 +511,7 @@
 </div>
 
 <script src="assets/aimy-ds.js"></script>
-<script src="assets/talent.js?v=36"></script>
+<script src="assets/talent.js?v=37"></script>
 <!-- Voice (Sales, unedited): dictation and a spoken conversation on both bars.
      It drives the composer and the product does not know it exists. -->
 <script src="assets/voice.js?v=1"></script>

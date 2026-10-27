@@ -157,6 +157,7 @@
     info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
     arrow: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
     ring: '<circle cx="12" cy="12" r="10" stroke-dasharray="3 3"/>',
+    home: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
     badge: '<path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/>',
     mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
     globe: '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
@@ -5794,6 +5795,14 @@
     [/passed|why/i, 'listc'], [/funnel|how far|by role|by account|by recruiter|load/i, 'bars'], [/feedback|told|waiting|miss/i, 'clock'],
     [/AiMY may do/i, 'shield'], [/add a candidate/i, 'plus'], [/hiring with us/i, 'acc'], [/request|requisition/i, 'req'],
     [/candidate|profile|who is on|people|application|shortlist/i, 'users']];
+  /* THE WAY HOME FROM ANYWHERE. A list page carries Today in its switcher;
+     a record (a candidate, a requisition, an account, a test) had only
+     Back, which goes one step and can lead deeper. Every page's top bar
+     now starts with Today, one press to the desk's front page. */
+  const homeCrumb = (html) => html.replace(/<div class="b-topbar s-block-wide">/g, (m, at) =>
+    /* Where Back already leads to Today, it is the way home on its own. */
+    html.slice(at, at + 600).indexOf('Back to Today</button>') >= 0 ? m
+      : m + '<button class="s-back t-home" type="button" data-home>' + svg('home', 14) + 'Today</button><span class="t-crumb" aria-hidden="true">/</span>');
   const capIcons = (html) => html.replace(/<h2 class="s-block-h">([^<]*)/g, (m, t) =>
     '<h2 class="s-block-h">' + svg((CAP_ICO.filter((x) => x[0].test(t))[0] || [0, 'listc'])[1], 14) + t);
   function paint() {
@@ -5815,11 +5824,11 @@
     }
     /* Adding someone carries the requisition they are for, so it is asked
        before the requisition's own page. */
-    byId('wbStage').innerHTML = capIcons(S.on === 'add' && isRec() ? addPage() : S.on === 'find' ? findPage()
+    byId('wbStage').innerHTML = homeCrumb(capIcons(S.on === 'add' && isRec() ? addPage() : S.on === 'find' ? findPage()
       : S.on === 'draft' && (isRec() || isHR()) ? draftPage() : S.on === 'cands' && (isRec() || isHR()) && !S.cand ? candsPage() : S.cand ? candPage() : S.req ? reqPage() : S.asmt ? asmtPage() : S.acc ? accPage()
       : S.on === 'reqs' ? reqsPage() : S.on === 'calls' && isRec() ? callsPage()
       : S.on === 'asmts' ? asmtsPage() : S.on === 'templates' ? templatesPage()
-      : S.on === 'reports' ? reportsPage() : deskHome());
+      : S.on === 'reports' ? reportsPage() : deskHome()));
     paintRail();
     paintBell();
     paintProto();
