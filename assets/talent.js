@@ -1119,6 +1119,7 @@
     D.gone.forEach((g) => { const c = DB.byId[g.id]; if (c) { DB.cands = DB.cands.filter((x) => x.id !== c.id); DB.byReq[c.req] = DB.byReq[c.req].filter((x) => x.id !== c.id); delete DB.byId[c.id]; } });
     D.x = D.x || {}; D.tpl = D.tpl || {}; D.auto = D.auto || {}; D.autoLog = D.autoLog || [];
     D.news = D.news || []; D.lists = D.lists || [];
+    D.flags = D.flags || []; D.searches = D.searches || []; D.searchRun = D.searchRun || {}; D.searchGone = D.searchGone || [];
     Object.keys(D.tpl).forEach((k) => { TEMPLATE[k] = D.tpl[k].slice(); });
     COLS.forEach((col) => {
       const m = D.x[col] || {};
@@ -1796,7 +1797,7 @@
       cands: { label: 'Candidates', n: isRec() || isHR() ? queue().length : null },
       reqs: { label: 'Requisitions', n: open },
       calls: { label: 'Calls', n: isRec() ? toCall().length : null },
-      find: { label: 'Find candidates' },
+      find: { label: 'Find candidates', n: isRec() ? newMatches() || null : null },
       asmts: { label: 'Assessments' },
       templates: { label: 'Templates' },
       reports: { label: 'Reports' },
@@ -4870,8 +4871,19 @@
     [/excel/i, 'Advanced Excel'], [/reconcil/i, 'Bank reconciliations'], [/process|operation/i, 'Process documentation'],
     [/jira/i, 'Jira'], [/api/i, 'REST APIs'],
   ];
-  let FIND = { q: '', req: null, src: { pool: true, web: true, apollo: true, signal: false }, step: 'ask', i: 0, res: [], done: {}, tab: 'pool', why: {} };
+  let FIND = { q: '', req: null, src: { pool: true, web: true, apollo: true, signal: false }, step: 'ask', i: 0, res: [], done: {}, tab: 'pool', why: {},
+    mode: null, like: null, cl: [], clKey: null, need: null, flagOpen: null };
+  /* LIKE THE PERSON WHO LEFT (Find, 29 Oct; R3). 82% of requests replace
+     someone, so the first way in is the person: their role's success
+     profile becomes the criteria, and an open requisition for the same
+     role and account takes whoever is added. */
+  const pastOf = (id) => DB.past.filter((p) => p.id === id)[0] || null;
+  const leavers = () => DB.past.filter((p) => !p.stayed && deskAccs().some((a) => a.id === p.acc));
+  const reqFor = (p) => DB.reqs.filter((q) => isOpen(q) && q.title === p.title && q.acc === p.acc && (isHR() || q.rec === DESK))[0] || null;
   function findCriteria() {
+    const lp = FIND.mode === 'like' ? pastOf(FIND.like) : null;
+    const lr = lp && ROLES.filter((r) => r.title === lp.title)[0];
+    if (lr) return lr.must.slice();
     if (FIND.req && DB.reqById[FIND.req]) return DB.reqById[FIND.req].must.slice();
     const t = FIND.q || '';
     const out = KEYS_TO_MUST.filter((x) => x[0].test(t)).map((x) => x[1]);
@@ -4879,12 +4891,44 @@
     if (y) out.unshift(y[1] + '+ years of experience');
     return out.slice(0, 6);
   }
+  /* THE CRITERIA, SHOWN BEFORE THE SEARCH AND EDITABLE (R3: four to six,
+     drafted from the job and the last hire, each marked required or
+     preferred). Drafted again whenever where they come from changes; an
+     edit holds until then. */
+  const critKey = () => FIND.mode + '|' + (FIND.mode === 'like' ? FIND.like : FIND.mode === 'req' ? FIND.req : FIND.q);
+  function critList() {
+    if (FIND.clKey !== critKey()) { FIND.cl = findCriteria().map((t) => ({ t: t, need: true })); FIND.clKey = critKey(); }
+    return FIND.cl;
+  }
+  function critBlock() {
+    const cl = critList(), lp = FIND.mode === 'like' ? pastOf(FIND.like) : null, q = FIND.req ? DB.reqById[FIND.req] : null;
+    const from = lp ? 'from ' + lp.name + '’s role' : FIND.mode === 'req' && q ? 'from the success profile for ' + q.title : FIND.q.trim() ? 'read from what you wrote' : '';
+    if (!cl.length) return '<div class="t-crit" id="findCrit"><p class="b-vfoot">' + (FIND.mode === 'like' ? 'Pick who left, and their role becomes what to look for.'
+      : FIND.mode === 'req' ? 'Pick a requisition, and its success profile becomes what to look for.' : 'Write what to look for, and it is read into criteria here.') + '</p></div>';
+    return '<div class="t-crit" id="findCrit"><div class="t-crit-head"><span class="t-crit-cap">Read against</span><span class="t-crit-from">' + esc(from) + ' · change any line · four to six works best</span></div>' +
+      cl.map((c, i) => '<div class="t-crit-row"><input class="b-draft-in t-crit-in" type="text" data-crit-ed="' + i + '" value="' + esc(c.t) + '" aria-label="Criterion ' + (i + 1) + '" spellcheck="false">' +
+        '<span class="t-crit-need" role="group" aria-label="How much it matters">' + [[1, 'Required'], [0, 'Preferred']].map((o) => { const on = !!c.need === !!o[0];
+          return '<button class="t-crit-opt' + (on ? ' is-on' : '') + '" type="button" data-crit-need="' + i + '|' + o[0] + '" aria-pressed="' + on + '">' + o[1] + '</button>'; }).join('') + '</span>' +
+        '<button class="t-crit-x" type="button" data-crit-del="' + i + '" aria-label="Remove ' + esc(c.t) + '">' + svg('x', 14) + '</button></div>').join('') +
+      (cl.length < 8 ? '<div class="t-crit-row t-crit-add"><input class="b-draft-in t-crit-in" type="text" id="critNew" placeholder="Add one, like Arabic and English" aria-label="Add a criterion" spellcheck="false">' +
+        '<button class="b-ghost" type="button" data-crit-add>Add</button></div>' : '') +
+      (cl.length > 6 ? '<p class="b-vfoot">' + cl.length + ' criteria. Past six, most profiles are silent on enough of them that the strongest people read as weak.</p>' : '') +
+    '</div>';
+  }
+  /* REPORT WRONG DATA (R3, R8): a public page can be about someone else,
+     or out of date. A report keeps that page from being used for them
+     again and reaches the data team; Not this person takes them out. */
+  const FLAG_WHY = [['person', 'Not this person'], ['job', 'Wrong job or company'], ['email', 'Wrong email'], ['old', 'Out of date']];
+  const flagOf = (x) => D.flags.filter((f) => f.name === x.name && f.page === x.page)[0] || null;
   const WEB_AT = ['Support Engineer at a payments startup', 'Customer Success Specialist at a SaaS company', 'Accountant at a logistics group',
     'Operations Analyst at an e-commerce company', 'Technical Support Lead at a telecom', 'AR Specialist at a hospital group', 'Helpdesk Engineer at a bank'];
   function runFind() {
-    const crit = findCriteria();
-    if (!crit.length) { shake('wrapFind'); return; }
+    const cl = critList().filter((c) => String(c.t).trim());
+    const crit = cl.map((c) => String(c.t).trim());
+    if (!crit.length) { if (byId('wrapFind')) shake('wrapFind'); else toast('Pick where to start first', null, 'Who left, a requisition, or what you wrote.'); return; }
     FIND.crit = crit;
+    FIND.need = cl.map((c) => !!c.need);
+    FIND.flagOpen = null;
     FIND.step = 'searching';
     FIND.i = 0;
     FIND.done = {};
@@ -4912,12 +4956,21 @@
     const fromPerson = (p, src, extra) => {
       if (D.gone.some((g) => g.name === p.name)) return;
       const ev = evFor(crit, { langs: p.langs, skills: p.skills || [], years: p.years });
-      res.push(Object.assign({ src: src, name: p.name, at: p.at, place: p.place, years: p.years, langs: p.langs, skills: p.skills || [], ev: ev,
-        score: ev.filter((x) => x === 'm').length + ev.filter((x) => x === 'p').length * 0.5, phone: p.phone || null, email: p.email || null }, extra || {}));
+      /* A required criterion counts twice what a preferred one does. */
+      const wt = (k) => (FIND.need && FIND.need.length === crit.length && !FIND.need[k] ? 1 : 2);
+      const o = Object.assign({ src: src, name: p.name, at: p.at, place: p.place, years: p.years, langs: p.langs, skills: p.skills || [], ev: ev,
+        score: ev.reduce((sum, x, k) => sum + wt(k) * (x === 'm' ? 1 : x === 'p' ? 0.5 : 0), 0), phone: p.phone || null, email: p.email || null }, extra || {});
+      if (src === 'web') o.seen = -1 - (vmHash(p.name) % 60);
+      const fl = src === 'web' ? flagOf(o) : null;
+      if (fl && fl.why === 'person') return;
+      if (fl) { o.flag = fl.why; o.score -= 100; }
+      res.push(o);
     };
     if (FIND.src.pool) {
       const seen = {};
-      DB.cands.filter((c) => (c.exit === 'out' || c.exit === 'clientno' || c.exit === 'withdrew') && reqOf(c).fam === fam).forEach((c) => {
+      /* The most recent leavers first: they are the warmest, and a saved
+         search counts them as new. */
+      DB.cands.filter((c) => (c.exit === 'out' || c.exit === 'clientno' || c.exit === 'withdrew') && reqOf(c).fam === fam).sort((a, b) => a.since - b.since).forEach((c) => {
         if (seen[c.pid] || res.length > 6) return;
         seen[c.pid] = 1;
         fromPerson(c, 'pool', { pid: c.pid, was: reqOf(c).title + ', ' + EXIT[c.exit].label.toLowerCase(), consent: c.exit === 'withdrew' ? 'Withdrew last time. Ask before calling.' : 'Applied before and agreed to hear about other roles.' });
@@ -4968,7 +5021,7 @@
       { label: 'Both, pool first', data: 'fc="both"', primary: true }, { label: 'Only the pool', data: 'fc="pool"' }, { label: 'Only the public web', data: 'fc="web"' }]);
   }
   function fcCrit() {
-    FIND.q = FC.q; FIND.req = FC.req;
+    FIND.q = FC.q; FIND.req = FC.req; FIND.mode = FC.req ? 'req' : 'text'; FIND.need = null;
     return findCriteria();
   }
   function fcStep(v) {
@@ -5100,9 +5153,10 @@
     .map((s) => s.enrich ? 'Adding work emails from ' + s.label : 'Searching ' + lower(s.label)))
     .concat(['Reading each profile against the criteria']);
   function findPage() {
-    if (S.req && S.req !== FIND.req && FIND.step !== 'results') FIND.req = S.req;
+    if (S.req && S.req !== FIND.req && FIND.step !== 'results') { FIND.req = S.req; FIND.mode = 'req'; }
+    if (!FIND.mode) FIND.mode = leavers().length ? 'like' : 'req';
     const open = DB.reqs.filter(isOpen).filter((q) => isHR() || q.rec === DESK);
-    const crit = findCriteria();
+    const left = leavers();
     let body = '', after = '';
     if (FIND.step === 'searching') {
       const steps = findSteps();
@@ -5118,20 +5172,28 @@
       (isRec() ? '' : '<div class="b-topbar s-block-wide"><button class="s-back" type="button" data-trail>' + svg('back', 14) + 'Back</button></div>') +
       '<section class="s-block s-block-wide" aria-label="Find candidates">' +
         '<div class="s-camp-list-head">' + switcher('find') + '</div>' +
-        '<div class="t-input-wrap" id="wrapFind"><textarea class="dial-input t-area t-input t-findq" rows="3" data-find-q aria-label="What to look for" ' +
+        '<p class="b-tocall">Start from:</p>' +
+        '<div class="b-cuts t-find-mode" role="group" aria-label="Start from">' + [['like', 'Like the person who left'], ['req', 'An open requisition'], ['text', 'Describe or paste']].map((m) =>
+          '<button class="filter-chip' + (FIND.mode === m[0] ? ' active' : '') + '" type="button" data-find-mode="' + m[0] + '" aria-pressed="' + (FIND.mode === m[0]) + '">' + m[1] + '</button>').join('') + '</div>' +
+        (FIND.mode === 'like' ? (left.length ? '<div class="b-cuts">' + left.map((p) => '<button class="filter-chip' + (FIND.like === p.id ? ' active' : '') + '" type="button" data-find-like="' + p.id + '">' +
+            esc(p.name) + '<span class="b-cut-n">' + esc(p.title) + ' · ' + esc(accOf(p).name) + '</span></button>').join('') + '</div>' +
+            (pastOf(FIND.like) ? '<p class="b-vfoot">' + esc(first(pastOf(FIND.like).name)) + ' left: ' + esc(lower(pastOf(FIND.like).why)) + '.' +
+              (FIND.req ? ' Whoever you add goes on ' + esc(DB.reqById[FIND.req].title) + ', the open requisition for this role.' : ' No open requisition for this role yet; you pick one when you add someone.') + '</p>' : '')
+          : '<p class="b-vfoot">Nobody has left on your accounts. Start from a requisition instead.</p>')
+        : FIND.mode === 'req' ? '<div class="b-cuts">' + open.map((q) => '<button class="filter-chip' + (FIND.req === q.id ? ' active' : '') + '" type="button" data-find-req="' + q.id + '">' + esc(q.title) + ' · ' + esc(accOf(q).name) + '</button>').join('') + '</div>'
+        : '<div class="t-input-wrap" id="wrapFind"><textarea class="dial-input t-area t-input t-findq" rows="3" data-find-q aria-label="What to look for" ' +
           'placeholder="Paste a job description or a CV, or list skills: German, Zendesk, SQL, 3 years">' + esc(FIND.q) + '</textarea>' +
-          '<p class="t-error-msg">Tell me what to look for, or pick a requisition.</p></div>' +
-        '<p class="b-tocall">Or look for people who fit an open requisition:</p>' +
-        '<div class="b-cuts">' + open.map((q) => '<button class="filter-chip' + (FIND.req === q.id ? ' active' : '') + '" type="button" data-find-req="' + q.id + '">' + esc(q.title) + ' · ' + esc(accOf(q).name) + '</button>').join('') + '</div>' +
+          '<p class="t-error-msg">Tell me what to look for.</p></div>') +
         '<p class="b-tocall">Where to look:</p>' +
         '<div class="b-cuts">' + FIND_SOURCES.map((s) => s.parked
           ? '<button class="filter-chip t-parked" type="button" disabled title="Consent and accuracy complaints. Kept off until decision D10.">' + esc(s.label) + '<span class="b-cut-n">' + esc(s.say) + '</span></button>'
           : '<button class="filter-chip' + (FIND.src[s.k] ? ' active' : '') + '" type="button" data-find-src="' + s.k + '" aria-pressed="' + !!FIND.src[s.k] + '">' + esc(s.label) + '<span class="b-cut-n">' + esc(s.say) + '</span></button>').join('') + '</div>' +
-        (crit.length ? '<p class="b-vfoot">Read against: ' + esc(crit.join('; ')) + '.</p>' : '') +
+        critBlock() +
         '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-find-go>' + (FIND.step === 'results' ? 'Search again' : 'Find candidates') + '</button>' +
+          (FIND.step === 'results' ? '<button class="b-ghost" type="button" data-find-save>Save this search</button>' : '') +
           '<button class="b-ghost" type="button" data-start="find">Or ask AiMY in the chat</button></p>' +
         body +
-      '</section>' + after +
+      '</section>' + after + searchesBlock() +
       (D.lists.length ? '<section class="s-block s-block-wide" aria-label="Saved shortlists"><div class="s-camp-list-head"><h2 class="s-block-h">Saved shortlists</h2><span class="s-block-say">' + D.lists.length + '</span></div>' +
         '<div class="b-owed">' + D.lists.slice().reverse().map((l, i) => '<button class="b-owed-row" type="button"' + goAttr({ on: 'draft', list: l.id }) + ' style="--i:' + Math.min(i, 8) + '">' +
           '<span class="b-owed-sev" aria-hidden="true"></span><span class="b-owed-main"><span class="b-owed-head"><span class="b-owed-type">' + esc(l.name) + '</span>' +
@@ -5140,6 +5202,82 @@
           '<span class="b-owed-go">Open it</span></button>').join('') + '</div></section>' : '') +
     '</div>';
   }
+  /* ══ SAVED SEARCHES THAT SAY WHAT IS NEW (Find, 29 Oct; R3) ══════════════
+     A search is kept with where it started, its criteria and its sources.
+     Each time Find opens it is run again quietly, and anyone in the pool
+     who left a requisition after it was last run counts as new: said on
+     the row and as the count on the Find candidates tab. Running it marks
+     them seen. One sample search ships, so the count has something to say. */
+  const SEED_SEARCHES = [{ id: 'ss1', name: 'Support people with German or SQL', mode: 'text', q: 'German, Zendesk, SQL, 2 years', req: null, like: null, cl: null,
+    src: { pool: true, web: true, apollo: true, signal: false }, day: -4, by: 'omar' }];
+  const searches = () => SEED_SEARCHES.filter((x) => D.searchGone.indexOf(x.id) < 0).concat(D.searches).filter((x) => x.by === DESK || isHR());
+  const lastRun = (x) => (D.searchRun[x.id] != null ? D.searchRun[x.id] : x.day);
+  /* Runs a saved search without touching the page's own search. */
+  function searchRes(x) {
+    const keep = { q: FIND.q, req: FIND.req, mode: FIND.mode, like: FIND.like, src: FIND.src, need: FIND.need };
+    Object.assign(FIND, { q: x.q || '', req: x.req, mode: x.mode, like: x.like, src: x.src, need: x.cl ? x.cl.map((c) => !!c.need) : null });
+    const crit = x.cl ? x.cl.map((c) => c.t) : findCriteria();
+    const res = crit.length ? gatherFind(crit) : [];
+    Object.assign(FIND, keep);
+    return res;
+  }
+  /* New in the pool: they left a requisition after the search last ran. */
+  const searchNew = (x) => searchRes(x).filter((r) => r.src === 'pool' && r.pid && DB.cands.some((c) => c.pid === r.pid && c.exit && -c.since > lastRun(x)));
+  const newMatches = () => searches().reduce((n, x) => n + searchNew(x).length, 0);
+  function searchesBlock() {
+    const list = searches();
+    if (!list.length) return '';
+    return '<section class="s-block s-block-wide" aria-label="Saved searches"><div class="s-camp-list-head"><h2 class="s-block-h">Saved searches</h2>' +
+      '<span class="s-block-say">run again each time you open Find · new people in your pool are counted</span></div>' +
+      '<div class="b-owed">' + list.map((x, i) => {
+        const fresh = searchNew(x);
+        return '<div class="b-owed-row t-row" style="--i:' + Math.min(i, 8) + '"><span class="b-owed-sev" aria-hidden="true"></span>' +
+          '<button class="b-owed-main t-row-open" type="button" data-search-run="' + x.id + '"><span class="b-owed-head"><span class="b-owed-type">' + esc(x.name) + '</span>' +
+            '<span class="b-owed-by">' + (x.cl ? plural(x.cl.length, 'criterion', 'criteria') : 'criteria read from what was written') + ' · saved ' + esc(sayWhen(x.day)) + '</span>' +
+            (fresh.length ? tag(fresh.length + ' new', 'info') : '') + '</span>' +
+            '<span class="b-owed-body">' + (fresh.length ? '<b>' + plural(fresh.length, 'person', 'people') + '</b> in your pool ' + (fresh.length === 1 ? 'matches' : 'match') + ' it since ' + esc(sayWhen(lastRun(x))) + ': ' + esc(fresh.map((r) => r.name).join(', ')) + '.'
+              : 'Nothing new in your pool since ' + esc(sayWhen(lastRun(x))) + '.') + '</span></button>' +
+          '<span class="t-acts"><button class="s-inline-btn" type="button" data-search-run="' + x.id + '">Run it</button><button class="s-inline-btn" type="button" data-search-del="' + x.id + '">Delete</button></span></div>';
+      }).join('') + '</div></section>';
+  }
+  function saveSearch() {
+    const q = FIND.req ? DB.reqById[FIND.req] : null, lp = FIND.mode === 'like' ? pastOf(FIND.like) : null;
+    const name = lp ? 'Like ' + lp.name + ', ' + lp.title : FIND.mode === 'req' && q ? 'People for ' + q.title : (FIND.q.trim().split('\n')[0] || 'A search').slice(0, 60);
+    const x = { id: uid('ss'), name: name, mode: FIND.mode, q: FIND.q, req: FIND.req, like: FIND.like, cl: critList().map((c) => ({ t: c.t, need: !!c.need })),
+      src: Object.assign({}, FIND.src), day: 0, by: DESK };
+    D.searches.push(x); save(); paint();
+    toast('Search saved', () => { D.searches = D.searches.filter((y) => y !== x); save(); paint(); }, 'It runs again whenever you open Find, and new people in your pool are counted on the tab.');
+  }
+  function runSearch(id) {
+    const x = searches().filter((y) => y.id === id)[0];
+    if (!x) return;
+    Object.assign(FIND, { q: x.q || '', req: x.req, mode: x.mode, like: x.like, src: Object.assign({}, x.src), step: 'ask' });
+    FIND.clKey = critKey();
+    FIND.cl = x.cl ? x.cl.map((c) => ({ t: c.t, need: c.need })) : findCriteria().map((t) => ({ t: t, need: true }));
+    D.searchRun[x.id] = 0; save();
+    if (S.on !== 'find') go({ on: 'find' });
+    runFind();
+  }
+  function delSearch(id) {
+    const x = searches().filter((y) => y.id === id)[0];
+    if (!x) return;
+    const seeded = SEED_SEARCHES.indexOf(x) >= 0;
+    if (seeded) D.searchGone.push(id); else D.searches = D.searches.filter((y) => y !== x);
+    save(); paint();
+    toast('Search deleted', () => { if (seeded) D.searchGone = D.searchGone.filter((y) => y !== id); else D.searches.push(x); save(); paint(); });
+  }
+  function flagFind(i, why) {
+    const x = FIND.res[i];
+    if (!x) return;
+    const f = { id: uid('f'), name: x.name, page: x.page, link: x.link, why: why, day: 0, by: DESK };
+    D.flags.push(f); save();
+    x.flag = why; FIND.flagOpen = null;
+    paint();
+    const label = FLAG_WHY.filter((w) => w[0] === why)[0][1];
+    toast('Reported: ' + lower(label), () => { D.flags = D.flags.filter((y) => y !== f); delete x.flag; save(); paint(); },
+      why === 'person' ? 'They are left out of searches from now on, and the data team sees the report.' : 'AiMY stops using this page for them, and the data team sees the report.');
+  }
+
   /* ── 11. SOURCING, POOL FIRST (sourcing-pool-first) ── what was asked, in
      the search line; our own pool first, warm people with their history;
      the web people counted apart as prospects, not candidates until they
@@ -5156,9 +5294,11 @@
     const asked = FIND.q.trim() ? FIND.q.trim().split('\n')[0] : q ? 'People who fit ' + q.title : 'Anyone who fits';
     const mails = web.filter((x) => x.emailFrom).length;
     /* Met, and what their profile is silent on, said apart (unknown is not a no). */
-    const known = (x) => { const m = x.ev.filter((e) => e === 'm').length, u = x.ev.filter((e) => e === 'n').length;
-      return m + ' of ' + x.ev.length + ' met' + (u ? ', ' + u + ' not known yet' : ''); };
-    const why = (x) => '<div class="reasons" style="grid-column:2 / -1;margin-top:0">' + FIND.crit.map((m, k) => rcChip(EVW[x.ev[k]] + ' · ' + m, x.ev[k] === 'm' ? 'ok' : x.ev[k] === 'p' ? 'warn' : 'dash')).join('') + '</div>';
+    const req = (k) => !FIND.need || FIND.need[k] !== false;
+    const known = (x) => { const rk = x.ev.map((e, k) => k).filter(req), pk = x.ev.map((e, k) => k).filter((k) => !req(k));
+      const m = rk.filter((k) => x.ev[k] === 'm').length, u = x.ev.filter((e) => e === 'n').length;
+      return m + ' of ' + rk.length + (pk.length ? ' required' : '') + ' met' + (pk.length ? ', ' + pk.filter((k) => x.ev[k] === 'm').length + ' of ' + pk.length + ' preferred' : '') + (u ? ', ' + u + ' not known yet' : ''); };
+    const why = (x) => '<div class="reasons" style="grid-column:2 / -1;margin-top:0">' + FIND.crit.map((m, k) => rcChip(EVW[x.ev[k]] + ' · ' + m + (req(k) ? '' : ' (preferred)'), x.ev[k] === 'm' ? 'ok' : x.ev[k] === 'p' ? 'warn' : 'dash')).join('') + '</div>';
     const row = (x, k, body, right) => '<div class="person"' + (k ? '' : ' style="border-top:0"') + '>' + body + '<div class="row" style="gap:8px">' + right +
       rcBtn(FIND.why[x.i] ? 'Hide why' : 'Why', 'data-find-why="' + x.i + '" aria-expanded="' + !!FIND.why[x.i] + '"', 'quiet') +
       (FIND.done[x.i] ? '' : selBox('find', x.i, x.name)) + '</div>' + (FIND.why[x.i] ? why(x) : '') + '</div>';
@@ -5170,7 +5310,10 @@
           '<div class="person"><div class="av g" aria-hidden="true">' + svg('globe', 15) + '</div><div><h4>' + plural(web.length, 'public profile') + '</h4><div class="sub">Source shown on each · minimal data kept · nobody contacted</div></div>' +
             '<div class="row" style="gap:8px">' + rcChip('Prospect', 'dash') + rcBtn('See them', 'data-find-tab="web"', 'small') + '</div></div>' : '')
       : web.map((x, k) => row(x, k, '<div class="av g" aria-hidden="true">' + svg('globe', 15) + '</div><div><h4>' + esc(x.name) + '</h4><div class="sub">' + esc(x.at) + ' · ' + esc(known(x)) + ' · ' + esc(x.page) + ', ' + esc(x.link.indexOf('/') > 0 ? x.link : x.link.split(', ').pop()) +
-          (x.emailFrom ? ' · work email from ' + esc(x.emailFrom) : '') + '</div></div>', rcChip('Prospect', 'dash') + add(x))).join('');
+          ', read ' + esc(sayWhen(x.seen)) + (x.emailFrom ? ' · work email from ' + esc(x.emailFrom) : '') + '</div></div>',
+          (x.flag ? rcChip('Reported: ' + lower(FLAG_WHY.filter((f) => f[0] === x.flag)[0][1]), 'warn') : rcChip('Prospect', 'dash')) +
+          (x.flag ? '' : rcBtn('Wrong data?', 'data-find-flag="' + x.i + '" aria-expanded="' + (FIND.flagOpen === x.i) + '"', 'quiet')) + add(x)) +
+        (FIND.flagOpen === x.i ? '<div class="reasons t-flag" role="group" aria-label="What is wrong">' + FLAG_WHY.map((f) => '<button class="chip" type="button" data-find-flagwhy="' + x.i + '|' + f[0] + '">' + esc(f[1]) + '</button>').join('') + '</div>' : '')).join('');
     return '<section class="rc s-block-wide" aria-label="What AiMY found">' +
       '<div class="eyebrow">' + svg('find', 14) + ' Sourcing and search</div>' +
       '<div class="search">' + svg('find', 16) + '<span>' + esc(asked) + '</span>' + (q ? '<span style="margin-left:auto" class="chip acc">' + svg('doc', 12) + ' from ' + esc(q.title) + '</span>' : '') + '</div>' +
@@ -7462,7 +7605,17 @@
     if ((el = at('[data-intake-create]'))) { intakeCreate(); return; }
     if ((el = at('[data-intake-reset]'))) { INTAKE = null; paint(); return; }
     /* ── Finding ── */
-    if ((el = at('[data-find-req]'))) { const k = val('data-find-req'); FIND.req = FIND.req === k ? null : k; FIND.step = 'ask'; paint(); return; }
+    if ((el = at('[data-find-req]'))) { const k = val('data-find-req'); FIND.req = FIND.req === k ? null : k; FIND.mode = 'req'; FIND.step = 'ask'; paint(); return; }
+    if ((el = at('[data-find-mode]'))) { const m = val('data-find-mode'); FIND.mode = m; FIND.step = 'ask'; if (m !== 'req') FIND.req = m === 'like' && pastOf(FIND.like) ? (reqFor(pastOf(FIND.like)) || {}).id || null : null; paint(); return; }
+    if ((el = at('[data-find-like]'))) { const p = pastOf(val('data-find-like')); FIND.like = p.id; FIND.req = (reqFor(p) || {}).id || null; FIND.step = 'ask'; paint(); return; }
+    if ((el = at('[data-crit-need]'))) { const p = two('data-crit-need'); critList()[Number(p[0])].need = p[1] === '1'; paint(); return; }
+    if ((el = at('[data-crit-del]'))) { critList().splice(Number(val('data-crit-del')), 1); paint(); return; }
+    if ((el = at('[data-crit-add]'))) { const v = ((byId('critNew') || {}).value || '').trim(); if (!v) { byId('critNew').focus(); return; } critList().push({ t: v, need: false }); paint(); const n = byId('critNew'); if (n) n.focus(); return; }
+    if ((el = at('[data-find-flag]'))) { const i = Number(val('data-find-flag')); FIND.flagOpen = FIND.flagOpen === i ? null : i; paint(); return; }
+    if ((el = at('[data-find-flagwhy]'))) { const p = two('data-find-flagwhy'); flagFind(Number(p[0]), p[1]); return; }
+    if ((el = at('[data-find-save]'))) { saveSearch(); return; }
+    if ((el = at('[data-search-run]'))) { runSearch(val('data-search-run')); return; }
+    if ((el = at('[data-search-del]'))) { delSearch(val('data-search-del')); return; }
     if ((el = at('[data-find-src]'))) { const k = val('data-find-src'); FIND.src[k] = !FIND.src[k]; paint(); return; }
     if ((el = at('[data-find-go]'))) { runFind(); return; }
     if ((el = at('[data-find-tab]'))) { FIND.tab = val('data-find-tab'); paint(); return; }
@@ -7750,6 +7903,9 @@
   document.addEventListener('change', (e) => {
     const f = e.target.files && e.target.files[0];
     if (e.target.matches('[data-cv-file]')) intakeRead(f ? f.name : null);
+    /* Only the criteria are redrawn, so a press on Find candidates that
+       ends the typing still lands. */
+    if (e.target.matches('[data-find-q]')) { const b = byId('findCrit'); if (b) b.outerHTML = critBlock(); }
     if (e.target.matches('[data-apply-file]')) applyRead(f ? f.name : null);
   });
   document.addEventListener('input', (e) => {
@@ -7758,6 +7914,7 @@
     if (t.matches('[data-ed]') && EDIT) { EDIT.f[g('data-ed')] = t.value; return; }
     if (t.matches('[data-in]') && INTAKE && INTAKE.f) { INTAKE.f[g('data-in')] = t.value; return; }
     if (t.matches('[data-find-q]')) { FIND.q = t.value; return; }
+    if (t.matches('[data-crit-ed]')) { const c = critList()[Number(g('data-crit-ed'))]; if (c) c.t = t.value; return; }
     if (t.id === 'passNote' && PASSING) { PASSING.line = t.value; return; }
     if (t.matches('[data-drn]') && DEBRIEF) { DEBRIEF.n[Number(g('data-drn'))] = t.value; return; }
     if (t.matches('[data-anstext]') && TAKE) { TAKE.a[Number(g('data-anstext'))] = t.value; return; }
@@ -7789,6 +7946,7 @@
   });
   /* The composer finds, for now: Enter takes what was typed to the
      requisitions it matches. Asking AiMY arrives with the canvas. */
+  document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'critNew') { e.preventDefault(); const b = document.querySelector('[data-crit-add]'); if (b) b.click(); } });
   byId('floatInput').addEventListener('keydown', (e) => {
     if (e.key !== 'Enter') return;
     const v = e.target.value.trim();

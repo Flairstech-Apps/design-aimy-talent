@@ -1017,3 +1017,35 @@ body.is-portal .aimy-overlay { display: none !important; }
   .t-fc-row { grid-template-columns: 84px auto; }
   .t-fc-say { grid-column: 2; }
 }
+
+/* ══ FIND: WHERE IT STARTS, AND WHAT IT READS AGAINST ═════════════════════
+   The criteria are shown before the search, one row each: the words (a box
+   you can change), Required or Preferred, and a way to take it out, with a
+   box to add one. Wrong data's reasons open under the web row they are on. */
+.t-find-mode { margin-bottom: 4px; }
+.t-crit { margin: 12px 0 4px; padding: 12px 14px; border: 1px solid var(--card-border); border-radius: var(--r-lg); display: grid; gap: 6px; }
+.t-crit-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin-bottom: 4px; }
+.t-crit-cap { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--d50); }
+.t-crit-from { font-size: var(--fs-xs); color: var(--ink-muted); }
+.t-crit-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px; }
+.t-crit-in { width: 100%; min-width: 0; font-size: var(--fs-sm); padding: 6px 10px; }
+.t-crit-need { display: inline-flex; border: 1px solid var(--card-border); border-radius: var(--r-pill); overflow: hidden; }
+.t-crit-opt {
+  padding: 4px 10px; border: 0; background: none; cursor: pointer; font: inherit;
+  font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--d100);
+}
+.t-crit-opt + .t-crit-opt { border-left: 1px solid var(--card-border); }
+.t-crit-opt.is-on { background: rgba(var(--accent-rgb), 0.16); color: var(--d50); }
+.t-crit-opt:focus-visible, .t-crit-x:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
+.t-crit-x {
+  display: inline-grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 999px;
+  background: none; color: var(--ink-muted); cursor: pointer;
+}
+.t-crit-x:hover { color: var(--d50); background: rgba(var(--accent-rgb), 0.10); }
+.t-crit-add { grid-template-columns: minmax(0, 1fr) auto; }
+.rc .reasons.t-flag { grid-column: 2 / -1; margin-top: 0; }
+@media (max-width: 560px) {
+  .t-crit-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .t-crit-need { grid-column: 1; justify-self: start; }
+  .t-crit-x { grid-column: 2; grid-row: 1; }
+}
