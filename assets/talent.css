@@ -550,19 +550,29 @@ body.is-portal .aimy-overlay { display: none !important; }
    panels take a translucent fill and blur what is behind them, so the
    page's gradient shows through. An override of sales.css, bdr.css and
    aimy-ds.css, kept here because those files are never edited; the fills
-   carry !important only where the shell sets its own. */
+   carry !important only where the shell sets its own.
+
+   THE VALUES ARE AiMY QA'S (28 Oct, Engy: "too light for a dark theme").
+   A white wash at 4.5% read grey, and a row on a section stacked two of
+   them. QA's glass is its own dark card colour, #141b24, let through at
+   72%, its panels at 82%, a 8% hairline and an 18px blur
+   (design-AiMY-QA index.html --glass-bg, .ai-insight, the toast). What
+   sits inside a glass section is not a second pane of glass: it takes
+   QA's 3% wash, so it stays dark. */
 :root {
-  --glass-bg: rgba(255, 255, 255, 0.045);
-  --glass-bg-2: rgba(255, 255, 255, 0.07);
-  --glass-panel: rgba(22, 29, 38, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.09);
-  --glass-blur: blur(14px) saturate(1.2);
+  --glass-bg: rgba(20, 27, 36, 0.72);
+  --glass-bg-2: rgba(255, 255, 255, 0.035);
+  --glass-inset: rgba(255, 255, 255, 0.03);
+  --glass-panel: rgba(22, 30, 42, 0.82);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: blur(18px) saturate(1.2);
 }
 :root[data-theme="light"] {
-  --glass-bg: rgba(255, 255, 255, 0.55);
-  --glass-bg-2: rgba(255, 255, 255, 0.72);
-  --glass-panel: rgba(255, 255, 255, 0.82);
-  --glass-border: rgba(16, 24, 40, 0.09);
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-bg-2: rgba(16, 24, 40, 0.04);
+  --glass-inset: rgba(16, 24, 40, 0.035);
+  --glass-panel: rgba(255, 255, 255, 0.9);
+  --glass-border: rgba(16, 24, 40, 0.10);
 }
 .type-card, .s-card, .slv, .bcard, .rail-card, .b-door, .b-owed-row, .s-insight, .t-out-card,
 .t-kpi, .t-prop, .t-msg, .t-batch, .t-gate, .b-cal-ev {
@@ -579,6 +589,11 @@ body.is-portal .aimy-overlay { display: none !important; }
   border-radius: 16px;
   padding: 20px 22px;
   margin-top: 16px;
+}
+.s-home > .s-block :is(.type-card, .s-card, .b-owed-row, .t-kpi, .t-prop, .t-msg, .t-batch, .t-gate, .b-cal-ev) {
+  background: var(--glass-inset) !important;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 .ntf-panel, .b-menu, .b-peek-card, .app-call, .aimy-float-bar, .proto-panel, .dial-panel, .aimy-toast {
   background: var(--glass-panel) !important;
