@@ -946,19 +946,25 @@
             answers: pending ? null : answers, score: pending ? null : score, doneDay: pending ? null : Math.min(-1, c.applied + 2) });
         }
       }
-      /* Offers. */
+      /* Offers. Dated inside the requisition's life: an offer goes out a week
+         or more after it opens, and a joined hire starts after their offer.
+         The same draws as before, clamped, so the rest of the corpus holds. */
       const oi = t.indexOf('offer');
+      const inLife = (d) => Math.min(-1, Math.max(q.opened + 7, d));
       if (at >= oi || c.exit === 'offerno') {
         const lo = q.budget ? q.budget.min : 20000, hi = q.budget ? q.budget.max : 30000;
         const salary = Math.round((lo + (hi - lo) * (0.35 + r() * 0.5)) / 500) * 500;
         const offer = { id: 'o' + (++on), cand: c.id, salary: salary, notice: c.notice || 'one month’s notice',
           expects: c.salary || null, hm: 'ok', bu: 'ok', sentDay: null, status: 'draft', joinDay: null, note: null };
-        if (c.exit === 'offerno') Object.assign(offer, { status: 'declined', sentDay: -between(r, 5, 20), note: 'Took a counter-offer from their current employer.' });
+        if (c.exit === 'offerno') Object.assign(offer, { status: 'declined', sentDay: inLife(-between(r, 5, 20)), note: 'Took a counter-offer from their current employer.' });
         else if (c.stage === 'offer') {
           if (chance(r, 0.5)) Object.assign(offer, { hm: chance(r, 0.5) ? 'ok' : 'waiting', bu: 'waiting', status: 'approving' });
           else Object.assign(offer, { status: 'sent', sentDay: -c.since });
-        } else if (c.stage === 'accepted') Object.assign(offer, { status: 'accepted', sentDay: -between(r, 10, 30), joinDay: between(r, 3, 35) });
-        else if (c.stage === 'joined') Object.assign(offer, { status: 'joined', sentDay: -between(r, 40, 80), joinDay: -between(r, 5, 30) });
+        } else if (c.stage === 'accepted') Object.assign(offer, { status: 'accepted', sentDay: inLife(-between(r, 10, 30)), joinDay: between(r, 3, 35) });
+        else if (c.stage === 'joined') {
+          const sd = inLife(-between(r, 40, 80));
+          Object.assign(offer, { status: 'joined', sentDay: sd, joinDay: Math.min(-1, Math.max(sd + 14, -between(r, 5, 30))) });
+        }
         DB.offers.push(offer);
       }
     });
@@ -1536,7 +1542,7 @@
      `approve` are the screens people outside the recruiting team reach from a
      link: the careers page, a candidate's own profile, an assessment, an
      interviewer's debrief and an approver's offer packet. */
-  const KEYS = ['as', 'on', 'req', 'cand', 'asmt', 'acc', 'q', 'p', 'list', 'find', 'edit', 'apply', 'me', 'take', 'debrief', 'approve', 'by', 'src'];
+  const KEYS = ['as', 'on', 'req', 'cand', 'asmt', 'acc', 'q', 'p', 'list', 'find', 'edit', 'apply', 'me', 'take', 'debrief', 'approve', 'by', 'src', 'period', 'account'];
   const OUTSIDE = ['apply', 'me', 'take', 'debrief', 'approve'];
   const outside = () => OUTSIDE.some((k) => !!S[k]);
   function parse() {
@@ -5312,45 +5318,181 @@
      each, so moving off it loses nothing (audit, "insights"). Scoped to the
      desk: a recruiter sees their own, a hiring manager theirs, the HR
      Manager everyone's. */
-  function reportsPage() {
-    const reqs = deskReqs().filter((q) => q.state !== 'draft');
+
+  /* THE VIEW A REPORT READS: a period and an account, kept in the link so a
+     view can be sent. The period picks requisitions BY THE DAY THEY OPENED,
+     one rule for the whole page, so every tile and chart below counts the
+     same set and none can disagree with another. */
+  const PERIODS = [[30, 'Last 30 days'], [60, 'Last 60 days'], [90, 'Last 90 days']];
+  const perOf = () => (S.period === '30' || S.period === '60' ? Number(S.period) : 90);
+  const openedIn = (q, lo, hi) => -q.opened >= lo && -q.opened < hi;
+  /* A span with fewer than this many to count from shows no figure: a rate
+     off two people is not a trend. */
+  const TREND_MIN = 3;
+  const rate = (a, b, min) => (b && b >= (min || 1) ? Math.round(a / b * 100) : null);
+
+  /* Every figure the page shows, for one set of requisitions. Worked out
+     once per set, so the tile, its trend and its target read one number. */
+  function rstats(reqs) {
     const cands = reqs.reduce((l, q) => l.concat(DB.byReq[q.id]), []);
     const reached = (k) => cands.filter((c) => { const q = reqOf(c); return rank(q, k) >= 0 && rank(q, c.maxAt) >= rank(q, k); }).length;
     const n = (k) => reqs.filter((q) => q.state === k).length;
-    const seats = reqs.reduce((s, q) => s + q.seats, 0);
-    const hiredSeats = reqs.filter((q) => q.state === 'filled' || q.state === 'started').reduce((s, q) => s + q.seats, 0);
     const offers = DB.offers.filter((o) => DB.byId[o.cand] && reqs.indexOf(reqOf(DB.byId[o.cand])) >= 0);
     const hiredO = offers.filter((o) => o.status === 'accepted' || o.status === 'joined');
-    const toHire = hiredO.length ? Math.round(hiredO.reduce((s, o) => s + (o.sentDay - reqOf(DB.byId[o.cand]).opened), 0) / hiredO.length) : null;
-    const toJoin = hiredO.length ? Math.round(hiredO.reduce((s, o) => s + (o.joinDay - reqOf(DB.byId[o.cand]).opened), 0) / hiredO.length) : null;
-    const sendAvg = avgSent(reqs);
-    const pct = (a, b) => (b ? Math.round(a / b * 100) + '%' : 'none yet');
-    const phones = reached('hr') + cands.filter((c) => c.stage === 'phone' && c.exit).length;
-    const sentN0 = reqs.map(sentDays).filter((x) => x != null).length;
+    const avg = (l, f) => (l.length ? Math.round(l.reduce((s, x) => s + f(x), 0) / l.length) : null);
+    const hires = cands.filter((c) => { const q = reqOf(c); return rank(q, c.maxAt) >= rank(q, 'accepted'); });
+    const notStarted = cands.filter((c) => !c.exit && c.stage === 'accepted');
+    return {
+      reqs: reqs, cands: cands, reached: reached, n: n, offers: offers, hiredO: hiredO,
+      open: reqs.filter(isOpen).length,
+      seats: reqs.reduce((s, q) => s + q.seats, 0),
+      hiredSeats: reqs.filter((q) => q.state === 'filled' || q.state === 'started').reduce((s, q) => s + q.seats, 0),
+      openSeats: reqs.filter(isOpen).reduce((s, q) => s + q.seats, 0),
+      sendAvg: avgSent(reqs), sentN0: reqs.map(sentDays).filter((x) => x != null).length,
+      toHire: avg(hiredO, (o) => o.sentDay - reqOf(DB.byId[o.cand]).opened),
+      toJoin: avg(hiredO, (o) => o.joinDay - reqOf(DB.byId[o.cand]).opened),
+      phones: reached('hr') + cands.filter((c) => c.stage === 'phone' && c.exit).length,
+      /* Profiles per hire only where a profile goes to a client at all. */
+      hiresSent: hires.filter((c) => rank(reqOf(c), 'sent') >= 0).length,
+      made: offers.filter((o) => o.sentDay != null).length,
+      declined: offers.filter((o) => o.status === 'declined').length,
+      notStarted: notStarted,
+      billed: hires.filter((c) => !c.exit && reqOf(c).billable).length,
+    };
+  }
+
+  /* A trend is three spans of 30 days, oldest first, drawn as a line and
+     said as numbers, so the line is never the only way to read it. */
+  function spark(vals) {
+    const pts = vals.map((v, i) => (v == null ? null : [6 + i * 26, v]));
+    const ok = pts.filter(Boolean);
+    if (ok.length < 2) return '';
+    const lo = Math.min.apply(null, ok.map((p) => p[1])), hi = Math.max.apply(null, ok.map((p) => p[1]));
+    const y = (v) => (hi === lo ? 10 : 16 - (v - lo) / (hi - lo) * 12).toFixed(1);
+    let d = '';
+    pts.forEach((p, i) => { if (p) d += (i && pts[i - 1] ? 'L' : 'M') + p[0] + ' ' + y(p[1]); });
+    const end = ok[ok.length - 1];
+    return '<svg class="t-spark" viewBox="0 0 64 20" width="64" height="20" aria-hidden="true"><path d="' + d + '"/><circle cx="' + end[0] + '" cy="' + y(end[1]) + '" r="2.5"/></svg>';
+  }
+  /* A target said with how far off it is, in the tile's own unit. */
+  function tgtSay(t, v, lead) {
+    const pc = t.unit === '%';
+    const unit = pc ? '%' : t.unit ? ' ' + t.unit : '';
+    const head = 'Target ' + t.v + unit + (t.dir === 'le' ? (pc ? ' or less' : ' or fewer') : ' or more');
+    if (v == null) return '<span class="t-kpi-tgt">' + esc((lead || '') + head) + '</span>';
+    const met = t.dir === 'le' ? v <= t.v : v >= t.v;
+    const gap = Math.round(Math.abs(v - t.v) * 10) / 10;
+    const off = (pc ? plural(gap, 'point') : t.unit === 'days' ? days(gap) : String(gap)) + (t.dir === 'le' ? ' over' : ' short');
+    return '<span class="t-kpi-tgt ' + (met ? 'is-ok' : 'is-warn') + '">' + esc((lead || '') + head + ' · ' + (met ? 'met' : off)) + '</span>';
+  }
+
+  function reportsPage() {
+    const per = perOf();
+    const pool = deskReqs().filter((q) => q.state !== 'draft');
+    const accs = ACCOUNTS.filter((a) => pool.some((q) => q.acc === a.id));
+    const accIn = accs.filter((a) => a.id === S.account)[0] || null;
+    const inAcc = pool.filter((q) => !accIn || q.acc === accIn.id);
+    const reqs = inAcc.filter((q) => openedIn(q, 0, per));
+    const st = rstats(reqs);
+    /* The three spans the trend reads, on the same account, whatever the period. */
+    const WS = [[60, 90], [30, 60], [0, 30]].map((w) => rstats(inAcc.filter((q) => openedIn(q, w[0], w[1]))));
+    const reached = st.reached;
+    const offers = st.offers, hiredO = st.hiredO, hiredSeats = st.hiredSeats;
+    const sendAvg = st.sendAvg, phones = st.phones;
+    const num = (x) => (x == null ? '·' : String(x));
+    const pcS = (x) => (x == null ? '·' : x + '%');
+    const TARGET_BY = 'Set by ' + DESKS.dina.name + ', the HR Manager. A sample until the team sets its own.';
+    const TREND_DEF = ['Trend', 'Three spans of 30 days, oldest first, by the day each requisition opened. A span with fewer than ' + TREND_MIN + ' to count from shows ·. The latest span is still running, so its days and rates can move.'];
+    /* Day 90 is read for the hires whose day 90 has passed, which are older
+       than any period here, so the period cannot apply to them; the account
+       does. */
+    const past = DB.past.filter((p) => p.billable && (accIn ? p.acc === accIn.id : accs.some((a) => a.id === p.acc)));
+    const stayed = past.filter((p) => p.stayed).length;
     /* ONE DEFINITION PER FIGURE (R6, the metric dictionary): each tile says
        its unit, where it starts and stops, and how many it rests on, behind
        How it is counted. Days to send profiles and Days to hire are averaged
        over different sets (requisitions that sent a profile, people with an
        accepted offer), so one can read lower than the other; the tile says so
-       rather than leaving it to look like a mistake. */
+       rather than leaving it to look like a mistake.
+       A TARGET ON EACH, WHERE ONE IS OURS TO HIT (R6: a number with no target
+       and no trend cannot say whether it is good). How many requisitions come
+       in, or how many a client cancels, is not, so those say why they have none. */
     const tiles = [
-      ['Requisitions', reqs.length, n('cclient') + ' cancelled by the client, ' + n('cmgr') + ' by the manager',
-        [['Unit', 'Requisition'], ['Counts', 'Every requisition in view, open or closed. Drafts are left out.'], ['Not to mix', 'Seats: one requisition can hold several.']]],
-      ['Seats', seats, hiredSeats + ' hired, ' + reqs.filter(isOpen).reduce((s, q) => s + q.seats, 0) + ' still open',
-        [['Unit', 'Seat, one vacancy'], ['Hired at', 'Its requisition is filled or its people have started'], ['Not to mix', 'People hired: an offer accepted counts a person, not a seat.']]],
-      ['Days to send profiles', sendAvg != null ? sendAvg : '·', 'from opening to the first profile sent, on average · ' + plural(sentN0, 'requisition'),
-        [['Unit', 'Requisition'], ['Starts', 'The requisition opens'], ['Stops', 'Its first profile is sent to the client'], ['Counts', plural(sentN0, 'requisition') + ' that have sent one. The rest are still waiting and are left out.']]],
-      ['Days to hire', toHire != null ? toHire : '·', 'from opening to the offer, on average · ' + plural(hiredO.length, 'person', 'people'),
-        [['Unit', 'Person'], ['Starts', 'Their requisition opens'], ['Stops', 'The offer is sent'], ['Counts', plural(hiredO.length, 'person', 'people') + ' with an accepted offer. Fewer than the requisitions above, so the two are not one timeline.']]],
-      ['Days to join', toJoin != null ? toJoin : '·', 'from opening to day one, on average · ' + plural(hiredO.length, 'person', 'people'),
-        [['Unit', 'Person'], ['Starts', 'Their requisition opens'], ['Stops', 'Their first day at work'], ['Counts', 'People with an accepted offer; a date not reached yet is the agreed start date.']]],
-      ['HR after the phone screen', pct(reached('hr'), phones), 'of people who passed the call went on to HR · ' + plural(phones, 'person', 'people'),
-        [['Unit', 'Person'], ['Of', plural(phones, 'person', 'people') + ' who finished a phone screen: went on to HR, or left at it'], ['Counts', 'Those who reached the HR interview']]],
-      ['Technical after HR', pct(reached('tech'), reached('hr')), 'of people past HR reached the technical round · ' + plural(reached('hr'), 'person', 'people'),
-        [['Unit', 'Person'], ['Of', plural(reached('hr'), 'person', 'people') + ' who reached the HR interview'], ['Counts', 'Those who reached the technical interview']]],
-      ['Client interview per profile sent', pct(reached('client'), reached('sent')), 'of profiles sent got a client interview · ' + plural(reached('sent'), 'profile'),
-        [['Unit', 'Person'], ['Of', plural(reached('sent'), 'profile') + ' sent to a client'], ['Counts', 'Those the client agreed to meet'], ['Norm', 'About 3 to 5 profiles per client interview is usual for agencies; a weak benchmark.']]],
+      { cap: 'Requisitions', v: (s) => s.reqs.length, show: num,
+        say: (s) => s.open + ' open, ' + (s.n('filled') + s.n('started')) + ' filled, ' + (s.n('cclient') + s.n('cmgr')) + ' cancelled',
+        def: () => [['Unit', 'Requisition'], ['Counts', 'Every requisition opened in the period. Drafts are left out.'], ['Not to mix', 'Seats: one requisition can hold several.'], ['Target', 'None. How many come in is the clients’ to decide.']] },
+      { cap: 'Seats', v: (s) => s.seats, show: num,
+        say: (s) => s.hiredSeats + ' hired, ' + s.openSeats + ' still open',
+        def: () => [['Unit', 'Seat, one vacancy'], ['Hired at', 'Its requisition is filled or its people have started'], ['Not to mix', 'People hired: an offer accepted counts a person, not a seat.'], ['Target', 'None, as for requisitions.']] },
+      { cap: 'Days to send profiles', v: (s) => s.sendAvg, base: (s) => s.sentN0, show: num, tgt: { v: 7, dir: 'le', unit: 'days' },
+        say: (s) => 'from opening to the first profile sent, on average · ' + plural(s.sentN0, 'requisition'),
+        def: (s) => [['Unit', 'Requisition'], ['Starts', 'The requisition opens'], ['Stops', 'Its first profile is sent to the client'], ['Counts', plural(s.sentN0, 'requisition') + ' that have sent one. The rest are still waiting and are left out.']] },
+      { cap: 'Days to hire', v: (s) => s.toHire, base: (s) => s.hiredO.length, show: num, tgt: { v: 30, dir: 'le', unit: 'days' },
+        say: (s) => 'from opening to the offer, on average · ' + plural(s.hiredO.length, 'person', 'people'),
+        def: (s) => [['Unit', 'Person'], ['Starts', 'Their requisition opens'], ['Stops', 'The offer is sent'], ['Counts', plural(s.hiredO.length, 'person', 'people') + ' with an accepted offer. Fewer than the requisitions above, so the two are not one timeline.']] },
+      { cap: 'Days to join', v: (s) => s.toJoin, base: (s) => s.hiredO.length, show: num, tgt: { v: 60, dir: 'le', unit: 'days' },
+        say: (s) => 'from opening to day one, on average · ' + plural(s.hiredO.length, 'person', 'people'),
+        def: () => [['Unit', 'Person'], ['Starts', 'Their requisition opens'], ['Stops', 'Their first day at work'], ['Counts', 'People with an accepted offer; a date not reached yet is the agreed start date.'], ['Why 60', 'Most notice periods here are one or two months.']] },
+      { cap: 'HR after the phone screen', v: (s, m) => rate(s.reached('hr'), s.phones, m), show: pcS, tgt: { v: 70, dir: 'ge', unit: '%' },
+        say: (s) => 'of people who passed the call went on to HR · ' + plural(s.phones, 'person', 'people'),
+        def: (s) => [['Unit', 'Person'], ['Of', plural(s.phones, 'person', 'people') + ' who finished a phone screen: went on to HR, or left at it'], ['Counts', 'Those who reached the HR interview']] },
+      { cap: 'Technical after HR', v: (s, m) => rate(s.reached('tech'), s.reached('hr'), m), show: pcS, tgt: { v: 55, dir: 'ge', unit: '%' },
+        say: (s) => 'of people past HR reached the technical round · ' + plural(s.reached('hr'), 'person', 'people'),
+        def: (s) => [['Unit', 'Person'], ['Of', plural(s.reached('hr'), 'person', 'people') + ' who reached the HR interview'], ['Counts', 'Those who reached the technical interview']] },
+      { cap: 'Client interview per profile sent', v: (s, m) => rate(s.reached('client'), s.reached('sent'), m), show: pcS, tgt: { v: 25, dir: 'ge', unit: '%' },
+        say: (s) => 'of profiles sent got a client interview · ' + plural(s.reached('sent'), 'profile'),
+        def: (s) => [['Unit', 'Person'], ['Of', plural(s.reached('sent'), 'profile') + ' sent to a client'], ['Counts', 'Those the client agreed to meet'], ['Norm', 'About 3 to 5 profiles per client interview is usual for agencies; a weak benchmark. 25% is one in four.']] },
     ];
+    /* THE STAFFING NUMBERS (R2, R6) the dashboard does not show: what it
+       takes to make a hire, the hires lost after the count, and the client's
+       side. Billed hires are never shown alone, always beside who stayed to
+       day 90 (M10), as they are on the client's own page. */
+    const staffing = [
+      { cap: 'Profiles sent per hire', v: (s, m) => (s.hiresSent && s.hiresSent >= (m || 1) ? Math.round(s.reached('sent') / s.hiresSent * 10) / 10 : null), show: num, tgt: { v: 6, dir: 'le', unit: '' },
+        say: (s) => s.reached('sent') + ' profiles sent for ' + plural(s.hiresSent, 'hire'),
+        def: () => [['Unit', 'Profile, per person hired'], ['Of', 'People with an accepted offer, on requisitions that send profiles to a client'], ['Counts', 'Every profile sent on those requisitions, hired or not'], ['Why 6', 'About 3 to 5 profiles per client interview, and most client interviews end in a hire.']] },
+      { cap: 'Offers declined', v: (s, m) => rate(s.declined, s.made, m), show: pcS, tgt: { v: 15, dir: 'le', unit: '%' },
+        say: (s) => s.declined + ' of ' + plural(s.made, 'offer') + ' made were turned down',
+        def: () => [['Unit', 'Offer'], ['Of', 'Offers sent to the candidate. Ones still being approved are left out.'], ['Counts', 'Offers the candidate turned down'], ['Read with', 'Their reasons, on each candidate. A counter-offer is the usual one.']] },
+      { cap: 'Hired, not started', v: (s) => s.notStarted.length, show: num,
+        say: (s) => { const j = s.notStarted.map((c) => (DB.offers.filter((o) => o.cand === c.id)[0] || {}).joinDay).filter((d) => d != null && d >= 0).sort((a, b) => a - b);
+          return s.notStarted.length ? 'accepted, day one still ahead' + (j.length ? ' · the next joins ' + sayDay(j[0]) : '') : 'nobody waiting to start'; },
+        def: () => [['Unit', 'Person'], ['Counts', 'People who accepted an offer and have not had their first day'], ['Not to mix', 'Hired already counts them. Anyone who drops out from here is a hire lost after it was counted.'], ['Target', 'None: it is a list to watch, not a rate.']] },
+      { cap: 'Cancelled by the client', v: (s, m) => rate(s.n('cclient'), s.reqs.length, m), show: pcS,
+        say: (s) => s.n('cclient') + ' of ' + plural(s.reqs.length, 'requisition') + (s.n('cmgr') ? ', and ' + s.n('cmgr') + ' by the manager' : ''),
+        def: () => [['Unit', 'Requisition'], ['Of', 'Every requisition opened in the period'], ['Counts', 'Those the client cancelled. The manager’s own cancellations are said beside it, not counted in.'], ['Target', 'None: it is the client’s decision. Read it with their reasons.']] },
+      { cap: 'Billed hires', v: (s) => s.billed, show: num, tgt: { v: 85, dir: 'ge', unit: '%' }, tgtV: () => rate(stayed, past.length), tgtLead: 'Day 90 ' + pcS(rate(stayed, past.length)) + ' · ',
+        say: (s) => 'hired on billable requisitions · ' + stayed + ' of ' + past.length + ' earlier ones stayed to day 90',
+        def: () => [['Unit', 'Person'], ['Counts', 'People with an accepted offer on a billable requisition'], ['Beside it', plural(past.length, 'billed hire') + ' whose day 90 has passed, on ' + (accIn ? accIn.name : 'these accounts') + '. Older than any period here, so the period does not apply to them.'], ['Target', 'For day 90: 85% or more. ' + TARGET_BY]] },
+    ];
+    const tile = (t) => {
+      const v = t.v(st);
+      const tv = WS.map((s) => (t.base && t.base(s) < TREND_MIN ? null : t.v(s, TREND_MIN)));
+      const def = t.def(st).concat(t.tgt && !t.tgtV ? [['Target', TARGET_BY]] : [], [TREND_DEF]);
+      return '<div class="t-kpi"><span class="t-kpi-cap">' + esc(t.cap) + '</span><b class="t-kpi-n">' + esc(t.show(v)) + '</b>' +
+        (t.tgt ? tgtSay(t.tgt, t.tgtV ? t.tgtV(st) : v, t.tgtLead) : '') +
+        '<span class="t-kpi-say">' + esc(t.say(st)) + '</span>' +
+        '<span class="t-kpi-trend">' + spark(tv) + '<span>Month by month: ' + tv.map((x) => esc(t.show(x))).join(' → ') + '</span></span>' +
+        '<details class="t-kpi-def"><summary>How it is counted</summary><dl>' + def.map((d) => '<dt>' + esc(d[0]) + '</dt><dd>' + esc(d[1]) + '</dd>').join('') + '</dl></details></div>';
+    };
+    /* The filters: the period as three chips, each with how many it holds,
+       and the account as chips too, wrapping rather than scrolling (Sales's
+       filter row), because a filter you cannot see is one you forget is on. */
+    const filters = '<div class="t-rpt-filters">' +
+      '<div class="s-views" role="group" aria-label="Opened in"><span class="t-rpt-lab">Opened in</span>' + PERIODS.map((p) =>
+        '<button class="s-view' + (per === p[0] ? ' is-on' : '') + '" type="button" data-period="' + p[0] + '" aria-pressed="' + (per === p[0]) + '">' + esc(p[1]) +
+        '<span class="s-view-n">' + inAcc.filter((q) => openedIn(q, 0, p[0])).length + '</span></button>').join('') + '</div>' +
+      (accs.length > 1 ? '<div class="s-views" role="group" aria-label="Account"><span class="t-rpt-lab">Account</span>' +
+        '<button class="s-view' + (!accIn ? ' is-on' : '') + '" type="button" data-account="" aria-pressed="' + !accIn + '">All accounts</button>' +
+        accs.map((a) => '<button class="s-view' + (accIn === a ? ' is-on' : '') + '" type="button" data-account="' + a.id + '" aria-pressed="' + (accIn === a) + '">' + esc(a.name) +
+          '<span class="s-view-n">' + pool.filter((q) => q.acc === a.id && openedIn(q, 0, per)).length + '</span></button>').join('') + '</div>' : '') +
+    '</div>';
+    const whose = isHR() ? 'Everyone’s requisitions' : isHM() ? 'The requisitions you asked for' : 'Your requisitions';
+    const head = '<div class="s-camp-list-head">' + switcher('reports') + '<span class="s-block-say">' + esc(whose + ', opened in the last ' + per + ' days' + (accIn ? ', for ' + accIn.name : '')) + '</span></div>' + filters;
+    if (!reqs.length) {
+      return '<div class="s-home"><section class="s-block s-block-wide" aria-label="Reports">' + head +
+        '<p class="t-rpt-none">No requisitions opened in the last ' + per + ' days' + (accIn ? ' for ' + esc(accIn.name) : '') + '. Try a longer period' + (accIn ? ' or all accounts' : '') + '.</p></section></div>';
+    }
     const byAcc = ACCOUNTS.map((a) => ({ a: a, n: reqs.filter((q) => q.acc === a.id).length, open: reqs.filter((q) => q.acc === a.id && isOpen(q)).length,
       hired: reqs.filter((q) => q.acc === a.id && (q.state === 'filled' || q.state === 'started')).length })).filter((x) => x.n).sort((x, y) => y.n - x.n);
     const maxAcc = Math.max(1, ...byAcc.map((x) => x.n));
@@ -5370,11 +5512,31 @@
     for (let i = 1; i < f.length; i++) if (f[i - 1].n - f[i].n > f[lossAt - 1].n - f[lossAt].n) lossAt = i;
     const sentN = reached('sent'), metN = reached('client');
     const slow = reqs.filter(noSend);
+    /* WHERE TIME GOES (R5: in FlairsTech's own data, 46 of 105 lost
+       requisition-days were spent waiting for feedback). Now, on the open
+       requisitions in view: the days each person is past the usual time for
+       their step, added up by the step and by who it waits on. The
+       recruiter's own steps are counted too, so the chart is not a list of
+       other people to blame. */
+    const WHO_SAY = { me: 'you', interviewer: 'the interviewer', hm: 'the hiring manager', client: 'the client', candidate: 'the candidate' };
+    const lost = {};
+    reqs.filter(isOpen).forEach((q) => activeOf(q).forEach((c) => {
+      const w = waitsOn(c), d = lostDays(c);
+      if (!WHO_SAY[w] || !d) return;
+      const k = c.stage + '|' + w;
+      lost[k] = lost[k] || { stage: c.stage, w: w, d: 0, n: 0 };
+      lost[k].d += d; lost[k].n++;
+    }));
+    const lostRows = Object.keys(lost).map((k) => lost[k]).sort((x, y) => y.d - x.d);
+    const lostAll = lostRows.reduce((s, x) => s + x.d, 0);
+    const lostThem = lostRows.filter((x) => x.w !== 'me').reduce((s, x) => s + x.d, 0);
+    const maxLost = Math.max(1, ...lostRows.map((x) => x.d));
     return '<div class="s-home">' +
-      '<section class="s-block s-block-wide" aria-label="Reports">' +
-        '<div class="s-camp-list-head">' + switcher('reports') + '<span class="s-block-say">' + esc(isHR() ? 'Everyone’s requisitions' : isHM() ? 'The requisitions you asked for' : 'Your requisitions') + '</span></div>' +
-        '<div class="t-kpis">' + tiles.map((t) => '<div class="t-kpi"><span class="t-kpi-cap">' + esc(t[0]) + '</span><b class="t-kpi-n">' + esc(t[1]) + '</b><span class="t-kpi-say">' + esc(t[2]) + '</span>' +
-          '<details class="t-kpi-def"><summary>How it is counted</summary><dl>' + t[3].map((d) => '<dt>' + esc(d[0]) + '</dt><dd>' + esc(d[1]) + '</dd>').join('') + '</dl></details></div>').join('') + '</div>' +
+      '<section class="s-block s-block-wide" aria-label="Reports">' + head +
+        '<div class="t-kpis">' + tiles.map(tile).join('') + '</div>' +
+      '</section>' +
+      '<section class="s-block s-block-wide" aria-label="Staffing"><div class="s-camp-list-head"><h2 class="s-block-h">Staffing</h2><span class="s-block-say">what a hire takes, and what happens after it</span></div>' +
+        '<div class="t-kpis">' + staffing.map(tile).join('') + '</div>' +
       '</section>' +
       (phones ? (function () {
         /* AiMY's one finding: a client's decline pattern waiting on a
@@ -5397,6 +5559,15 @@
           ],
           foot: isHR() ? 'Team and request views. Per-recruiter scorecards live in AiMY QA; the counts below are alphabetical, not a ranking.' : 'Team and request views only. Per-recruiter scorecards live in AiMY QA.' });
       })() : '') +
+      '<section class="s-block s-block-wide" aria-label="Where time goes"><div class="s-camp-list-head"><h2 class="s-block-h">Where time goes</h2><span class="s-block-say">days past the usual time, now · by step and who it waits on</span></div>' +
+        (lostRows.length ? '<div class="t-funnel">' + lostRows.map((x, i) => '<div class="t-fn-row t-lost-row' + (x.w === 'me' ? ' is-mine' : '') + (i === 0 ? ' is-top' : '') + '">' +
+            '<span class="t-fn-label"><span class="t-lost-step">' + esc(STAGE[x.stage].label) + '</span><span class="t-lost-who">waiting on ' + esc(WHO_SAY[x.w]) + '</span></span>' +
+            bar(x.d, maxLost) + '<span class="t-fn-n"><b>' + days(x.d) + '</b> · ' + plural(x.n, 'person', 'people') + '</span></div>').join('') + '</div>' +
+          aimyBlock({ text: '<b>' + lostThem + ' of ' + lostAll + '</b> days past the usual time are spent waiting on someone else’s answer' +
+            (lostAll - lostThem ? ', and <b>' + days(lostAll - lostThem) + '</b> on steps that are yours' : '') + '. In FlairsTech’s own data it was 46 of 105, so waiting is where to look first. Today lists each one with its nudge.',
+            from: 'the open requisitions in view, and the recruitment data' })
+          : '<p class="t-rpt-none">Nothing is past its usual time on the open requisitions in view.</p>') +
+      '</section>' +
       '<section class="s-block s-block-wide" aria-label="Funnel"><div class="s-camp-list-head"><h2 class="s-block-h">The funnel</h2><span class="s-block-say">everyone who reached each stage · share of the stage before</span></div>' +
         '<div class="t-funnel">' + f.map((s, i) => '<div class="t-fn-row' + (i === lossAt ? ' is-leak' : '') + '"><span class="t-fn-label">' + esc(STAGE[s.k].label) + '</span>' +
           bar(s.n, Math.max(1, f[0].n)) + '<span class="t-fn-n"><b>' + s.n + '</b>' + (i && f[i - 1].n ? ' · ' + Math.round(s.n / f[i - 1].n * 100) + '%' : '') + '</span></div>').join('') + '</div>' +
@@ -5404,20 +5575,20 @@
           dropped + ' offers were declined. ' + repl + ' of ' + reqs.length + ' requests were replacements, and ' + bill + ' are billable.', from: 'every requisition in view' }) +
       '</section>' +
       reasonsBlock(declines(reqs), 'clients') +
-      '<section class="s-block s-block-wide" aria-label="By account"><div class="s-camp-list-head"><h2 class="s-block-h">By account</h2><span class="s-block-say">requests · open · filled</span></div>' +
+      (accIn ? '' : '<section class="s-block s-block-wide" aria-label="By account"><div class="s-camp-list-head"><h2 class="s-block-h">By account</h2><span class="s-block-say">requests · open · filled</span></div>' +
         '<div class="t-funnel">' + byAcc.map((x) => '<button class="t-fn-row t-fn-btn" type="button" data-acc="' + x.a.id + '"><span class="t-fn-label">' + esc(x.a.name) + '</span>' + bar(x.n, maxAcc) +
           '<span class="t-fn-n"><b>' + x.n + '</b> · ' + x.open + ' · ' + x.hired + '</span></button>').join('') + '</div>' +
-      '</section>' +
+      '</section>') +
       '<section class="s-block s-block-wide" aria-label="By role"><div class="s-camp-list-head"><h2 class="s-block-h">By role</h2><span class="s-block-say">requests</span></div>' +
         '<div class="t-funnel">' + byTitle.map((x) => '<div class="t-fn-row"><span class="t-fn-label">' + esc(x.t) + '</span>' + bar(x.n, byTitle[0].n) + '<span class="t-fn-n"><b>' + x.n + '</b></span></div>').join('') + '</div>' +
       '</section>' +
       /* Counts, alphabetical, no bars: nothing here can be read as a
          ranking until decision D5 (P6; rank incentives cut productivity in
-         a field experiment, R6). */
+         a field experiment, R6). The same period and account as the rest. */
       (isHR() ? '<section class="s-block s-block-wide" aria-label="By recruiter"><div class="s-camp-list-head"><h2 class="s-block-h">By recruiter</h2><span class="s-block-say">alphabetical · not a ranking</span></div>' +
         aimyBlock({ text: 'The same numbers the dashboard shows today, as counts. Whether per-person numbers stay in Talent is decision D5; the research leans to team views here and coaching one person at a time in AiMY QA.', from: 'the UI/UX plan, P6' }) +
         '<div class="t-tbl" role="table" aria-label="By recruiter"><div class="t-tbl-row t-tbl-head" role="row"><span role="columnheader">Recruiter</span><span role="columnheader">Open requisitions</span><span role="columnheader">People in progress</span><span role="columnheader">Days to send profiles</span></div>' +
-        RECRUITERS.slice().sort((x, y) => x.name.localeCompare(y.name)).map((rc) => { const mineR = DB.reqs.filter((q) => q.rec === rc.id);
+        RECRUITERS.slice().sort((x, y) => x.name.localeCompare(y.name)).map((rc) => { const mineR = reqs.filter((q) => q.rec === rc.id);
           const act = mineR.filter(isOpen).reduce((s, q) => s + activeOf(q).length, 0);
           return '<div class="t-tbl-row" role="row"><span role="cell">' + esc(rc.name) + '</span><span role="cell">' + mineR.filter(isOpen).length + '</span><span role="cell">' + act + '</span><span role="cell">' + (avgSent(mineR) != null ? avgSent(mineR) : '·') + '</span></div>'; }).join('') + '</div>' +
       '</section>' : '') +
@@ -6999,6 +7170,9 @@
     }
     if ((el = at('[data-quick]'))) { go({ on: 'reqs', q: el.getAttribute('data-quick') }); return; }
     if ((el = at('[data-q]'))) { go(Object.assign({}, S, { q: el.getAttribute('data-q') }), true); return; }
+    /* The report's view: 90 days and every account are the plain link. */
+    if ((el = at('[data-period]'))) { const p = val('data-period'); go(Object.assign({}, S, { period: p === '90' ? null : p }), true); return; }
+    if ((el = at('[data-account]'))) { go(Object.assign({}, S, { account: val('data-account') || null }), true); return; }
     if ((el = at('[data-trail]'))) { go(TRAIL && !TRAIL.req ? TRAIL : { on: 'reqs' }); return; }
     if ((el = at('[data-home]'))) { go({}); return; }
     if ((el = at('[data-reset]'))) { reset(); load(); go({}, true); toast('Back to the start', null, 'Every change you made is gone.'); return; }

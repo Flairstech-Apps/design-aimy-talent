@@ -843,3 +843,46 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-cal-open:hover .b-cal-ename b { text-decoration: underline; }
 .t-cal-open:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
 .t-prep-btn { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; margin-left: 16px; }
+
+/* ══ REPORTS, READ AGAINST SOMETHING ══════════════════════════════════════
+   The view (period, account) as Sales's view chips, labelled, wrapping
+   rather than scrolling. Each tile carries its target as a chip that says
+   met or by how much it is off, in words as well as colour, and its trend
+   as a small line with the three numbers beside it (talent.js reportsPage). */
+.t-rpt-filters { display: grid; gap: 4px; margin: 4px 0 16px; }
+.t-rpt-filters .s-views { align-items: center; margin-bottom: 0; }
+.t-rpt-lab {
+  min-width: 76px; margin-right: 4px;
+  font-size: var(--t-micro); font-weight: var(--fw-medium); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted);
+}
+.t-rpt-none { margin: 4px 0 8px; font-size: var(--fs-sm); color: var(--d100); }
+.t-kpi-tgt {
+  display: flex; align-items: baseline; gap: 6px;
+  font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--d100); line-height: var(--lh-snug);
+}
+.t-kpi-tgt::before { content: ''; flex: none; width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid currentColor; transform: translateY(-1px); }
+.t-kpi-tgt.is-ok { color: var(--ok-text, var(--ok)); }
+.t-kpi-tgt.is-ok::before { background: currentColor; }
+.t-kpi-tgt.is-warn { color: var(--warn-text, var(--warn)); }
+.t-kpi-tgt.is-warn::before { background: currentColor; }
+.t-kpi-trend {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px;
+  font-size: var(--fs-xs); color: var(--d100); font-variant-numeric: tabular-nums;
+}
+.t-spark { flex: none; overflow: visible; }
+.t-spark path { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.t-spark circle { fill: var(--accent); }
+/* Where time goes: the step and who it waits on, on two lines in the
+   label; the recruiter's own steps in the plain bar colour, others' in the
+   accent, so the split is in the words first. */
+.t-lost-row { grid-template-columns: minmax(0, 180px) minmax(0, 1fr) auto; }
+.t-lost-row .t-fn-n { white-space: nowrap; }
+.t-lost-row .t-fn-label { display: flex; flex-direction: column; gap: 1px; white-space: normal; }
+.t-lost-step { color: var(--d50); font-weight: var(--fw-medium); }
+.t-lost-who { font-size: var(--fs-xs); color: var(--ink-muted); }
+.t-lost-row .t-fn-fill { background: var(--accent); }
+.t-lost-row.is-mine .t-fn-fill { background: var(--brand); opacity: 0.55; }
+@media (max-width: 560px) {
+  .t-rpt-lab { flex: 1 1 100%; }
+  .t-lost-row { grid-template-columns: minmax(0, 1fr) auto; }
+}
