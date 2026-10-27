@@ -367,10 +367,14 @@
   const DESKS = {
     omar:  { id: 'omar',  name: 'Omar Saeed',   ini: 'OS', role: 'Recruiter',      fn: 'rec' },
     rania: { id: 'rania', name: 'Rania Samir',  ini: 'RS', role: 'Hiring manager', fn: 'hm' },
+    /* Sales's stakeholder: reads, changes nothing. The BU Director answers
+       budget and headcount on an offer, requests hires for the unit, and
+       hears why clients pass (Sales S1, "what buyers say"). */
+    hesham: { id: 'hesham', name: 'Hesham Nabil', ini: 'HN', role: 'BU Director',  fn: 'bu' },
     dina:  { id: 'dina',  name: 'Dina Ragab',   ini: 'DR', role: 'HR Manager',     fn: 'hr' },
     jana:  { id: 'jana',  name: 'Jana Weber',   ini: 'JW', role: 'Northwind Software', fn: 'client', acc: 'northwind' },
   };
-  const DESK_ORDER = ['omar', 'rania', 'dina', 'jana'];
+  const DESK_ORDER = ['omar', 'rania', 'hesham', 'dina', 'jana'];
 
   /* The people who interview, by role family. */
   const INTERVIEWERS = {
@@ -1000,6 +1004,20 @@
         billable: acc.id !== 'flairs', join: i < 12 ? -between(r, 95, 190) : -between(r, 200, 360), recorded: i < 12,
         d30: i < 12 ? pick(r, SAID30) : null, stayed: stayed, why: stayed ? null : pick(r, LEFT) });
     }
+    /* ONE PACKET WAITS ON THE BU DIRECTOR, so that desk opens on its one
+       question. The hiring manager has said yes on fit and salary; the seat
+       and the money are still open. Taken from another recruiter's client
+       interview, so Omar's scripted day is untouched, and drawn after every
+       use of `r`, so the rest of the seed is unchanged. */
+    if (!DB.offers.some((o) => o.status === 'approving')) {
+      const c = DB.cands.filter((x) => !x.exit && x.stage === 'client' && DB.reqById[x.req].rec !== ME)[0];
+      if (c) {
+        const q = DB.reqById[c.req], lo = q.budget ? q.budget.min : 20000, hi = q.budget ? q.budget.max : 30000;
+        Object.assign(c, { stage: 'offer', since: 1, maxAt: 'offer', meet: null, fb: false });
+        DB.offers.push({ id: 'obu1', cand: c.id, salary: Math.round((lo + (hi - lo) * 0.6) / 500) * 500, notice: c.notice || 'one month’s notice',
+          expects: c.salary || null, hm: 'ok', bu: 'waiting', sentDay: null, status: 'approving', joinDay: null, note: null });
+      }
+    }
   }
 
 
@@ -1011,7 +1029,10 @@
      `added` are candidates a call brought in (a stranger who rang). */
   /* `auto` holds the rung a person set for each of AiMY's actions, and
      `autoLog` every move up or down the ladder, with AiMY's reason. */
-  const fresh = () => ({ c: {}, calls: [], added: [], x: {}, tpl: {}, auto: {}, autoLog: [] });
+  /* `news` is work coming back to a desk (Sales's bell: a hand-over, an
+     assignment, a decision taken somewhere else). `lists` are shortlists a
+     person saved from the chat. */
+  const fresh = () => ({ c: {}, calls: [], added: [], x: {}, tpl: {}, auto: {}, autoLog: [], news: [], lists: [] });
   /* Every other collection keeps its changes the same way: `D.x[col][id]`
      holds the fields a person changed, and a record made here carries
      `_new` so it is rebuilt on load. `props` are Learning proposals. */
@@ -1023,6 +1044,7 @@
     D.calls = D.calls || []; D.added = D.added || [];
     D.added.forEach((c) => { if (!DB.byId[c.id] && DB.byReq[c.req]) { DB.cands.push(c); DB.byId[c.id] = c; DB.byReq[c.req].push(c); } });
     D.x = D.x || {}; D.tpl = D.tpl || {}; D.auto = D.auto || {}; D.autoLog = D.autoLog || [];
+    D.news = D.news || []; D.lists = D.lists || [];
     Object.keys(D.tpl).forEach((k) => { TEMPLATE[k] = D.tpl[k].slice(); });
     COLS.forEach((col) => {
       const m = D.x[col] || {};
@@ -1068,6 +1090,17 @@
     return make('events', Object.assign({ id: uid('e'), cand: c.id, day: 0, time: nowTime(), kind: kind, text: text, by: DESK }, extra || {}));
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) {} }
+  /* WORK COMES BACK (Sales: "follow-ups come back in the bell"). A review of
+     Sales's desks found work that left a desk never returned; here a
+     decision taken on another desk lands in the bell of the desk it is for,
+     and an Undo takes the news back with the change. */
+  function tellDesk(to, n) {
+    const x = Object.assign({ id: uid('n'), to: to, day: 0, time: nowTime(), sev: 'p2', read: false }, n);
+    D.news.push(x);
+    save();
+    return x;
+  }
+  function untell(x) { if (!x) return; D.news = D.news.filter((n) => n.id !== x.id); save(); }
   function write(c, fields) {
     D.c[c.id] = Object.assign(D.c[c.id] || {}, fields);
     Object.assign(c, fields);
@@ -1111,6 +1144,7 @@
   const isHM = () => me().fn === 'hm';
   const isHR = () => me().fn === 'hr';
   const isClient = () => me().fn === 'client';
+  const isBU = () => me().fn === 'bu';
   /* WHOSE REQUISITIONS. The recruiter's are the ones they fill, the hiring
      manager's the ones they asked for, the client's the ones for their
      company, and the HR Manager reads all of them. */
@@ -1119,6 +1153,7 @@
     if (d.fn === 'rec') return DB.reqs.filter((q) => q.rec === d.id);
     if (d.fn === 'hm') return DB.reqs.filter((q) => q.hm === d.id);
     if (d.fn === 'client') return DB.reqs.filter((q) => q.acc === d.acc && q.state !== 'draft');
+    if (d.fn === 'bu') return DB.reqs.filter((q) => q.state !== 'draft');
     return DB.reqs;
   }
   const mine = () => deskReqs();
@@ -1130,7 +1165,7 @@
     if (isRec() || isHR()) return true;
     const q = DB.reqById[c.req], t = TEMPLATE[q.tpl];
     const reached = t.indexOf(c.maxAt || c.stage);
-    if (isHM()) return reached >= t.indexOf('tech');
+    if (isHM() || isBU()) return reached >= t.indexOf('tech');
     if (isClient()) return q.acc === me().acc && t.indexOf('sent') >= 0 && reached >= t.indexOf('sent') && c.exit !== 'out';
     return false;
   }
@@ -1452,7 +1487,7 @@
      `approve` are the screens people outside the recruiting team reach from a
      link: the careers page, a candidate's own profile, an assessment, an
      interviewer's debrief and an approver's offer packet. */
-  const KEYS = ['as', 'on', 'req', 'cand', 'asmt', 'acc', 'q', 'find', 'edit', 'apply', 'me', 'take', 'debrief', 'approve', 'by', 'src'];
+  const KEYS = ['as', 'on', 'req', 'cand', 'asmt', 'acc', 'q', 'p', 'list', 'find', 'edit', 'apply', 'me', 'take', 'debrief', 'approve', 'by', 'src'];
   const OUTSIDE = ['apply', 'me', 'take', 'debrief', 'approve'];
   const outside = () => OUTSIDE.some((k) => !!S[k]);
   function parse() {
@@ -1473,8 +1508,12 @@
   /* `over` replaces the view. The last view you were on is kept for the
      Back link, which goes there rather than to a fixed place (Sales, b68c204). */
   let TRAIL = null;
-  function go(over, replace) {
+  /* `force` passes the unsaved-shortlist gate (the gate's own buttons). */
+  function go(over, replace, force) {
     const next = Object.assign({}, over);
+    if (!force && DRAFT && S.on === 'draft' && !S.list && next.on !== 'draft') {
+      LEAVE = over; paint(); byId('pageScroll').scrollTop = 0; return;
+    }
     /* The desk travels with every link inside the product, and never onto a
        screen somebody outside it opens. */
     if (DESK !== 'omar' && !('as' in over) && !OUTSIDE.some((k) => !!next[k])) next.as = DESK;
@@ -1632,7 +1671,9 @@
       { k: 'decide', label: 'Decide the oldest one', n: d.length, why: oldest ? oldest.name + ', ' + lower(STAGE[oldest.stage].label) : 'nothing is waiting' },
       { k: 'send', label: 'Send profiles', n: ready.length, why: ready.length ? 'technical results are in for ' + plural(ready.length, 'candidate') : 'none ready yet' },
       { k: 'screen', label: 'Call the next one', n: tc.length, why: tc.length ? tc[0].c.name + (tc[0].why === 'callback' ? ' asked for a callback' : ', ' + lower(STAGE[tc[0].c.stage].label)) : 'nobody is waiting' },
-      { k: 'risk', label: 'Requisitions at risk', n: risky.length, why: risky.length ? risky.map((q) => q.title).join(', ') : 'all on course' },
+      /* Sales's fourth tile is Find leads; at-risk requisitions are already a
+         line above and a block below. */
+      { k: 'find', label: 'Find people', n: null, why: 'describe who to look for; what comes back is a shortlist' },
     ];
     return '<section class="slv s-block-wide">' +
       '<div class="slv-head">' + mark(18).replace('<svg ', '<svg ') + '<h1 class="slv-title">Today</h1>' +
@@ -1654,6 +1695,7 @@
        to whoever does the verb on it). */
     const all = {
       '': { label: 'Today' },
+      cands: { label: 'Candidates', n: isRec() || isHR() ? queue().length : null },
       reqs: { label: 'Requisitions', n: open },
       calls: { label: 'Calls', n: isRec() ? toCall().length : null },
       find: { label: 'Find candidates' },
@@ -1661,8 +1703,8 @@
       templates: { label: 'Templates' },
       reports: { label: 'Reports' },
     };
-    const row = isRec() ? ['', 'reqs', 'calls', 'find', 'asmts', 'reports'] : isHM() ? ['', 'reqs', 'reports']
-      : isHR() ? ['', 'reqs', 'asmts', 'templates', 'reports'] : ['', 'reqs'];
+    const row = isRec() ? ['', 'cands', 'reqs', 'calls', 'find', 'asmts', 'reports'] : isHM() || isBU() ? ['', 'reqs', 'reports']
+      : isHR() ? ['', 'cands', 'reqs', 'asmts', 'templates', 'reports'] : ['', 'reqs'];
     const tabs = row.map((k) => Object.assign({ k: k }, all[k]));
     return '<h2 class="b-switch">' + tabs.map((t) => '<button class="b-switch-btn' + (t.k === here ? ' is-on' : '') + '" type="button"' +
       goAttr(t.k ? { on: t.k } : {}) + (t.k === here ? ' aria-current="page"' : '') + '>' + esc(t.label) +
@@ -1764,6 +1806,53 @@
       esc(lower(STAGE[h.furthest].label)) + ', and from there an accepted offer usually takes <b>' + days(h.need) + '</b>.';
   }
 
+  /* ── CANDIDATES ── Sales's Contacts: everyone on your open requisitions as
+     one queue, cut by who the next move waits on. The cuts are a partition,
+     so they add up to All (Sales B1), and the people still owed an answer
+     sit apart, the way Sales keeps Accounts apart. Fifteen at a time. */
+  const PAGE_N = 15;
+  const queueCut = (c) => {
+    const w = waitsOn(c);
+    if (c.stage === 'sourced' && !c.contactOk) return 'new';
+    return w === 'me' ? 'me' : w === 'client' ? 'client' : 'others';
+  };
+  const QCUT_ORDER = { me: 0, new: 1, client: 2, others: 3 };
+  function queue() {
+    return myOpen().reduce((l, q) => l.concat(activeOf(q)), [])
+      .sort((a, b) => QCUT_ORDER[queueCut(a)] - QCUT_ORDER[queueCut(b)] || b.since - a.since);
+  }
+  const QCUTS = [
+    { k: 'all',    label: 'All' },
+    { k: 'me',     label: 'Waiting on you' },
+    { k: 'new',    label: 'First contact' },
+    { k: 'client', label: 'With the client' },
+    { k: 'others', label: 'Waiting on others' },
+  ];
+  function candsPage() {
+    const all = queue(), owed = untold();
+    const cut = S.q === 'untold' || QCUTS.some((x) => x.k === S.q) ? S.q : 'all';
+    const list = cut === 'untold' ? owed : cut === 'all' ? all : all.filter((c) => queueCut(c) === cut);
+    const n = (k) => k === 'all' ? all.length : all.filter((c) => queueCut(c) === k).length;
+    const pages = Math.max(1, Math.ceil(list.length / PAGE_N));
+    const page = Math.min(pages - 1, Math.max(0, Number(S.p) || 0));
+    const from = page * PAGE_N, to = Math.min(list.length, from + PAGE_N);
+    const left = list.length - to;
+    return '<div class="s-home">' +
+      '<section class="s-block s-block-wide">' +
+        '<div class="s-camp-list-head">' + switcher('cands') + '</div>' +
+        '<p class="b-tocall"><b>' + n('me') + '</b> waiting on you, across ' + plural(myOpen().length, 'open requisition') + '</p>' +
+        '<div class="b-cuts b-cuts-row">' + QCUTS.map((x) => '<button class="filter-chip' + (x.k === cut ? ' active' : '') + '" type="button"' + goAttr({ on: 'cands', q: x.k === 'all' ? undefined : x.k }) + '>' +
+          esc(x.label) + '<span class="b-cut-n">' + n(x.k) + '</span></button>').join('') +
+          '<button class="filter-chip t-cut-apart' + (cut === 'untold' ? ' active' : '') + '" type="button"' + goAttr({ on: 'cands', q: 'untold' }) + '>Not told yet<span class="b-cut-n">' + owed.length + '</span></button>' +
+        '</div>' +
+        (list.length ? '<div class="b-grid">' + list.slice(from, to).map((c, i) => '<div class="b-slot" style="--i:' + i + '">' + candCard(c, i) + '</div>').join('') + '</div>' +
+          '<div class="b-pager"><span class="b-vfoot">' + (from + 1) + '–' + to + ' of ' + plural(list.length, 'candidate') + ' · page ' + (page + 1) + ' of ' + pages + '</span>' +
+            '<span class="b-pager-go">' + (page > 0 ? '<button class="s-inline-btn" type="button"' + goAttr({ on: 'cands', q: S.q, p: page > 1 ? String(page - 1) : undefined }) + '>Previous 15</button>' : '') +
+            (left > 0 ? '<button class="s-inline-btn" type="button"' + goAttr({ on: 'cands', q: S.q, p: String(page + 1) }) + '>Next ' + Math.min(PAGE_N, left) + '</button>' : '') + '</span></div>'
+          : '<p class="s-none">Nobody here.</p>') +
+      '</section></div>';
+  }
+
   /* ── REQUISITIONS ── the recruiter's, as cards, cut by where they stand. */
   const CUTS = [
     /* "Open" is `isOpen`, the same test the rail and the switcher count, so
@@ -1796,7 +1885,9 @@
         '<div class="s-camp-list-head">' + switcher('reqs') +
           '<label class="b-find">' + svg('find', 14) +
             '<input type="text" data-find value="' + esc(S.find || '') + '" placeholder="Find a requisition, an account or a candidate" spellcheck="false" aria-label="Find a requisition, an account or a candidate"></label>' +
-          (isClient() ? '<button class="b-ghost" type="button" data-client-request>Ask for a hire</button>' : '<button class="b-ghost" type="button" data-new-req>New requisition</button>') +
+          (isClient() ? '<button class="b-ghost" type="button" data-client-request>Ask for a hire</button>'
+            : isBU() ? '<button class="b-ghost" type="button" data-client-request>Request a hire</button>'
+            : '<button class="b-ghost" type="button" data-new-req>New requisition</button>') +
         '</div>' +
         '<div class="b-cuts b-cuts-row">' + cuts.map((c) => '<button class="filter-chip' + (c === cut ? ' active' : '') + '" type="button" data-q="' + c.k + '">' +
           esc(c.label) + '<span class="b-cut-n">' + all.filter(c.test).length + '</span></button>').join('') + '</div>' +
@@ -2033,8 +2124,11 @@
     const e = note(c, 'out', (isClient() ? me().name + ' passed: ' : 'The client passed, recorded by ' + me().name + ': ') +
       lower(DECLINE_K[why].label) + (line ? ', “' + line + '”' : '') + '.');
     PASSING = null;
+    /* The client's decision goes back to the recruiter who sent the profile. */
+    const n = isClient() ? tellDesk(reqOf(c).rec, { sev: 'p1', type: 'Client decision', cta: 'Open ' + first(c.name), go: { cand: c.id },
+      body: accOf(reqOf(c)).name + ' passed on ' + c.name + ': ' + lower(DECLINE_K[why].label) + '. They are owed an answer within ' + TELL_DAYS + ' days.' }) : null;
     paint();
-    toast('Passed on ' + first(c.name) + ': ' + lower(DECLINE_K[why].label), () => { write(c, was); unmake('events', e); paint(); }, declineFeeds(c));
+    toast('Passed on ' + first(c.name) + ': ' + lower(DECLINE_K[why].label), () => { write(c, was); unmake('events', e); untell(n); paint(); }, declineFeeds(c));
   }
 
   /* ── THE SENDOUT (P1, R2) ── sent, opened, decided, each dated. A profile
@@ -3672,6 +3766,8 @@
       day: v.status === 'booked' && v.day > 0 ? 0 : v.day });
     if (c.stage === v.stage && !c.exit) write(c, { fb: true, meet: Math.min(0, c.meet == null ? 0 : c.meet) });
     note(c, 'iv', v.by + ' sent the debrief: ' + (DEBRIEF.v === 'yes' ? 'proceed.' : 'do not proceed.'), { by: null });
+    tellDesk(q.rec, { sev: 'p1', type: 'Debrief in', cta: 'Decide', go: { cand: c.id },
+      body: v.by.split(',')[0] + ' says ' + (DEBRIEF.v === 'yes' ? 'proceed' : 'do not proceed') + ' on ' + c.name + ', ' + lower(STAGE[v.stage].label) + ' for ' + q.title + '.' });
     DEBRIEF.sent = true;
     paint();
   }
@@ -3774,6 +3870,10 @@
     const n = byId('apprNote') ? byId('apprNote').value.trim() : '';
     put('offers', o, { [by]: k });
     note(c, 'offer', (by === 'hm' ? hmOf(reqOf(c)).name : BU_DIRECTOR) + (k === 'ok' ? ' approved the offer.' : ' sent the offer back' + (n ? ': ' + n : '.')));
+    if (k !== 'ok') tellDesk(reqOf(c).rec, { sev: 'p1', type: 'Offer sent back', cta: 'Open ' + first(c.name), go: { cand: c.id },
+      body: (by === 'hm' ? hmOf(reqOf(c)).name : BU_DIRECTOR) + ' sent ' + first(c.name) + '’s offer back' + (n ? ': ' + n : '.') });
+    else if (o.hm === 'ok' && o.bu === 'ok') tellDesk(reqOf(c).rec, { sev: 'p1', type: 'Offer approved', cta: 'Send it', go: { cand: c.id },
+      body: 'Both approvers said yes to ' + c.name + '’s offer. A person sends it.' });
     APPROVE_DONE = o.id + by;
     paint();
   }
@@ -3835,6 +3935,20 @@
     FIND.i = 0;
     FIND.done = {};
     SEL.find = {};
+    FIND.res = gatherFind(crit);
+    paint();
+    clearInterval(FIND.timer);
+    const steps = findSteps();
+    FIND.timer = setInterval(() => {
+      FIND.i++;
+      if (FIND.i >= steps.length) { clearInterval(FIND.timer); FIND.step = 'results'; FIND.reveal = true; }
+      if (S.on === 'find') paint();
+    }, 620);
+  }
+  /* Who comes back for these criteria, from the sources FIND has on: the
+     pool first, the web second, one list. Shared by the Find tab and the
+     chat, so both bring back the same people for the same ask. */
+  function gatherFind(crit) {
     let h = 7;
     (FIND.q + '|' + (FIND.req || '')).split('').forEach((ch) => { h = (h * 33 + ch.charCodeAt(0)) >>> 0; });
     const r = rng(h);
@@ -3871,15 +3985,160 @@
     /* The pool first, then the web, each strongest first: one list. */
     res.sort((a, b) => (a.src === 'pool' ? 0 : 1) - (b.src === 'pool' ? 0 : 1) || b.score - a.score);
     res.forEach((x, i) => { x.i = i; });
-    FIND.res = res;
-    paint();
-    clearInterval(FIND.timer);
-    const steps = findSteps();
-    FIND.timer = setInterval(() => {
-      FIND.i++;
-      if (FIND.i >= steps.length) { clearInterval(FIND.timer); FIND.step = 'results'; FIND.reveal = true; }
-      if (S.on === 'find') paint();
-    }, 620);
+    return res;
+  }
+
+  /* ══ FINDING THROUGH THE CHAT (Sales B8) ══════════════════════════════════
+     Describe who you want; AiMY asks where to look, reads the success
+     profile back, and brings back a draft shortlist, "Not saved yet", with a
+     Keep tick on each card. Leaving an unsaved draft shows a gate at the top
+     of the page, not a dialog, and the browser's Back is caught too. */
+  let FC = null, DRAFT = null, LEAVE = null;
+  function fcSay(who, html, acts) {
+    const ch = chatFor();
+    if (!ch.title && who === 'you') ch.title = html.length > 56 ? html.slice(0, 55) + '…' : html;
+    ch.turns.push({ who: who, html: who === 'you' ? esc(html) : html, acts: acts || [] });
+    saveChats();
+    paintThread();
+  }
+  function findChat(reqId, text) {
+    CHAT_AT = null;
+    FC = { req: reqId || null, q: text || '', src: null };
+    peekHide();
+    if (!canvasShown()) openCanvas();
+    if (!chatNow() || !chatNow().title) chatFor().title = text || 'Find people';
+    if (text) fcSay('you', text);
+    fcSay('aimy', 'From your talent pool, the public web, or both? The pool comes first either way; SignalHire stays parked and nothing is scraped from LinkedIn.', [
+      { label: 'Both, pool first', data: 'fc="both"', primary: true }, { label: 'Only the pool', data: 'fc="pool"' }, { label: 'Only the public web', data: 'fc="web"' }]);
+  }
+  function fcCrit() {
+    FIND.q = FC.q; FIND.req = FC.req;
+    return findCriteria();
+  }
+  function fcStep(v) {
+    if (!FC) return;
+    const open = DB.reqs.filter(isOpen).filter((q) => isHR() || q.rec === DESK);
+    if (v === 'both' || v === 'pool' || v === 'web') {
+      FC.src = v;
+      fcSay('you', { both: 'Both, pool first', pool: 'Only the pool', web: 'Only the public web' }[v]);
+    } else if (v.indexOf('req:') === 0) {
+      FC.req = v.slice(4);
+      fcSay('you', DB.reqById[FC.req].title);
+    }
+    if (v === 'both' || v === 'pool' || v === 'web' || v.indexOf('req:') === 0) {
+      const crit = fcCrit();
+      if (!crit.length) {
+        fcSay('aimy', 'For which requisition? I read its success profile, so the people come back already judged against it.',
+          open.slice(0, 6).map((q) => ({ label: q.title + ' · ' + accOf(q).name, data: 'fc="req:' + q.id + '"' })));
+        return;
+      }
+      fcSay('aimy', 'I read that as ' + (FC.req ? 'the success profile for <b>' + esc(DB.reqById[FC.req].title) + '</b>' : 'what you wrote') + ': ' +
+        crit.map((m) => '<b>' + esc(m) + '</b>').join(', ') + '. Each person comes back with how many of these they meet; a profile that is silent on one reads Not known, not No.',
+        [{ label: 'That is enough', data: 'fc="enough"', primary: true }]);
+      return;
+    }
+    if (v === 'enough') {
+      fcSay('you', 'That is enough');
+      FIND.src = { pool: FC.src !== 'web', web: FC.src !== 'pool', apollo: true, signal: false };
+      const crit = fcCrit();
+      const res = gatherFind(crit);
+      const title = (FC.req ? DB.reqById[FC.req].title : crit[0] || 'People') + ', ' + sayDay(0);
+      FC.res = res; FC.crit = crit; FC.name = title;
+      const pool = res.filter((x) => x.src === 'pool').length;
+      fcSay('aimy', '<b>' + plural(res.length, 'person', 'people') + '</b> came back: ' + plural(pool, 'from your pool', 'from your pool') + ', ' + (res.length - pool) + ' from public pages, each page named. I would call it “' + esc(title) + '”.',
+        [{ label: 'Curate the list', data: 'fc="curate"', primary: true }]);
+      return;
+    }
+    if (v === 'curate') {
+      DRAFT = { name: FC.name, req: FC.req, crit: FC.crit, res: FC.res, keep: {} };
+      FC = null;
+      closeCanvas();
+      go({ on: 'draft' });
+    }
+  }
+  /* The draft, or a saved shortlist (`?on=draft&list=`). */
+  function draftPage() {
+    const saved = S.list ? D.lists.filter((l) => l.id === S.list)[0] : null;
+    const d = saved || DRAFT;
+    if (!d) return '<div class="s-home"><div class="b-topbar s-block-wide"><button class="s-back" type="button" data-trail>' + svg('back', 14) + 'Back</button></div>' +
+      '<section class="s-block s-block-wide"><p class="s-none">Nothing to review. Ask AiMY to find people.</p></section></div>';
+    const q = d.req ? DB.reqById[d.req] : null;
+    const kept = d.res.filter((x) => saved || d.keep[x.i] !== false);
+    const pool = d.res.filter((x) => x.src === 'pool').length;
+    const gate = !saved && LEAVE ? '<section class="s-insight is-lead b-lead-slim b-gate s-block-wide" aria-label="Not saved">' +
+      '<div class="s-lead-mark">' + mark(14) + '<span class="work-state ws-staged" data-work-state="staged">Awaiting You</span></div>' +
+      '<p class="s-lead-deck">This shortlist is not saved. <b>' + plural(d.res.length, 'person', 'people') + '</b> came back and nobody is working them.</p>' +
+      '<p class="b-gate-note">Leaving throws them away. Save it and it is yours; put it on a requisition and they join your queue.</p>' +
+      '<div class="s-lead-acts"><button class="s-insight-lnk primary" type="button" data-draft-save>Save</button>' +
+        '<button class="s-insight-lnk" type="button" data-draft-discard>Discard</button><button class="s-inline-btn" type="button" data-draft-stay>Stay</button></div></section>' : '';
+    const open = DB.reqs.filter(isOpen).filter((x) => isHR() || x.rec === DESK);
+    const addBtn = q ? '<button class="s-insight-lnk primary" type="button" data-draft-add="' + q.id + '">Add ' + kept.length + ' to ' + esc(q.title) + '</button>'
+      : '<span class="b-menu-wrap"><button class="s-insight-lnk primary b-menu-open" type="button" data-pickopen="drAdd" aria-haspopup="menu">Add ' + kept.length + ' to a requisition' + svg('down', 14) + '</button>' +
+        '<div class="b-menu" id="drAdd" role="menu" hidden>' + open.map((x) => '<button class="b-menu-item" type="button" role="menuitem" data-draft-add="' + x.id + '"><span class="b-menu-name">' + esc(x.title) + '</span><span class="tel-menu-cc">' + esc(accOf(x).name) + '</span></button>').join('') + '</div></span>';
+    return '<div class="s-home">' + gate +
+      '<div class="b-topbar s-block-wide"><button class="s-back" type="button" data-trail>' + svg('back', 14) + 'Back</button></div>' +
+      '<section class="s-rec-head s-block-wide">' +
+        '<span class="s-rec-kind b-kinds">' + fact('users', 'Shortlist') + (saved ? tag('Saved ' + sayWhen(saved.day), 'ok') : tag('Not saved yet', 'warn')) + '</span>' +
+        '<div class="s-rec-title"><h1 class="s-rec-name">' + esc(d.name) + '</h1></div>' +
+        '<div class="b-cmeta"><div class="b-cmeta-part"><h2 class="b-cmeta-cap">Who came back</h2><div class="b-cmeta-say"><p class="b-cmeta-p">' +
+          plural(pool, 'person', 'people') + ' from the talent pool, ' + (d.res.length - pool) + ' from public pages' + (q ? ', read against the success profile for ' + esc(q.title) : '') +
+          '. Read against: ' + esc(d.crit.join('; ')) + '. Web people are prospects: first contact waits for your approval.</p></div></div></div>' +
+        '<div class="s-rec-actions">' + addBtn + (saved ? '<button class="b-ghost" type="button" data-list-del="' + saved.id + '">Delete it</button>'
+          : '<button class="b-ghost" type="button" data-draft-save>Save</button><button class="b-ghost" type="button" data-draft-discard>Discard</button>') + '</div>' +
+      '</section>' +
+      '<section class="s-block s-block-wide"><div class="s-camp-list-head"><h2 class="s-block-h">Who is on it</h2><span class="s-block-say">' +
+        (saved ? plural(d.res.length, 'person', 'people') : kept.length + ' of ' + d.res.length + ' kept · untick anyone you do not want') + '</span></div>' +
+        '<div class="b-grid">' + d.res.map((x, i) => '<div class="b-slot">' + draftCard(x, i, d, !!saved) + '</div>').join('') + '</div></section>' +
+    '</div>';
+  }
+  function draftCard(x, i, d, saved) {
+    const met = x.ev.filter((e) => e === 'm').length;
+    const keep = saved || d.keep[x.i] !== false;
+    return '<article class="type-card s-card b-qcard" style="--i:' + Math.min(i, 8) + '">' +
+      '<div class="tc-head">' + tag(x.src === 'pool' ? 'Talent pool' : 'Prospect', x.src === 'pool' ? 'ok' : 'neutral') +
+        '<span class="b-kind">' + esc(x.was || (x.page ? x.page + ' · ' + x.link : '')) + '</span></div>' +
+      '<div class="b-qcard-top"><span class="tc-title s-card-title">' + esc(x.name) + '</span></div>' +
+      '<p class="tc-summary b-qcard-role">' + esc(x.at) + '</p>' +
+      '<p class="b-qcard-where">' + fact('job', plural(x.years, 'year')) + fact('pin', x.place) + fact('lang', x.langs.join(', ')) + '</p>' +
+      aimyBlock({ text: '<b>' + met + ' of ' + x.ev.length + '</b> must-haves met' + (x.ev.filter((e) => e === 'n').length ? '; ' + x.ev.filter((e) => e === 'n').length + ' not known, which is not a no' : '') + '.', from: x.src === 'pool' ? 'their history with us' : 'a public page, named' }) +
+      '<p class="b-vfoot">' + esc(x.consent) + (x.email ? (x.emailFrom ? ' Work email from ' + esc(x.emailFrom) + '.' : ' Email on file.') : '') + '</p>' +
+      (saved ? '' : '<div class="tc-gov b-qcard-foot"><span></span><button class="filter-chip' + (keep ? ' active' : '') + '" type="button" data-keep="' + x.i + '" aria-pressed="' + keep + '">' + (keep ? svg('check', 12) + 'Keep' : 'Keep') + '</button></div>') +
+    '</article>';
+  }
+  /* Put the kept people on a requisition, as Find's own add does; one Undo
+     takes back all of them. */
+  function draftAdd(reqId) {
+    const saved = S.list ? D.lists.filter((l) => l.id === S.list)[0] : null;
+    const d = saved || DRAFT, q = DB.reqById[reqId];
+    if (!d || !q) return;
+    /* findAdd reads FIND.res by each person's own index. */
+    const byI = []; d.res.forEach((x) => { byI[x.i] = x; });
+    FIND.res = byI; FIND.done = {};
+    const made = d.res.filter((x) => saved || d.keep[x.i] !== false).map((x) => findAdd(x.i, reqId, true)).filter(Boolean);
+    const wasDraft = DRAFT;
+    if (!saved) DRAFT = null;
+    LEAVE = null;
+    go({ req: q.id }, false, true);
+    toast(plural(made.length, 'person', 'people') + ' added to ' + q.title, () => { made.forEach(dropCand); if (!saved) DRAFT = wasDraft; paint(); },
+      made.some((c) => !c.contactOk) ? 'They are at Sourced. First contact with the web people waits for your approval.' : 'They are at Sourced.');
+  }
+  function draftSave() {
+    const d = DRAFT; if (!d) return;
+    const l = { id: uid('l'), name: d.name, req: d.req, crit: d.crit, res: d.res.filter((x) => d.keep[x.i] !== false), day: 0, by: DESK };
+    D.lists.push(l); save();
+    DRAFT = null;
+    const to = LEAVE || { on: 'draft', list: l.id };
+    LEAVE = null;
+    go(to, false, true);
+    toast('Shortlist saved', () => { D.lists = D.lists.filter((x) => x.id !== l.id); DRAFT = d; save(); paint(); }, plural(l.res.length, 'person', 'people') + ', under Find candidates.');
+  }
+  function draftDiscard() {
+    const d = DRAFT;
+    DRAFT = null;
+    const to = LEAVE || {};
+    LEAVE = null;
+    go(to, false, true);
+    toast('Shortlist discarded', () => { DRAFT = d; go({ on: 'draft' }, false, true); });
   }
   const findSteps = () => ['Reading what to look for'].concat(FIND_SOURCES.filter((s) => FIND.src[s.k] && !s.parked)
     .map((s) => s.enrich ? 'Adding work emails from ' + s.label : 'Searching ' + lower(s.label)))
@@ -3928,9 +4187,17 @@
           ? '<button class="filter-chip t-parked" type="button" disabled title="Consent and accuracy complaints. Kept off until decision D10.">' + esc(s.label) + '<span class="b-cut-n">' + esc(s.say) + '</span></button>'
           : '<button class="filter-chip' + (FIND.src[s.k] ? ' active' : '') + '" type="button" data-find-src="' + s.k + '" aria-pressed="' + !!FIND.src[s.k] + '">' + esc(s.label) + '<span class="b-cut-n">' + esc(s.say) + '</span></button>').join('') + '</div>' +
         (crit.length ? '<p class="b-vfoot">Read against: ' + esc(crit.join('; ')) + '.</p>' : '') +
-        '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-find-go>' + (FIND.step === 'results' ? 'Search again' : 'Find candidates') + '</button></p>' +
+        '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-find-go>' + (FIND.step === 'results' ? 'Search again' : 'Find candidates') + '</button>' +
+          '<button class="b-ghost" type="button" data-start="find">Or ask AiMY in the chat</button></p>' +
         body +
-      '</section></div>';
+      '</section>' +
+      (D.lists.length ? '<section class="s-block s-block-wide" aria-label="Saved shortlists"><div class="s-camp-list-head"><h2 class="s-block-h">Saved shortlists</h2><span class="s-block-say">' + D.lists.length + '</span></div>' +
+        '<div class="b-owed">' + D.lists.slice().reverse().map((l, i) => '<button class="b-owed-row" type="button"' + goAttr({ on: 'draft', list: l.id }) + ' style="--i:' + Math.min(i, 8) + '">' +
+          '<span class="b-owed-sev" aria-hidden="true"></span><span class="b-owed-main"><span class="b-owed-head"><span class="b-owed-type">' + esc(l.name) + '</span>' +
+            '<span class="b-owed-by">' + plural(l.res.length, 'person', 'people') + (l.req && DB.reqById[l.req] ? ' · ' + esc(DB.reqById[l.req].title) : '') + '</span></span>' +
+            '<span class="b-owed-body">Saved ' + esc(sayWhen(l.day)) + ' by ' + esc(DESKS[l.by] ? DESKS[l.by].name : 'you') + '.</span></span>' +
+          '<span class="b-owed-go">Open it</span></button>').join('') + '</div></section>' : '') +
+    '</div>';
   }
   function findCard(x, i) {
     const src = FIND_SOURCES.filter((s) => s.k === x.src)[0];
@@ -4351,7 +4618,7 @@
   }
 
   /* ══ THE OTHER DESKS ═════════════════════════════════════════════════════ */
-  function deskHome() { return isHM() ? hmHome() : isHR() ? hrHome() : isClient() ? clientHome() : homePage(); }
+  function deskHome() { return isHM() ? hmHome() : isHR() ? hrHome() : isClient() ? clientHome() : isBU() ? buHome() : homePage(); }
   /* What waits on this desk, each with the one way to answer it. Feeds the
      home page, the rail and the bell alike, so they cannot disagree. */
   function asks() {
@@ -4375,7 +4642,7 @@
         out.push({ k: 'new', c: c, age: c.since, head: c.name + ' is on your shortlist', body: 'Advanced to the technical round for ' + q.title + '. ' + evMet(c) + ' of ' + c.ev.length + ' must-haves met in the CV.', go: { cand: c.id }, verb: 'See them' });
       }));
       /* A client's request lands here as a draft, to be talked through. */
-      DB.reqs.filter((q) => q.state === 'draft' && q.hm === DESK && DESKS[q.askedBy] && DESKS[q.askedBy].fn === 'client').forEach((q) => {
+      DB.reqs.filter((q) => q.state === 'draft' && q.hm === DESK && DESKS[q.askedBy] && (DESKS[q.askedBy].fn === 'client' || DESKS[q.askedBy].fn === 'bu')).forEach((q) => {
         out.push({ k: 'request', c: null, age: 0, head: DESKS[q.askedBy].name + ' asked for ' + (q.title ? plural(q.seats, 'seat') + ' as ' + q.title : 'a hire'),
           body: q.desc + ' Talk it through with them, then open it.', go: { req: q.id }, verb: 'Open the draft' });
       });
@@ -4386,6 +4653,15 @@
       DB.ivs.filter((v) => v.status === 'owed' && (v.stage === 'client' || v.stage === 'ctech') && reqOf(DB.byId[v.cand]).acc === me().acc).forEach((v) => {
         const c = DB.byId[v.cand];
         out.push({ k: 'debrief', c: c, head: 'How did ' + first(c.name) + '’s interview go?', body: STAGE[v.stage].label + ' ' + sayWhen(v.day) + '. Your feedback goes to the recruiter.', go: { debrief: v.id }, verb: 'Give feedback' });
+      });
+    } else if (isBU()) {
+      /* Two approvers, two questions (M3): fit and salary are the hiring
+         manager's; the seat and the money are the BU Director's. */
+      DB.offers.filter((o) => o.status === 'approving' && o.bu !== 'ok' && DB.byId[o.cand]).forEach((o) => {
+        const c = DB.byId[o.cand], q = reqOf(c);
+        out.push({ k: 'offer', c: c, age: c.since, head: 'Budget and headcount for ' + first(c.name) + '’s offer',
+          body: money(o.salary) + ' for ' + q.title + ', ' + accOf(q).name + '. Fit is ' + hmOf(q).name + '’s question; yours is whether the seat and the money are there.',
+          go: { approve: o.id, by: 'bu' }, verb: 'Answer it' });
       });
     } else if (isHR()) {
       DB.offers.filter((o) => o.status === 'approving').forEach((o) => {
@@ -4494,6 +4770,31 @@
           : 'Enough to read. AiMY compares who stayed against the success profile, and proposes only where a pattern holds.') +
         (lp.length ? '<div class="t-props">' + lp.map((p, i) => propCard(p, i)).join('') + '</div>' : '<p class="s-none">Nothing to approve.</p>') +
       '</section>' +
+    '</div>';
+  }
+  /* The BU Director's desk is Sales's stakeholder: the manager's reading,
+     bounded to what they answer for, with reading-only verbs. */
+  function buHome() {
+    const a = asks();
+    const open = deskReqs().filter(isOpen);
+    const risky = open.filter((q) => health(q).risk);
+    const said = declines(DB.reqs).filter((c) => c.decline.day >= -90);
+    const top = declineCounts(said)[0];
+    const filled = deskReqs().filter((q) => q.state === 'filled' || q.state === 'started').length;
+    return '<div class="s-home">' +
+      deskBrief('Today', [
+        a.length ? '<b>' + plural(a.length, 'offer') + '</b> ' + (a.length === 1 ? 'waits' : 'wait') + ' for your answer on budget and headcount. Fit is the hiring manager’s question, not yours.' : 'No offer is waiting for your answer.',
+        '<b>' + plural(open.length, 'requisition') + '</b> open in the unit' + (risky.length ? ', <b>' + risky.length + '</b> likely to miss the date' : '') + '; ' + plural(filled, 'seat') + ' filled this period.',
+        top ? 'Clients gave <b>' + plural(said.length, 'reason') + '</b> for passing in 90 days; the most common is ' + esc(lower(top.d.label)) + '.' : 'No client has passed with a reason yet.',
+      ], [
+        { label: 'Answer the budget question', n: a.length, why: a[0] ? a[0].c.name + ', ' + reqOf(a[0].c).title : 'nothing is waiting', go: a[0] ? a[0].go : { on: 'reqs' } },
+        { label: 'Request a hire', why: 'a hiring manager talks it through before it opens', data: 'client-request' },
+        { label: 'Why clients pass', why: 'one reason per decision, every client', data: 'ask="Why do clients pass?"' },
+        { label: 'Reports', why: 'the unit in numbers', go: { on: 'reports' } },
+      ]) +
+      '<section class="s-block s-block-wide"><div class="s-camp-list-head">' + switcher('') + '<span class="s-block-say">offers waiting on your answer · oldest first</span></div>' +
+        (a.length ? askRows(a) : '<p class="s-none">Nothing is waiting on you.</p>') + '</section>' +
+      reasonsBlock(said, 'clients', null) +
     '</div>';
   }
   function clientHome() {
@@ -4733,6 +5034,7 @@
     hm: ['What needs me today?', 'Which requisitions are at risk?', 'Where do we lose people?', 'Open a requisition for 2 Senior Accountants'],
     hr: ['Which requisitions are at risk?', 'Where do we lose people?', 'How long to send the first profile?', 'How many dropped at the HR interview?'],
     client: ['What needs me today?', 'We need two more support engineers'],
+    bu: ['What needs me today?', 'Why do clients pass?', 'Which requisitions are at risk?', 'We need two more accountants'],
   };
   const msgAvatar = (who) => who === 'you'
     ? '<div class="msg-avatar user-av">' + esc(me().name.split(' ').map((w) => w[0]).join('').slice(0, 2)) + '</div>'
@@ -4769,7 +5071,7 @@
         : '<p class="ov-chat-none">Nothing yet. Ask AiMY something and it lands here.</p>');
   }
   function paintBasis() {
-    const tags = [isHR() ? 'Every requisition' : isClient() ? accOf(deskReqs()[0] || DB.reqs[0]).name + '’s requisitions' : 'Your requisitions'];
+    const tags = [isHR() || isBU() ? 'Every requisition' : isClient() ? accOf(deskReqs()[0] || DB.reqs[0]).name + '’s requisitions' : 'Your requisitions'];
     if (S.req && DB.reqById[S.req]) tags.push(DB.reqById[S.req].title);
     if (S.cand && DB.byId[S.cand] && sees(DB.byId[S.cand])) tags.push(DB.byId[S.cand].name);
     byId('overlayContextTags').innerHTML = tags.map((t) => '<span class="overlay-context-tag">' + esc(t) + '</span>').join('');
@@ -4835,7 +5137,13 @@
     const lc = t.toLowerCase();
     const reqMatch = DB.reqs.filter((q) => q.state !== 'draft' && lc.indexOf(q.title.toLowerCase()) >= 0)[0];
     const accMatch = ACCOUNTS.filter((a) => lc.indexOf(a.name.toLowerCase().split(' ')[0]) >= 0)[0];
-    if (isClient() && /\b(need|hire|hiring|request|another|more|want)\b/.test(lc)) { clientRequest(t); return; }
+    if (/\bwhy\b.*\b(pass|passed|decline|declined|turn|reject)/.test(lc) && !isClient()) {
+      const said = declines(deskReqs()).filter((c) => c.decline.day >= -90), counts = declineCounts(said);
+      peek(counts.length ? 'Clients gave <b>' + plural(said.length, 'reason') + '</b> in 90 days, one per decision. ' + counts.slice(0, 3).map((x) => esc(x.d.label) + ' ' + x.n).join(', ') +
+        '. Each feeds matching for its own client only.' : 'No client has passed with a reason yet.', [{ label: 'Open the reports', go: { on: 'reports' }, primary: true }]);
+      return;
+    }
+    if ((isClient() || isBU()) && /\b(need|hire|hiring|request|another|more|want)\b/.test(lc)) { clientRequest(t); return; }
     if (/\b(open|new|create|start|raise|draft)\b.*\b(requisition|req|role|position|vacancy)\b|^(we need|i need|hire)\b/.test(lc) && !isClient()) {
       const p = parseRole(t);
       const q = newReq({ title: p.title, level: p.level, acc: accMatch ? accMatch.id : undefined, seats: p.seats });
@@ -4852,11 +5160,11 @@
         : 'I started a draft' + (accMatch ? ' for ' + esc(accMatch.name) : '') + '. Name the role and I can write the rest.', []);
       return;
     }
+    /* Finding is a conversation (Sales B8): the canvas asks where to look,
+       reads the success profile back, and brings back a draft shortlist. */
     if (/\b(find|search|source|look for|looking for)\b/.test(lc) && (isRec() || isHR())) {
-      FIND.q = t; FIND.req = reqMatch ? reqMatch.id : null; FIND.step = 'ask';
-      go({ on: 'find' });
-      runFind();
-      peekHide();
+      ASKING = null;
+      findChat(reqMatch ? reqMatch.id : null, t);
       return;
     }
     if (/\b(add|upload)\b.*\b(cv|candidate|resume)\b/.test(lc) && (isRec() || isHR())) { go({ on: 'add', req: reqMatch ? reqMatch.id : undefined }); return; }
@@ -5249,7 +5557,8 @@
     }
     /* Adding someone carries the requisition they are for, so it is asked
        before the requisition's own page. */
-    byId('wbStage').innerHTML = S.on === 'add' && isRec() ? addPage() : S.on === 'find' ? findPage() : S.cand ? candPage() : S.req ? reqPage() : S.asmt ? asmtPage() : S.acc ? accPage()
+    byId('wbStage').innerHTML = S.on === 'add' && isRec() ? addPage() : S.on === 'find' ? findPage()
+      : S.on === 'draft' && (isRec() || isHR()) ? draftPage() : S.on === 'cands' && (isRec() || isHR()) && !S.cand ? candsPage() : S.cand ? candPage() : S.req ? reqPage() : S.asmt ? asmtPage() : S.acc ? accPage()
       : S.on === 'reqs' ? reqsPage() : S.on === 'calls' && isRec() ? callsPage()
       : S.on === 'asmts' ? asmtsPage() : S.on === 'templates' ? templatesPage()
       : S.on === 'reports' ? reportsPage() : deskHome();
@@ -5262,7 +5571,29 @@
   }
 
   /* ── The bell: what is waiting on a person, every row ending in a record. */
+  /* What came back to this desk from another one, newest first. */
+  const newsFor = () => D.news.filter((n) => n.to === DESK).slice(-6).reverse();
+  function newsRows() {
+    return newsFor().map((n) => '<li class="ntf-row' + (n.read ? ' is-read' : '') + '">' +
+      '<span class="ntf-sev ' + (n.sev || 'p2') + '" aria-hidden="true"></span>' +
+      '<div class="ntf-row-main"><div class="ntf-row-head"><span class="ntf-row-type">' + esc(n.type) + '</span>' +
+        '<span class="ntf-row-when">' + esc(n.day === 0 ? 'today, ' + n.time : sayWhen(n.day)) + '</span></div>' +
+        '<p class="ntf-row-body">' + esc(n.body) + '</p>' +
+        '<button class="ntf-row-cta" type="button"' + goAttr(n.go) + '>' + esc(n.cta) + '</button></div></li>').join('');
+  }
   function paintBell() {
+    paintBellRows();
+    /* News that came back counts and lights the dot until it is read. */
+    const news = newsFor();
+    if (!news.length) return;
+    const rows = byId('ntfList').innerHTML.indexOf('ntf-empty') >= 0 ? '' : byId('ntfList').innerHTML;
+    byId('ntfList').innerHTML = newsRows() + rows;
+    const total = byId('ntfList').querySelectorAll('.ntf-row').length;
+    byId('ntfCount').hidden = false;
+    byId('ntfCount').textContent = total;
+    if (news.some((n) => !n.read)) byId('ntfDot').hidden = false;
+  }
+  function paintBellRows() {
     if (!isRec()) {
       const a = asks();
       byId('ntfList').innerHTML = a.length ? a.slice(0, 8).map((x) => '<li class="ntf-row">' +
@@ -5353,9 +5684,11 @@
     const oWas = o ? { status: o.status, joinDay: o.joinDay } : null;
     if (to === 'joined' && o) put('offers', o, { status: 'joined', joinDay: 0 });
     const e = note(c, 'move', 'Moved to ' + lower(STAGE[to].label) + ' by ' + me().name + '.');
+    const n = isClient() && to === 'client' ? tellDesk(q.rec, { sev: 'p1', type: 'Client decision', cta: 'Open ' + first(c.name), go: { cand: c.id },
+      body: accOf(q).name + ' wants to meet ' + c.name + ' for ' + q.title + '. AiMY booked it for ' + sayDay(2) + '.' }) : null;
     paint();
     toast('Moved ' + first(c.name) + ' to ' + lower(STAGE[to].label), () => {
-      write(c, was); if (iv) unmake('ivs', iv); if (o) put('offers', o, oWas); unmake('events', e); paint();
+      write(c, was); if (iv) unmake('ivs', iv); if (o) put('offers', o, oWas); unmake('events', e); untell(n); paint();
       toast('Put back', null, c.name + ' is at ' + lower(STAGE[was.stage].label) + ' again.');
     },
       MEETS[to] ? 'AiMY booked it for ' + sayDay(2) + ' with ' + interviewerFor(q, to) + ' and tells them from the booking.'
@@ -5383,6 +5716,7 @@
     if (k === 'send') { const c = d.filter((x) => x.stage === 'tech' && reqOf(x).tpl !== 'internal')[0]; return c ? go({ req: c.req, q: 'tech' }) : go({ on: 'reqs', q: 'mine' }); }
     if (k === 'screen') { const l = toCall(); return l.length ? callAll(l.map((x) => x.c.id)) : go({ on: 'calls' }); }
     if (k === 'risk') return go({ on: 'reqs', q: 'risk' });
+    if (k === 'find') return findChat(null, '');
     go({});
   }
 
@@ -5464,8 +5798,11 @@
     if ((el = at('[data-assign]'))) {
       const p = two('data-assign'), q = DB.reqById[p[0]], was = q.rec;
       if (was === p[1]) return;
-      put('reqs', q, { rec: p[1] }); paint();
-      toast('Assigned to ' + RECRUITERS.filter((x) => x.id === p[1])[0].name, () => { put('reqs', q, { rec: was }); paint(); },
+      put('reqs', q, { rec: p[1] });
+      const n = tellDesk(p[1], { sev: 'p1', type: 'Assigned to you', cta: 'Open it', go: { req: q.id },
+        body: me().name + ' gave you ' + q.title + ' for ' + accOf(q).name + '. The reason: the lightest load on the team.' });
+      paint();
+      toast('Assigned to ' + RECRUITERS.filter((x) => x.id === p[1])[0].name, () => { put('reqs', q, { rec: was }); untell(n); paint(); },
         'They are told in their bell, with the reason: the lightest load on the team.');
       return;
     }
@@ -5740,6 +6077,20 @@
     if ((el = at('[data-out]'))) { const p = el.getAttribute('data-out').split('|'); out(DB.byId[p[0]], p[1]); return; }
     if ((el = at('[data-nudge]'))) { nudge(DB.byId[el.getAttribute('data-nudge')]); return; }
     if ((el = at('[data-start]'))) { start(el.getAttribute('data-start')); return; }
+    /* ── Finding through the chat, and the shortlist it brings back ── */
+    if ((el = at('[data-fc]'))) { fcStep(el.getAttribute('data-fc')); return; }
+    if ((el = at('[data-keep]'))) { if (DRAFT) { const i = Number(el.getAttribute('data-keep')); DRAFT.keep[i] = DRAFT.keep[i] === false; paint(); } return; }
+    if ((el = at('[data-draft-add]'))) { draftAdd(el.getAttribute('data-draft-add')); return; }
+    if ((el = at('[data-draft-save]'))) { draftSave(); return; }
+    if ((el = at('[data-draft-discard]'))) { draftDiscard(); return; }
+    if ((el = at('[data-draft-stay]'))) { LEAVE = null; paint(); return; }
+    if ((el = at('[data-list-del]'))) {
+      const id = el.getAttribute('data-list-del'), l = D.lists.filter((x) => x.id === id)[0];
+      D.lists = D.lists.filter((x) => x.id !== id); save();
+      go({ on: 'find' });
+      toast('Shortlist deleted', () => { D.lists.push(l); save(); paint(); });
+      return;
+    }
     if ((el = at('[data-quick]'))) { go({ on: 'reqs', q: el.getAttribute('data-quick') }); return; }
     if ((el = at('[data-q]'))) { go(Object.assign({}, S, { q: el.getAttribute('data-q') }), true); return; }
     if ((el = at('[data-trail]'))) { go(TRAIL && !TRAIL.req ? TRAIL : { on: 'reqs' }); return; }
@@ -5747,7 +6098,7 @@
     if ((el = at('[data-reset]'))) { reset(); load(); go({}, true); toast('Back to the start', null, 'Every change you made is gone.'); return; }
     if ((el = at('#protoToggle'))) { const p = byId('protoPanel'); p.hidden = !p.hidden; el.setAttribute('aria-expanded', String(!p.hidden)); paintProto(); return; }
     if ((el = at('#ntfBell'))) { const p = byId('ntfPanel'); p.hidden = !p.hidden; el.setAttribute('aria-expanded', String(!p.hidden)); return; }
-    if ((el = at('#ntfClear'))) { D.read = true; save(); paintBell(); return; }
+    if ((el = at('#ntfClear'))) { D.read = true; D.news.forEach((n) => { if (n.to === DESK) n.read = true; }); save(); paintBell(); return; }
     if ((el = at('#canvasOpen'))) { byId('floatInput').focus(); return; }
     /* The product list that hangs from the mark below 720px (Sales). */
     if ((el = at('[data-pickopen]'))) {
@@ -5789,24 +6140,30 @@
      draft, to be talked through before it opens (Sales's client request). */
   /* The button asks in the bar; what they type there is the request. */
   function clientRequest(text) {
+    /* The BU Director requests hires for FlairsTech's own unit (Sales S3,
+       the stakeholder's Request a campaign); the client for their company. */
+    const accId = isBU() ? 'flairs' : me().acc;
     if (!text) {
       const inp = byId('floatInput');
       inp.placeholder = 'Who do you need? For example: two more support engineers by December';
       inp.focus();
-      peek('Tell me who you need in the bar below, in your own words. I pass it to ' + esc(HMS.filter((h) => h.id === ACCOUNTS.filter((a) => a.id === me().acc)[0].hm)[0].name) + ' as a draft.', []);
+      peek('Tell me who you need in the bar below, in your own words. I pass it to ' + esc(HMS.filter((h) => h.id === ACCOUNTS.filter((a) => a.id === accId)[0].hm)[0].name) + ' as a draft.', []);
       return;
     }
-    const acc = ACCOUNTS.filter((a) => a.id === me().acc)[0];
+    const acc = ACCOUNTS.filter((a) => a.id === accId)[0];
     const p = parseRole(text);
-    const am = HMS.filter((h) => h.id === acc.hm)[0].name;
-    const q = make('reqs', { id: uid('r'), title: p.title, fam: famOf(p.title), level: p.level, must: [], acc: acc.id, tpl: acc.tpl, hm: acc.hm, rec: 'omar', seats: p.seats,
+    /* The unit's own requests go to the hiring manager on the desks. */
+    const hmId = isBU() ? 'rania' : acc.hm;
+    const am = HMS.filter((h) => h.id === hmId)[0].name;
+    const q = make('reqs', { id: uid('r'), title: p.title, fam: famOf(p.title), level: p.level, must: [], acc: acc.id, tpl: acc.tpl, hm: hmId, rec: 'omar', seats: p.seats,
       kind: 'new', billable: true, state: 'draft', opened: 0, target: expDays(acc.tpl), place: 'Nasr City office', plan: null, domain: acc.domain, published: false,
       budget: { min: BUDGETS[p.level][0], max: BUDGETS[p.level][1] }, desc: me().name + ' at ' + acc.name + ' asked: “' + text.replace(/[.!?]$/, '') + '.”', asmt: null, askedBy: DESK });
     byId('floatInput').placeholder = 'Ask AiMY, or find a requisition or a candidate…';
     peekHide();
     paint();
-    toast('Sent to ' + am + ', your account manager', () => { unmake('reqs', q); paint(); },
-      (p.title ? plural(p.seats, 'seat') + ' as ' + p.title + '. ' : '') + 'She talks it through with you before it opens.');
+    const n = tellDesk(hmId, { sev: 'p1', type: 'Hiring request', body: me().name + ' asked for ' + (p.title ? plural(p.seats, 'seat') + ' as ' + p.title : 'a hire') + '. Talk it through before it opens.', cta: 'Open the draft', go: { req: q.id } });
+    toast('Sent to ' + am + (isBU() ? ', to talk through first' : ', your account manager'), () => { unmake('reqs', q); untell(n); paint(); },
+      (p.title ? plural(p.seats, 'seat') + ' as ' + p.title + '. ' : '') + 'It is talked through with you before it opens.');
   }
   document.addEventListener('change', (e) => {
     const f = e.target.files && e.target.files[0];
@@ -5902,7 +6259,13 @@
     if (e.key === 'Escape') { const p = byId('ntfPanel'); if (!p.hidden) { p.hidden = true; byId('ntfBell').setAttribute('aria-expanded', 'false'); } }
     if (e.key === '/' && !/input|textarea/i.test((document.activeElement || {}).tagName || '')) { e.preventDefault(); byId('floatInput').focus(); }
   });
-  window.addEventListener('popstate', () => { parse(); paint(); });
+  window.addEventListener('popstate', () => {
+    /* The browser's Back is caught too: an unsaved shortlist shows its gate. */
+    if (DRAFT && S.on === 'draft' && !S.list && new URLSearchParams(location.search).get('on') !== 'draft') {
+      history.pushState(null, '', urlOf(S)); LEAVE = {}; paint(); byId('pageScroll').scrollTop = 0; return;
+    }
+    parse(); paint();
+  });
   window.addEventListener('resize', () => requestAnimationFrame(placeSwitchBar), { passive: true });
 
 

@@ -431,7 +431,9 @@ body.is-portal .aimy-overlay { display: none !important; }
 /* On a phone a row's verbs go under its reading, not beside it. */
 @media (max-width: 560px) {
   .t-row { flex-wrap: wrap; }
-  .t-row > .t-acts { flex-basis: 100%; flex-wrap: nowrap; margin: 4px 0 0 28px; }
+  /* The 28px indent comes out of the basis, or two verbs (Pass, Meet them)
+     push the row past the screen's edge. */
+  .t-row > .t-acts { flex-basis: calc(100% - 28px); min-width: 0; flex-wrap: wrap; margin: 4px 0 0 28px; }
   .t-row > .t-acts > .t-row-go { margin: 0; }
   .t-row-more { padding-left: 0; }
 }
@@ -580,3 +582,7 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-out[dir="rtl"] .t-chat-you p { border-top-right-radius: 14px; border-top-left-radius: 4px; }
 .t-out[dir="rtl"] .t-chat .b-cuts.t-col { margin-left: 0; margin-right: 28px; }
 .t-out[dir="rtl"] .t-apply-form .t-q .t-check { margin-left: 0; }
+
+/* Candidates queue (Sales's Contacts): "Not told yet" sits apart from the
+   cuts that add up to All, the way Sales keeps its Accounts chip apart. */
+.t-cut-apart { margin-inline-start: auto; }

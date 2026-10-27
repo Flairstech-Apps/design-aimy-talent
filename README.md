@@ -66,9 +66,10 @@ In Sales, the log is read back in the AiMY canvas. Talent keeps it in the call p
 
 Everything in the New Operations list and the Product Overview now has a surface. Each one follows the Sales rules: one press with Undo, prose behind Edit, no modals or pickers as the only way.
 
-- **Four desks, switched by `?as=`** from the name in the top bar:
+- **Five desks, switched by `?as=`** from the name in the top bar, one for each of Sales's desks:
   - `omar` (recruiter, the default).
   - `rania` (hiring manager). Sees candidates from the technical interview on, approves offers, owes debriefs, and gets clients' requests as drafts.
+  - `hesham` (BU Director, Sales's stakeholder). Reads every requisition and changes none. Answers budget and headcount on an offer, requests hires for the unit (they go to Rania as a draft), and hears why clients pass.
   - `dina` (HR Manager). Sees every requisition, the ones at risk with a Reassign menu (AiMY's pick is the lightest load), stage templates, interview templates and the reports.
   - `jana` (client, Northwind only). Sees her own requisitions, decides on profiles sent (Meet them or Pass), gives interview feedback, and asks for a hire in the AiMY bar. No salary, no internal notes.
 - **Requisitions are created and edited** through the interface (New requisition, Clone it, Edit) or through AiMY ("open a requisition for 2 Senior Accountants at Northwind"). A new one is a draft until Open; Write it with AiMY drafts the description and success profile, and says so when nothing like the role was filled before. Published puts it on the careers page with a link to copy for LinkedIn. Hold, Filled and the two cancels are one press each.
@@ -100,6 +101,15 @@ The market research found that single steps of hiring are solved and the loop is
 - **Smaller ones.** Today names the records each block reads (M8). The hiring manager's asks are grouped by account, oldest first, and include answers clients owe (M11). Clients see billed hires beside acceptance and day-90 retention (M10). The BU Director's page asks about budget and headcount only (M3). Calls carry a Design target label (P8). The careers page and own profile switch to Arabic, right to left (M9; the Arabic needs a native read). The debrief quotes the recording marked Check it, and names the agenda topic it never reached.
 
 Every part is documented, with a screenshot, in the local knowledge vault: `knowledge-vault/50 Design system/Component library.md`.
+
+## Closer to Sales (27 Oct)
+
+These four parts close the gaps between this prototype and AiMY Sales. They were found by comparing it with `talent-sales/` (Sales's UX, followed exactly) and `talent-v2/` (a research-first sandbox). `talent-sales/compare.html` maps Sales onto Talent process by process.
+
+- **Candidates** (`?on=cands`) is Sales's Contacts queue. It holds everyone on your open requisitions, 15 at a time, with "1–15 of 37" underneath. The cuts are Waiting on you, First contact, With the client and Waiting on others, and they add up to All. Not told yet sits apart.
+- **Finding through the chat** (Sales B8). Find people on Today, or "find …" in the bar, opens the canvas. AiMY asks whether to search the pool, the web or both, reads the success profile back, and brings back a shortlist marked **Not saved yet**, with a Keep tick on each card. From there you can add the kept people to a requisition, save the list (saved lists appear under Find candidates) or discard it. If you leave without saving, a gate at the top of the page offers Save, Discard or Stay, and the browser's Back is caught too. The Find tab's form is still there.
+- **The bell brings work back.** When a decision is taken on another desk, it lands in the bell of the desk it is for, and Undo takes the news back with it. That covers a client's pass or meet, an interviewer's debrief, an offer approved or sent back, a requisition reassigned, and a hiring request.
+- **The BU Director's desk** (`?as=hesham`). See the desk list above.
 
 ## Rules carried over from Sales
 
