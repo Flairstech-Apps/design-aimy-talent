@@ -455,10 +455,32 @@ body.is-portal .aimy-overlay { display: none !important; }
 @media (prefers-reduced-motion: reduce) { .t-batch { animation: none; } }
 
 /* A message before it goes (M4). */
-.t-msg { margin: 0 0 12px; padding: 12px 14px; border-radius: var(--r-md); border: 1px solid var(--card-border); background: var(--card-bg); display: grid; gap: 6px; }
-.t-msg-cap { margin: 0; font-size: var(--t-micro); font-weight: var(--fw-medium); letter-spacing: 0.08em; text-transform: uppercase; color: var(--d100); }
-.t-msg-body { margin: 0; color: var(--d50); font-size: var(--fs-sm); line-height: var(--lh-base); max-width: 72ch; }
-.t-msg-foot { margin: 0; font-size: var(--fs-xs); color: var(--d100); }
+/* The answer as it will arrive: who and how on top, the words in a bubble
+   with what changes per person marked, the template and its approver below. */
+.t-msg { margin: 0 0 12px; padding: 14px 16px; border-radius: var(--r-lg); border: 1px solid var(--card-border); background: var(--card-bg); display: grid; gap: 12px; }
+.t-msg-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.t-msg-to { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.t-msg-av {
+  flex: none; display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%;
+  font-size: var(--fs-2xs); font-weight: var(--fw-semibold); color: var(--d50);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 40%, transparent), color-mix(in srgb, var(--purple, #8b4ff4) 40%, transparent));
+}
+.t-msg-who { display: flex; flex-direction: column; gap: 1px; min-width: 0; font-size: var(--fs-sm); color: var(--d50); }
+.t-msg-who > span { font-size: var(--fs-xs); color: var(--ink-muted); }
+.t-msg-chs { display: flex; flex-wrap: wrap; gap: 6px; }
+.t-msg-ch {
+  display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: var(--r-pill);
+  border: 1px solid color-mix(in srgb, var(--brand) 35%, transparent); font-size: var(--fs-2xs); font-weight: var(--fw-medium); color: var(--d50);
+}
+.t-msg-ch.is-off { border-style: dashed; border-color: var(--card-border-hover); color: var(--ink-muted); }
+.t-msg-body {
+  margin: 0; max-width: 64ch; padding: 12px 14px; border-radius: 14px 14px 14px 4px;
+  background: color-mix(in srgb, var(--brand) 9%, transparent); border: 1px solid color-mix(in srgb, var(--brand) 18%, transparent);
+  color: var(--d50); font-size: var(--fs-sm); line-height: var(--lh-base);
+}
+.t-msg-var { padding: 0 3px; border-radius: 4px; background: color-mix(in srgb, var(--purple, #8b4ff4) 26%, transparent); color: inherit; }
+.t-msg-foot { display: flex; align-items: flex-start; gap: 6px; margin: 0; font-size: var(--fs-xs); color: var(--ink-muted); }
+.t-msg-foot > svg { flex: none; margin-top: 2px; }
 
 
 /* A Learning proposal (P5): the change as Now against Proposed. */

@@ -2686,10 +2686,22 @@
      for one real person, with the channel it goes by. Nothing is sent from
      here; the verb beside it sends. */
   const tellText = (c) => TELL_TPL.replace('{first}', first(c.name)).replace('{role}', reqOf(c).title).replace('{me}', me().name);
+  /* THE ANSWER, SHOWN AS IT WILL ARRIVE (M4, Message preview). Who it goes
+     to and by which channels on top, the words in a message bubble with
+     the parts that change for each person marked, and the template and
+     who approved it at the foot: the approval is why a person may send it. */
   function msgPreview(c) {
-    return '<div class="t-msg"><p class="t-msg-cap">The message · HR template “Decline, after screening”, approved by ' + esc(DESKS.dina.name) + '</p>' +
-      '<p class="t-msg-body">' + esc(tellText(c)) + '</p>' +
-      '<p class="t-msg-foot">To ' + esc(first(c.name)) + ' by ' + (c.wa ? 'WhatsApp and email (opted in)' : 'email only: no WhatsApp opt-in') + '. Each person gets their own name and role.</p></div>';
+    const q = reqOf(c);
+    const v = (t) => '<mark class="t-msg-var" title="Filled in for each person">' + esc(t) + '</mark>';
+    const body = esc(TELL_TPL).replace('{first}', v(first(c.name))).replace('{role}', v(q.title)).replace('{me}', v(me().name));
+    const ch = (ico, label, off) => '<span class="t-msg-ch' + (off ? ' is-off' : '') + '">' + svg(ico, 12) + esc(label) + '</span>';
+    return '<div class="t-msg">' +
+      '<div class="t-msg-head"><span class="t-msg-to"><span class="t-msg-av" aria-hidden="true">' + esc(initials(c.name)) + '</span>' +
+        '<span class="t-msg-who"><b>To ' + esc(c.name) + '</b><span>' + esc(q.title) + ' · ' + esc(accOf(q).name) + '</span></span></span>' +
+        '<span class="t-msg-chs">' + (c.wa ? ch('msg', 'WhatsApp') : ch('msg', 'No WhatsApp opt-in', true)) + ch('mail', 'Email') + '</span></div>' +
+      '<p class="t-msg-body">' + body + '</p>' +
+      '<p class="t-msg-foot">' + svg('shield', 12) + '<span>HR template “Decline, after screening”, approved by ' + esc(DESKS.dina.name) + '. The marked words change for each person.</span></p>' +
+    '</div>';
   }
   function tell(ids) {
     const list = ids.map((id) => DB.byId[id]).filter((c) => c && c.told === false);
