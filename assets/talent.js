@@ -82,7 +82,9 @@
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const TODAY = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })();
   const DAY_MS = 86400000;
-  const dayOf = (n) => new Date(TODAY.getTime() + n * DAY_MS);
+  /* By the calendar, not by 24-hour steps: across the end of summer time a
+     day is 25 hours, and n steps of 24 landed on the day before. */
+  const dayOf = (n) => new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate() + n);
   const sayDay = (n) => { const d = dayOf(n); return d.getDate() + ' ' + MONTHS[d.getMonth()]; };
   /* Relative where relative is what a recruiter means, absolute otherwise. */
   const sayWhen = (n) => n === 0 ? 'today' : n === 1 ? 'tomorrow' : n === -1 ? 'yesterday'
@@ -1601,7 +1603,7 @@
      `approve` are the screens people outside the recruiting team reach from a
      link: the careers page, a candidate's own profile, an assessment, an
      interviewer's debrief and an approver's offer packet. */
-  const KEYS = ['as', 'on', 'req', 'cand', 'asmt', 'acc', 'q', 'p', 'list', 'find', 'edit', 'apply', 'me', 'take', 'debrief', 'approve', 'by', 'src', 'period', 'account', 'rq'];
+  const KEYS = ['as', 'on', 'req', 'cand', 'asmt', 'acc', 'q', 'p', 'list', 'find', 'edit', 'apply', 'me', 'take', 'debrief', 'approve', 'by', 'src', 'period', 'account', 'rq', 'day'];
   const OUTSIDE = ['apply', 'me', 'take', 'debrief', 'approve'];
   const outside = () => OUTSIDE.some((k) => !!S[k]);
   function parse() {
@@ -1816,11 +1818,12 @@
       reqs: { label: 'Requisitions', n: open },
       calls: { label: 'Calls', n: isRec() ? toCall().length : null },
       find: { label: 'Find candidates', n: isRec() ? newMatches() || null : null },
+      diary: { label: 'Diary', n: isRec() || isHM() ? diaryItems(0, 0).filter((m) => !m.done).length || null : null },
       asmts: { label: 'Assessments' },
       templates: { label: 'Templates' },
       reports: { label: 'Reports' },
     };
-    const row = isRec() ? ['', 'cands', 'reqs', 'calls', 'find', 'asmts', 'reports'] : isHM() || isBU() ? ['', 'reqs', 'reports']
+    const row = isRec() ? ['', 'cands', 'reqs', 'calls', 'diary', 'find', 'asmts', 'reports'] : isHM() ? ['', 'reqs', 'diary', 'reports'] : isBU() ? ['', 'reqs', 'reports']
       : isHR() ? ['', 'cands', 'reqs', 'asmts', 'templates', 'reports'] : ['', 'reqs'];
     const tabs = row.map((k) => Object.assign({ k: k }, all[k]));
     return '<h2 class="b-switch">' + tabs.map((t) => '<button class="b-switch-btn' + (t.k === here ? ' is-on' : '') + '" type="button"' +
@@ -6121,6 +6124,140 @@
     '</div>';
   }
 
+  /* ══ THE DIARY (Sales B11, for recruiting; Engy, 29 Oct) ═════════════════
+     Today says what needs you now; the diary is the week and the month.
+     Sales's own calendar, as its markup and styles have it: a month grid
+     with a dot per thing on each day, the chosen day's agenda beside it,
+     and what is next under that. What lands here is what a recruiter's
+     week is made of: interviews (with Prepare me), callbacks in the window
+     the person asked for, start dates, and the day-30 and day-90 check-ins.
+     Under it, Sales's "Missing details" as recruiting has it: Results not
+     in, every interview that happened with no result, oldest first, each
+     with its nudge (or, on the hiring manager's desk, their own debrief).
+     The recruiter reads their requisitions; the hiring manager theirs,
+     and only the people they can see. */
+  const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const DAY_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  /* Monday first; the weekend is Friday and Saturday, as it is in Cairo. */
+  const WD_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const DIARY_DOT = { iv: 'b-cal-dot k-meeting', client: 'b-cal-dot k-demo', callback: 'b-cal-dot k-callback', start: 'b-cal-dot k-held', check: 'b-cal-dot k-dinner', owed: 'b-cal-dot k-owed' };
+  const DIARY_KIND = { iv: 'Interview', client: 'Client interview', callback: 'Callback', start: 'Start date', check: 'Check-in', owed: 'Result not in' };
+  const dOff = (d) => Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - TODAY) / DAY_MS);
+  const diaryReqs = () => (isHM() ? deskReqs() : mine());
+  /* Everything in the diary between two days, in day and time order. */
+  function diaryItems(from, to) {
+    const out = [], reqs = diaryReqs(), inR = (d) => d != null && d >= from && d <= to;
+    const ok = (c) => c && reqs.indexOf(reqOf(c)) >= 0 && (!isHM() || sees(c));
+    const ivKind = (s) => (s === 'client' || s === 'ctech' ? 'client' : 'iv');
+    reqs.forEach((q) => DB.byReq[q.id].forEach((c) => {
+      if (!ok(c) || c.exit) return;
+      /* Booked: today or ahead. */
+      if (MEETS[c.stage] && c.meet != null && c.meet >= 0 && inR(c.meet)) out.push({ day: c.meet, time: c.slot, kind: ivKind(c.stage), c: c, what: STAGE[c.stage].label });
+      /* A callback is the recruiter's, in the window they asked for. */
+      if (isRec() && c.callback != null && canCall(c)) {
+        const d = Math.max(0, c.callback);
+        if (inR(d)) out.push({ day: d, time: c.cbWin ? CB_WIN[c.cbWin][0] : null, until: c.cbWin ? CB_WIN[c.cbWin][1] : null, kind: 'callback', c: c, what: 'Asked to be called back' });
+      }
+    }));
+    /* Held: with the result in, or still owed. */
+    DB.ivs.forEach((v) => {
+      const c = DB.byId[v.cand];
+      if (!ok(c) || !inR(v.day) || v.status === 'booked') return;
+      out.push(v.status === 'owed' ? { day: v.day, time: v.slot, kind: 'owed', c: c, v: v, what: STAGE[v.stage].label + ' with ' + v.by.split(',')[0] }
+        : { day: v.day, time: v.slot, kind: ivKind(v.stage), c: c, v: v, done: true, what: STAGE[v.stage].label + ' with ' + v.by.split(',')[0] });
+    });
+    /* A start date, and the two check-ins after it. */
+    DB.offers.forEach((o) => {
+      const c = DB.byId[o.cand];
+      if (!ok(c) || o.joinDay == null || (o.status !== 'accepted' && o.status !== 'joined')) return;
+      if (inR(o.joinDay)) out.push({ day: o.joinDay, time: null, kind: 'start', c: c, what: (o.joinDay <= 0 ? 'Started' : 'Starts') + ' at ' + accOf(reqOf(c)).name });
+      [[30, 'd30'], [90, 'd90']].forEach((x) => {
+        const d = o.joinDay + x[0];
+        if (inR(d)) out.push({ day: d, time: null, kind: 'check', c: c, what: 'Day-' + x[0] + ' check-in' + (c[x[1]] ? ', recorded' : d < 0 ? ', not recorded yet' : '') });
+      });
+    });
+    return out.sort((a, b) => a.day - b.day || String(a.time || '99').localeCompare(String(b.time || '99')));
+  }
+  /* Every interview that happened with no result, oldest first. */
+  const resultsOwed = () => diaryItems(-400, -1).filter((m) => m.kind === 'owed').sort((a, b) => a.day - b.day);
+  /* The one thing to do about a result not in: the hiring manager writes
+     their own; for anyone else, the recruiter nudges, once, and it says so. */
+  function owedAct(m) {
+    const c = m.c, v = m.v;
+    if (isHM() && v.by.indexOf(me().name) === 0) return '<button class="s-inline-btn t-prep-btn" type="button"' + goAttr({ debrief: v.id }) + '>Write it</button>';
+    if (c.nudged != null) return '<span class="b-kind">Nudged ' + esc(sayWhen(c.nudged)) + '</span>';
+    return isRec() ? '<button class="s-inline-btn t-prep-btn" type="button" data-nudge="' + c.id + '">' + esc(nudgeSay(c)) + '</button>' : '';
+  }
+  function diaryRow(m, i) {
+    const c = m.c;
+    const act = m.kind === 'callback' && m.day <= 0 ? '<button class="s-inline-btn t-prep-btn" type="button" data-call="' + c.id + '">' + svg('phone', 12) + 'Call ' + esc(first(c.name)) + '</button>'
+      : (m.kind === 'iv' || m.kind === 'client') && !m.done ? '<button class="s-inline-btn t-prep-btn" type="button" data-prep="' + c.id + '">' + mark(12) + 'Prepare me</button>'
+      : m.kind === 'owed' ? owedAct(m) : '';
+    return '<div class="b-cal-ev is-plain t-cal-ev" style="--i:' + Math.min(i, 8) + '">' +
+      '<button class="t-cal-open" type="button"' + goAttr({ cand: c.id }) + '>' +
+        '<span class="b-cal-evtop"><span class="' + DIARY_DOT[m.kind] + '"></span>' +
+          '<span class="b-cal-etime">' + esc(m.time ? m.time + (m.until ? '–' + m.until : '') : 'All day') + '</span>' +
+          '<span class="b-kind">' + esc(DIARY_KIND[m.kind] + (m.done ? ', result in' : '')) + '</span></span>' +
+        '<span class="b-cal-ename"><b>' + esc(c.name) + '</b><span class="b-cal-ewhat">' + esc(m.what) + ' · ' + esc(reqOf(c).title) + '</span></span>' +
+      '</button>' + act + '</div>';
+  }
+  function diaryPage() {
+    const sel = Number(S.day) || 0;
+    const d = dayOf(sel), y = d.getFullYear(), mo = d.getMonth();
+    const first1 = new Date(y, mo, 1), lead = (first1.getDay() + 6) % 7;
+    const start = dOff(first1) - lead;
+    const n = lead + new Date(y, mo + 1, 0).getDate() > 35 ? 42 : 35;
+    const all = diaryItems(start, start + n - 1);
+    const byDay = {};
+    all.forEach((m) => { (byDay[m.day] = byDay[m.day] || []).push(m); });
+    const inMonth = all.filter((m) => dayOf(m.day).getMonth() === mo).length;
+    const grid = Array.from({ length: n }, (x, i) => {
+      const off = start + i, dt = dayOf(off), on = byDay[off] || [];
+      const out = dt.getMonth() !== mo, end = dt.getDay() === 5 || dt.getDay() === 6;
+      return '<button class="b-cal-day' + (out ? ' is-out' : '') + (off === sel ? ' is-sel' : '') + (off === 0 ? ' is-today' : '') + (end ? ' is-end' : '') + '" type="button" data-diary-day="' + off + '" ' +
+        'aria-label="' + esc(sayDay(off) + ', ' + plural(on.length, 'thing')) + '"' + (off === sel ? ' aria-current="date"' : '') + ' style="--i:' + (i % 7) + '">' +
+        '<span class="b-cal-bg"></span><span class="b-cal-num">' + dt.getDate() + '</span>' +
+        '<span class="b-cal-dots">' + on.slice(0, 3).map((m) => '<span class="' + DIARY_DOT[m.kind] + '"></span>').join('') + '</span></button>';
+    }).join('');
+    const day = diaryItems(sel, sel), soon = diaryItems(sel + 1, sel + 60).slice(0, 3);
+    const step = (k) => dOff(new Date(y, mo + k, 1));
+    const week = diaryItems(0, 6), owed = resultsOwed();
+    const cnt = (k) => week.filter((m) => m.kind === k && !m.done).length;
+    const said = [[cnt('iv') + cnt('client'), 'interview'], [cnt('callback'), 'callback'], [cnt('start'), 'start date'], [cnt('check'), 'check-in']]
+      .filter((x) => x[0]).map((x) => '<b>' + plural(x[0], x[1]) + '</b>');
+    const lead1 = aimyBlock({ text: (said.length ? 'This week: ' + said.join(', ').replace(/, ([^,]*)$/, ' and $1') + '.' : 'Nothing is in the diary this week.') +
+      (owed.length ? ' <b>' + plural(owed.length, 'result') + '</b> not in yet, the oldest from ' + esc(sayWhen(owed[0].day)) + '.' : ' Every interview so far has its result.'),
+      from: 'the interviews, callbacks and offers on ' + (isHM() ? 'the requisitions you asked for' : 'your requisitions') }, true);
+    const keyRow = '<p class="t-diary-key">' + ['iv', 'client', 'callback', 'start', 'check', 'owed'].filter((k) => isRec() || k !== 'callback')
+      .map((k) => '<span><span class="' + DIARY_DOT[k] + '"></span>' + esc(DIARY_KIND[k]) + '</span>').join('') + '</p>';
+    const cal = '<div class="b-cal"><div class="b-cal-panel">' +
+      '<div class="b-cal-head"><h3 class="b-cal-month">' + MONTH_FULL[mo] + ' ' + y + '<span class="b-cal-count">' + inMonth + '</span></h3>' +
+        '<div class="b-cal-nav"><button class="b-cal-btn is-word" type="button" data-diary-day="0">Today</button>' +
+          '<button class="b-cal-btn" type="button" data-diary-day="' + step(-1) + '" aria-label="The month before">' + svg('back') + '</button>' +
+          '<button class="b-cal-btn" type="button" data-diary-day="' + step(1) + '" aria-label="The month after">' + svg('go') + '</button></div></div>' +
+      '<div class="b-cal-mo"><div class="b-cal-week">' + WD_SHORT.map((w, i) => '<span class="' + (i === 4 || i === 5 ? 'b-cal-wd is-end' : 'b-cal-wd') + '">' + w + '</span>').join('') + '</div>' +
+        '<div class="b-cal-grid" role="grid" aria-label="' + esc(MONTH_FULL[mo] + ' ' + y) + '">' + grid + '</div>' + keyRow + '</div>' +
+      '<div class="b-cal-side"><h4 class="b-cal-cap">' + esc((sel === 0 ? 'Today' : DAY_FULL[d.getDay()]) + ', ' + sayDay(sel)) + ' · ' + esc(plural(day.length, 'thing')) + '</h4>' +
+        '<div class="b-cal-agenda">' + (day.length ? day.map(diaryRow).join('') : '<p class="b-cal-none">Nothing on this day.</p>') + '</div>' +
+        (soon.length ? '<div class="b-cal-next"><h4 class="b-cal-cap">Next in the diary</h4><div class="b-cal-agenda">' + soon.map((m, i) =>
+          '<button class="b-cal-nrow" type="button" data-diary-day="' + m.day + '" style="--i:' + i + '"><span class="' + DIARY_DOT[m.kind] + '"></span>' +
+            '<span class="b-cal-nwhen">' + esc(sayDay(m.day)) + (m.time ? ' · ' + esc(m.time) : '') + '</span><span class="b-cal-nwho">' + esc(m.c.name) + '</span></button>').join('') + '</div></div>' : '') +
+      '</div></div></div>';
+    return '<div class="s-home">' +
+      '<section class="s-block s-block-wide" aria-label="The diary"><div class="s-camp-list-head">' + switcher('diary') + '</div>' + lead1 +
+        '<div class="b-diary">' + cal + '</div></section>' +
+      '<section class="s-block s-block-wide" aria-label="Results not in"><div class="s-camp-list-head"><h2 class="s-block-h">Results not in</h2>' +
+        '<span class="s-block-say">interviews that happened with no result yet · oldest first</span></div>' +
+        (owed.length ? '<div class="b-owed">' + owed.map((m, i) => '<div class="b-owed-row t-row" style="--i:' + Math.min(i, 8) + '"><span class="b-owed-sev" aria-hidden="true"></span>' +
+          '<button class="b-owed-main t-row-open" type="button"' + goAttr({ cand: m.c.id }) + '><span class="b-owed-head"><span class="b-owed-type">' + esc(m.c.name) + '</span>' +
+            '<span class="b-owed-by">' + esc(reqOf(m.c).title) + ' · ' + esc(accOf(reqOf(m.c)).name) + '</span></span>' +
+            '<span class="b-owed-body">' + esc(STAGE[m.v.stage].label) + ' with ' + esc(m.v.by) + ', ' + esc(sayWhen(m.day)) + '. <b>' + days(-m.day) + '</b> without a result.</span></button>' +
+          '<span class="t-acts">' + owedAct(m) + '</span></div>').join('') + '</div>'
+          : '<p class="s-none">Every interview so far has its result.</p>') +
+      '</section>' +
+    '</div>';
+  }
+
   /* ══ THE OTHER DESKS ═════════════════════════════════════════════════════ */
   function deskHome() { return isHM() ? hmHome() : isHR() ? hrHome() : isClient() ? clientHome() : isBU() ? buHome() : homePage(); }
   /* What waits on this desk, each with the one way to answer it. Feeds the
@@ -7366,6 +7503,7 @@
        before the requisition's own page. */
     byId('wbStage').innerHTML = homeCrumb((S.on === 'add' && isRec() ? addPage() : S.on === 'find' ? findPage()
       : S.on === 'newreq' && !isClient() && !isBU() ? newReqPage()
+      : S.on === 'diary' && (isRec() || isHM()) ? diaryPage()
       : S.on === 'draft' && (isRec() || isHR()) ? draftPage() : S.on === 'cands' && (isRec() || isHR()) && !S.cand ? candsPage() : S.cand ? candPage() : S.req ? reqPage() : S.asmt ? asmtPage() : S.acc ? accPage()
       : S.on === 'reqs' ? reqsPage() : S.on === 'calls' && isRec() ? callsPage()
       : S.on === 'asmts' ? asmtsPage() : S.on === 'templates' ? templatesPage()
@@ -7981,6 +8119,7 @@
       if (p[1] === 'out') { OUTING = { id: p[0], other: false, line: '' }; PASSING = null; WRITING = null; paint(); return; }
       out(DB.byId[p[0]], p[1]); return;
     }
+    if ((el = at('[data-diary-day]'))) { const v = val('data-diary-day'); go(Object.assign({}, S, { day: v === '0' ? null : v }), true); return; }
     if ((el = at('[data-nudge]'))) { nudge(DB.byId[el.getAttribute('data-nudge')]); return; }
     if ((el = at('[data-start]'))) { start(el.getAttribute('data-start')); return; }
     /* ── Finding through the chat, and the shortlist it brings back ── */

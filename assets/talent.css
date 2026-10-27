@@ -1099,3 +1099,9 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-msg-end { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
 .t-msg-end .t-msg-foot { flex: 1 1 280px; }
 .t-msg-end .s-insight-lnk { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ══ THE DIARY ════════════════════════════════════════════════════════════
+   Sales's calendar (bdr.css .b-cal, .b-diary) as it is. Talent adds only
+   the key under the month, so each dot's colour has a word. */
+.t-diary-key { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 10px 0 0; padding: 0 4px; font-size: var(--fs-2xs); color: var(--d100); }
+.t-diary-key > span { display: inline-flex; align-items: center; gap: 6px; }
