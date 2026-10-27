@@ -448,10 +448,8 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-fn-row.is-top .t-fn-label { color: var(--d50); font-weight: var(--fw-semibold); }
 
 /* What a block reads (M8). */
-.t-src { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 10px; font-size: var(--fs-2xs); color: var(--d100); }
-.t-src-cap { font-weight: var(--fw-medium); letter-spacing: 0.08em; text-transform: uppercase; }
-.t-src-k { padding: 2px 8px; border-radius: 999px; border: 1px solid var(--card-border); }
-.t-src-k.is-new { border-style: dashed; border-color: rgba(var(--accent-rgb), 0.5); color: var(--accent-text); }
+.t-src { margin: 0 0 10px; font-size: var(--fs-xs); color: var(--ink-muted); line-height: var(--lh-snug); }
+.t-src-cap { margin-right: 4px; font-size: var(--fs-2xs); font-weight: var(--fw-medium); letter-spacing: 0.08em; text-transform: uppercase; }
 
 /* Select many, act once (M7). The bar holds while anything is ticked. */
 .t-sel { margin-right: 4px; }

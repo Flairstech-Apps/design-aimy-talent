@@ -2613,9 +2613,11 @@
   }
 
   /* ── WHAT A BLOCK READS (M8) ── the record each part of the briefing
-     needs, and whether that record exists today or is one Talent adds. */
-  const srcNote = (reads) => '<p class="t-src"><span class="t-src-cap">Reads</span>' + reads.map((x) =>
-    '<span class="t-src-k' + (x[1] ? ' is-new' : '') + '"' + (x[1] ? ' title="A record AiMY Talent adds. The dashboard does not have it today."' : '') + '>' + esc(x[0]) + (x[1] ? ' · new' : '') + '</span>').join('') + '</p>';
+     needs, and whether that record exists today or is one Talent adds.
+     Said as a line of text, not chips: it labels the block, and nothing
+     on it is pressed. "New to Talent" is a record the dashboard lacks today. */
+  const srcNote = (reads) => '<p class="t-src"><span class="t-src-cap">Reads</span> ' +
+    esc(reads.map((x) => x[0] + (x[1] ? ' (new to Talent)' : '')).join(', ')) + '</p>';
 
   /* ── SELECT MANY, ACT ONCE (M7) ── a tick on each row, and a bar holding
      the count and the verbs while anything is ticked. One press acts on
