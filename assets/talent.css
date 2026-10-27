@@ -1105,3 +1105,30 @@ body.is-portal .aimy-overlay { display: none !important; }
    the key under the month, so each dot's colour has a word. */
 .t-diary-key { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 10px 0 0; padding: 0 4px; font-size: var(--fs-2xs); color: var(--d100); }
 .t-diary-key > span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ══ THE CONFIRMATION, WITH ROOM TO READ (Engy, 29 Oct) ═════════════════════
+   The library caps the toast at 360px, so a title and its one-sentence
+   detail wrapped into a narrow block of five short lines. Here it may run
+   to 560px (the screen less its margins on a phone), so most confirmations
+   read on one line and their detail on one more. The title leads in bold;
+   the detail sits under it smaller and quieter; the mark aligns to the
+   title rather than floating in the middle; Undo is a real button on the
+   right with its own target. Overridden here, as bdr.css §31b does, never
+   in the library. */
+.aimy-toast {
+  min-width: min(400px, calc(100vw - 32px)); max-width: min(560px, calc(100vw - 32px)); width: max-content;
+  align-items: flex-start; padding: 12px 14px 14px; gap: 12px;
+}
+.aimy-toast-icon { margin-top: 1px; }
+.aimy-toast-body { gap: 3px; min-width: 0; padding-top: 3px; }
+.aimy-toast-title { font-size: var(--fs-sm); line-height: var(--lh-snug); text-wrap: pretty; }
+.aimy-toast-sub { font-size: var(--fs-xs); font-weight: var(--fw-regular, 400); color: var(--ink-muted); line-height: var(--lh-snug); text-wrap: pretty; }
+.aimy-toast-divider { align-self: stretch; height: auto; }
+.aimy-toast-undo {
+  align-self: center; padding: 5px 12px; border-radius: var(--r-pill);
+  border: 1px solid color-mix(in srgb, var(--brand) 40%, transparent);
+  transition: color var(--t-fast), background-color var(--t-fast), transform 160ms var(--ease-out);
+}
+.aimy-toast-undo:hover { background: color-mix(in srgb, var(--brand) 14%, transparent); }
+.aimy-toast-undo:active { transform: scale(0.97); }
+.aimy-toast-undo:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
