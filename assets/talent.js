@@ -368,7 +368,7 @@
   ];
   function readCall(text) {
     const t = String(text || '');
-    const out = { outcome: null, notice: null, salary: null, when: null };
+    const out = { outcome: null, notice: null, salary: null, when: null, win: null };
     for (let i = 0; i < READ.length; i++) if (READ[i][1].test(t)) { out.outcome = READ[i][0]; break; }
     const n = /\b(one|two|three|1|2|3) months?'?s? notice|\b(start (right away|immediately|next week))/i.exec(t);
     const WORDS = { 1: 'one', 2: 'two', 3: 'three' };
@@ -376,7 +376,8 @@
     else if (n) out.notice = 'can ' + n[2].toLowerCase();
     const s = /(?:expect(?:ing)?|looking for|asking for)[^0-9]{0,24}([\d,]{5,7})/i.exec(t);
     if (s) out.salary = 'EGP ' + s[1] + ' a month';
-    out.when = /\btomorrow\b/i.test(t) ? 1 : /\bnext week\b/i.test(t) ? 7 : /\b(later today|this evening|tonight|in an hour)\b/i.test(t) ? 0 : null;
+    out.when = /\btomorrow\b/i.test(t) ? 1 : /\bnext week\b/i.test(t) ? 7 : /\b(later today|this (morning|afternoon|evening)|tonight|in an hour|after (six|6))\b/i.test(t) ? 0 : null;
+    out.win = /\bmorning\b/i.test(t) ? 'am' : /\bafternoon\b/i.test(t) ? 'pm' : /\b(evening|tonight|after (six|6))\b/i.test(t) ? 'eve' : null;
     return out;
   }
   /* A stranger's name, read off what they said (Sales's READ_WHO, cut down). */
@@ -839,7 +840,7 @@
       !CLOSED[DB.reqById[c.req].state] && DB.reqById[c.req].state !== 'hold' && pred(c));
     minePeople((c) => c.stage === 'phone').slice(0, 2).forEach((c, i) => {
       T(c, -1, { outcome: 'callback', secs: 40, time: i ? '16:00' : '13:30', note: 'Asked to be called back today after six.' });
-      c.callback = 0; c.fate = c.fate === 'german' ? 'german' : 'pass';
+      c.callback = 0; c.cbWin = 'eve'; c.fate = c.fate === 'german' ? 'german' : 'pass';
     });
     minePeople((c) => c.stage === 'hr' || c.stage === 'tech').slice(0, 2).forEach((c, i) => {
       T(c, 0, { outcome: 'reached', secs: between(r, 90, 200), time: i ? '10:25' : '09:40', note: 'Confirmed the interview time.' });
@@ -1520,7 +1521,8 @@
   const canCall = (c) => !!c && !c.dnc && !c.badNumber && !!c.phone;
   const myCalls = () => DB.calls.filter((t) => t.by === ME).sort((a, b) => callKey(b) - callKey(a));
 
-  /* WHO TO CALL. Callbacks someone asked for come first, then the phone
+  /* WHO TO CALL. Callbacks someone asked for come first (one whose window
+     today has not opened waits at the end), then the phone
      screens that are due, longest waiting first, then the people who
      applied and have not been called yet. Nobody who asked not to be called,
      and nobody whose number did not work. */
@@ -1528,7 +1530,9 @@
     const out = [];
     myOpen().forEach((q) => activeOf(q).forEach((c) => {
       if (!canCall(c)) return;
-      if (c.callback != null && c.callback <= 0) out.push({ c: c, why: 'callback', rank: 0 });
+      /* Asked for a later day: not today's call, whatever their stage. */
+      if (c.callback != null && c.callback > 0) return;
+      if (c.callback != null && c.callback <= 0) out.push({ c: c, why: 'callback', rank: cbLater(c) ? 3 : 0 });
       else if (c.stage === 'phone') out.push({ c: c, why: 'screen', rank: 1 });
       else if (c.stage === 'applied') out.push({ c: c, why: 'applied', rank: 2 });
     }));
@@ -3026,8 +3030,8 @@
       passed: early ? 'Logs the call and moves ' + first(c.name) + ' to the HR interview. What they said about notice and salary goes on their record.'
         : 'Logs the call. ' + first(c.name) + ' is past the screen already, so nothing moves.',
       reached: 'Logs the call. Nothing moves.',
-      callback: 'Logs the call and puts them back in your calls ' + CB_SAY[cbWhen(call)] + '.',
-      noanswer: 'Logs an attempt. They stay in your calls.',
+      callback: 'Logs the call and puts them back in your calls ' + cbSay(cbWhen(call)) + '.',
+      noanswer: 'Logs an attempt' + (call.dir === 'out' && fuOn(call) ? ' and sends ' + first(c.name) + ' the message by ' + fuBy(c) : '') + '. They stay in your calls.',
       notfit: 'Logs the call and takes them out as not a fit. Nothing is sent to them until a person approves the message.',
       withdrew: 'Logs the call and takes them out: they are not interested.',
       wrong: 'Logs the call and marks the number as not working.',
@@ -3053,8 +3057,8 @@
     if (c) {
       const q = reqOf(c);
       const before = { stage: c.stage, since: c.since, exit: c.exit, maxAt: c.maxAt, callback: c.callback, notice: c.notice,
-        salary: c.salary, dnc: c.dnc, badNumber: c.badNumber, fb: c.fb, meet: c.meet, slot: c.slot, told: c.told };
-      const f = { callback: null };
+        salary: c.salary, dnc: c.dnc, badNumber: c.badNumber, fb: c.fb, meet: c.meet, slot: c.slot, told: c.told, cbWin: c.cbWin || null, fuDay: c.fuDay != null ? c.fuDay : null };
+      const f = { callback: null, cbWin: null };
       if (rd.notice) f.notice = rd.notice;
       if (rd.salary) f.salary = rd.salary;
       let moved = null;
@@ -3063,8 +3067,11 @@
         Object.assign(f, { stage: 'hr', since: 0, meet: 2, slot: '11:00', fb: false, maxAt: rank(q, 'hr') > rank(q, c.maxAt) ? 'hr' : c.maxAt });
       }
       call.movedTo = moved;
-      if (o === 'callback') f.callback = cbWhen(call);
-      if (o === 'noanswer') f.callback = c.callback;
+      if (o === 'callback') { const w = cbWhen(call); f.callback = w.day; f.cbWin = w.win; }
+      if (o === 'noanswer') { f.callback = c.callback; f.cbWin = c.cbWin || null; }
+      const fu = o === 'noanswer' && call.dir === 'out' && fuOn(call);
+      if (fu) f.fuDay = 0;
+      call.fuSent = fu;
       /* Not a fit on a call was said on the call, so they have been told. */
       if (o === 'notfit') Object.assign(f, { exit: 'out', since: 0, told: true });
       if (o === 'withdrew') Object.assign(f, { exit: 'withdrew', since: 0 });
@@ -3072,8 +3079,9 @@
       if (o === 'wrong') f.badNumber = true;
       write(c, f);
       addCall(t);
-      said = 'Logged the call with ' + first(c.name) + ' · ' + OUTCOME[o].label + (moved ? ', moved to the HR interview' : '');
-      undo = () => { dropCall(t.id); write(c, before); paint(); };
+      const fe = fu ? note(c, 'msg', 'Sent by ' + fuBy(c) + ' after no answer: “' + fuText(c) + '”') : null;
+      said = 'Logged the call with ' + first(c.name) + ' · ' + OUTCOME[o].label + (moved ? ', moved to the HR interview' : '') + (fu ? ', message sent' : '');
+      undo = () => { dropCall(t.id); write(c, before); if (fe) unmake('events', fe); paint(); };
     } else {
       addCall(t);
       said = 'Logged a call with ' + (call.who || call.phone);
@@ -3085,7 +3093,7 @@
     const ch = CHATS.filter((x) => x.id === call.chat)[0];
     const rt = ch ? ch.turns.filter((x) => x.id === call.turn)[0] : null;
     if (rt) rt.html = 'Logged: <b>' + esc(OUTCOME[o].label.toLowerCase()) + '</b>' + (c ? ' with ' + esc(first(c.name)) : '') + (call.movedTo ? ', moved to the HR interview' : '') + '.';
-    if (sess) { (sess.log = sess.log || []).push({ cand: was, o: o, moved: !!call.movedTo }); coachNote(call); }
+    if (sess) { (sess.log = sess.log || []).push({ cand: was, o: o, moved: !!call.movedTo, fu: !!call.fuSent }); coachNote(call); }
     PENDING = null;
     saveChats();
     paint();
@@ -3118,9 +3126,43 @@
      tomorrow or next week, read from what was said and changed in one
      press. It is when they come back into Calls, never a call placed by
      itself. */
-  const CB_WHEN = [[0, 'Later today'], [1, 'Tomorrow'], [7, 'Next week']];
-  const CB_SAY = { 0: 'later today', 1: 'tomorrow', 7: 'next week' };
-  const cbWhen = (call) => (call.read && call.read.when != null && CB_SAY[call.read.when] ? call.read.when : 1);
+  /* A DAY AND A PART OF IT (Calls, 29 Oct): "tomorrow" was a whole day,
+     and a person who asked for after six was called at ten. A callback is a
+     window they asked for; a part of today that is already over is not
+     offered. */
+  const CB_WIN = { am: ['10:00', '12:00'], pm: ['14:00', '17:00'], eve: ['18:00', '20:00'] };
+  const CB_WHEN = [
+    { k: '0pm', label: 'This afternoon', day: 0, win: 'pm' },
+    { k: '0eve', label: 'This evening', day: 0, win: 'eve' },
+    { k: '1am', label: 'Tomorrow morning', day: 1, win: 'am' },
+    { k: '1pm', label: 'Tomorrow afternoon', day: 1, win: 'pm' },
+    { k: '7', label: 'Next week', day: 7, win: null },
+  ];
+  const hourNow = () => new Date().getHours();
+  const cbOpen = () => CB_WHEN.filter((w) => w.day > 0 || hourNow() < Number(CB_WIN[w.win][1].slice(0, 2)));
+  const winSay = (w) => (w ? CB_WIN[w][0] + '–' + CB_WIN[w][1] : '');
+  /* The window pressed, else the one read off what was said, else the
+     nearest that makes sense. */
+  function cbWhen(call) {
+    const rd = call.read || {}, open = cbOpen();
+    const pressed = open.filter((w) => w.k === call.cb)[0];
+    if (pressed) return pressed;
+    const day = rd.when != null ? rd.when : rd.win ? 0 : 1;
+    const win = rd.win || (day === 0 ? 'eve' : day === 1 ? 'am' : null);
+    return open.filter((w) => w.day === day && w.win === win)[0] || open.filter((w) => w.day === day)[0] || open.filter((w) => w.k === '1am')[0];
+  }
+  const cbSay = (w) => w.label.toLowerCase() + (w.win ? ', ' + winSay(w.win) : '');
+  /* Today's window has not opened yet, so the call waits for it. */
+  const cbLater = (c) => c.callback === 0 && c.cbWin && hourNow() < Number(CB_WIN[c.cbWin][0].slice(0, 2));
+  /* A SHORT MESSAGE AFTER NO ANSWER (Calls, 29 Oct): a missed call alone
+     reads as a stranger; one line naming the role gets more call-backs.
+     Shown before it goes, on by default, and it goes only when the
+     recruiter logs the call: the press is the approval. By WhatsApp where
+     they opted in, by email where not. */
+  const fuText = (c) => 'Hi ' + first(c.name) + ', this is ' + first(me().name) + ' from FlairsTech about the ' + reqOf(c).title + ' role. I tried to call you just now. ' +
+    'When is a good time to talk? ' + (c.wa ? 'You can reply here or call me back on this number.' : 'You can reply to this email.');
+  const fuBy = (c) => (c.wa ? 'WhatsApp' : 'email');
+  const fuOn = (call) => (call.fu != null ? call.fu : DB.byId[call.cand] ? DB.byId[call.cand].fuDay !== 0 : false);
   const narrowCall = () => window.matchMedia('(max-width: 760px)').matches;
   const answerBlock = (title, body, cite) => '<div class="s-ans"><div class="s-ans-title">' + esc(title) + '</div>' +
     '<div class="s-ans-body">' + body + '</div>' + (cite ? '<div class="s-ans-cite"><span>' + esc(cite) + '</span></div>' : '') + '</div>';
@@ -3218,7 +3260,7 @@
     if (rd.notice) rows.push(['Notice', rd.notice, 'neutral']);
     if (rd.salary) rows.push(['Expects', rd.salary, 'neutral']);
     if (moves) rows.push(['Stage', STAGE[c.stage].label + ' → HR interview', 'neutral']);
-    if (o === 'callback') rows.push(['Call back', CB_SAY[cbWhen(call)].replace(/^./, (x) => x.toUpperCase()), 'neutral']);
+    if (o === 'callback') rows.push(['Call back', cbSay(cbWhen(call)).replace(/^./, (x) => x.toUpperCase()), 'neutral']);
     if (!c) rows.push(['Who', call.who || 'Not on file', 'neutral']);
     const nx = call.dir === 'in' ? null : sessNext(call);
     return said +
@@ -3230,8 +3272,12 @@
       '<div class="b-cuts t-log-row" role="group" aria-label="What happened">' + OUTCOMES.map((x) =>
         '<button class="filter-chip' + (o === x.k ? ' active' : '') + '" type="button" data-outcome="' + x.k + '" aria-pressed="' + (o === x.k) + '">' +
           '<span class="t-key" aria-hidden="true">' + OUTCOME[x.k].n + '</span>' + esc(x.label) + '</button>').join('') + '</div>' +
-      (o === 'callback' ? '<div class="b-cuts t-log-row" role="group" aria-label="When to call back">' + CB_WHEN.map((w) =>
-        '<button class="filter-chip' + (cbWhen(call) === w[0] ? ' active' : '') + '" type="button" data-cb="' + w[0] + '" aria-pressed="' + (cbWhen(call) === w[0]) + '">' + esc(w[1]) + '</button>').join('') + '</div>' : '') +
+      (o === 'callback' ? '<div class="b-cuts t-log-row" role="group" aria-label="When to call back">' + cbOpen().map((w) => { const on = cbWhen(call).k === w.k;
+        return '<button class="filter-chip' + (on ? ' active' : '') + '" type="button" data-cb="' + w.k + '" aria-pressed="' + on + '">' + esc(w.label) + (w.win ? '<span class="b-cut-n">' + winSay(w.win) + '</span>' : '') + '</button>'; }).join('') + '</div>' : '') +
+      (o === 'noanswer' && c && call.dir === 'out' ? '<div class="t-fu">' +
+        '<button class="filter-chip' + (fuOn(call) ? ' active' : '') + '" type="button" data-fu aria-pressed="' + fuOn(call) + '">' + (fuOn(call) ? svg('check', 12) : '') + 'Also send them a message</button>' +
+        '<p class="t-fu-say">“' + esc(fuText(c)) + '”</p>' +
+        '<p class="t-fu-how">By ' + fuBy(c) + (c.wa ? ', which they opted in to' : ': no WhatsApp opt-in') + '. It goes when you log the call' + (c.fuDay === 0 ? '; they already had one today' : '') + '.</p></div>' : '') +
       '<p class="t-log-will">' + esc(willSay(call)) + '</p>' +
       '<p class="t-acts">' +
         (!c && call.who ? '<button class="btn btn-ghost btn-sm" type="button" data-add-stranger>Add ' + esc(first(call.who)) + ' as a candidate</button>' : '') +
@@ -3260,6 +3306,8 @@
     if (rd.notice) PENDING.read.notice = rd.notice;
     if (rd.salary) PENDING.read.salary = rd.salary;
     if (rd.when != null) PENDING.read.when = rd.when;
+    if (rd.win) PENDING.read.win = rd.win;
+    if (rd.when != null || rd.win) PENDING.cb = null;
     callTurn({ who: 'you', html: esc(text) });
     readbackSay();
     return true;
@@ -3273,7 +3321,8 @@
     const got = log.filter((x) => x.o !== 'noanswer' && x.o !== 'wrong').length;
     const moved = log.filter((x) => x.moved).length;
     const TONE = { passed: 'ok', reached: 'neutral', callback: 'warn', noanswer: 'neutral', notfit: 'err', withdrew: 'err', wrong: 'err', dnc: 'err' };
-    const body = '<p class="s-callsum-note">' + plural(log.length, 'call') + ' · <b>' + got + '</b> got through' + (sess.skipped.length ? ' · ' + sess.skipped.length + ' skipped' : '') + '.</p>' +
+    const body = '<p class="s-callsum-note">' + plural(log.length, 'call') + ' · <b>' + got + '</b> got through' + (sess.skipped.length ? ' · ' + sess.skipped.length + ' skipped' : '') +
+      (log.some((x) => x.fu) ? ' · ' + log.filter((x) => x.fu).length + ' messaged after no answer' : '') + '.</p>' +
       (log.length ? '<div class="b-cuts">' + Object.keys(by).map((k) => '<span class="tag tag-' + TONE[k] + '">' + by[k] + ' ' + esc(OUTCOME[k].label) + '</span>').join('') + '</div>' : '') +
       '<div class="s-callsum-rows"><div class="s-callsum-row"><span class="s-callsum-mem">What it was worth</span><span class="s-callsum-val">' +
         (moved ? '<b>' + plural(moved, 'person', 'people') + '</b> passed the screen and ' + (moved === 1 ? 'is' : 'are') + ' booked for the HR interview.'
@@ -4019,6 +4068,24 @@
     }, i);
   }
 
+  /* WHAT TO GET, said on the row before the call (Calls, 29 Oct): the
+     brief says it too, but only once the call is open. The screen's two
+     facts not on file yet, then the must-haves the CV is silent on. */
+  function getLine(c) {
+    const q = reqOf(c);
+    if (rank(q, c.stage) > rank(q, 'phone')) return 'A follow-up: nothing on this call moves their stage.';
+    const want = [c.notice ? null : 'their notice', c.salary ? null : 'the salary they expect'].filter(Boolean);
+    const silent = q.must.filter((m, i) => c.ev[i] === 'n');
+    const facts = want.length ? want.join(' and ').replace(/^./, (x) => x.toUpperCase()) + '.' : 'Their notice and salary are on file.';
+    /* The must-have is quoted whole: some carry a comma of their own. */
+    return facts + (silent.length ? ' Ask about “' + silent[0] + '”' + (silent.length > 1 ? ', and ' + (silent.length - 1) + ' more the CV is silent on.' : '; the CV is silent on it.') : '');
+  }
+  /* THE RUN'S SIZE: how many it calls, and about how long that takes, said
+     before it starts. A screen takes about ten minutes and a call nobody
+     answers about one; about six in ten pick up. */
+  const RUN_N = [5, 10, 0];
+  const runN = (n) => { const k = UI.runN != null ? UI.runN : 10; return k && k < n ? k : n; };
+  const runMins = (n) => Math.max(5, Math.round(n * (0.6 * 10 + 0.4) / 5) * 5);
   /* ── CALLS ── who to call, who called and got nobody, and every call. */
   function callsPage() {
     const list = toCall(), miss = missed(), log = myCalls();
@@ -4034,11 +4101,18 @@
         ? aimyBlock({ text: '<b>' + plural(list.length, 'person', 'people') + '</b> to call: ' +
             [counts.callback ? counts.callback + ' asked for a callback' : null, counts.screen ? counts.screen + ' due a phone screen' : null,
               counts.applied ? counts.applied + ' applied and not called yet' : null].filter(Boolean).join(', ') + '. Callbacks first.' }, true) +
-          '<div class="b-acts"><button class="s-insight-lnk primary" type="button" data-call-all>' + svg('phone', 14) + 'Call them in order</button></div>' +
+          '<div class="b-acts t-run">' +
+            (list.length > RUN_N[0] ? '<span class="t-runsize" role="group" aria-label="How many to call"><span class="t-rpt-lab">How many</span>' + RUN_N.filter((k) => k < list.length).map((k) => {
+              const on = runN(list.length) === (k || list.length);
+              return '<button class="s-view' + (on ? ' is-on' : '') + '" type="button" data-runn="' + k + '" aria-pressed="' + on + '">' + (k ? 'The first ' + k : 'All ' + list.length) + '</button>'; }).join('') + '</span>' : '') +
+            '<button class="s-insight-lnk primary" type="button" data-call-all>' + svg('phone', 14) + (runN(list.length) < list.length ? 'Call the first ' + runN(list.length) + ' in order' : 'Call ' + (list.length === 1 ? 'them' : 'all ' + list.length + ' in order')) + '</button>' +
+            '<span class="t-run-say">About ' + runMins(runN(list.length)) + ' minutes, if about six in ten pick up. You press Call for each one.</span>' +
+          '</div>' +
           '<div class="b-log">' + list.map((x, i) => logRow({
             tone: '', ico: svg('phone'), who: x.c.name,
-            meta: logMeta([WHY[x.why], x.c.phone, reqOf(x.c).title + ', ' + accOf(reqOf(x.c)).name]),
-            say: lastCall(x.c) ? esc(callSay(lastCall(x.c))) : 'Not called yet. ' + evSay(x.c) + '.',
+            meta: logMeta([x.why === 'callback' && x.c.cbWin ? (cbLater(x.c) ? 'call back from ' + CB_WIN[x.c.cbWin][0] : 'call back ' + winSay(x.c.cbWin)) : WHY[x.why], x.c.phone, reqOf(x.c).title + ', ' + accOf(reqOf(x.c)).name]),
+            say: '<b>Get:</b> ' + esc(getLine(x.c)) + ' ' + (lastCall(x.c) ? esc(callSay(lastCall(x.c))) : 'Not called yet.') +
+              (x.c.fuDay != null ? ' Messaged by ' + fuBy(x.c) + ' ' + esc(sayWhen(x.c.fuDay)) + '.' : ''),
             aimy: true, act: 'data-call="' + x.c.id + '"', go: 'Call', goIco: svg('phone', 14),
           }, i)).join('') + '</div>'
         : '<p class="b-vfoot">Nobody is waiting for a call from you.</p>';
@@ -4115,7 +4189,7 @@
         '<div class="b-cmeta">' +
           part('Now', p(esc(c.at)) + p(esc(plural(c.years, 'year')) + ' of experience')) +
           (isClient() ? '' : part('Reach them', p('<b>' + esc(c.phone || 'No phone yet') + '</b>') + p(esc(c.email || '')) +
-            p(esc(c.dnc ? 'Asked not to be called again.' : c.badNumber ? 'This number did not work.' : c.callback != null && c.callback <= 0 ? 'Asked to be called back today.' : plural(calls.length, 'call') + ' so far.')))) +
+            p(esc(c.dnc ? 'Asked not to be called again.' : c.badNumber ? 'This number did not work.' : c.callback != null && c.callback <= 0 ? 'Asked to be called back today' + (c.cbWin ? ', ' + winSay(c.cbWin) : '') + '.' : plural(calls.length, 'call') + ' so far.')))) +
           part('Languages and skills', p(esc(c.langs.join(', '))) + p(esc((c.skills || []).join(', ')))) +
           (isClient() ? '' : part('Said on calls', c.notice || c.salary ? (c.notice ? p(esc(c.notice.charAt(0).toUpperCase() + c.notice.slice(1))) : '') +
             (c.salary ? p('Expects ' + esc(c.salary)) : '') : '<p class="b-cmeta-p b-draft-none">Nothing yet. The phone screen asks.</p>')) +
@@ -4338,8 +4412,8 @@
      entry a .crit row led by its icon, who and when in the .sub line. */
   function historyBlock(c) {
     const h = historyOf(c);
-    const ICO = { apply: 'user', call: 'phone', asmt: 'goal', iv: 'users', offer: 'job', move: 'go', out: 'go', note: 'req' };
-    const TONE = { apply: 'brand', call: 'brand', asmt: 'acc', iv: 'acc', offer: 'ok', move: 'ok', out: 'err', note: 'mute' };
+    const ICO = { apply: 'user', call: 'phone', asmt: 'goal', iv: 'users', offer: 'job', move: 'go', out: 'go', note: 'req', msg: 'msg' };
+    const TONE = { apply: 'brand', call: 'brand', asmt: 'acc', iv: 'acc', offer: 'ok', move: 'ok', out: 'err', note: 'mute', msg: 'brand' };
     let day = null;
     const sug = c.histSug ? DB.events.filter((e) => e.id === c.histSug)[0] : null;
     return rcard({ cap: 'Candidates and history', ico: 'hist', label: 'History',
@@ -6879,7 +6953,7 @@
     const d = decisions();
     if (k === 'decide' && d[0]) return go({ req: d[0].req, q: d[0].stage });
     if (k === 'send') { const c = d.filter((x) => x.stage === 'tech' && reqOf(x).tpl !== 'internal')[0]; return c ? go({ req: c.req, q: 'tech' }) : go({ on: 'reqs', q: 'mine' }); }
-    if (k === 'screen') { const l = toCall(); return l.length ? callAll(l.map((x) => x.c.id)) : go({ on: 'calls' }); }
+    if (k === 'screen') { const l = toCall(); return l.length ? callAll(l.slice(0, runN(l.length)).map((x) => x.c.id)) : go({ on: 'calls' }); }
     if (k === 'risk') return go({ on: 'reqs', q: 'risk' });
     if (k === 'find') return findChat(null, '');
     go({});
@@ -7215,7 +7289,7 @@
     }
     /* ── The call ── */
     if ((el = at('[data-call]'))) { startCall(el.getAttribute('data-call')); return; }
-    if ((el = at('[data-call-all]'))) { callAll(toCall().map((x) => x.c.id)); return; }
+    if ((el = at('[data-call-all]'))) { const l = toCall(); callAll(l.slice(0, runN(l.length)).map((x) => x.c.id)); return; }
     if ((el = at('[data-callgo]'))) { callGo(); return; }
     if ((el = at('[data-call-end]'))) { endCall(); return; }
     if ((el = at('[data-call-close]'))) { dismissCall(); return; }
@@ -7250,7 +7324,9 @@
     if ((el = at('[data-more]'))) { const k = val('data-more'); TODAY_MORE[k] = !TODAY_MORE[k]; paint(); return; }
     if ((el = at('[data-ask-date]'))) { askMove(DB.reqById[val('data-ask-date')]); return; }
     if ((el = at('[data-prep]'))) { prepMe(DB.byId[val('data-prep')]); return; }
-    if ((el = at('[data-cb]'))) { if (PENDING) { PENDING.read = PENDING.read || {}; PENDING.read.when = Number(val('data-cb')); paintThread(); } return; }
+    if ((el = at('[data-cb]'))) { if (PENDING) { PENDING.cb = val('data-cb'); paintThread(); } return; }
+    if ((el = at('[data-fu]'))) { if (PENDING) { PENDING.fu = !fuOn(PENDING); paintThread(); } return; }
+    if ((el = at('[data-runn]'))) { UI.runN = Number(val('data-runn')); saveUI(); paint(); return; }
     if ((el = at('[data-coach]'))) { coachAnswer(val('data-coach')); return; }
     if ((el = at('[data-coachset]'))) { COACH_FORCE = val('data-coachset'); coachRescript(); paintProto(); return; }
     /* On a phone the panel covers the conversation: it folds to its strip. */

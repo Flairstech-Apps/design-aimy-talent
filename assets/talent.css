@@ -931,3 +931,16 @@ body.is-portal .aimy-overlay { display: none !important; }
   .t-cview { margin-left: 0; }
   .t-rq-btn { max-width: 100%; }
 }
+
+/* ══ CALLS: THE RUN'S SIZE, AND A MESSAGE AFTER NO ANSWER ═════════════════
+   The run's size as Sales's view chips beside the one button, with how long
+   it takes said under it. The message after no answer is shown as it will
+   read, quoted, with how it goes (talent.js callsPage, readbackHtml). */
+.t-run { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.t-runsize { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.t-runsize .t-rpt-lab { min-width: 0; }
+.t-run-say { flex: 1 1 100%; font-size: var(--fs-xs); color: var(--ink-muted); }
+.t-fu { margin: 10px 0 0; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: var(--r-lg); }
+.t-fu .filter-chip { display: inline-flex; align-items: center; gap: 6px; }
+.t-fu-say { margin: 8px 0 4px; font-size: var(--fs-sm); color: var(--d50); line-height: var(--lh-snug); }
+.t-fu-how { margin: 0; font-size: var(--fs-xs); color: var(--ink-muted); }
