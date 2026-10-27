@@ -157,6 +157,10 @@
     info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
     arrow: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
     ring: '<circle cx="12" cy="12" r="10" stroke-dasharray="3 3"/>',
+    badge: '<path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/>',
+    mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+    globe: '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+    ban: '<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
   };
   const svg = (k, px) => '<svg viewBox="0 0 24 24"' + (px ? ' width="' + px + '" height="' + px + '"' : '') +
     ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -1866,6 +1870,7 @@
         (cut === 'untold' && owed.length ? msgPreview(DB.byId[Object.keys(SEL.tell)[0]] || owed[0]) +
           (selN('tell') ? batchBar('tell', '<button class="s-insight-lnk primary" type="button" data-tell-sel>Send the answer to ' + plural(selN('tell'), 'person', 'people') + '</button>')
             : '<p class="t-acts"><button class="b-ghost" type="button" data-sel-all="tell">Select all ' + owed.length + '</button></p>') : '') +
+        (cut === 'new' && list.length ? trustCard(list.filter((c) => /^Found on/.test(c.source) && !c.contactOk)) : '') +
         (cut === 'new' && list.length ? (selN('sourced') ? batchBar('sourced', '<button class="s-insight-lnk primary" type="button" data-contact-sel>Approve first contact for ' + plural(selN('sourced'), 'person', 'people') + '</button>')
             : '<p class="t-acts"><button class="b-ghost" type="button" data-sel-all="sourced">Select all ' + list.length + '</button></p>') : '') +
         (list.length ? '<div class="b-grid">' + list.slice(from, to).map((c, i) => '<div class="b-slot" style="--i:' + i + '">' + candCard(c, i) + '</div>').join('') + '</div>' +
@@ -2136,35 +2141,43 @@
     : '<button class="' + (cls || 'b-ghost') + '" type="button" data-out="' + c.id + '|' + k + '">' + esc(EXIT[k].label) + '</button>';
   const passOpen = (c) => !!PASSING && PASSING.id === c.id;
 
-  /* ══ THE RESEARCH MOCKUPS (30 Research/UI) ════════════════════════════════
-     The nine component cards drawn for the research, built as drawn: a caps
-     label with its icon above a rounded card; inside, a title "Thing ·
-     Person" with a muted line and one status pill; caps for each part; rows
-     led by an icon with the evidence quoted under a rule; AiMY's purple box;
-     an amber warning; lock and shield footnotes. The styles are talent.css
-     §THE RESEARCH MOCKUPS. */
-  /* Class names written out whole, so the audit can see each one used. */
-  const MC_TONE = { ok: 'mc-t-ok', warn: 'mc-t-warn', err: 'mc-t-err', accent: 'mc-t-accent', dashed: 'mc-t-dashed', line: 'mc-t-line', neutral: '' };
-  const MC_ICO = { ok: 'mc-i-ok', warn: 'mc-i-warn', err: 'mc-i-err', accent: 'mc-i-accent', muted: 'mc-i-muted' };
-  const MC_DOT = { ok: 'mc-d-ok', err: 'mc-d-err', wait: 'mc-d-wait' };
-  const MC_GRP = { Screen: 'mc-g-screen', Assess: 'mc-g-assess', Interview: 'mc-g-interview', Client: 'mc-g-client', Offer: 'mc-g-offer', Hired: 'mc-g-hired' };
-  const mcPill = (text, tone, ico) => '<span class="mc-pill ' + (MC_TONE[tone] || '') + '">' + (ico ? svg(ico, 15) : '') + '<span>' + esc(text) + '</span></span>';
-  const mcBtn = (label, attr, primary, ico) => '<button class="mc-btn' + (primary ? ' is-primary' : '') + '" type="button" ' + attr + '>' + (ico ? svg(ico, 16) : '') + '<span>' + esc(label) + '</span></button>';
-  const mcHead = (title, sub, right) => '<div class="mc-head"><div class="mc-head-t"><h2 class="mc-title">' + title + '</h2>' + (sub ? '<p class="mc-sub">' + sub + '</p>' : '') + '</div>' +
-    (right ? '<div class="mc-head-r">' + right + '</div>' : '') + '</div>';
-  const mcSec = (t, right) => '<p class="mc-sec"><span>' + esc(t) + '</span>' + (right ? '<span>' + esc(right) + '</span>' : '') + '</p>';
-  const mcAimy = (text, src, acts) => '<div class="mc-aimy">' + mark(22) + '<div class="mc-aimy-main"><p class="mc-aimy-t">' + text + '</p>' +
-    (src ? '<p class="mc-aimy-src">' + src + '</p>' : '') + (acts ? '<div class="mc-acts">' + acts + '</div>' : '') + '</div></div>';
-  const mcWarn = (html, acts) => '<div class="mc-warn">' + svg('tri', 20) + '<div class="mc-warn-main"><p>' + html + '</p>' + (acts ? '<div class="mc-acts">' + acts + '</div>' : '') + '</div></div>';
-  const mcNote = (ico, html) => '<p class="mc-note">' + svg(ico, 18) + '<span>' + html + '</span></p>';
-  const mcRow = (ico, tone, label, body, right) => '<div class="mc-row"><span class="mc-row-ico ' + (MC_ICO[tone] || '') + '">' + svg(ico, 24) + '</span>' +
-    '<div class="mc-row-main"><p class="mc-row-label">' + label + '</p>' + (body || '') + '</div>' + (right ? '<div class="mc-row-r">' + right + '</div>' : '') + '</div>';
-  const mcQuote = (html) => '<p class="mc-quote">' + html + '</p>';
-  const mcFoot = (left, right) => '<div class="mc-foot"><span>' + left + '</span>' + (right ? '<span>' + right + '</span>' : '') + '</div>';
-  function mcard(o) {
-    return '<section class="mc s-block-wide' + (o.cls ? ' ' + o.cls : '') + '" aria-label="' + esc(o.label || o.cap) + '">' +
-      (o.cap ? '<p class="mc-cap">' + svg(o.ico, 18) + '<span>' + esc(o.cap) + '</span></p>' : '') +
-      (o.cards || ['<div class="mc-card">' + o.body + '</div>']).join('') + '</section>';
+  /* ══ THE RESEARCH COMPONENTS (30 Research/UI/source/components.html) ═════
+     The eleven component cards drawn for the research, built from that
+     file's own markup and class names, as is: an .eyebrow (a caps label
+     with its icon) over a .card; inside, .row.between with an h3 "Thing ·
+     Person", a .sub line and one .chip; .crit rows led by an .ico, the
+     evidence in a .quote; AiMY's violet .aimy box with its .prov line;
+     .note footnotes with a lock or a shield. The styles are that file's
+     stylesheet, scoped under .rc in talent.css §THE RESEARCH COMPONENTS.
+     Here they are wired to the real records and handlers. */
+  /* Class lists written out whole, so the audit can see each one used. */
+  const RC_CHIP = { ok: 'chip ok', warn: 'chip warn', err: 'chip err', acc: 'chip acc', dash: 'chip dash', on: 'chip on' };
+  const RC_ICO = { ok: 'ico ok', warn: 'ico warn', err: 'ico err', acc: 'ico acc', mute: 'ico mute', brand: 'ico brand' };
+  const RC_BTN = { primary: 'btn primary', small: 'btn small', psmall: 'btn primary small', quiet: 'btn small quiet' };
+  const RC_EV = { ok: 'ev done', err: 'ev bad', wait: 'ev' };
+  const RC_GRP = { Screen: 'grp g1', Assess: 'grp g2', Interview: 'grp g3', Client: 'grp g4', Offer: 'grp g5', Hired: 'grp g6' };
+  const rcChip = (text, tone, ico) => '<span class="' + (RC_CHIP[tone] || 'chip') + '">' + (ico ? svg(ico, 12) + ' ' : '') + esc(text) + '</span>';
+  const rcBtn = (label, attr, kind, ico) => '<button class="' + (RC_BTN[kind] || 'btn') + '" type="button" ' + attr + '>' + (ico ? svg(ico, 13) + ' ' : '') + esc(label) + '</button>';
+  const rcHead = (title, sub, right) => '<div class="row between"><div><h3>' + title + '</h3>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>' + (right || '') + '</div>';
+  const rcCaps = (t) => '<span class="sub caps">' + esc(t) + '</span>';
+  const rcMark = () => mark(18).replace('<svg ', '<svg class="mark" ');
+  const rcAimy = (text, prov, acts, top) => '<div class="aimy"' + (top ? '' : ' style="margin-top:14px"') + '>' + rcMark() + '<div>' + text +
+    (prov ? '<div class="prov">' + prov + '</div>' : '') + (acts ? '<div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">' + acts + '</div>' : '') + '</div></div>';
+  const rcWarn = (html, acts) => '<div class="warnbox" style="margin-top:10px">' + svg('tri', 14) + '<div>' + html +
+    (acts ? '<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap">' + acts + '</div>' : '') + '</div></div>';
+  const rcNote = (ico, html) => '<div class="note">' + svg(ico, 14) + '<span>' + html + '</span></div>';
+  const rcCrit = (ico, tone, label, body, right) => '<div class="crit"><span class="' + (RC_ICO[tone] || 'ico mute') + '">' + svg(ico, 18) + '</span>' +
+    '<div><b>' + label + '</b>' + (body || '') + '</div>' + (right || '<span></span>') + '</div>';
+  const rcGate = (ico, tone, label, say, right) => '<div class="gate"><span class="' + (RC_ICO[tone] || 'ico mute') + '">' + svg(ico, 18) + '</span>' +
+    '<div><b>' + label + '</b><div class="sub">' + say + '</div></div>' + right + '</div>';
+  const rcQuote = (html) => '<div class="quote">' + html + '</div>';
+  const rcSay = (html) => '<div class="sub" style="margin-top:3px">' + html + '</div>';
+  const rcFoot = (left, right) => '<div class="foot"><span>' + left + '</span>' + (right ? '<span>' + right + '</span>' : '') + '</div>';
+  const initials = (name) => name.split(' ').map((w) => w[0]).join('').slice(0, 2);
+  function rcard(o) {
+    return '<section class="rc s-block-wide" aria-label="' + esc(o.label || o.cap) + '">' +
+      (o.amber ? '<div class="eyebrow amber">' : '<div class="eyebrow">') + svg(o.ico, 14) + ' ' + esc(o.cap) + '</div>' +
+      (o.cards || ['<div class="card">' + o.body + '</div>']).join('') + '</section>';
   }
   const shortAcc = (a) => a.name.split(' ')[0];
   /* What the CV says on one must-have, as a line to quote: the skill or
@@ -2179,17 +2192,21 @@
     return c.at;
   }
 
-  /* ── THE REASON PICKER (P1) ── one reason from a fixed list, as pills; a
-     pressed reason is the pass, with Undo. Other takes one line. */
-  function passPicker(c) {
+  /* ── THE REASON PICKER (P1) ── one reason from a fixed list, as the
+     sendout's .reasons chips; a pressed reason is the pass, with Undo.
+     Other takes one line. Outside a component card it brings its own .rc. */
+  function passPicker(c, inCard) {
     const other = PASSING.other;
-    return '<div class="mc-why" role="group" aria-label="Why ' + esc(isClient() ? 'you pass on ' : 'the client passed on ') + esc(c.name) + '">' +
-      mcSec(isClient() ? 'Why · pick one' : 'Why · the client picks one') +
-      '<div class="mc-picks">' + DECLINE.map((d) => '<button class="mc-pick' + (other && d.k === 'other' ? ' is-on' : '') + '" type="button" data-pass-why="' + c.id + '|' + d.k + '">' + esc(d.label) + '</button>').join('') + '</div>' +
+    const body = '<div style="margin-top:12px" role="group" aria-label="Why ' + esc(isClient() ? 'you pass on ' : 'the client passed on ') + esc(c.name) + '">' +
+      rcCaps(isClient() ? 'Why · pick one' : 'Why · the client picks one') +
+      '<div class="reasons">' + DECLINE.map((d) => other && d.k === 'other'
+        ? '<button class="chip on" type="button" data-pass-why="' + c.id + '|' + d.k + '">' + svg('check', 12) + ' ' + esc(d.label) + '</button>'
+        : '<button class="chip" type="button" data-pass-why="' + c.id + '|' + d.k + '">' + esc(d.label) + '</button>').join('') + '</div>' +
       (other ? '<div class="t-addnote t-input-wrap" id="wrapPass"><input class="dial-input t-input" id="passNote" type="text" autocomplete="off" placeholder="One line on why" aria-label="Why, in one line" value="' + esc(PASSING.line || '') + '">' +
-        '<button class="mc-btn is-primary" type="button" data-pass-other="' + c.id + '"><span>Pass</span></button></div>' : '') +
-      '<p class="mc-why-foot">Reason codes · not free text · feeds matching for ' + esc(accOf(reqOf(c)).name) + ' only. <button class="t-inline-link" type="button" data-pass-cancel>Keep ' + esc(first(c.name)) + ' in</button></p>' +
+        rcBtn('Pass', 'data-pass-other="' + c.id + '"', 'primary') + '</div>' : '') +
+      rcNote('info', 'Reason codes · not free text · feeds matching for ' + esc(accOf(reqOf(c)).name) + ' only. ' + rcBtn('Keep ' + first(c.name) + ' in', 'data-pass-cancel', 'quiet')) +
     '</div>';
+    return inCard ? body : '<div class="rc rc-pick">' + body + '</div>';
   }
 
   /* ── 1. THE SENDOUT, WITH THE CLIENT'S REASON (client-sendout-reason-codes) ── */
@@ -2198,26 +2215,27 @@
     const q = reqOf(c), a = accOf(q);
     const passed = c.exit === 'clientno', met = !passed && c.decideDay != null;
     const who = a.id === 'northwind' ? DESKS.jana.name : 'their hiring team';
-    const pill = passed ? mcPill(isClient() ? 'You declined' : 'Client declined', 'err') : met ? mcPill('Wants to meet', 'ok')
-      : c.openDay != null ? mcPill('Opened, no decision', 'warn') : mcPill('Not opened yet', 'neutral');
-    const step = (tone, head, rest) => '<li class="mc-tl-step ' + MC_DOT[tone] + '"><span class="mc-tl-dot" aria-hidden="true"></span><p><b>' + head + '</b>' + (rest ? ' · ' + rest : '') + '</p></li>';
+    const pill = passed ? rcChip(isClient() ? 'You declined' : 'Client declined', 'err') : met ? rcChip('Wants to meet', 'ok')
+      : c.openDay != null ? rcChip('Opened, no decision', 'warn') : rcChip('Not opened yet');
+    const ev = (tone, head, rest) => '<div class="' + RC_EV[tone] + '"><b>' + head + '</b>' + (rest ? ' <span class="sub">· ' + rest + '</span>' : '') + '</div>';
     const sentSay = isClient() ? 'by ' + esc(DESKS.omar.name) + ', FlairsTech' : (c.sentDay - q.opened) + ' days after the request opened · write-up approved by the recruiter';
-    const pick = passed && c.decline ? '<div class="mc-why">' + mcSec(isClient() ? 'Why · you picked one' : 'Why · the client picks one') +
-      '<div class="mc-picks">' + DECLINE.map((d) => '<span class="mc-pick' + (d.k === c.decline.why ? ' is-on is-err' : '') + '">' + (d.k === c.decline.why ? svg('check', 15) : '') + esc(d.label) + '</span>').join('') + '</div></div>' : '';
+    const pick = passed && c.decline ? '<div style="margin-top:12px">' + rcCaps(isClient() ? 'Why · you picked one' : 'Why · the client picks one') +
+      '<div class="reasons">' + DECLINE.map((d) => d.k === c.decline.why ? '<span class="chip on">' + svg('check', 12) + ' ' + esc(d.label) + '</span>' : '<span class="chip">' + esc(d.label) + '</span>').join('') + '</div></div>' : '';
     const n = passed && c.decline ? accDeclines(a.id, MONTH).filter((x) => x.decline.why === c.decline.why).length : 0;
-    return mcard({ cap: isClient() ? 'Your desk · The profile we sent' : 'Client desk · The sendout', ico: 'send', label: 'The sendout',
-      body: mcHead('Profile sent · ' + esc(c.name), 'to ' + esc(a.name) + ' · ' + esc(q.title), pill) +
-        '<ol class="mc-tl">' +
-          step('ok', 'Sent ' + esc(sayDay(c.sentDay)), sentSay) +
-          (c.openDay != null ? step('ok', 'Opened by the client ' + esc(sayDay(c.openDay)), esc(who)) : step('wait', 'Not opened yet', 'sent ' + esc(sayWhen(c.sentDay)))) +
-          (passed ? step('err', 'Declined ' + esc(sayDay(c.decideDay != null ? c.decideDay : 0)), c.decline && c.decline.note ? '“' + esc(c.decline.note) + '”' : esc(lower(DECLINE_K[c.decline ? c.decline.why : 'other'].label)))
-            : met ? step('ok', 'Wants to meet · ' + esc(sayDay(c.decideDay)), 'the client interview is next')
-            : c.openDay != null ? step('wait', 'Decision', 'waiting ' + days(-c.openDay)) : '') +
-        '</ol>' +
-        (passOpen(c) ? passPicker(c) : pick) +
-        (passed && c.decline ? mcAimy('This is the <b>' + nth(Math.max(1, n)) + '</b> ' + esc(shortAcc(a)) + ' decline this month for ' + esc(DECLINE_K[c.decline.why].say) + '. It now counts in ' + esc(shortAcc(a)) + '’s success profile as a learning signal.',
+    return rcard({ cap: isClient() ? 'Your desk · the profile we sent' : 'Client desk · the sendout', ico: 'send', label: 'The sendout',
+      body: rcHead('Profile sent · ' + esc(c.name), 'to ' + esc(a.name) + ' · ' + esc(q.title), pill) +
+        '<div class="tl">' +
+          ev('ok', 'Sent ' + esc(sayDay(c.sentDay)), sentSay) +
+          (c.openDay != null ? ev('ok', 'Opened by the client ' + esc(sayDay(c.openDay)), esc(who)) : ev('wait', 'Not opened yet', 'sent ' + esc(sayWhen(c.sentDay)))) +
+          (passed ? ev('err', 'Declined ' + esc(sayDay(c.decideDay != null ? c.decideDay : 0)), c.decline && c.decline.note ? '“' + esc(c.decline.note) + '”' : esc(lower(DECLINE_K[c.decline ? c.decline.why : 'other'].label)))
+            : met ? ev('ok', 'Wants to meet · ' + esc(sayDay(c.decideDay)), 'the client interview is next')
+            : c.openDay != null ? ev('wait', 'Decision', 'waiting ' + days(-c.openDay)) : '') +
+        '</div>' +
+        (passOpen(c) ? passPicker(c, true) : pick) +
+        (passed && c.decline ? rcAimy('This is the ' + nth(Math.max(1, n)) + ' ' + esc(shortAcc(a)) + ' decline this month for ' + esc(DECLINE_K[c.decline.why].say) + '. It now counts in ' + esc(shortAcc(a)) + '’s success profile as a learning signal.',
           'Reason codes · not free text · feeds matching for this account only') : '') +
-        (isClient() && !c.exit && c.stage === 'sent' && !passOpen(c) ? '<div class="mc-acts">' + mcBtn('Invite to interview', 'data-move="' + c.id + '|client"', true, 'cal') + mcBtn('Decline with a reason', 'data-pass-open="' + c.id + '"') + '</div>' : '') });
+        (isClient() && !c.exit && c.stage === 'sent' && !passOpen(c) ? '<div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">' +
+          rcBtn('Invite to interview', 'data-move="' + c.id + '|client"', 'primary', 'cal') + rcBtn('Decline with a reason', 'data-pass-open="' + c.id + '"') + '</div>' : '') });
   }
 
   /* ── 3. EVIDENCE PER CRITERION (scoring-evidence-per-criterion) ── the
@@ -2226,20 +2244,20 @@
   function evidenceCard(c) {
     const q = reqOf(c), works = isRec() || isHR();
     const met = c.ev.filter((e) => e === 'm').length, unk = c.ev.filter((e) => e === 'n').length, part = c.ev.filter((e) => e === 'p').length, all = c.ev.length;
-    const lane = met === all ? ['Lane · Strong fit', 'ok'] : met + unk === all ? ['Lane · Fit, to check', 'warn'] : met * 2 >= all ? ['Lane · Partial fit', 'warn'] : ['Lane · Weak fit', 'neutral'];
+    const lane = met === all ? ['Lane · Strong fit', 'ok'] : met + unk === all ? ['Lane · Fit, to check', 'warn'] : met * 2 >= all ? ['Lane · Partial fit', 'warn'] : ['Lane · Weak fit', ''];
     const asks = c.asks || [];
-    return mcard({ cap: 'Scoring and matching', ico: 'listc', label: 'Against the success profile',
-      body: mcHead(esc(c.name), esc(q.title) + ' · ' + esc(accOf(q).name), mcPill(lane[0], lane[1])) +
-        '<div class="mc-score"><div><p class="mc-big">' + met + ' of ' + all + '</p><p class="mc-sub">required criteria met, each quoted</p></div>' +
-          (unk ? mcPill(unk + ' not known yet', 'warn', 'qc') : part ? mcPill(part + ' partly', 'warn') : '') + '</div>' +
-        '<div class="mc-seg" aria-hidden="true">' + c.ev.map((e) => '<span class="' + (e === 'm' ? 'mc-seg-ok' : 'mc-seg-warn') + '"></span>').join('') + '</div>' +
-        '<div class="mc-rows">' + q.must.map((m, i) => {
+    return rcard({ cap: 'Scoring and matching', ico: 'listc', label: 'Against the success profile',
+      body: rcHead(esc(c.name), esc(q.title) + ' · ' + esc(accOf(q).name), rcChip(lane[0], lane[1])) +
+        '<div class="row between" style="margin-top:14px;align-items:flex-end"><div><div class="big">' + met + ' of ' + all + '</div><div class="sub" style="margin-top:4px">required criteria met, each quoted</div></div>' +
+          (unk ? rcChip(unk + ' not known yet', 'warn', 'qc') : part ? rcChip(part + ' partly', 'warn') : '') + '</div>' +
+        '<div class="segs" aria-hidden="true">' + c.ev.map((e) => e === 'm' ? '<i class="ok"></i>' : '<i class="warn"></i>').join('') + '</div>' +
+        '<div style="margin-top:12px">' + q.must.map((m, i) => {
           const e = c.ev[i];
-          if (e === 'n') return mcRow('qc', 'warn', esc(m), '<p class="mc-row-say">The CV is silent here. Not the same as Not met.</p>',
-            works && !c.exit ? (asks.indexOf(i) >= 0 ? mcPill('On the list', 'neutral') : mcBtn('Ask ' + first(c.name), 'data-ask-must="' + c.id + '|' + i + '"', false, 'msg')) : mcPill('Not known', 'dashed'));
-          return mcRow(e === 'm' ? 'okc' : 'warnc', e === 'm' ? 'ok' : 'warn', esc(m), mcQuote('“' + esc(cvSays(c, m)) + '”'), mcPill(EVW[e], e === 'm' ? 'ok' : 'warn'));
+          if (e === 'n') return rcCrit('qc', 'warn', esc(m), rcSay('The CV is silent here. Not the same as Not met.'),
+            works && !c.exit ? (asks.indexOf(i) >= 0 ? rcChip('On the list') : rcBtn('Ask ' + first(c.name), 'data-ask-must="' + c.id + '|' + i + '"', 'small', 'msg')) : rcChip('Not known', 'dash'));
+          return rcCrit(e === 'm' ? 'okc' : 'warnc', e === 'm' ? 'ok' : 'warn', esc(m), rcQuote('“' + esc(cvSays(c, m)) + '”'), rcChip(EVW[e], e === 'm' ? 'ok' : 'warn'));
         }).join('') + '</div>' +
-        mcFoot(svg('hist', 15) + 'Criteria v' + ((q.mustV || 0) + 1) + ' · set by ' + esc(hmOf(q).name) + ', ' + esc(sayDay(q.opened)), works ? 'Overridable · you decide' : 'Read against your success profile') });
+        rcFoot(svg('hist', 12) + ' Criteria v' + ((q.mustV || 0) + 1) + ' · set by ' + esc(hmOf(q).name) + ', ' + esc(sayDay(q.opened)), works ? 'Overridable · you decide' : 'Read against your success profile') });
   }
 
   /* ── 2. WHAT WE VERIFIED (candidate-verified-skills) ── CV says next to
@@ -2250,24 +2268,23 @@
     const asks = c.asks || [];
     const ivN = ivsOf(c).filter((x) => x.status === 'done').length, asN = DB.sends.filter((s) => s.cand === c.id && s.status === 'done').length;
     const last = v.reduce((d, x) => (x.seen[0] && (d == null || x.seen[0].day > d) ? x.seen[0].day : d), null);
-    const STV = { verified: ['Confirmed', 'ok'], differs: ['Differs', 'warn'], partly: ['Partly shown', 'warn'], notshown: ['Not shown', 'neutral'], unproven: ['Not checked', 'dashed'] };
-    return mcard({ cap: 'Candidates and history', ico: 'okc', label: 'What we verified',
-      body: mcHead(esc(c.name) + ' · what we verified', 'Across ' + plural(ivN, 'interview') + ' and ' + plural(asN, 'assessment') + ' · every new requisition starts here',
-          last != null ? mcPill('Last checked ' + sayDay(last), 'accent', 'hist') : mcPill('Nothing checked yet', 'dashed')) +
-        '<div class="mc-vt" role="table" aria-label="What we verified">' +
-          '<div class="mc-vt-h" role="row"><span role="columnheader">Skill or experience</span><span role="columnheader">CV says</span><span role="columnheader">Interview found</span><span role="columnheader"></span><span role="columnheader">Evidence</span></div>' +
+    const STV = { verified: ['Confirmed', 'ok'], differs: ['Differs', 'warn'], partly: ['Partly shown', 'warn'], notshown: ['Not shown', ''], unproven: ['Not checked', 'dash'] };
+    return rcard({ cap: 'Candidates and history', ico: 'badge', label: 'What we verified',
+      body: rcHead(esc(c.name) + ' · what we verified', 'Across ' + plural(ivN, 'interview') + ' and ' + plural(asN, 'assessment') + ' · every new requisition starts here',
+          last != null ? rcChip('Last checked ' + sayDay(last), 'acc', 'hist') : rcChip('Nothing checked yet', 'dash')) +
+        '<table style="margin-top:14px"><tr><th>Skill or experience</th><th>CV says</th><th>Interview found</th><th></th><th>Evidence</th></tr>' +
           v.map((x, i) => {
             const best = x.seen[0], s = STV[x.state];
             const asked = asks.indexOf(i) >= 0;
-            return '<div class="mc-vt-r" role="row"><b role="cell">' + esc(x.must) + '</b>' +
-              '<span role="cell">' + esc(x.cv === 'n' ? 'Silent' : cvSays(c, x.must)) + '</span>' +
-              '<span role="cell">' + (best ? esc(best.note || RATE[best.r]) : 'Not asked yet') + '</span>' +
-              '<span role="cell">' + mcPill(s[0], s[1]) + '</span>' +
-              '<span role="cell" class="mc-vt-ev">' + (best ? svg('play', 18) + '<span>' + esc(STAGE[best.stage].label) + ', ' + esc(sayDay(best.day)) + '</span>'
-                : svg('ring', 18) + '<span>' + (asked ? 'On the list for the next interview' : works && !c.exit ? '<button class="t-inline-link" type="button" data-ask-must="' + c.id + '|' + i + '">Ask in the next interview</button>' : 'Not asked yet') + '</span>') + '</span></div>';
+            return '<tr><td><b>' + esc(x.must) + '</b></td>' +
+              '<td>' + esc(x.cv === 'n' ? 'Silent' : cvSays(c, x.must)) + '</td>' +
+              '<td>' + (best ? esc(best.note || RATE[best.r]) : 'Not asked yet') + '</td>' +
+              '<td>' + rcChip(s[0], s[1]) + '</td>' +
+              '<td class="sub"><span class="row" style="gap:5px">' + (best ? '<span class="ico brand">' + svg('play', 14) + '</span>' + esc(STAGE[best.stage].label) + ', ' + esc(sayDay(best.day))
+                : '<span class="ico brand">' + svg('ring', 14) + '</span>' + (asked ? 'On the list for the next interview' : works && !c.exit ? rcBtn('Ask in the next interview', 'data-ask-must="' + c.id + '|' + i + '"', 'quiet') : 'Not asked yet')) + '</span></td></tr>';
           }).join('') +
-        '</div>' +
-        (isClient() ? '' : mcNote('info', 'AiMY suggests each finding from the transcript; the interviewer confirms it before it lands here. The candidate sees and edits only their own layer: what the CV says.')) });
+        '</table>' +
+        (isClient() ? '' : rcNote('info', 'AiMY suggests each finding from the transcript; the interviewer confirms it before it lands here. The candidate sees and edits only their own layer: what the CV says.')) });
   }
   function passWith(c, why, line) {
     const was = { exit: c.exit, since: c.since, decline: c.decline || null, decideDay: c.decideDay, told: c.told };
@@ -2321,19 +2338,16 @@
     '</section>';
   }
 
-  /* ── AN INSIGHT: ONE SENTENCE, ONE ACTION (Insights layer, R6) ── the
-     finding, the figure it rests on with its definition behind How it is
-     counted (unit, start, stop), and the one thing to do about it. */
   /* ── 5. THE INSIGHTS LAYER (insight-sentence-and-metric) ── one finding
-     in AiMY's box with one action, then each figure it rests on as a card:
+     in AiMY's box with one action, then each figure it rests on as a tile:
      the number, what it is of, and its unit, start and stop spelled out. */
   function insight(o) {
-    return mcard({ cap: 'Insights layer', ico: 'bars', label: o.label, cards: [
-      mcAimy(o.say, o.src, o.act),
-      '<div class="mc-metrics">' + o.metrics.map((m) => '<div class="mc-card mc-metric"><p class="mc-metric-cap">' + esc(m.cap) + '</p>' +
-        '<p class="mc-metric-n"><b>' + esc(m.n) + '</b><span>' + esc(m.of) + '</span></p>' +
-        '<dl class="mc-def">' + m.def.map((d) => '<dt>' + esc(d[0]) + '</dt><dd>' + esc(d[1]) + '</dd>').join('') + '</dl></div>').join('') + '</div>',
-      o.foot ? mcNote('users', o.foot) : ''] });
+    return rcard({ cap: 'Insights layer', ico: 'bars', label: o.label, cards: [
+      rcAimy(o.say, o.src, o.act, true),
+      '<div class="two" style="margin-top:14px">' + o.metrics.map((m) => '<div class="tile"><div class="sub">' + esc(m.cap) + '</div>' +
+        '<div class="row" style="align-items:baseline;gap:8px;margin-top:6px"><span class="big">' + esc(m.n) + '</span><span class="sub">' + esc(m.of) + '</span></div>' +
+        '<div class="def">' + m.def.map((d) => '<span>' + esc(d[0]) + '</span><b>' + esc(d[1]) + '</b>').join('') + '</div></div>').join('') + '</div>',
+      o.foot ? rcNote('users', o.foot) : ''] });
   }
 
   /* ── WHAT A BLOCK READS (M8) ── the record each part of the briefing
@@ -2380,13 +2394,33 @@
      number bought or found does not count. */
   function consentList(c) {
     const web = /^Found on/.test(c.source);
-    const cv = c.source === 'Applied through the link' ? ['ok', 'Given ' + sayWhen(c.applied != null ? c.applied : -3) + ', when they applied']
-      : c.source === 'From the talent pool' ? ['ok', 'Agreed to hear about other roles']
-      : web ? ['warn', c.contactOk ? 'A prospect: first contact approved, no reply yet' : 'A prospect: nothing given yet']
-      : ['ok', 'Given on the first call'];
-    const wa = c.wa ? ['ok', 'Opted in ' + sayWhen(c.waDay != null ? c.waDay : 0) + '. Updates can go there'] : ['neutral', 'No opt-in. Messages go by email'];
-    return '<ul class="t-consent">' + [['CV and details', cv], ['WhatsApp', wa], ['Recording', ['neutral', 'Asked before each recording, on the call']]].map((x) =>
-      '<li class="t-cons"><span class="t-cons-dot' + (x[1][0] === 'ok' ? ' is-ok' : x[1][0] === 'warn' ? ' is-warn' : '') + '" aria-hidden="true"></span><span class="t-cons-k">' + esc(x[0]) + '</span><span class="t-cons-v">' + esc(x[1][1]) + '</span></li>').join('') + '</ul>';
+    const cv = c.source === 'Applied through the link' ? ['ok', 'Given ' + sayWhen(c.applied != null ? c.applied : -3) + ', when they applied', 'Given']
+      : c.source === 'From the talent pool' ? ['ok', 'Agreed to hear about other roles', 'Given']
+      : web ? ['warn', c.contactOk ? 'A prospect: first contact approved, no reply yet' : 'A prospect: nothing given yet', 'Prospect']
+      : ['ok', 'Given on the first call', 'Given'];
+    const wa = c.wa ? ['ok', 'Opted in ' + sayWhen(c.waDay != null ? c.waDay : 0) + '. Updates can go there', 'Allowed'] : ['err', 'No opt-in. Messages go by email', 'Blocked'];
+    const rec = ['ok', 'Notice in the invite, said again on the call; they can opt out', 'Asked'];
+    /* Each permission as a .gate row of the trust card, with its date. */
+    return '<div class="rc rc-flat">' + [['user', 'CV and details', cv], ['msg', 'WhatsApp', wa], ['mic', 'Recording', rec]].map((x, i) =>
+      rcGate(x[0], x[2][0], esc(x[1]), esc(x[2][1]), x[2][0] === 'err' ? rcChip(x[2][2], 'err', 'ban') : x[2][0] === 'warn' ? rcChip(x[2][2], 'dash') : rcChip(x[2][2], 'ok'))).join('') + '</div>';
+  }
+  /* ── 10. TRUST AND LAW (trust-consent-gates) ── where first contact and
+     recording are decided: the law's deadline, what first contact may use
+     and what it never may, and what a recording needs. Shown on the First
+     contact cut and on a prospect's own page. */
+  function trustCard(list, who) {
+    const n = list.length;
+    return rcard({ cap: 'Trust and law', ico: 'shield', amber: true, label: 'Trust and law', cards: [
+      '<div class="errbox">' + svg('tri', 14) + '<span><b>Egypt Law 151/2020:</b> the grace period ends around 1 Nov 2026. Licence, data protection officer and transfer permit are with legal.</span></div>',
+      '<div class="card" style="margin-top:12px"><h4>First contact · ' + esc(who || plural(n, 'web prospect')) + '</h4>' +
+        '<div class="gate" style="border-top:0;margin-top:6px"><span class="ico ok">' + svg('mail', 18) + '</span><div><b>Email with a privacy notice</b><div class="sub">Says where we found them; one click to object and be deleted</div></div>' + rcChip('Allowed', 'ok') + '</div>' +
+        rcGate('msg', 'err', 'WhatsApp', 'Needs their opt-in to FlairsTech first. Bought numbers don’t count', rcChip('Blocked', 'err', 'ban')) +
+        rcGate('globe', 'err', 'Scrape LinkedIn', 'Against LinkedIn’s user agreement', rcChip('Never', 'err', 'ban')) +
+      '</div>',
+      '<div class="card"><h4>Recording an interview</h4>' +
+        '<div class="reasons" style="margin-top:10px">' + ['Notice in the invite', 'Opt-out link', 'Spoken notice on calls', 'No bot after opt-out'].map((t) => rcChip(t, 'ok', 'check')).join('') + rcChip('Retention period set per client') + '</div>' +
+        rcNote('ban', 'No emotion or personality read from face or voice.') +
+      '</div>'] });
   }
   const viaSay = (c) => c.wa ? 'by WhatsApp and email' : 'by email (no WhatsApp opt-in)';
 
@@ -3436,6 +3470,7 @@
           exitBtn(c, outK) +
         '</div>') +
       '</section>' +
+      (works && /^Found on/.test(c.source) && c.stage === 'sourced' && !c.contactOk ? trustCard([c], first(c.name) + ', a web prospect') : '') +
       sendoutCard(c) +
       evidenceCard(c) +
       verifiedCard(c, v) +
@@ -3582,14 +3617,14 @@
     const due = o.joinDay != null ? o.joinDay + day : null;
     const works = isRec() || isHR() || isHM();
     const got = done ? opts.filter((x) => x[0] === done)[0] : null;
-    /* A row of the day-90 card: the icon and pill carry the outcome. */
+    /* A .crit row of the day-90 card: the icon and chip carry the outcome. */
     const good = got && (got[0] === 'well' || got[0] === 'stayed');
-    return mcRow(got ? (good ? 'okc' : 'warnc') : 'ring', got ? (good ? 'ok' : 'warn') : 'muted',
+    return rcCrit(got ? (good ? 'okc' : 'warnc') : 'ring', got ? (good ? 'ok' : 'warn') : 'mute',
       'Day ' + day + (day === 30 ? ' · how it is going' : ' · whether they stayed'),
-      '<p class="mc-row-say">' + (day === 30 ? 'With ' + esc(hmOf(reqOf(c)).name) + ' and with ' + esc(first(c.name)) + ', separately.' : 'And why, if not. Then Employee Self-Service takes over.') +
-        (got ? '' : due != null ? ' Due ' + esc(sayWhen(due)) + '.' : '') + '</p>' +
-        (!got && works && due != null && due <= 0 ? '<div class="mc-picks">' + opts.map((x) => '<button class="mc-pick" type="button" data-checkin="' + c.id + '|' + day + '|' + x[0] + '">' + esc(x[1]) + '</button>').join('') + '</div>' : ''),
-      got ? mcPill(got[0] === 'stayed' ? 'Still here' : got[1], good ? 'ok' : 'warn') : mcPill('Not yet', 'dashed'));
+      rcSay((day === 30 ? 'With ' + esc(hmOf(reqOf(c)).name) + ' and with ' + esc(first(c.name)) + ', separately.' : 'And why, if not. Then Employee Self-Service takes over.') +
+        (got ? '' : due != null ? ' Due ' + esc(sayWhen(due)) + '.' : '')) +
+        (!got && works && due != null && due <= 0 ? '<div class="reasons">' + opts.map((x) => '<button class="chip" type="button" data-checkin="' + c.id + '|' + day + '|' + x[0] + '">' + esc(x[1]) + '</button>').join('') + '</div>' : ''),
+      got ? rcChip(got[0] === 'stayed' ? 'Still here' : got[1], good ? 'ok' : 'warn') : rcChip('Not yet', 'dash'));
   }
   function onboardHtml(c, o) {
     const done = c.onb || [];
@@ -3606,41 +3641,46 @@
   function dayNinety(c, o) {
     const q = reqOf(c), a = accOf(q);
     const got = CHECK90.filter((x) => x[0] === c.d90)[0];
-    const pill = got ? mcPill(got[0] === 'stayed' ? 'Still here' : 'Left', got[0] === 'stayed' ? 'ok' : 'err')
-      : o.joinDay != null && o.joinDay + 90 <= 0 ? mcPill('Day 90 due', 'warn') : mcPill(o.joinDay != null && o.joinDay <= 0 ? 'Before day 90' : 'Not started yet', 'dashed');
+    const pill = got ? rcChip(got[0] === 'stayed' ? 'Still here' : 'Left', got[0] === 'stayed' ? 'ok' : 'err')
+      : o.joinDay != null && o.joinDay + 90 <= 0 ? rcChip('Day 90 due', 'warn') : rcChip(o.joinDay != null && o.joinDay <= 0 ? 'Before day 90' : 'Not started yet', 'dash');
     const n = checkins(), pct = Math.min(100, Math.round(n / GATE * 100));
-    return mcard({ cap: 'Offers and onboarding · Day 90', ico: 'loop', label: 'Day-90 check-in', cards: [
-      '<div class="mc-card">' + mcHead('Day-90 check-in · ' + esc(c.name),
+    return rcard({ cap: 'Offers and onboarding · day 90', ico: 'loop', label: 'Day-90 check-in', cards: [
+      '<div class="card">' + rcHead('Day-90 check-in · ' + esc(c.name),
           (o.joinDay != null ? (o.joinDay <= 0 ? 'Joined ' : 'Joins ') + esc(shortAcc(a)) + ' ' + esc(sayDay(o.joinDay)) + ' · ' : '') + 'asked of ' + esc(hmOf(q).name) + ' and of ' + esc(first(c.name)) + ', separately', pill) +
-        '<div class="mc-rows">' + checkRow(c, o, 30, CHECK30, c.d30) + checkRow(c, o, 90, CHECK90, c.d90) + '</div>' +
-        mcNote('shield', 'Separate from probation. Answers feed learning in aggregate only.') + '</div>',
-      '<div class="mc-card">' + mcHead('Learning Proposal · ' + esc(shortAcc(a)) + ' success profile', 'Weigh what day-90 outcomes show at screening',
-          n >= GATE ? mcPill('Enough data', 'ok') : mcPill('Waiting for data', 'dashed', 'lock')) +
-        '<div class="mc-prog" role="meter" aria-label="Day-90 check-ins recorded" aria-valuemin="0" aria-valuemax="' + GATE + '" aria-valuenow="' + Math.min(n, GATE) + '"><span style="width:' + pct + '%"></span></div>' +
-        '<p class="mc-prog-say"><span>' + n + ' of ' + GATE + ' day-90 check-ins needed before AiMY proposes</span><span>' + pct + '%</span></p></div>'] });
+        '<div style="margin-top:10px">' + checkRow(c, o, 30, CHECK30, c.d30) + checkRow(c, o, 90, CHECK90, c.d90) + '</div>' +
+        rcNote('shield', 'Separate from probation. Answers feed learning in aggregate only.') + '</div>',
+      '<div class="card"><div class="row between"><h4>Learning Proposal · ' + esc(shortAcc(a)) + ' success profile</h4>' +
+          (n >= GATE ? rcChip('Enough data', 'ok') : rcChip('Waiting for data', 'dash', 'lock')) + '</div>' +
+        '<div class="sub" style="margin-top:6px">Weigh what day-90 outcomes show at screening</div>' +
+        '<div class="meter" role="meter" aria-label="Day-90 check-ins recorded" aria-valuemin="0" aria-valuemax="' + GATE + '" aria-valuenow="' + Math.min(n, GATE) + '"><i style="width:' + pct + '%"></i></div>' +
+        '<div class="row between" style="margin-top:6px"><span class="sub">' + n + ' of ' + GATE + ' day-90 check-ins needed before AiMY proposes</span><span class="sub">' + pct + '%</span></div></div>'] });
   }
 
-  /* ── The history, and a line to add to it ── */
+  /* ── The history, and a line to add to it ── in the research cards'
+     language: a .card titled "History · Person", each day a .divider, each
+     entry a .crit row led by its icon, who and when in the .sub line. */
   function historyBlock(c) {
     const h = historyOf(c);
     const ICO = { apply: 'user', call: 'phone', asmt: 'goal', iv: 'users', offer: 'job', move: 'go', out: 'go', note: 'req' };
+    const TONE = { apply: 'brand', call: 'brand', asmt: 'acc', iv: 'acc', offer: 'ok', move: 'ok', out: 'err', note: 'mute' };
     let day = null;
     const sug = c.histSug ? DB.events.filter((e) => e.id === c.histSug)[0] : null;
-    return '<section class="s-block s-block-wide" aria-label="History">' +
-      '<div class="s-camp-list-head"><h2 class="s-block-h">History</h2><span class="s-block-say">everything, newest first</span></div>' +
+    return rcard({ cap: 'Candidates and history', ico: 'hist', label: 'History',
+      body: rcHead('History · ' + esc(c.name), 'Everything, newest first', rcChip(plural(h.length, 'entry', 'entries'))) +
       ((isRec() || isHR() || isHM()) ? '<div class="t-addnote"><input class="dial-input" id="histNote" type="text" autocomplete="off" spellcheck="false" ' +
           'placeholder="Add something that happened, like: interviewed by the client on Teams, they said yes" aria-label="Add to their history">' +
-        '<button class="btn btn-brand btn-sm" type="button" data-hist-add="' + c.id + '">Add</button></div>' : '') +
-      (sug && sug.read && !c.exit ? '<div class="t-sug">' + aimyBlock({ text: 'I read “' + esc(sug.text) + '” as <b>' + (sug.read === 'yes' ? 'they passed' : 'they did not pass') + '</b>.', from: 'your note' }) +
-        '<p class="t-acts">' + (sug.read === 'yes' && nextOf(c) ? '<button class="s-insight-lnk primary" type="button" data-move="' + c.id + '|' + nextOf(c) + '">Move them to ' + esc(lower(STAGE[nextOf(c)].label)) + '</button>'
-          : sug.read === 'no' ? '<button class="s-insight-lnk primary" type="button" data-out="' + c.id + '|out">Mark as not progressing</button>' : '') +
-        '<button class="b-ghost" type="button" data-sug-no="' + c.id + '">Leave it</button></p></div>' : '') +
-      '<div class="b-log">' + h.map((x, i) => {
-        const head = x.day !== day ? '<h3 class="b-month">' + esc(dayLabel(x.day)) + '</h3>' : '';
+        rcBtn('Add', 'data-hist-add="' + c.id + '"', 'primary') + '</div>' : '') +
+      (sug && sug.read && !c.exit ? rcAimy('I read “' + esc(sug.text) + '” as <b>' + (sug.read === 'yes' ? 'they passed' : 'they did not pass') + '</b>.', 'from your note',
+        (sug.read === 'yes' && nextOf(c) ? rcBtn('Move them to ' + lower(STAGE[nextOf(c)].label), 'data-move="' + c.id + '|' + nextOf(c) + '"', 'psmall')
+          : sug.read === 'no' ? rcBtn('Mark as not progressing', 'data-out="' + c.id + '|out"', 'psmall') : '') +
+        rcBtn('Leave it', 'data-sug-no="' + c.id + '"', 'small')) : '') +
+      '<div style="margin-top:4px">' + h.map((x) => {
+        const head = x.day !== day ? '<div class="divider">' + esc(dayLabel(x.day)) + '</div>' : '';
         day = x.day;
-        return head + logRow({ tone: '', ico: svg(ICO[x.kind] || 'req'), who: x.text, meta: logMeta([x.time, x.by && DESKS[x.by] ? DESKS[x.by].name : null]) }, i);
-      }).join('') + '</div>' +
-    '</section>';
+        const meta = [x.time, x.by && DESKS[x.by] ? DESKS[x.by].name : null].filter(Boolean).join(' · ');
+        return head + '<div class="crit" style="border-top:0;padding:8px 0"><span class="' + (RC_ICO[TONE[x.kind]] || 'ico mute') + '">' + svg(ICO[x.kind] || 'req', 18) + '</span>' +
+          '<div><b>' + esc(x.text) + '</b>' + (meta ? rcSay(esc(meta)) : '') + '</div><span></span></div>';
+      }).join('') + '</div>' });
   }
   /* A note says someone passed or did not, in plain words. */
   const readNote = (t) => /\b(not|didn'?t|did not|no)\b.{0,20}\b(pass|proceed|fit|good)|\bsaid no\b|\brejected\b|\bnot a fit\b/i.test(t) ? 'no'
@@ -3875,26 +3915,26 @@
        never came up, then ratings and a call that start empty. */
     const quoted = q.must.map((m, i) => [m, said(i), i]).filter((x) => x[1]);
     return '<div class="t-out">' + outsideHead('Interview debrief', 'For ' + v.by) +
-      mcard({ cap: 'Interviews · The debrief', ico: 'mic', label: 'The debrief', cls: 'mc-out',
-        body: mcHead(esc(STAGE[v.stage].label) + ' · ' + esc(c.name),
+      rcard({ cap: 'Interviews · the debrief', ico: 'mic', label: 'The debrief',
+        body: rcHead(esc(STAGE[v.stage].label) + ' · ' + esc(c.name),
             esc(sayDay(v.day)) + ' · ' + esc(v.slot) + (rec ? ' · ' + rec.mins + ' min · recorded with consent' : ' · not recorded') + ' · ' + esc(q.title) + ', ' + esc(accOf(q).name),
-            rec ? mcPill('Recording', 'line', 'play') : mcBtn(REC_BUSY[v.id] ? 'Transcribing…' : 'Upload the recording', 'data-rec-up="' + v.id + '"', false, 'upload')) +
-          (quoted.length ? mcSec('From the transcript · Check it') + '<div class="mc-rows">' + quoted.map((x) =>
-            mcRow('quote', 'accent', esc(x[0]), mcQuote('“' + esc(x[1]) + '”' + (rec && rec.suggests ? ' · the recording suggests ' + esc(RATE[rec.suggests[x[2]]].toLowerCase()) : '')),
-              '<button class="t-inline-link mc-edit" type="button" data-dr-quote="' + x[2] + '">Edit</button>')).join('') + '</div>' : '') +
-          (missedTopic ? mcWarn('The template asks about <b>' + esc(lower(missedTopic)) + '</b>, and it did not come up. Ask ' + esc(first(c.name)) + ' by message?',
-            DEBRIEF.asked ? '<span class="mc-done">Asked ' + esc(viaSay(c)) + '. The answer lands on their record.</span>' : mcBtn('Ask ' + first(c.name) + ' by message', 'data-gap-ask="' + v.id + '"', false, 'msg'))
-            : gaps.length ? mcWarn('The CV is silent on <b>' + esc(gaps.join('; ')) + '</b>. Ask for an example before you rate it.') : '') +
-          (tpl ? mcSec('The agenda · ' + tpl.title) + '<ol class="mc-agenda">' + tpl.items.map((x) => '<li>' + esc(x) + '</li>').join('') + '</ol>' : '') +
-          '<div class="t-input-wrap" id="wrapDebrief"><div class="t-input">' +
-            mcSec('Each must-have · your rating') + q.must.map((m, i) => '<div class="mc-rate"><p class="mc-row-label">' + esc(m) + '</p>' +
-              '<div class="mc-verdict">' + ['m', 'p', 'n'].map((k) => '<button class="mc-vbtn' + (DEBRIEF.r[i] === k ? ' is-on' : '') + '" type="button" data-dr="' + i + '|' + k + '">' + RATE[k] + '</button>').join('') + '</div>' +
+            rec ? rcChip('Recording', '', 'play') : rcBtn(REC_BUSY[v.id] ? 'Transcribing…' : 'Upload the recording', 'data-rec-up="' + v.id + '"', 'small', 'upload')) +
+          (quoted.length ? '<div style="margin-top:12px">' + rcCaps('From the transcript · check it') + quoted.map((x) =>
+            rcCrit('quote', 'acc', esc(x[0]), rcQuote('“' + esc(x[1]) + '”' + (rec && rec.suggests ? ' · the recording suggests ' + esc(RATE[rec.suggests[x[2]]].toLowerCase()) : '')),
+              rcBtn('Edit', 'data-dr-quote="' + x[2] + '"', 'quiet'))).join('') + '</div>' : '') +
+          (missedTopic ? rcWarn('The template asks about <b>' + esc(lower(missedTopic)) + '</b>, and it did not come up. Ask ' + esc(first(c.name)) + ' by message?',
+            DEBRIEF.asked ? '<span>Asked ' + esc(viaSay(c)) + '. The answer lands on their record.</span>' : rcBtn('Ask ' + first(c.name) + ' by message', 'data-gap-ask="' + v.id + '"', 'small', 'msg'))
+            : gaps.length ? rcWarn('The CV is silent on <b>' + esc(gaps.join('; ')) + '</b>. Ask for an example before you rate it.') : '') +
+          (tpl ? '<div style="margin-top:14px">' + rcCaps('The agenda · ' + tpl.title) + '<ol class="agenda">' + tpl.items.map((x) => '<li>' + esc(x) + '</li>').join('') + '</ol></div>' : '') +
+          '<div class="t-input-wrap" id="wrapDebrief" style="margin-top:14px"><div class="t-input">' +
+            rcCaps('Each must-have · your rating') + q.must.map((m, i) => '<div class="rate"><b>' + esc(m) + '</b>' +
+              '<div class="verdict">' + ['m', 'p', 'n'].map((k) => (DEBRIEF.r[i] === k ? '<button class="on" type="button"' : '<button type="button"') + ' data-dr="' + i + '|' + k + '">' + RATE[k] + '</button>').join('') + '</div>' +
               '<input class="dial-input" type="text" data-drn="' + i + '" value="' + esc(DEBRIEF.n[i] || '') + '" placeholder="One line on what you saw" aria-label="What you saw on ' + esc(m) + '"></div>').join('') +
-            '<h3 class="mc-h3">Your verdict</h3>' +
-            '<div class="mc-verdict mc-verdict-2">' + [['yes', 'Proceed'], ['no', 'Do not proceed']].map((x) => '<button class="mc-vbtn' + (DEBRIEF.v === x[0] ? ' is-on' : '') + '" type="button" data-dv="' + x[0] + '">' + x[1] + '</button>').join('') + '</div>' +
+            '<div style="margin-top:14px"><h4>Your verdict</h4>' +
+            '<div class="verdict">' + [['yes', 'Proceed'], ['no', 'Do not proceed']].map((x) => (DEBRIEF.v === x[0] ? '<button class="on" type="button"' : '<button type="button"') + ' data-dv="' + x[0] + '">' + x[1] + '</button>').join('') + '</div></div>' +
           '</div><p class="t-error-msg">Rate every line, then say proceed or not.</p></div>' +
-          mcNote('lock', 'AiMY never fills this. Other interviewers’ feedback stays hidden until you submit yours.') +
-          '<div class="mc-acts mc-acts-end">' + mcBtn('Submit debrief', 'data-debrief-submit', true) + '</div>' }) +
+          rcNote('lock', 'AiMY never fills this. Other interviewers’ feedback stays hidden until you submit yours.') +
+          '<div class="row" style="justify-content:flex-end;margin-top:8px">' + rcBtn('Submit debrief', 'data-debrief-submit', 'primary') + '</div>' }) +
     '</div>';
   }
   function debriefSubmit() {
@@ -4055,7 +4095,7 @@
     [/excel/i, 'Advanced Excel'], [/reconcil/i, 'Bank reconciliations'], [/process|operation/i, 'Process documentation'],
     [/jira/i, 'Jira'], [/api/i, 'REST APIs'],
   ];
-  let FIND = { q: '', req: null, src: { pool: true, web: true, apollo: true, signal: false }, step: 'ask', i: 0, res: [], done: {} };
+  let FIND = { q: '', req: null, src: { pool: true, web: true, apollo: true, signal: false }, step: 'ask', i: 0, res: [], done: {}, tab: 'pool' };
   function findCriteria() {
     if (FIND.req && DB.reqById[FIND.req]) return DB.reqById[FIND.req].must.slice();
     const t = FIND.q || '';
@@ -4286,7 +4326,7 @@
     if (S.req && S.req !== FIND.req && FIND.step !== 'results') FIND.req = S.req;
     const open = DB.reqs.filter(isOpen).filter((q) => isHR() || q.rec === DESK);
     const crit = findCriteria();
-    let body = '';
+    let body = '', after = '';
     if (FIND.step === 'searching') {
       const steps = findSteps();
       body = '<div class="t-steps">' + steps.map((s, i) => '<p class="t-stepline' + (i < FIND.i ? ' is-done' : i === FIND.i ? ' is-now' : '') + '">' +
@@ -4294,22 +4334,7 @@
         (i === FIND.i ? '<span class="t-shimmer" data-text="' + esc(s) + '">' + esc(s) + '</span>' : '<span>' + esc(s) + '</span>') + '</p>').join('') + '</div>' +
         '<div class="b-grid">' + [0, 1, 2].map(() => '<div class="b-slot"><div class="b-skel s-skel-card"><div class="s-skel-line skeleton"></div><div class="s-skel-line skeleton"></div><div class="s-skel-line skeleton"></div><div class="s-skel-line skeleton"></div></div></div>').join('') + '</div>';
     } else if (FIND.step === 'results') {
-      const bySrc = (k) => FIND.res.filter((x) => x.src === k).length;
-      const added = Object.keys(FIND.done).length;
-      const mails = FIND.res.filter((x) => x.emailFrom).length;
-      const open = DB.reqs.filter(isOpen).filter((q) => isHR() || q.rec === DESK);
-      const n = selN('find');
-      body = aimyBlock({ text: '<b>' + plural(FIND.res.length, 'person', 'people') + '</b> found: ' + (FIND.src.pool ? bySrc('pool') + ' from our talent pool first' : '') +
-        (FIND.src.pool && FIND.src.web ? ', then ' : '') + (FIND.src.web ? plural(bySrc('web'), 'prospect') + ' from the public web' : '') + (mails ? ', ' + mails + ' with a work email from Apollo' : '') +
-        '. Each part sorted by how many of the ' + FIND.crit.length + ' must-haves they meet.' + (added ? ' ' + plural(added, 'person', 'people') + ' added so far.' : ''), from: 'the sources you picked' }) +
-        '<div class="b-cuts">' + FIND.crit.map((m) => '<span class="filter-chip t-static">' + esc(m) + '</span>').join('') + '</div>' +
-        '<p class="t-acts">' + (FIND.req ? '<button class="s-insight-lnk primary" type="button" data-find-top>Add the 5 strongest to ' + esc(DB.reqById[FIND.req].title) + '</button>' : '') +
-          '<button class="b-ghost" type="button" data-sel-all="find">Select all ' + FIND.res.filter((x) => !FIND.done[x.i]).length + '</button>' +
-          '<button class="b-ghost" type="button" data-find-again>Search again</button></p>' +
-        '<div class="b-grid' + (FIND.reveal ? ' t-reveal' : '') + '">' + FIND.res.map((x, i) => '<div class="b-slot">' + findCard(x, i) + '</div>').join('') + '</div>' +
-        batchBar('find', FIND.req ? '<button class="s-insight-lnk primary" type="button" data-find-sel="' + FIND.req + '">Add ' + n + ' to ' + esc(DB.reqById[FIND.req].title) + '</button>'
-          : '<span class="b-menu-wrap"><button class="s-insight-lnk primary b-menu-open" type="button" data-pickopen="faSel" aria-haspopup="menu">Add ' + n + ' to a requisition' + svg('down', 14) + '</button>' +
-            '<div class="b-menu t-menu-up" id="faSel" role="menu" hidden>' + open.map((q) => '<button class="b-menu-item" type="button" role="menuitem" data-find-sel="' + q.id + '"><span class="b-menu-name">' + esc(q.title) + '</span><span class="tel-menu-cc">' + esc(accOf(q).name) + '</span></button>').join('') + '</div></span>');
+      after = sourcingCard();
       FIND.reveal = false;
     }
     return '<div class="s-home">' +
@@ -4329,7 +4354,7 @@
         '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-find-go>' + (FIND.step === 'results' ? 'Search again' : 'Find candidates') + '</button>' +
           '<button class="b-ghost" type="button" data-start="find">Or ask AiMY in the chat</button></p>' +
         body +
-      '</section>' +
+      '</section>' + after +
       (D.lists.length ? '<section class="s-block s-block-wide" aria-label="Saved shortlists"><div class="s-camp-list-head"><h2 class="s-block-h">Saved shortlists</h2><span class="s-block-say">' + D.lists.length + '</span></div>' +
         '<div class="b-owed">' + D.lists.slice().reverse().map((l, i) => '<button class="b-owed-row" type="button"' + goAttr({ on: 'draft', list: l.id }) + ' style="--i:' + Math.min(i, 8) + '">' +
           '<span class="b-owed-sev" aria-hidden="true"></span><span class="b-owed-main"><span class="b-owed-head"><span class="b-owed-type">' + esc(l.name) + '</span>' +
@@ -4338,32 +4363,44 @@
           '<span class="b-owed-go">Open it</span></button>').join('') + '</div></section>' : '') +
     '</div>';
   }
-  function findCard(x, i) {
-    const src = FIND_SOURCES.filter((s) => s.k === x.src)[0];
-    const met = x.ev.filter((e) => e === 'm').length;
-    const added = FIND.done[x.i];
+  /* ── 11. SOURCING, POOL FIRST (sourcing-pool-first) ── what was asked, in
+     the search line; our own pool first, warm people with their history;
+     the web people counted apart as prospects, not candidates until they
+     reply; and how first contact goes. Each row adds the person in one
+     press, with Undo. */
+  function sourcingCard() {
+    const pool = FIND.res.filter((x) => x.src === 'pool'), web = FIND.res.filter((x) => x.src !== 'pool');
+    const tab = FIND.tab === 'web' && web.length || !pool.length ? 'web' : 'pool';
+    const q = FIND.req ? DB.reqById[FIND.req] : null;
+    const asked = FIND.q.trim() ? FIND.q.trim().split('\n')[0] : q ? 'People who fit ' + q.title : 'Anyone who fits';
+    const mails = web.filter((x) => x.emailFrom).length;
+    const known = (x) => x.ev.filter((e) => e === 'm').length + ' of ' + x.ev.length + ' known';
+    const row = (x, k, body, right) => '<div class="person"' + (k ? '' : ' style="border-top:0"') + '>' + body + '<div class="row" style="gap:8px">' + right + '</div></div>';
+    const add = (x) => FIND.done[x.i] ? '<span class="sub">Added to ' + esc(FIND.done[x.i]) + '</span>' : findAddBtn(x);
+    const rows = tab === 'pool'
+      ? pool.map((x, k) => row(x, k, '<div class="av" aria-hidden="true">' + esc(initials(x.name)) + '</div><div><h4>' + esc(x.name) + '</h4><div class="sub">' + esc(x.was) + ' · ' + esc(known(x)) + ' · ' + esc(x.consent) + '</div></div>',
+          (/^Withdrew/.test(x.consent) ? rcChip('Ask first', 'warn') : rcChip('Warm', 'ok')) + add(x))).join('') +
+        (web.length ? '<div class="divider">Web prospects · not candidates until they reply</div>' +
+          '<div class="person"><div class="av g" aria-hidden="true">' + svg('globe', 15) + '</div><div><h4>' + plural(web.length, 'public profile') + '</h4><div class="sub">Source shown on each · minimal data kept · nobody contacted</div></div>' +
+            '<div class="row" style="gap:8px">' + rcChip('Prospect', 'dash') + rcBtn('See them', 'data-find-tab="web"', 'small') + '</div></div>' : '')
+      : web.map((x, k) => row(x, k, '<div class="av g" aria-hidden="true">' + svg('globe', 15) + '</div><div><h4>' + esc(x.name) + '</h4><div class="sub">' + esc(x.at) + ' · ' + esc(known(x)) + ' · ' + esc(x.page) + ', ' + esc(x.link.indexOf('/') > 0 ? x.link : x.link.split(', ').pop()) +
+          (x.emailFrom ? ' · work email from ' + esc(x.emailFrom) : '') + '</div></div>', rcChip('Prospect', 'dash') + add(x))).join('');
+    return '<section class="rc s-block-wide" aria-label="What AiMY found">' +
+      '<div class="eyebrow">' + svg('find', 14) + ' Sourcing and search</div>' +
+      '<div class="search">' + svg('find', 16) + '<span>' + esc(asked) + '</span>' + (q ? '<span style="margin-left:auto" class="chip acc">' + svg('doc', 12) + ' from ' + esc(q.title) + '</span>' : '') + '</div>' +
+      '<div class="tabs" role="tablist">' + [['pool', 'In your pool', pool.length], ['web', 'Web prospects', web.length]].map((t) =>
+        (t[0] === tab ? '<button class="on" type="button" role="tab" aria-selected="true"' : '<button type="button" role="tab" aria-selected="false"') + ' data-find-tab="' + t[0] + '">' + t[1] + '<b>' + t[2] + '</b></button>').join('') + '</div>' +
+      '<div class="card" style="padding:4px 16px 12px">' + (rows || '<div class="person" style="border-top:0"><div class="av g" aria-hidden="true">' + svg('find', 15) + '</div><div><h4>Nobody here</h4><div class="sub">Try the other sources above</div></div><span></span></div>') +
+        '<div class="row between" style="margin-top:10px;flex-wrap:wrap"><span class="sub">' + svg('mail', 12) + ' First contact by email with a privacy notice' +
+          (tab === 'web' ? ', once you approve it' + (mails ? ' · ' + mails + ' with a work email from Apollo' : '') : '') + '</span>' +
+          (q && FIND.res.some((x) => !FIND.done[x.i]) ? rcBtn('Add the 5 strongest to ' + q.title, 'data-find-top', 'primary') : '') + '</div>' +
+      '</div></section>';
+  }
+  function findAddBtn(x) {
     const open = DB.reqs.filter(isOpen).filter((q) => isHR() || q.rec === DESK);
-    return '<article class="type-card s-card b-qcard" style="--i:' + Math.min(i, 8) + '">' +
-      '<div class="tc-head">' + (added ? '' : selBox('find', x.i, x.name)) + tag(src.tag, x.src === 'pool' ? 'ok' : 'neutral') +
-        (x.was ? '<span class="b-kind">' + esc(x.was) + '</span>' : x.page ? '<span class="b-kind">' + esc(x.page) + ' · ' + esc(x.link) + '</span>' : '') + '</div>' +
-      '<div class="b-qcard-top"><span class="tc-title s-card-title">' + esc(x.name) + '</span></div>' +
-      '<p class="tc-summary b-qcard-role">' + esc(x.at) + '</p>' +
-      '<p class="b-qcard-where">' + fact('job', plural(x.years, 'year')) + fact('pin', x.place) + fact('lang', x.langs.join(', ')) + '</p>' +
-      '<div class="t-acc" data-acc-open="false">' +
-        '<div class="b-aimy"><svg class="b-aimy-mark" width="13" height="15" viewBox="0 0 18 20" aria-hidden="true"><use href="#aimy-logo-small"/></svg>' +
-          '<span class="b-aimy-say"><b>' + met + ' of ' + x.ev.length + '</b> must-haves met' + (x.ev.filter((e) => e === 'p').length ? ', ' + x.ev.filter((e) => e === 'p').length + ' partly' : '') + '. ' +
-          '<button class="t-inline-link t-acc-head" type="button" aria-expanded="false" data-acc-toggle>Why<span class="t-acc-chevron">' + svg('down', 12) + '</span></button></span></div>' +
-        '<div class="t-acc-panel"><div class="t-acc-panel-inner"><div class="t-qlist">' + FIND.crit.map((m, k) => '<p class="t-q"><span class="tag tag-' + (x.ev[k] === 'm' ? 'ok' : x.ev[k] === 'p' ? 'warn' : 'neutral') + '">' + EVW[x.ev[k]] + '</span>' +
-          '<span>' + esc(m) + (x.ev[k] !== 'n' ? '. Their profile names ' + esc((x.skills.filter((s) => m.toLowerCase().indexOf(s.toLowerCase().split(' ')[0]) >= 0)[0]) || (x.years + ' years')) + '.' : '. Their profile is silent here, which is not a no. Ask them.') + '</span></p>').join('') + '</div></div></div>' +
-      '</div>' +
-      '<p class="b-vfoot">' + esc(x.consent) + (x.phone ? ' Phone on file.' : '') + (x.email ? (x.emailFrom ? ' Work email from ' + esc(x.emailFrom) + '.' : ' Email on file.') : '') + '</p>' +
-      '<div class="tc-gov b-qcard-foot">' +
-        (added ? '<span class="b-kind">Added to ' + esc(added) + '</span>'
-          : FIND.req ? '<button class="s-insight-lnk primary" type="button" data-find-add="' + x.i + '|' + FIND.req + '">Add to ' + esc(DB.reqById[FIND.req].title) + '</button>'
-          : '<span class="b-menu-wrap"><button class="s-insight-lnk primary b-menu-open" type="button" data-pickopen="fa' + x.i + '" aria-haspopup="menu">Add to a requisition' + svg('down', 14) + '</button>' +
-            '<div class="b-menu" id="fa' + x.i + '" role="menu" hidden>' + open.map((q) => '<button class="b-menu-item" type="button" role="menuitem" data-find-add="' + x.i + '|' + q.id + '"><span class="b-menu-name">' + esc(q.title) + '</span><span class="tel-menu-cc">' + esc(accOf(q).name) + '</span></button>').join('') + '</div></span>') +
-      '</div>' +
-    '</article>';
+    return FIND.req ? rcBtn('Add', 'data-find-add="' + x.i + '|' + FIND.req + '"', 'small', 'plus')
+      : '<span class="b-menu-wrap"><button class="btn small b-menu-open" type="button" data-pickopen="fa' + x.i + '" aria-haspopup="menu">' + svg('plus', 13) + ' Add ' + svg('down', 12) + '</button>' +
+        '<div class="b-menu" id="fa' + x.i + '" role="menu" hidden>' + open.map((q) => '<button class="b-menu-item" type="button" role="menuitem" data-find-add="' + x.i + '|' + q.id + '"><span class="b-menu-name">' + esc(q.title) + '</span><span class="tel-menu-cc">' + esc(accOf(q).name) + '</span></button>').join('') + '</div></span>';
   }
   function findAdd(i, reqId, quiet) {
     const x = FIND.res[i];
@@ -4480,27 +4517,26 @@
     const r = resultsOf(a);
     const first0 = r.reduce((d, s) => Math.min(d, s.doneDay != null ? s.doneDay : s.day), 0);
     const verdict = (o) => {
-      if (!o || o.n < GATE) return mcPill('Too few results yet', 'dashed');
+      if (!o || o.n < GATE) return rcChip('Too few results yet', 'dash');
       const pr = o.right ? o.rightMet / o.right : 0, pw = o.wrong ? o.wrongMet / o.wrong : 0;
-      if (o.right < 5 || o.wrong < 5) return mcPill('Too few missed it to compare', 'dashed');
-      return pr - pw >= 0.2 ? mcPill('Predicts client acceptance', 'ok') : pw - pr >= 0.2 ? mcPill('Points the wrong way', 'err') : mcPill('Predicts nothing we measure', 'err');
+      if (o.right < 5 || o.wrong < 5) return rcChip('Too few missed it to compare', 'dash');
+      return pr - pw >= 0.2 ? rcChip('Predicts client acceptance', 'ok') : pw - pr >= 0.2 ? rcChip('Points the wrong way', 'err') : rcChip('Predicts nothing we measure', 'err');
     };
     const p = worst != null && rates[worst] < 40 ? qProposals(a.id)[0] : null;
     const sentN = Math.max.apply(null, outs.map((o) => o.n).concat([0]));
-    const acts = p ? (isHR() ? mcBtn('Approve the rewording', 'data-prop="' + esc(p.key) + '|approve"', true) + mcBtn('Drop Q' + (p.i + 1) + ' instead', 'data-prop="' + esc(p.key) + '|drop"')
-        : p.rec && p.rec.state === 'waiting' ? '<span class="mc-done">Waiting on ' + esc(DESKS.dina.name) + '</span>'
-        : mcBtn('Review proposal', 'data-prop="' + esc(p.key) + '|send"', true)) + mcBtn('Keep Q' + (p.i + 1), 'data-prop="' + esc(p.key) + '|later"') : '';
-    return mcard({ cap: 'Assessments · Item insights', ico: 'clip', label: 'Item insights',
-      body: mcHead(esc(a.title), plural(r.length, 'taken', 'taken') + ' since ' + esc(sayDay(first0)) + ' · linked to what happened next',
-          '<button class="mc-pill mc-t-line mc-pill-btn" type="button" data-copy="https://' + esc(link) + '">' + svg('link', 15) + '<span>Shared by link</span></button>') +
-        '<div class="mc-qt" role="table" aria-label="Questions against later outcomes">' +
-          '<div class="mc-qt-h" role="row"><span role="columnheader">Question</span><span role="columnheader">Pass rate</span><span role="columnheader">Against later outcomes</span></div>' +
-          a.questions.map((qq, i) => '<div class="mc-qt-r" role="row"><span role="cell"><b>Q' + (i + 1) + '</b> · ' + esc(qq.q.length > 46 ? qq.q.slice(0, 45) + '…' : qq.q) + '</span>' +
-            '<span role="cell" class="mc-rate-c"><b>' + (rates[i] != null ? rates[i] + '%' : '·') + '</b><span class="mc-rbar"><span class="' + (rates[i] != null && rates[i] < 40 ? 'is-low' : '') + '" style="width:' + (rates[i] || 0) + '%"></span></span></span>' +
-            '<span role="cell">' + verdict(outs[i]) + '</span></div>').join('') +
-        '</div>' +
+    const acts = p ? (isHR() ? rcBtn('Approve the rewording', 'data-prop="' + esc(p.key) + '|approve"', 'psmall') + rcBtn('Drop Q' + (p.i + 1) + ' instead', 'data-prop="' + esc(p.key) + '|drop"', 'small')
+        : p.rec && p.rec.state === 'waiting' ? '<span class="sub">Waiting on ' + esc(DESKS.dina.name) + '</span>'
+        : rcBtn('Review proposal', 'data-prop="' + esc(p.key) + '|send"', 'psmall')) + rcBtn('Keep Q' + (p.i + 1), 'data-prop="' + esc(p.key) + '|later"', 'small') : '';
+    return rcard({ cap: 'Assessments · item insights', ico: 'clip', label: 'Item insights',
+      body: rcHead(esc(a.title), plural(r.length, 'taken', 'taken') + ' since ' + esc(sayDay(first0)) + ' · linked to what happened next',
+          '<button class="chip" type="button" data-copy="https://' + esc(link) + '">' + svg('link', 12) + ' Shared by link</button>') +
+        '<table style="margin-top:14px"><tr><th>Question</th><th>Pass rate</th><th>Against later outcomes</th></tr>' +
+          a.questions.map((qq, i) => '<tr><td><b>Q' + (i + 1) + '</b> · ' + esc(qq.q.length > 46 ? qq.q.slice(0, 45) + '…' : qq.q) + '</td>' +
+            '<td><b>' + (rates[i] != null ? rates[i] + '%' : '·') + '</b><div class="bar"><i style="width:' + (rates[i] || 0) + '%;background:var(' + (rates[i] != null && rates[i] < 40 ? '--err' : '--brand') + ')"></i></div></td>' +
+            '<td>' + verdict(outs[i]) + '</td></tr>').join('') +
+        '</table>' +
         (sentN < GATE ? gate(sentN, GATE, 'people sent to a client after taking it', 'Below ' + GATE + ', no question is said to predict anything.') : '') +
-        (p ? mcAimy('<b>' + (100 - rates[worst]) + '%</b> get Q' + (worst + 1) + ' wrong. When nearly everyone misses one question, the question is usually the problem. Reword it: “' + esc(p.to) + '”?',
+        (p ? rcAimy((100 - rates[worst]) + '% get Q' + (worst + 1) + ' wrong. When nearly everyone misses one question, the question is usually the problem. Reword it: “' + esc(p.to) + '”?',
           'Learning Proposal · from ' + plural(r.length, 'result') + ' and ' + plural(sentN, 'client decision') + ' · an HR Manager approves', acts) : '') });
   }
   function asmtSet(a, fields, say) {
@@ -4661,21 +4697,20 @@
       '<section class="s-block s-block-wide" aria-label="Stage templates">' +
         '<div class="s-camp-list-head">' + switcher('templates') + '</div>' +
       '</section>' +
-      mcard({ cap: 'Positions and pipeline', ico: 'branch', label: 'Stage templates', cards: Object.keys(TEMPLATE).map((k) => {
+      rcard({ cap: 'Positions and pipeline', ico: 'branch', label: 'Stage templates', cards: Object.keys(TEMPLATE).map((k) => {
         const name = TEMPLATE_NAME[k] || k, accs = ACCOUNTS.filter((a) => a.tpl === k);
         const used = DB.reqs.filter((q) => q.tpl === k && isOpen(q)).length;
-        return '<div class="mc-card">' + mcHead('Stage template · ' + esc(name), 'Set by the HR Manager · used by ' + plural(used, 'open requisition') + (accs.length ? ' · ' + esc(accs.map((a) => a.name).join(', ')) : ''),
-            mcBtn(TPL_EDIT[k] ? 'Done' : 'Edit', 'data-tpl-edit="' + k + '"', !!TPL_EDIT[k], TPL_EDIT[k] ? 'check' : 'pen')) +
-          (TPL_EDIT[k] ? '<div class="mc-picks">' + STAGE_ORDER.map((s) => {
+        return '<div class="card">' + rcHead('Stage template · ' + esc(name), 'Set by the HR Manager · used by ' + plural(used, 'open requisition') + (accs.length ? ' · ' + esc(accs.map((a) => a.name).join(', ')) : ''),
+            rcBtn(TPL_EDIT[k] ? 'Done' : 'Edit', 'data-tpl-edit="' + k + '"', TPL_EDIT[k] ? 'psmall' : 'small', TPL_EDIT[k] ? 'check' : 'pen')) +
+          (TPL_EDIT[k] ? '<div class="reasons" style="margin-top:12px">' + STAGE_ORDER.map((s) => {
             const on = TEMPLATE[k].indexOf(s) >= 0, locked = STAGE_FIXED[s];
-            return '<button class="mc-pick' + (on ? ' is-on' : '') + '" type="button"' + (locked ? ' disabled title="Every pipeline needs this stage"' : ' data-tpl-toggle="' + k + '|' + s + '"') +
-              ' aria-pressed="' + on + '">' + (on ? svg('check', 14) : '') + esc(STAGE[s].label) + (busy(k, s) && on ? ' · in use' : '') + '</button>';
+            return (on ? '<button class="chip ok" type="button"' : '<button class="chip" type="button"') + (locked ? ' disabled title="Every pipeline needs this stage"' : ' data-tpl-toggle="' + k + '|' + s + '"') +
+              ' aria-pressed="' + on + '">' + (on ? svg('check', 12) + ' ' : '') + esc(STAGE[s].label) + (busy(k, s) && on ? ' · in use' : '') + '</button>';
           }).join('') + '</div>' : '') +
-          mcSec(name + '’s stages', 'One internal funnel') +
-          '<div class="mc-stages">' + TEMPLATE[k].map((s) => '<div class="mc-stage"><span class="mc-stage-name"><span>' + esc(STAGE[s].label) + '</span>' +
-              (only(k, s) ? '<span class="mc-stage-note">' + esc(name) + ' only</span>' : '') + '</span>' + svg('arrow', 18) +
-            '<span class="mc-grp ' + MC_GRP[STAGE_GROUP[s]] + '">' + STAGE_GROUP[s] + '</span></div>').join('') + '</div>' +
-          mcNote('info', 'Each client names its own stages. Every stage maps to one of six groups, so the funnel compares across clients. Exits (withdrew, client declined) are reasons, not stages.') +
+          '<div class="row between" style="margin:16px 0 8px">' + rcCaps(name + '’s stages') + '<span class="sub caps" style="width:150px;text-align:center">One internal funnel</span></div>' +
+          '<div class="map">' + TEMPLATE[k].map((s) => '<div class="st">' + esc(STAGE[s].label) + (only(k, s) ? '<small>' + esc(name) + ' only</small>' : '') + '</div>' +
+            '<div class="arr">' + svg('arrow', 14) + '</div><div class="' + RC_GRP[STAGE_GROUP[s]] + '">' + STAGE_GROUP[s] + '</div>').join('') + '</div>' +
+          rcNote('info', 'Each client names its own stages. Every stage maps to one of six groups, so the funnel compares across clients. Exits (withdrew, client declined) are reasons, not stages.') +
         '</div>';
       }) }) +
       '<section class="s-block s-block-wide" aria-label="Interview templates">' +
@@ -4762,9 +4797,9 @@
         const say = dp ? dp.evidence + ' ' + esc(dp.rule)
           : '<b>' + sentN + ' of ' + phones + '</b> people screened by phone were sent to a client. Most are lost before the client, not at it' +
             (sendAvg != null ? ', and the first profile takes <b>' + days(sendAvg) + '</b> to send.' : '.');
-        const act = dp ? (isHR() ? mcBtn('Approve the rule', 'data-prop="' + esc(dp.key) + '|approve"', true) : dp.rec && dp.rec.state === 'waiting' ? '<span class="mc-done">Waiting on ' + esc(DESKS.dina.name) + '</span>'
-            : mcBtn('Send it to ' + DESKS.dina.name, 'data-prop="' + esc(dp.key) + '|send"', true)) + mcBtn('Not now', 'data-prop="' + esc(dp.key) + '|later"')
-          : slow.length ? mcBtn('Open the ' + plural(slow.length, 'requisition') + ' with no profile after ' + NOSEND_DAYS + ' days', goAttr({ on: 'reqs', q: 'nosend' }).trim(), true) : '';
+        const act = dp ? (isHR() ? rcBtn('Approve the rule', 'data-prop="' + esc(dp.key) + '|approve"', 'psmall') : dp.rec && dp.rec.state === 'waiting' ? '<span class="sub">Waiting on ' + esc(DESKS.dina.name) + '</span>'
+            : rcBtn('Send it to ' + DESKS.dina.name, 'data-prop="' + esc(dp.key) + '|send"', 'psmall')) + rcBtn('Not now', 'data-prop="' + esc(dp.key) + '|later"', 'small')
+          : slow.length ? rcBtn('Open the ' + plural(slow.length, 'requisition') + ' with no profile after ' + NOSEND_DAYS + ' days', goAttr({ on: 'reqs', q: 'nosend' }).trim(), 'psmall') : '';
         return insight({ label: 'Where people are lost', say: say, act: act,
           src: dp ? 'Learning proposal · from ' + esc(dp.from) + ' in 90 days · reason codes · an HR Manager approves'
             : 'Clients met ' + metN + ' of them, about ' + (metN ? (sentN / metN).toFixed(1) : '·') + ' profiles per client interview. ' + versusNorm(metN ? sentN / metN : null) + ' A weak benchmark: vendor blogs and one 2018 survey.',
@@ -4991,23 +5026,23 @@
     const a = ACCOUNTS.filter((x) => x.id === me().acc)[0];
     const titles = list.map((c) => reqOf(c).title).filter((t, i, all) => all.indexOf(t) === i);
     const fresh = list.filter((c) => c.since <= 7).length;
-    return mcard({ cap: 'Client desk · What ' + shortAcc(a) + ' sees', ico: 'acc', label: 'Profiles for you',
-      body: mcHead('Profiles for you', esc(titles.join(', ')) + ' · ' + plural(fresh, 'new this week', 'new this week'), mcPill(me().name + ' · ' + a.name, 'line')) +
+    return rcard({ cap: 'Client desk · what ' + shortAcc(a) + ' sees', ico: 'acc', label: 'Profiles for you',
+      body: rcHead('Profiles for you', esc(titles.join(', ')) + ' · ' + plural(fresh, 'new this week', 'new this week'), rcChip(me().name + ' · ' + a.name)) +
         list.map((c) => {
           const met = evMet(c), all = c.ev.length;
           const v = verified(c).filter((x) => x.state === 'verified').map((x) => x.must);
-          return '<div class="mc-inner">' +
-            '<div class="mc-person"><span class="mc-av" aria-hidden="true">' + esc(c.name.split(' ').map((w) => w[0]).join('').slice(0, 2)) + '</span>' +
-              '<div class="mc-person-t"><button class="mc-person-name" type="button" data-cand="' + c.id + '">' + esc(c.name) + '</button>' +
-                '<p class="mc-sub">' + esc(c.at) + ', ' + plural(c.years, 'year') + ' · ' + esc(c.langs.join(', ')) + (v.length ? ' · ' + esc(v[0]) + ' (verified in interview)' : '') + (c.notice ? ' · ' + esc(c.notice) : '') + '</p></div>' +
-              mcPill(met + ' of ' + all + ' met', met === all ? 'ok' : 'warn') + '</div>' +
-            (passOpen(c) ? passPicker(c) : '<div class="mc-acts">' + mcBtn('Invite to interview', 'data-move="' + c.id + '|client"', true, 'cal') + mcBtn('Decline with a reason', 'data-pass-open="' + c.id + '"') + '</div>') +
-            mcNote('lock', 'Each person on your team decides on their own; nobody’s rating shows to the others until they have given theirs.') +
+          return '<div class="card" style="margin-top:14px">' +
+            '<div class="row between"><div class="row"><div class="av" aria-hidden="true">' + esc(initials(c.name)) + '</div>' +
+              '<div><h4><button type="button" data-cand="' + c.id + '">' + esc(c.name) + '</button></h4>' +
+                '<div class="sub">' + esc(c.at) + ', ' + plural(c.years, 'year') + ' · ' + esc(c.langs.join(', ')) + (v.length ? ' · ' + esc(v[0]) + ' (verified in interview)' : '') + (c.notice ? ' · ' + esc(c.notice) : '') + '</div></div></div>' +
+              rcChip(met + ' of ' + all + ' met', met === all ? 'ok' : 'warn') + '</div>' +
+            (passOpen(c) ? passPicker(c, true) : '<div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">' + rcBtn('Invite to interview', 'data-move="' + c.id + '|client"', 'primary', 'cal') + rcBtn('Decline with a reason', 'data-pass-open="' + c.id + '"') + '</div>') +
+            rcNote('lock', 'Each person on your team decides on their own; nobody’s rating shows to the others until they have given theirs.') +
           '</div>';
         }).join('') +
-        '<div class="mc-seen">' +
-          '<p>' + svg('eye', 20) + '<span><b>You see</b>profiles we sent, evidence, interviews, status of your requests</span></p>' +
-          '<p>' + svg('eyeoff', 20) + '<span><b>You never see</b>salary, margin, internal notes, other clients</span></p>' +
+        '<div class="two" style="margin-top:14px">' +
+          '<div class="note">' + svg('eye', 14) + '<span><b>You see</b><br>profiles we sent, evidence, interviews, status of your requests</span></div>' +
+          '<div class="note">' + svg('eyeoff', 14) + '<span><b>You never see</b><br>salary, margin, internal notes, other clients</span></div>' +
         '</div>' });
   }
   function clientHome() {
@@ -5753,6 +5788,14 @@
     bar.style.transform = 'translate(' + on.offsetLeft + 'px, ' + (on.offsetTop + on.offsetHeight - 2) + 'px) scaleX(' + on.offsetWidth + ')';
   }
 
+  /* A SECTION'S HEADING IS THE EYEBROW (the research components): a caps
+     label led by its icon, the icon chosen from what the heading names. */
+  const CAP_ICO = [[/interview/i, 'mic'], [/offer/i, 'job'], [/call/i, 'phone'], [/proposal|learning/i, 'loop'], [/assessment|question|result/i, 'clip'],
+    [/passed|why/i, 'listc'], [/funnel|how far|by role|by account|by recruiter|load/i, 'bars'], [/feedback|told|waiting|miss/i, 'clock'],
+    [/AiMY may do/i, 'shield'], [/add a candidate/i, 'plus'], [/hiring with us/i, 'acc'], [/request|requisition/i, 'req'],
+    [/candidate|profile|who is on|people|application|shortlist/i, 'users']];
+  const capIcons = (html) => html.replace(/<h2 class="s-block-h">([^<]*)/g, (m, t) =>
+    '<h2 class="s-block-h">' + svg((CAP_ICO.filter((x) => x[0].test(t))[0] || [0, 'listc'])[1], 14) + t);
   function paint() {
     /* Somebody outside the team gets the page alone, with none of the
        product's chrome (the careers page, a profile, a test, a debrief). */
@@ -5772,11 +5815,11 @@
     }
     /* Adding someone carries the requisition they are for, so it is asked
        before the requisition's own page. */
-    byId('wbStage').innerHTML = S.on === 'add' && isRec() ? addPage() : S.on === 'find' ? findPage()
+    byId('wbStage').innerHTML = capIcons(S.on === 'add' && isRec() ? addPage() : S.on === 'find' ? findPage()
       : S.on === 'draft' && (isRec() || isHR()) ? draftPage() : S.on === 'cands' && (isRec() || isHR()) && !S.cand ? candsPage() : S.cand ? candPage() : S.req ? reqPage() : S.asmt ? asmtPage() : S.acc ? accPage()
       : S.on === 'reqs' ? reqsPage() : S.on === 'calls' && isRec() ? callsPage()
       : S.on === 'asmts' ? asmtsPage() : S.on === 'templates' ? templatesPage()
-      : S.on === 'reports' ? reportsPage() : deskHome();
+      : S.on === 'reports' ? reportsPage() : deskHome());
     paintRail();
     paintBell();
     paintProto();
@@ -6144,7 +6187,7 @@
     if ((el = at('[data-find-req]'))) { const k = val('data-find-req'); FIND.req = FIND.req === k ? null : k; FIND.step = 'ask'; paint(); return; }
     if ((el = at('[data-find-src]'))) { const k = val('data-find-src'); FIND.src[k] = !FIND.src[k]; paint(); return; }
     if ((el = at('[data-find-go]'))) { runFind(); return; }
-    if ((el = at('[data-find-again]'))) { FIND.step = 'ask'; paint(); return; }
+    if ((el = at('[data-find-tab]'))) { FIND.tab = val('data-find-tab'); paint(); return; }
     if ((el = at('[data-find-add]'))) { const p = two('data-find-add'); findAdd(Number(p[0]), p[1]); return; }
     if ((el = at('[data-find-top]'))) {
       const made = FIND.res.filter((x) => !FIND.done[x.i]).slice(0, 5).map((x) => ({ i: x.i, c: findAdd(x.i, FIND.req, true) })).filter((x) => x.c);
