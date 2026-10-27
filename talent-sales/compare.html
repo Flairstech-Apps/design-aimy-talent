@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sales and Talent</title>
+<meta name="description" content="AiMY Sales compared with AiMY Talent, process by process, and how the Talent prototype takes Sales's UX unchanged.">
+<link rel="icon" href="assets/Aimy-full.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root, :root[data-theme="dark"] {
+  --bg: #0b0d14; --surface: #141826; --sunk: #1a1f30; --ink: #eef0f7; --ink2: #b4bacb; --ink3: #8189a0;
+  --line: rgba(255,255,255,.09); --brand: #8fb0ff; --accent: #b896fb; --accent-soft: rgba(139,79,244,.16);
+  --ok: #34d399; --ok-soft: rgba(52,211,153,.13); --warn: #fbbf24; --warn-soft: rgba(251,191,36,.13); --new: #8fb0ff; --new-soft: rgba(74,123,255,.14);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) {
+  --bg: #f5f6fb; --surface: #fff; --sunk: #f0f1f8; --ink: #141829; --ink2: #464d63; --ink3: #6b7288;
+  --line: rgba(20,24,45,.10); --brand: #2453d6; --accent: #5b1fb8; --accent-soft: rgba(103,37,204,.08);
+  --ok: #0f7a52; --ok-soft: rgba(15,157,107,.10); --warn: #8a5a00; --warn-soft: rgba(183,121,31,.12); --new: #2453d6; --new-soft: rgba(51,105,255,.09);
+  color-scheme: light; } }
+:root[data-theme="light"] {
+  --bg: #f5f6fb; --surface: #fff; --sunk: #f0f1f8; --ink: #141829; --ink2: #464d63; --ink3: #6b7288;
+  --line: rgba(20,24,45,.10); --brand: #2453d6; --accent: #5b1fb8; --accent-soft: rgba(103,37,204,.08);
+  --ok: #0f7a52; --ok-soft: rgba(15,157,107,.10); --warn: #8a5a00; --warn-soft: rgba(183,121,31,.12); --new: #2453d6; --new-soft: rgba(51,105,255,.09);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 "Poppins", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 40px 16px 80px; display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 48px; }
+nav { position: sticky; top: 24px; align-self: start; font-size: 13.5px; display: flex; flex-direction: column; gap: 2px; }
+nav a { color: var(--ink2); text-decoration: none; padding: 5px 10px; border-radius: 8px; }
+nav a:hover { background: var(--sunk); color: var(--ink); }
+nav b { font-size: 12px; color: var(--ink3); letter-spacing: .06em; text-transform: uppercase; margin: 14px 10px 4px; }
+h1 { font-size: 38px; line-height: 1.1; letter-spacing: -.02em; margin: 0 0 12px; }
+h2 { font-size: 24px; letter-spacing: -.01em; margin: 56px 0 8px; scroll-margin-top: 20px; }
+h2 + p, .lede { color: var(--ink2); max-width: 70ch; }
+.lede { font-size: 17px; }
+a { color: var(--brand); }
+.btns { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0; }
+.btn { display: inline-flex; padding: 9px 16px; border-radius: 999px; background: var(--accent); color: var(--bg); font-weight: 600; font-size: 14px; text-decoration: none; }
+.btn.ghost { background: none; color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 14px; }
+th { text-align: left; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink3); padding: 8px 10px; border-bottom: 1px solid var(--line); }
+td { padding: 11px 10px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink2); }
+td:first-child { color: var(--ink); font-weight: 500; }
+.tw { overflow-x: auto; }
+.k { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+.same { background: var(--ok-soft); color: var(--ok); }
+.adapt { background: var(--warn-soft); color: var(--warn); }
+.new { background: var(--new-soft); color: var(--new); }
+.left { background: var(--sunk); color: var(--ink3); }
+.flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; margin: 8px 0 4px; }
+.flow span { padding: 5px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); }
+.flow i { color: var(--ink3); font-style: normal; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+.card h3 { margin: 0 0 6px; font-size: 15px; }
+.card p, .card li { color: var(--ink2); font-size: 14px; }
+.card ul { margin: 6px 0 0; padding-left: 18px; }
+.note { background: var(--accent-soft); border-radius: 12px; padding: 14px 18px; margin: 16px 0; color: var(--ink); max-width: 80ch; }
+footer { margin-top: 64px; border-top: 1px solid var(--line); padding-top: 16px; font-size: 13px; color: var(--ink3); }
+@media (max-width: 900px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 0; } nav { position: static; flex-direction: row; flex-wrap: wrap; margin-bottom: 20px; } nav b { display: none; } .cols { grid-template-columns: 1fr; } h1 { font-size: 30px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav aria-label="Contents">
+  <b>Compare</b>
+  <a href="#short">The short version</a>
+  <a href="#words">The words</a>
+  <a href="#desks">The five desks</a>
+  <a href="#frame">The frame</a>
+  <a href="#process">Process by process</a>
+  <a href="#rules">The UX rules</a>
+  <b>Talent only</b>
+  <a href="#adds">What Talent adds</a>
+  <a href="#leaves">What stays in Sales</a>
+  <b>The prototypes</b>
+  <a href="#v2">talent-v2 against Sales</a>
+  <a href="#build">This build</a>
+</nav>
+<main>
+  <p style="color:var(--ink3);font-size:13px;margin:0 0 6px">27 October 2026 · from the AiMY Sales Handoff (Nour Ali, 26 Oct), the live Sales prototype, the Talent UI/UX plan and the knowledge vault</p>
+  <h1>AiMY Sales and AiMY Talent</h1>
+  <p class="lede">Talent is the same product as Sales doing a different job: a hiring loop instead of a sales loop. This page lines the two up, and the prototype next to it takes Sales's UX as it is, with recruiting words and the research's guardrails added.</p>
+  <div class="btns"><a class="btn" href="index.html">Open the Talent prototype</a><a class="btn ghost" href="https://aimy-sales.nour-ali.workers.dev/" target="_blank" rel="noopener">Open AiMY Sales</a></div>
+
+  <h2 id="short">The short version</h2>
+  <div class="cols">
+    <div class="card"><h3>Sales</h3><p>A caller works a queue of people, calls them, and AiMY reads each call back. Leads climb a ladder to "Handed over"; a manager turns them into deals. Campaigns set the goal. The client sees promises kept, never the people.</p></div>
+    <div class="card"><h3>Talent</h3><p>A recruiter works a queue of candidates, phone-screens them, and AiMY reads each call back. Candidates climb a stage template to "Joined"; the client decides on profiles sent. Requisitions set the goal. The client sees evidence, never salary or our notes.</p></div>
+  </div>
+  <div class="note"><b>The rule from the vault:</b> "A new product is a new process on the existing design, not a new design." Everything below marked <span class="k same">Same</span> is copied from Sales unchanged in the prototype.</div>
+
+  <h2 id="words">The words</h2>
+  <p>One word per thing, used the same way on every desk.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Sales</th><th>Talent</th><th></th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Contact</td><td>Candidate</td><td><span class="k adapt">Renamed</span></td><td>One lifelong record per person, with every application on it.</td></tr>
+      <tr><td>Account</td><td>Client account</td><td><span class="k same">Same</span></td><td>Every request is a client need; Northwind holds more than half.</td></tr>
+      <tr><td>Campaign</td><td>Requisition</td><td><span class="k adapt">Renamed</span></td><td>A push to a goal (seats by a date) for one client, owned by one person.</td></tr>
+      <tr><td>List</td><td>Shortlist, from the talent pool</td><td><span class="k adapt">Renamed</span></td><td>People found for a requisition, reviewed before anyone is contacted.</td></tr>
+      <tr><td>The ladder</td><td>Stages, from the account's template</td><td><span class="k adapt">Adapted</span></td><td>Same rules (forward only, Undo back, exits are not steps); the steps come per client.</td></tr>
+      <tr><td>Deal stage</td><td>Offer</td><td><span class="k adapt">Adapted</span></td><td>After the client says yes: offer, accepted, joined.</td></tr>
+      <tr><td>Brief</td><td>Brief</td><td><span class="k same">Same</span></td><td>Before a phone screen or interview: open with, last time, what the CV is silent on.</td></tr>
+      <tr><td>Bell</td><td>Bell</td><td><span class="k same">Same</span></td><td>Work that left a desk comes back here: debriefs in, client decisions, approvals.</td></tr>
+      <tr><td>Desk</td><td>Desk</td><td><span class="k same">Same</span></td><td>One person's view of one product.</td></tr>
+      <tr><td>Hand over</td><td>Send the profile</td><td><span class="k adapt">Adapted</span></td><td>The moment work leaves the first desk: to a manager in Sales, to the client in Talent.</td></tr>
+    </tbody>
+  </table></div>
+  <p style="margin-top:18px"><b>The two ladders, side by side</b></p>
+  <div class="flow"><span>Not called</span><i>→</i><span>No answer</span><i>→</i><span>Callback</span><i>→</i><span>Answered</span><i>→</i><span>Meeting set</span><i>→</i><span>Showed up</span><i>→</i><span>Interested</span><i>→</i><span>Handed over</span></div>
+  <div class="flow"><span>Sourced</span><i>→</i><span>Applied</span><i>→</i><span>Assessment</span><i>→</i><span>Phone screen</span><i>→</i><span>HR</span><i>→</i><span>Technical</span><i>→</i><span>Profile sent</span><i>→</i><span>Client interview</span><i>→</i><span>Offer</span><i>→</i><span>Accepted</span><i>→</i><span>Joined</span></div>
+  <p style="color:var(--ink2);font-size:14px">Exits in Sales: Declined, Wrong number, Do not call. Exits in Talent: Not progressing, Withdrew, Client declined, Offer declined. Neither is a step.</p>
+
+  <h2 id="desks">The five desks</h2>
+  <p>The more senior the person, the more they see and the less they change. Talent keeps the five, one for one.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Sales desk</th><th>Talent desk</th><th>Does</th><th>Never sees</th></tr></thead>
+    <tbody>
+      <tr><td>Caller · Engy Saleh</td><td>Recruiter · Omar Saeed</td><td>Works the candidate queue, phone-screens, confirms AiMY's read-back, moves stages, sends profiles to the client, finds people through the chat.</td><td>Other recruiters' work as a ranking.</td></tr>
+      <tr><td>Sales manager · Lina Haddad</td><td>Hiring manager · Rania Samir</td><td>Account manager for the clients: approves offers (fit and salary), answers client asks, talks hiring requests through.</td><td>Candidates the recruiter has not advanced.</td></tr>
+      <tr><td>Stakeholder · Sherif Amin</td><td>BU Director · Hesham Nabil</td><td>Reads his unit's requisitions. Verbs: Request a hire, Approve budget and headcount, Ask AiMY. Hears why clients pass.</td><td>Individual candidates' fit (that is the hiring manager's question).</td></tr>
+      <tr><td>Client · Marit Okonjo</td><td>Client · Jana Weber, Northwind</td><td>Decides on profiles sent (Meet them or Pass, with one reason), her interviews, "Your hiring with us".</td><td>Salary, margin, internal notes, other clients, anyone not sent to her.</td></tr>
+      <tr><td>CEO · Rami Fahim</td><td>HR Manager · Dina Ragab</td><td>Reads everything; assigns and reassigns requisitions with AiMY's suggestion and reason; approves learning proposals; sets what AiMY may do.</td><td>Nothing hidden, but changes no candidate.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="frame">The frame</h2>
+  <p>Every part of the screen is Sales's, copied unchanged in the prototype (Sales's own stylesheets, unedited).</p>
+  <div class="tw"><table>
+    <thead><tr><th>Part</th><th>In Sales</th><th>In Talent</th><th></th></tr></thead>
+    <tbody>
+      <tr><td>Top bar</td><td>Product switcher, phone (caller only), theme, bell, profile pill</td><td>The same; Talent is the lit product</td><td><span class="k same">Same</span></td></tr>
+      <tr><td>Left column</td><td>What needs you now, today's diary, the money or the client's report</td><td>What needs you now, the next interview, "Your hiring with us" for the client</td><td><span class="k same">Same</span></td></tr>
+      <tr><td>Home</td><td>Today: a few sentences, then a Start strip</td><td>Today: a few sentences, then a Start strip</td><td><span class="k same">Same</span></td></tr>
+      <tr><td>Navigation</td><td>The page title is the tab switcher: Contacts · Diary · Campaigns · Lists</td><td>Candidates · Interviews · Requisitions · Shortlists</td><td><span class="k same">Same</span></td></tr>
+      <tr><td>Lists</td><td>Cards, cut chips that add up to All, 15 a page</td><td>The same</td><td><span class="k same">Same</span></td></tr>
+      <tr><td>AiMY bar</td><td>At the bottom; the answer card sits above it; full screen for longer work</td><td>The same</td><td><span class="k same">Same</span></td></tr>
+      <tr><td>Writes</td><td>One press, a message with Undo, never "are you sure"</td><td>The same</td><td><span class="k same">Same</span></td></tr>
+      <tr><td>Calls</td><td>A panel on the right; the brief in the canvas; read-back after hanging up</td><td>The same, for the phone screen, labelled a design target while telephony is on hold</td><td><span class="k adapt">Adapted</span></td></tr>
+      <tr><td>Prototype panel</td><td>Bottom right: incoming calls, states, reset</td><td>Bottom right: outside links (careers page, own profile, debrief, approval), compare, reset</td><td><span class="k adapt">Adapted</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="process">Process by process</h2>
+  <p>Each Sales process from the handoff, and the Talent process built on it.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Sales</th><th>Talent</th><th></th></tr></thead>
+    <tbody>
+      <tr><td>B1 Work the queue</td><td>Work the candidate queue: cuts by stage (Waiting on you, Phone screen, Interviews, With the client), oldest first</td><td><span class="k same">Same UX</span></td></tr>
+      <tr><td>B2 Make a call and log it</td><td>Phone screen: Call opens the panel and the brief (open with, what the CV is silent on); hang up, AiMY reads it back ("I read that as passed the call"), Log it moves the stage with Undo</td><td><span class="k same">Same UX</span></td></tr>
+      <tr><td>B3 Call a whole page in one run</td><td>Not carried: phone screens are booked, not dialled in runs</td><td><span class="k left">Stays in Sales</span></td></tr>
+      <tr><td>B5 Answer an incoming call</td><td>A candidate calls back; the brief says why (assessment, offer question)</td><td><span class="k left">Later</span></td></tr>
+      <tr><td>B7 Move a lead by hand, hand it over</td><td>"What happened?" one press each (Passed, Not progressing, Withdrew); <b>Send the profile</b> with the write-up you approve</td><td><span class="k same">Same UX</span></td></tr>
+      <tr><td>B8 Find leads through the chat</td><td>Find people through the chat: pool or web, AiMY reads the success profile back, a draft shortlist "Not saved yet" with Keep ticks; web people are prospects</td><td><span class="k same">Same UX</span></td></tr>
+      <tr><td>B9 Put a list to work</td><td>Put a shortlist on a requisition; Apollo adds a work email only</td><td><span class="k adapt">Adapted</span></td></tr>
+      <tr><td>B10 Read a company before calling</td><td>Read a client account: open requisitions, why they pass, news with a hiring consequence</td><td><span class="k adapt">Adapted</span></td></tr>
+      <tr><td>B11 Diary, campaigns, notes</td><td>Interviews (the diary), Requisitions, history</td><td><span class="k same">Same UX</span></td></tr>
+      <tr><td>M1 Prepare for a meeting</td><td>Prepare me before an interview: the kit, the gaps to probe</td><td><span class="k same">Same UX</span></td></tr>
+      <tr><td>M2 Write up a meeting in a sentence</td><td>"Called Hana, she passed the call" in the bar moves the stage</td><td><span class="k same">Same UX</span></td></tr>
+      <tr><td>M3 Work the deals</td><td>Offers: approve fit and salary, then a person sends</td><td><span class="k adapt">Adapted</span></td></tr>
+      <tr><td>M8 Read the money</td><td>Reports: where people are lost, one definition per number, one action</td><td><span class="k adapt">Adapted</span></td></tr>
+      <tr><td>M9 Hear what arrives</td><td>The bell: debriefs in, client decisions, approvals, client asks</td><td><span class="k same">Same UX</span></td></tr>
+      <tr><td>R2 Join, assign, reassign</td><td>The HR Manager reassigns a requisition with AiMY's suggestion and its reason</td><td><span class="k same">Same UX</span></td></tr>
+      <tr><td>S1 What buyers say</td><td>Why clients pass, by reason, for the BU Director</td><td><span class="k same">Same UX</span></td></tr>
+      <tr><td>C1 Your journey with AiMY</td><td>Your hiring with us: hires beside acceptance and day-90 retention</td><td><span class="k same">Same UX</span></td></tr>
+      <tr><td>X2 A client's request is talked through first</td><td>A client's ask for a hire lands with the hiring manager and opens as a draft</td><td><span class="k same">Same UX</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="rules">The UX rules</h2>
+  <div class="tw"><table>
+    <thead><tr><th>Rule from Sales</th><th>In Talent</th><th></th></tr></thead>
+    <tbody>
+      <tr><td>Open on a briefing, not a database</td><td>Every desk opens on Today</td><td><span class="k same">Kept</span></td></tr>
+      <tr><td>One product, five desks</td><td>Five desks, one set of numbers</td><td><span class="k same">Kept</span></td></tr>
+      <tr><td>The page title is the tab switcher</td><td>Candidates · Interviews · Requisitions · Shortlists</td><td><span class="k same">Kept</span></td></tr>
+      <tr><td>Fifteen at a time</td><td>"1–15 of 23 candidates"</td><td><span class="k same">Kept</span></td></tr>
+      <tr><td>Logging is confirming, not a form</td><td>Phone-screen read-back; debrief quotes marked "Check it"</td><td><span class="k same">Kept</span></td></tr>
+      <tr><td>The call sits beside the page</td><td>Phone screen in the right panel</td><td><span class="k same">Kept</span></td></tr>
+      <tr><td>Undo instead of "are you sure?"</td><td>Every move, send and decision</td><td><span class="k same">Kept</span></td></tr>
+      <tr><td>Say it in a sentence</td><td>The bar moves stages from a sentence</td><td><span class="k same">Kept</span></td></tr>
+      <tr><td>Finding is a conversation</td><td>No search builder page</td><td><span class="k same">Kept</span></td></tr>
+      <tr><td>What a person saw is one press</td><td>"Passed the call", "Not progressing": a person's press, never AiMY's</td><td><span class="k same">Kept</span></td></tr>
+      <tr><td>The client sees results, not our operation</td><td>No salary, margin, notes or other clients</td><td><span class="k same">Kept</span></td></tr>
+      <tr><td>Follow-ups come back in the bell</td><td>Debriefs, client decisions, approvals</td><td><span class="k same">Kept</span></td></tr>
+      <tr><td>A page belongs to whoever does the work</td><td>Recruiter scorecards stay out of Talent (D5)</td><td><span class="k same">Kept</span></td></tr>
+      <tr><td>Only public facts about a person</td><td>Web-found people are prospects; the CV is read as data</td><td><span class="k same">Kept</span></td></tr>
+      <tr><td>—</td><td>Evidence as counts, never a match percentage; Not known is not Not met</td><td><span class="k new">Talent adds</span></td></tr>
+      <tr><td>—</td><td>AI fills facts, a person gives the verdict</td><td><span class="k new">Talent adds</span></td></tr>
+      <tr><td>—</td><td>Consent before contact and recording; WhatsApp only with an opt-in</td><td><span class="k new">Talent adds</span></td></tr>
+      <tr><td>—</td><td>Learning is aggregate, gated by sample size, approved by a person</td><td><span class="k new">Talent adds</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="adds">What Talent adds</h2>
+  <div class="cols">
+    <div class="card"><h3>On the record</h3><ul><li>Success profile and evidence per criterion</li><li>CV says beside Interview found</li><li>Consent with dates</li><li>The sendout as a record: sent, opened, decided</li><li>Day-30 and day-90 check-ins</li></ul></div>
+    <div class="card"><h3>Loops that learn</h3><ul><li>One reason on every client Pass</li><li>Learning proposals the HR Manager approves</li><li>Questions tied to client outcomes after 20</li><li>What AiMY may do, on three rungs</li></ul></div>
+    <div class="card"><h3>People outside the desks</h3><ul><li>The careers page, applying through AiMY</li><li>The candidate's own profile, by one-time code, in Arabic too</li><li>The interviewer's debrief link</li><li>The approvers' link</li></ul></div>
+    <div class="card"><h3>Guardrails</h3><ul><li>Everyone hears within 5 days</li><li>No LinkedIn scraping; SignalHire parked</li><li>No ranking of recruiters</li><li>Honest reports: where people are lost upstream</li></ul></div>
+  </div>
+
+  <h2 id="leaves">What stays in Sales</h2>
+  <p>The money apparatus (Talent keeps only billable hires), calling runs and high-volume dialling, LinkedIn connections, account tiers (Gold, Silver, Bench), and per-person performance, which belongs in AiMY QA.</p>
+
+  <h2 id="v2">talent-v2 against Sales</h2>
+  <p>talent-v2 carried the research but drew its own frame. These are the places it parted from Sales; this build closes each one.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Sales does</th><th>talent-v2 did</th><th>This build</th></tr></thead>
+    <tbody>
+      <tr><td>The page title is the tab switcher</td><td>A navigation column</td><td>Title tabs, no column</td></tr>
+      <tr><td>The AiMY bar at the bottom, the answer card above it</td><td>A bar at the top opening a side drawer</td><td>Sales's bar, answer card and canvas</td></tr>
+      <tr><td>Today with a Start strip</td><td>Today with blocks, no Start strip</td><td>Sales's Today and Start strip</td></tr>
+      <tr><td>The bell brings work back</td><td>No bell</td><td>Sales's bell</td></tr>
+      <tr><td>Fifteen at a time</td><td>Everything on one page</td><td>Pages of 15</td></tr>
+      <tr><td>The call in a right panel, read back after</td><td>A "Call" button that only said it was a target</td><td>Sales's call panel and read-back</td></tr>
+      <tr><td>Five desks</td><td>Four (no BU Director desk)</td><td>Five</td></tr>
+      <tr><td>Sales's own stylesheets</td><td>Its own stylesheet</td><td>Sales's stylesheets, unedited</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="build">This build</h2>
+  <p><code>talent-sales/</code>: Sales's page shell and its stylesheets (<code>aimy-ds.css</code>, <code>sales.css</code>, <code>bdr.css</code>, <code>aimy-responsive.css</code>) copied unedited from the live prototype, and one new script, <code>talent.js</code>, that paints Talent into Sales's markup. Nothing from the earlier Talent prototype at the repo root is used.</p>
+  <footer>Sources: AiMY Sales Handoff (Nour Ali, 26 Oct 2026) · aimy-sales.nour-ali.workers.dev · AiMY Talent UI/UX plan (26 Oct) · knowledge vault. People and companies are invented.</footer>
+</main>
+</div>
+</body>
+</html>
