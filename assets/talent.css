@@ -886,3 +886,50 @@ body.is-portal .aimy-overlay { display: none !important; }
   .t-rpt-lab { flex: 1 1 100%; }
   .t-lost-row { grid-template-columns: minmax(0, 1fr) auto; }
 }
+
+/* ══ CANDIDATES: FIND, ONE REQUISITION, CARDS OR A LIST ════════════════════
+   The search, the requisition menu (Sales's .b-menu) and the two densities
+   sit on one wrapping row above the cuts (talent.js candsPage). The list is
+   one row a person: who, the requisition, where they stand, one verb. */
+.t-cfilters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 10px; position: relative; z-index: 30; }
+.t-cfilters .b-find { flex: 1 1 240px; max-width: 360px; }
+.t-rq-btn { display: inline-flex; align-items: center; gap: 6px; max-width: 320px; }
+.t-rq-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.t-rq-btn svg { flex: none; }
+#rqMenu { min-width: 280px; max-height: 360px; overflow-y: auto; }
+.t-rq-item { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.t-cview { display: inline-flex; gap: 4px; margin-left: auto; }
+.t-cf-on { margin: 0 0 10px; }
+.t-before { color: var(--d100); }
+.t-clist { list-style: none; margin: 4px 0 0; padding: 0; display: grid; }
+.t-crow {
+  display: grid; align-items: center; gap: 4px 14px;
+  grid-template-columns: 20px minmax(0, 1.2fr) minmax(0, 1.1fr) 200px minmax(0, 1.5fr) 128px;
+  padding: 10px 4px; border-top: 1px solid var(--card-border); font-size: var(--fs-sm);
+}
+.t-crow:first-child { border-top: 0; }
+.t-crow:hover { background: rgba(var(--accent-rgb), 0.04); }
+.t-crow-sel { width: 20px; }
+.t-crow-who, .t-crow-req { display: flex; flex-direction: column; gap: 1px; min-width: 0; color: var(--d100); }
+.t-crow-name {
+  align-self: flex-start; max-width: 100%; padding: 0; border: 0; background: none; cursor: pointer;
+  font: inherit; font-weight: var(--fw-semibold); color: var(--d50); text-align: left;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.t-crow-name:hover { text-decoration: underline; }
+.t-crow-name:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
+.t-crow-title { color: var(--d50); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.t-crow-sub { font-size: var(--fs-xs); color: var(--ink-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.t-crow-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.t-crow-say { color: var(--d100); line-height: var(--lh-snug); }
+.t-crow-act { justify-self: end; }
+@media (max-width: 900px) {
+  .t-crow { grid-template-columns: 20px minmax(0, 1fr) auto; }
+  .t-crow-req, .t-crow-say { grid-column: 2 / -1; }
+  .t-crow-tags { grid-column: 2; grid-row: 3; }
+  .t-crow-act { grid-column: 3; grid-row: 1; }
+}
+@media (max-width: 560px) {
+  .t-cview { margin-left: 0; }
+  .t-rq-btn { max-width: 100%; }
+}

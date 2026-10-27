@@ -473,6 +473,21 @@
   ];
   const DECLINE_K = {};
   DECLINE.forEach((d) => { DECLINE_K[d.k] = d; });
+  /* ── Why we stop (Not progressing) ── the same rule on our own side: one
+     reason from a list, so it can be counted, and so a person who comes
+     back is read with what stopped them last time. Kept with us; the
+     answer the candidate gets never quotes it. */
+  const OUT_WHY = [
+    { k: 'must',   label: 'Misses a must-have', say: 'misses a must-have' },
+    { k: 'lang',   label: 'Spoken language',    say: 'spoken language below what the role needs' },
+    { k: 'salary', label: 'Salary',             say: 'expects more than the budget' },
+    { k: 'notice', label: 'Notice period',      say: 'notice period too long' },
+    { k: 'iv',     label: 'The interview',      say: 'the interview did not go well' },
+    { k: 'reach',  label: 'Could not reach them', say: 'could not be reached' },
+    { k: 'other',  label: 'Other',              say: 'another reason' },
+  ];
+  const OUT_K = {};
+  OUT_WHY.forEach((d) => { OUT_K[d.k] = d; });
   /* Declines this many days old or newer count as "this month". */
   const MONTH = 30;
 
@@ -884,6 +899,13 @@
       });
       k.maxAt = k.stage;
       DB.cands.push(k); DB.byId[id] = k; DB.byReq[to.id].push(k);
+    });
+    DB.cands.forEach((c) => {
+      if (c.exit !== 'out') return;
+      const n = parseInt(c.id.slice(1), 10) || 0;
+      const why = c.stage === 'sourced' || c.stage === 'applied' ? ['reach', 'salary'][n % 2]
+        : c.stage === 'phone' || c.stage === 'assess' ? ['lang', 'salary', 'notice', 'must'][n % 4] : ['iv', 'must'][n % 2];
+      c.outWhy = { why: why, note: '', day: -c.since, by: DB.reqById[c.req].rec };
     });
   }
 
@@ -1542,7 +1564,7 @@
      `approve` are the screens people outside the recruiting team reach from a
      link: the careers page, a candidate's own profile, an assessment, an
      interviewer's debrief and an approver's offer packet. */
-  const KEYS = ['as', 'on', 'req', 'cand', 'asmt', 'acc', 'q', 'p', 'list', 'find', 'edit', 'apply', 'me', 'take', 'debrief', 'approve', 'by', 'src', 'period', 'account'];
+  const KEYS = ['as', 'on', 'req', 'cand', 'asmt', 'acc', 'q', 'p', 'list', 'find', 'edit', 'apply', 'me', 'take', 'debrief', 'approve', 'by', 'src', 'period', 'account', 'rq'];
   const OUTSIDE = ['apply', 'me', 'take', 'debrief', 'approve'];
   const outside = () => OUTSIDE.some((k) => !!S[k]);
   function parse() {
@@ -1574,7 +1596,7 @@
     if (DESK !== 'omar' && !('as' in over) && !OUTSIDE.some((k) => !!next[k])) next.as = DESK;
     if (!replace) TRAIL = Object.assign({}, S);
     /* A half-made pass and ticks on another page do not follow you. */
-    if (next.req !== S.req || next.cand !== S.cand || next.on !== S.on) { PASSING = null; WRITING = null; SEL.sourced = {}; }
+    if (next.req !== S.req || next.cand !== S.cand || next.on !== S.on) { PASSING = null; OUTING = null; WRITING = null; SEL.sourced = {}; }
     S = next;
     DESK = DESKS[S.as] ? S.as : 'omar';
     const u = urlOf(S);
@@ -1958,23 +1980,81 @@
     { k: 'client', label: 'With the client' },
     { k: 'others', label: 'Waiting on others' },
   ];
+  /* SEARCH AND ONE REQUISITION. A recruiter with several requisitions open
+     looks for one person, or one requisition's people, more often than they
+     scroll the queue. Both narrow the cuts, so the count on each chip is
+     what is left to see. */
+  const candHit = (c, f) => {
+    if (!f) return true;
+    const q = reqOf(c);
+    return [c.name, c.at, c.place, c.email || '', c.phone || '', (c.skills || []).join(' '), q.title, accOf(q).name]
+      .join(' ').toLowerCase().indexOf(f.toLowerCase()) >= 0;
+  };
+  /* CARDS OR A LIST: the card for working one person, the list for reading
+     many at a glance. The choice is kept for this person, on this device. */
+  const LIST_N = 40;
+  function candRow(c) {
+    const q = reqOf(c), was = before(c);
+    const works = isRec() || isHR();
+    const pick1 = works && !c.exit && c.stage === 'sourced' && !c.contactOk;
+    const owedTell = works && c.exit && c.told === false;
+    /* One verb per row, the card's first one; anything with a choice in it
+       (an exit and its reason, an offer) is on the card. */
+    const act = owedTell ? '<button class="s-inline-btn" type="button" data-tell="' + c.id + '">Send the answer</button>'
+      : pick1 ? '<button class="s-inline-btn" type="button" data-contact-ok="' + c.id + '">Approve first contact</button>'
+      : !c.exit && isRec() && (c.stage === 'applied' || c.stage === 'phone') && canCall(c) ? '<button class="s-inline-btn" type="button" data-call="' + c.id + '">' + svg('phone', 13) + 'Call</button>'
+      : '<button class="s-inline-btn" type="button" data-cand="' + c.id + '">Open</button>';
+    return '<li class="t-crow">' +
+      (pick1 ? selBox('sourced', c.id, c.name) : owedTell ? selBox('tell', c.id, c.name) : '<span class="t-crow-sel" aria-hidden="true"></span>') +
+      '<span class="t-crow-who"><button class="t-crow-name" type="button" data-cand="' + c.id + '">' + esc(c.name) + '</button><span class="t-crow-sub">' + esc(c.at) + '</span></span>' +
+      '<span class="t-crow-req"><span class="t-crow-title">' + esc(q.title) + '</span><span class="t-crow-sub">' + esc(accOf(q).name) + '</span></span>' +
+      '<span class="t-crow-tags">' + stageTag(c) + (was ? tag('Returning', 'info') : '') + '</span>' +
+      '<span class="t-crow-say">' + esc(candSay(c)) + '</span>' +
+      '<span class="t-crow-act">' + act + '</span>' +
+    '</li>';
+  }
   function candsPage() {
-    const all = queue(), owed = untold();
+    const rqQ = S.rq && DB.reqById[S.rq] ? DB.reqById[S.rq] : null;
+    const hit = (c) => (!rqQ || c.req === rqQ.id) && candHit(c, S.find);
+    const everyone = queue(), owedAll = untold();
+    const all = everyone.filter(hit), owed = owedAll.filter(hit);
     const cut = S.q === 'untold' || QCUTS.some((x) => x.k === S.q) ? S.q : 'all';
     const list = cut === 'untold' ? owed : cut === 'all' ? all : all.filter((c) => queueCut(c) === cut);
     const n = (k) => k === 'all' ? all.length : all.filter((c) => queueCut(c) === k).length;
-    const pages = Math.max(1, Math.ceil(list.length / PAGE_N));
+    const asList = UI.cview === 'list';
+    const per = asList ? LIST_N : PAGE_N;
+    const pages = Math.max(1, Math.ceil(list.length / per));
     const page = Math.min(pages - 1, Math.max(0, Number(S.p) || 0));
-    const from = page * PAGE_N, to = Math.min(list.length, from + PAGE_N);
+    const from = page * per, to = Math.min(list.length, from + per);
     const left = list.length - to;
+    /* The search and the requisition ride on every link on this page. */
+    const keep = (o) => goAttr(Object.assign({ on: 'cands', rq: S.rq, find: S.find }, o));
+    const narrowed = !!(rqQ || S.find);
+    const reqsIn = mine().map((q) => ({ q: q, n: everyone.concat(owedAll).filter((c) => c.req === q.id).length })).filter((x) => x.n);
+    const clear = '<button class="t-inline-link" type="button" data-cfclear>Show everyone</button>';
     return '<div class="s-home">' +
       '<section class="s-block s-block-wide">' +
         '<div class="s-camp-list-head">' + switcher('cands') + '</div>' +
-        '<p class="b-tocall"><b>' + n('me') + '</b> waiting on you, across ' + plural(myOpen().length, 'open requisition') + '</p>' +
-        '<div class="b-cuts b-cuts-row">' + QCUTS.map((x) => '<button class="filter-chip' + (x.k === cut ? ' active' : '') + '" type="button"' + goAttr({ on: 'cands', q: x.k === 'all' ? undefined : x.k }) + '>' +
-          esc(x.label) + '<span class="b-cut-n">' + n(x.k) + '</span></button>').join('') +
-          '<button class="filter-chip t-cut-apart' + (cut === 'untold' ? ' active' : '') + '" type="button"' + goAttr({ on: 'cands', q: 'untold' }) + '>Not told yet<span class="b-cut-n">' + owed.length + '</span></button>' +
+        '<p class="b-tocall"><b>' + n('me') + '</b> waiting on you, ' + (rqQ ? 'on ' + esc(rqQ.title) + ' for ' + esc(accOf(rqQ).name) : 'across ' + plural(myOpen().length, 'open requisition')) + '</p>' +
+        '<div class="t-cfilters">' +
+          '<label class="b-find">' + svg('find', 14) +
+            '<input type="text" data-find value="' + esc(S.find || '') + '" placeholder="Find a name, a skill or a requisition" spellcheck="false" aria-label="Find a name, a skill or a requisition"></label>' +
+          '<span class="b-menu-wrap"><button class="b-ghost t-rq-btn" type="button" data-pickopen="rqMenu" aria-haspopup="menu" aria-expanded="false">' +
+            '<span class="t-rq-label">' + esc(rqQ ? rqQ.title + ', ' + accOf(rqQ).name : 'All requisitions') + '</span>' + svg('down', 14) + '</button>' +
+            '<div class="b-menu" id="rqMenu" role="menu" hidden><span class="b-menu-cap">Requisition</span>' +
+              '<button class="b-menu-item" type="button" role="menuitem" data-rq=""' + (rqQ ? '' : ' aria-current="true"') + '><span class="b-menu-name">All requisitions</span><span class="tel-menu-cc">' + everyone.concat(owedAll).length + '</span></button>' +
+              reqsIn.map((x) => '<button class="b-menu-item" type="button" role="menuitem" data-rq="' + x.q.id + '"' + (rqQ === x.q ? ' aria-current="true"' : '') + '>' +
+                '<span class="t-rq-item"><span class="b-menu-name">' + esc(x.q.title) + '</span><span class="t-crow-sub">' + esc(accOf(x.q).name) + '</span></span><span class="tel-menu-cc">' + x.n + '</span></button>').join('') +
+            '</div></span>' +
+          '<span class="t-cview" role="group" aria-label="Show as">' + [['cards', 'Cards'], ['list', 'List']].map((x) => {
+            const on = (x[0] === 'list') === asList;
+            return '<button class="s-view' + (on ? ' is-on' : '') + '" type="button" data-cview="' + x[0] + '" aria-pressed="' + on + '">' + x[1] + '</button>'; }).join('') + '</span>' +
         '</div>' +
+        '<div class="b-cuts b-cuts-row">' + QCUTS.map((x) => '<button class="filter-chip' + (x.k === cut ? ' active' : '') + '" type="button"' + keep({ q: x.k === 'all' ? undefined : x.k }) + '>' +
+          esc(x.label) + '<span class="b-cut-n">' + n(x.k) + '</span></button>').join('') +
+          '<button class="filter-chip t-cut-apart' + (cut === 'untold' ? ' active' : '') + '" type="button"' + keep({ q: 'untold' }) + '>Not told yet<span class="b-cut-n">' + owed.length + '</span></button>' +
+        '</div>' +
+        (narrowed ? '<p class="b-vfoot t-cf-on">Showing ' + (rqQ ? 'the people on ' + esc(rqQ.title) + ', ' + esc(accOf(rqQ).name) : 'everyone') + (S.find ? ' matching “' + esc(S.find) + '”' : '') + '. ' + clear + '</p>' : '') +
         /* Where the volume is, select many and act once (Batch bar, M7); the
            answer owed is shown as it will read (Message preview, M4). */
         (cut === 'untold' && owed.length ? msgPreview(DB.byId[Object.keys(SEL.tell)[0]] || owed[0]) +
@@ -1983,11 +2063,12 @@
         (cut === 'new' && list.length ? trustCard(list.filter((c) => /^Found on/.test(c.source) && !c.contactOk)) : '') +
         (cut === 'new' && list.length ? (selN('sourced') ? batchBar('sourced', '<button class="s-insight-lnk primary" type="button" data-contact-sel>Approve first contact for ' + plural(selN('sourced'), 'person', 'people') + '</button>')
             : '<p class="t-acts"><button class="b-ghost" type="button" data-sel-all="sourced">Select all ' + list.length + '</button></p>') : '') +
-        (list.length ? '<div class="b-grid">' + list.slice(from, to).map((c, i) => '<div class="b-slot" style="--i:' + i + '">' + candCard(c, i) + '</div>').join('') + '</div>' +
+        (list.length ? (asList ? '<ul class="t-clist" aria-label="Candidates">' + list.slice(from, to).map(candRow).join('') + '</ul>'
+            : '<div class="b-grid">' + list.slice(from, to).map((c, i) => '<div class="b-slot" style="--i:' + i + '">' + candCard(c, i) + '</div>').join('') + '</div>') +
           '<div class="b-pager"><span class="b-vfoot">' + (from + 1) + '–' + to + ' of ' + plural(list.length, 'candidate') + ' · page ' + (page + 1) + ' of ' + pages + '</span>' +
-            '<span class="b-pager-go">' + (page > 0 ? '<button class="s-inline-btn" type="button"' + goAttr({ on: 'cands', q: S.q, p: page > 1 ? String(page - 1) : undefined }) + '>Previous 15</button>' : '') +
-            (left > 0 ? '<button class="s-inline-btn" type="button"' + goAttr({ on: 'cands', q: S.q, p: String(page + 1) }) + '>Next ' + Math.min(PAGE_N, left) + '</button>' : '') + '</span></div>'
-          : '<p class="s-none">Nobody here.</p>') +
+            '<span class="b-pager-go">' + (page > 0 ? '<button class="s-inline-btn" type="button"' + keep({ q: S.q, p: page > 1 ? String(page - 1) : undefined }) + '>Previous ' + per + '</button>' : '') +
+            (left > 0 ? '<button class="s-inline-btn" type="button"' + keep({ q: S.q, p: String(page + 1) }) + '>Next ' + Math.min(per, left) + '</button>' : '') + '</span></div>'
+          : '<p class="s-none">' + (narrowed ? 'Nobody here matches. ' + clear : 'Nobody here.') + '</p>') +
       '</section></div>';
   }
 
@@ -2171,17 +2252,25 @@
     '</section>';
   }
 
-  /* One candidate, as the same card. */
-  function candCard(c, i) {
-    const q = reqOf(c);
-    const nx = nextOf(c);
-    const w = waitsOn(c);
-    const say = c.exit ? EXIT[c.exit].say + '.'
+  /* Where a candidate stands, in one sentence: the card's and the list's. */
+  function candSay(c) {
+    return c.exit ? exitSay(c) + '.'
       : MEETS[c.stage] && c.meet != null ? (c.meet > 0 ? 'Interview ' + sayWhen(c.meet) + ' at ' + c.slot + '.'
         : c.meet === 0 ? 'Interview today at ' + c.slot + '.'
         : c.fb ? 'Interviewed ' + sayWhen(c.meet) + '. The result is in: proceed.'
         : 'Interviewed ' + sayWhen(c.meet) + '. ' + waitWho(c) + ' has not sent the result.')
       : STAGE[c.stage].say.charAt(0).toUpperCase() + STAGE[c.stage].say.slice(1) + ', ' + days(c.since) + '.';
+  }
+  /* The earlier application, said with what stopped it. */
+  const beforeSay = (x) => 'Applied before for ' + reqOf(x).title + ': ' + lower(EXIT[x.exit].label) +
+    (x.outWhy && x.exit === 'out' ? ', ' + lower(OUT_K[x.outWhy.why].label) : x.decline ? ', ' + lower(DECLINE_K[x.decline.why].label) : '');
+  /* One candidate, as the same card. */
+  function candCard(c, i) {
+    const q = reqOf(c);
+    const nx = nextOf(c);
+    const w = waitsOn(c);
+    const say = candSay(c);
+    const was = before(c);
     const canMove = !c.exit && nx && (w === 'me' || w === 'client' || w === 'candidate' || c.stage === 'sourced') && (isRec() || isHR());
     const outK = c.stage === 'sent' || c.stage === 'client' || c.stage === 'ctech' ? 'clientno' : c.stage === 'offer' ? 'offerno' : 'out';
     const foot = (l, r) => '<div class="tc-gov b-qcard-foot">' + l + r + '</div>';
@@ -2208,17 +2297,19 @@
        where the buttons were. */
     if (!c.exit && passOpen(c)) special = passPicker(c);
     if (!c.exit && writeOpen(c)) special = writeBox(c);
+    if (!c.exit && outPicking(c)) special = outPicker(c);
     /* Owed an answer (M4): tick it into the batch, or send this one. */
     const owedTell = c.exit && c.told === false && (isRec() || isHR());
     if (owedTell) special = foot('<span class="b-kind">' + (c.since >= TELL_DAYS ? 'Past the ' + TELL_DAYS + '-day limit' : 'Tell them by ' + esc(sayDay(TELL_DAYS - c.since))) + '</span>',
       '<button class="s-insight-lnk primary" type="button" data-tell="' + c.id + '">Send the answer</button>');
     const pick1 = !c.exit && c.stage === 'sourced' && !c.contactOk && (isRec() || isHR());
     return '<article class="type-card s-card b-qcard" style="--i:' + Math.min(i, 8) + '">' +
-      '<div class="tc-head">' + (pick1 ? selBox('sourced', c.id, c.name) : owedTell ? selBox('tell', c.id, c.name) : '') + stageTag(c) + '<span class="b-kind">' + esc(c.source) + '</span></div>' +
+      '<div class="tc-head">' + (pick1 ? selBox('sourced', c.id, c.name) : owedTell ? selBox('tell', c.id, c.name) : '') + stageTag(c) + (was ? tag('Returning', 'info') : '') + '<span class="b-kind">' + esc(c.source) + '</span></div>' +
       '<div class="b-qcard-top"><button class="tc-title s-card-title" type="button" data-cand="' + c.id + '">' + esc(c.name) + '</button></div>' +
       '<p class="tc-summary b-qcard-role">' + esc(c.at) + '</p>' +
       '<p class="b-qcard-where">' + fact('job', plural(c.years, 'year') + ' of experience') + fact('pin', c.place) + '</p>' +
       '<p class="b-qcard-where">' + fact('lang', c.langs.join(', ')) + '</p>' +
+      (was ? '<p class="b-qcard-where t-before">' + fact('hist', beforeSay(was)) + '</p>' : '') +
       aimyBlock({ text: esc(say) + ' ' + evSay(c) + '.' + (s && s.status === 'done' ? ' Assessment ' + s.score + '%.' : ''), from: 'the CV, read against the success profile' }) +
       (c.stage === 'sent' || (isClient() && c.exit === 'clientno') ? sendout(c) : '') +
       /* AT THE SCREEN, THE CALL IS THE MOVE. Someone who applied or is due a
@@ -2250,6 +2341,17 @@
     ? '<button class="' + (cls || 'b-ghost') + '" type="button" data-pass-open="' + c.id + '">' + (isClient() ? 'Pass' : esc(EXIT.clientno.label)) + '</button>'
     : '<button class="' + (cls || 'b-ghost') + '" type="button" data-out="' + c.id + '|' + k + '">' + esc(EXIT[k].label) + '</button>';
   const passOpen = (c) => !!PASSING && PASSING.id === c.id;
+  /* Not progressing opens its reasons in place the same way: pressing a
+     reason is the exit, with Undo. */
+  let OUTING = null;
+  const outPicking = (c) => !!OUTING && OUTING.id === c.id;
+  /* Said after the exit: "we did not take them further: notice period too long". */
+  const exitSay = (c) => EXIT[c.exit].say + (c.exit === 'out' && c.outWhy ? ': ' + OUT_K[c.outWhy.why].say + (c.outWhy.note ? ', “' + c.outWhy.note + '”' : '')
+    : c.decline ? ': ' + DECLINE_K[c.decline.why].say + (c.decline.note ? ', “' + c.decline.note + '”' : '') : '');
+  /* RETURNING (R2, rediscovery): this person was on another requisition
+     before and left it. The card says so, with what stopped them, so
+     nobody screens them twice for the same thing. */
+  const before = (c) => apps(c).filter((x) => x.id !== c.id && x.exit)[0] || null;
 
   /* ══ THE RESEARCH COMPONENTS (30 Research/UI/source/components.html) ═════
      The eleven component cards drawn for the research, built from that
@@ -2315,6 +2417,20 @@
       (other ? '<div class="t-addnote t-input-wrap" id="wrapPass"><input class="dial-input t-input" id="passNote" type="text" autocomplete="off" placeholder="One line on why" aria-label="Why, in one line" value="' + esc(PASSING.line || '') + '">' +
         rcBtn('Pass', 'data-pass-other="' + c.id + '"', 'primary') + '</div>' : '') +
       rcNote('info', 'Reason codes · not free text · feeds matching for ' + esc(accOf(reqOf(c)).name) + ' only. ' + rcBtn('Keep ' + first(c.name) + ' in', 'data-pass-cancel', 'quiet')) +
+    '</div>';
+    return inCard ? body : '<div class="rc rc-pick">' + body + '</div>';
+  }
+
+  function outPicker(c, inCard) {
+    const other = OUTING.other;
+    const body = '<div style="margin-top:12px" role="group" aria-label="Why ' + esc(c.name) + ' is not progressing">' +
+      rcCaps('Why not progressing · pick one') +
+      '<div class="reasons">' + OUT_WHY.map((d) => other && d.k === 'other'
+        ? '<button class="chip on" type="button" data-out-why="' + c.id + '|' + d.k + '">' + svg('check', 12) + ' ' + esc(d.label) + '</button>'
+        : '<button class="chip" type="button" data-out-why="' + c.id + '|' + d.k + '">' + esc(d.label) + '</button>').join('') + '</div>' +
+      (other ? '<div class="t-addnote t-input-wrap" id="wrapOut"><input class="dial-input t-input" id="outNote" type="text" autocomplete="off" placeholder="One line on why" aria-label="Why, in one line" value="' + esc(OUTING.line || '') + '">' +
+        rcBtn('Not progressing', 'data-out-other="' + c.id + '"', 'primary') + '</div>' : '') +
+      rcNote('lock', 'Kept with us. The answer ' + esc(first(c.name)) + ' gets does not quote it. ' + rcBtn('Keep ' + first(c.name) + ' in', 'data-out-cancel', 'quiet')) +
     '</div>';
     return inCard ? body : '<div class="rc rc-pick">' + body + '</div>';
   }
@@ -3991,7 +4107,9 @@
         '<span class="s-rec-kind b-kinds">' + fact('user', 'Candidate') + fact('req', q.title) + (isClient() ? '' : fact('acc', accOf(q).name)) + fact('pin', c.place) + '</span>' +
         '<div class="s-rec-title"><h1 class="s-rec-name">' + esc(c.name) + '</h1>' +
           '<span class="s-meta-st tone-' + (c.exit ? 'neutral' : 'ok') + '">' + esc(c.exit ? EXIT[c.exit].label : STAGE[c.stage].label) + '</span>' +
+          (isClient() || !before(c) ? '' : tag('Returning', 'info')) +
           (isClient() ? '' : '<span class="b-kind">' + esc(c.source) + ', ' + esc(sayWhen(c.applied != null ? c.applied : -3)) + '</span>') + '</div>' +
+          (isClient() || !before(c) ? '' : '<p class="b-cmeta-p t-before">' + fact('hist', beforeSay(before(c))) + '</p>') +
         '<div class="b-cmeta">' +
           part('Now', p(esc(c.at)) + p(esc(plural(c.years, 'year')) + ' of experience')) +
           (isClient() ? '' : part('Reach them', p('<b>' + esc(c.phone || 'No phone yet') + '</b>') + p(esc(c.email || '')) +
@@ -4013,8 +4131,7 @@
         '<div class="s-lead-mark"><svg class="s-insight-mark" viewBox="0 0 18 20" width="14" height="14" aria-hidden="true"><use href="#aimy-logo-small"/></svg>' +
           '<span class="work-state ws-detected">Read off the record</span></div>' +
         '<div class="s-lead-line"><span class="s-lead-n">' + ok + '</span><span class="s-lead-say">of the <span class="s-lead-of">' + v.length + '</span> must-haves verified in interview. The CV meets ' + evMet(c) + '.</span></div>' +
-        '<p class="s-lead-deck">' + esc(c.exit ? EXIT[c.exit].say.charAt(0).toUpperCase() + EXIT[c.exit].say.slice(1) +
-            (c.decline ? ': ' + DECLINE_K[c.decline.why].say + (c.decline.note ? ', “' + c.decline.note + '”' : '') : '') + '.' +
+        '<p class="s-lead-deck">' + esc(c.exit ? exitSay(c).charAt(0).toUpperCase() + exitSay(c).slice(1) + '.' +
             (c.told === false && !isClient() ? ' Not told yet; they hear by ' + sayDay(hearBy(c)) + '.' : c.told ? ' They have been told.' : '')
           : differs.length ? 'The CV and the interview differ on ' + differs.map((x) => x.must).join('; ') + '. Worth asking about in the next round.'
           : !ok ? (early ? 'Nothing is checked in an interview yet. The phone screen comes first.' : 'Nothing is checked in an interview yet.')
@@ -4022,7 +4139,7 @@
         /* Message preview (component library): what they will read, before Send. */
         (c.exit && c.told === false && works ? msgPreview(c) + '<div class="s-lead-acts"><button class="s-insight-lnk primary" type="button" data-tell="' + c.id + '">Send the answer</button></div>' : '') +
         /* With a sendout, the reasons open inside its card instead. */
-        (c.exit || !works ? '' : passOpen(c) && c.sentDay == null ? passPicker(c) : writeOpen(c) ? writeBox(c) : '<div class="s-lead-acts">' +
+        (c.exit || !works ? '' : passOpen(c) && c.sentDay == null ? passPicker(c) : outPicking(c) ? outPicker(c) : writeOpen(c) ? writeBox(c) : '<div class="s-lead-acts">' +
           (isRec() && canCall(c) ? '<button class="s-insight-lnk' + (early ? ' primary' : '') + '" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call ' + esc(first(c.name)) + '</button>' : '') +
           (nx && !early && (w === 'me' || w === 'client' || w === 'candidate') && c.stage !== 'offer' ? '<button class="s-insight-lnk primary" type="button" data-move="' + c.id + '|' + nx + '">' + esc(goSay(c)) + '</button>' : '') +
           exitBtn(c, outK) +
@@ -6740,12 +6857,13 @@
         : to === 'sent' ? 'Sent to ' + accOf(q).name + '. They will be asked once, and nudged if they go quiet.'
         : to === 'offer' ? 'Prepare the offer from their card.' : to === 'assess' ? 'Send the assessment from their card.' : null);
   }
-  function out(c, k) {
-    const was = { exit: c.exit, since: c.since, told: c.told };
-    write(c, { exit: k, since: 0, told: NEEDS_TELLING[k] ? false : null });
-    const e = note(c, 'out', EXIT[k].label + ', marked by ' + me().name + '.');
+  function out(c, k, why, line) {
+    const was = { exit: c.exit, since: c.since, told: c.told, outWhy: c.outWhy || null };
+    write(c, { exit: k, since: 0, told: NEEDS_TELLING[k] ? false : null, outWhy: why ? { why: why, note: line || '', day: 0, by: DESK } : null });
+    const e = note(c, 'out', EXIT[k].label + (why ? ': ' + lower(OUT_K[why].label) + (line ? ', “' + line + '”' : '') : '') + ', marked by ' + me().name + '.');
+    OUTING = null;
     paint();
-    toast(first(c.name) + ': ' + EXIT[k].label.toLowerCase(), () => { write(c, was); unmake('events', e); paint(); toast('Put back', null, c.name + ' is in progress again.'); },
+    toast(first(c.name) + ': ' + EXIT[k].label.toLowerCase() + (why ? ', ' + lower(OUT_K[why].label) : ''), () => { write(c, was); unmake('events', e); paint(); toast('Put back', null, c.name + ' is in progress again.'); },
       NEEDS_TELLING[k] ? 'Nothing goes to them yet. A person sends the answer within ' + TELL_DAYS + ' days, from Not told yet on Today.' : null);
   }
   function nudge(c) {
@@ -6876,6 +6994,22 @@
         'AiMY sends one short message on LinkedIn or by email, naming the role. Nothing about pay.');
       return;
     }
+    /* ── Not progressing, with its reason ── */
+    if ((el = at('[data-out-cancel]'))) { OUTING = null; paint(); return; }
+    if ((el = at('[data-out-why]'))) {
+      const p = two('data-out-why');
+      if (p[1] === 'other') { OUTING.other = true; paint(); const f = byId('outNote'); if (f) f.focus(); return; }
+      out(DB.byId[p[0]], 'out', p[1], ''); return;
+    }
+    if ((el = at('[data-out-other]'))) {
+      const line = (byId('outNote') || {}).value || '';
+      if (!line.trim()) { shake('wrapOut'); return; }
+      out(DB.byId[val('data-out-other')], 'out', 'other', line.trim()); return;
+    }
+    /* ── Candidates: one requisition, and cards or a list ── */
+    if ((el = at('[data-rq]'))) { go(Object.assign({}, S, { rq: val('data-rq') || null, p: null }), true); return; }
+    if ((el = at('[data-cview]'))) { UI.cview = val('data-cview'); saveUI(); paint(); return; }
+    if ((el = at('[data-cfclear]'))) { go({ on: 'cands', q: S.q }, true); return; }
     /* ── A pass with its reason ── */
     if ((el = at('[data-pass-open]'))) { PASSING = { id: val('data-pass-open'), other: false, line: '' }; paint(); return; }
     if ((el = at('[data-pass-cancel]'))) { PASSING = null; paint(); return; }
@@ -7151,7 +7285,11 @@
       return;
     }
     if ((el = at('[data-wu-cancel]'))) { WRITING = null; paint(); return; }
-    if ((el = at('[data-out]'))) { const p = el.getAttribute('data-out').split('|'); out(DB.byId[p[0]], p[1]); return; }
+    if ((el = at('[data-out]'))) {
+      const p = el.getAttribute('data-out').split('|');
+      if (p[1] === 'out') { OUTING = { id: p[0], other: false, line: '' }; PASSING = null; WRITING = null; paint(); return; }
+      out(DB.byId[p[0]], p[1]); return;
+    }
     if ((el = at('[data-nudge]'))) { nudge(DB.byId[el.getAttribute('data-nudge')]); return; }
     if ((el = at('[data-start]'))) { start(el.getAttribute('data-start')); return; }
     /* ── Finding through the chat, and the shortlist it brings back ── */
