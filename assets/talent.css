@@ -45,13 +45,12 @@
   .t-fn-track { grid-column: 1 / -1; order: 3; }
 }
 
-/* ══ 3. LOGGING A CALL, IN THE PANEL IT HAPPENED IN ════════════════════════
-   Sales logs a call in the canvas; Talent has no canvas yet, so the panel
-   becomes the log when you hang up. These rules only space what Sales's own
-   pieces (s-callsum, filter-chip, dial-input, call-tools) already draw. */
-.t-call-log { gap: 12px; }
-.t-call-log .b-aimy { margin: 0; }
-.t-log-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+/* ══ 3. LOGGING A CALL, IN THE CONVERSATION ══════════════════════════════
+   As Sales does since 28 Oct: hanging up closes the panel and the call is
+   read back as AiMY's turn in the conversation (talent.js readbackHtml).
+   These rules only space what Sales's own pieces (s-callsum, filter-chip,
+   s-ans) already draw. */
+.t-log-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 8px; }
 .t-log-row .filter-chip { gap: 6px; }
 .t-key {
   display: inline-flex; align-items: center; justify-content: center;
@@ -59,9 +58,7 @@
   font-weight: var(--fw-bold); font-variant-numeric: tabular-nums;
   background: rgba(var(--accent-rgb), 0.14); color: var(--d100);
 }
-.t-log-note { width: 100%; margin: 0 0 8px; }
 .t-log-will { margin: 0 0 12px; font-size: var(--fs-sm); line-height: 1.45; color: var(--d100); }
-.t-log-acts { gap: 8px; }
 
 /* The prototype toggle sits bottom-right, which during a call is the foot
    of the call panel where Log lives. Prototype chrome steps aside for the

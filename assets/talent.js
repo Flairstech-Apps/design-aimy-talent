@@ -2701,6 +2701,7 @@
     if (CALL_DIAL) { clearTimeout(CALL_DIAL); CALL_DIAL = null; }
     if (CALL_TICK) { clearInterval(CALL_TICK); CALL_TICK = null; }
     if (CALL_LINE) { clearInterval(CALL_LINE); CALL_LINE = null; }
+    if (CALL_WAIT) { clearInterval(CALL_WAIT); CALL_WAIT = null; }
   }
   /* Down to a strip so the page can be read mid-call (Sales's callMin). */
   function callMin(on) {
@@ -2717,7 +2718,7 @@
     return s.map((l) => [l[0], fill(l[1])]);
   }
   const busy = () => {
-    if (CALL && CALL.state === 'logging') { toast('Log the last call first.'); return true; }
+    if (PENDING) { openCanvas(); toast('Log the last call first.', null, 'It is waiting in the conversation.'); return true; }
     if (CALL) { toast('You are already on a call. One line at a time.'); return true; }
     if (RINGING) { toast('A call is coming in. Answer it or let it go first.'); return true; }
     return false;
@@ -2735,11 +2736,16 @@
     document.body.classList.add('is-calling');
     callMin(false);
     paintCall();
+    callBrief(c);
     return true;
   }
   function callGo() {
     const c = CALL;
     if (!c || c.state !== 'ready') return;
+    /* Pressed before the count ran out, or the count running out. */
+    if (CALL_WAIT) { clearInterval(CALL_WAIT); CALL_WAIT = null; }
+    c.wait = null;
+    briefFreeze();
     c.state = 'connecting';
     paintCall();
     CALL_DIAL = setTimeout(() => {
@@ -2776,19 +2782,32 @@
   }
   const heardText = (c) => c.script.slice(0, c.shown).map((l) => l[1]).join(' ');
 
-  /* Hanging up turns the panel into the log. A call stopped while it was
-     still connecting is a call nobody answered. */
+  /* HANGING UP CLOSES THE PANEL (Sales). The call is over, so the panel
+     goes, and what AiMY heard is read back in the conversation, where the
+     brief already is. A call stopped while it was still connecting is a
+     call nobody answered. */
   function endCall() {
     const c = CALL;
-    if (!c || c.state === 'ready' || c.state === 'logging') return;
+    if (!c || c.state === 'ready') return;
     clearCallTimers();
-    const wasDialing = c.state === 'connecting';
+    c.dialing = c.state === 'connecting';
     c.state = 'logging';
     c.read = c.recording && c.shown ? readCall(heardText(c)) : { outcome: null, notice: null, salary: null, when: null };
-    c.lit = wasDialing ? 'noanswer' : c.read.outcome || (c.dir === 'in' && c.cand ? 'reached' : null);
+    c.lit = c.dialing ? 'noanswer' : c.read.outcome || (c.dir === 'in' && c.cand ? 'reached' : null);
     if (!c.cand) c.who = readWho(c.script.slice(0, c.shown));
+    briefFreeze();
+    /* The conversation it is read back in: the run's, the brief's, or a
+       new one for a call that had no brief (a typed number, a stranger). */
+    const home = c.sess && c.sess.chat ? c.sess.chat : (CHATS.filter((x) => x.turns.some((y) => y.id === c.brief))[0] || {}).id;
+    if (home) CHAT_AT = home;
+    else callChat(null, c.cand ? 'A call with ' + DB.byId[c.cand].name : 'A call from ' + c.phone);
+    c.chat = CHAT_AT;
+    PENDING = c;
+    CALL = null;
+    document.body.classList.remove('is-calling');
     callMin(false);
     paintCall();
+    readbackSay();
   }
   /* What pressing Log will do, said before it is pressed. */
   function willSay(call) {
@@ -2812,8 +2831,8 @@
   }
 
   function logCall(stop) {
-    const call = CALL;
-    if (!call || call.state !== 'logging') return;
+    const call = PENDING;
+    if (!call) return;
     const o = call.lit;
     if (!o) { toast('Pick what happened first.'); return; }
     const now = new Date();
@@ -2838,6 +2857,7 @@
         moved = 'hr';
         Object.assign(f, { stage: 'hr', since: 0, meet: 2, slot: '11:00', fb: false, maxAt: rank(q, 'hr') > rank(q, c.maxAt) ? 'hr' : c.maxAt });
       }
+      call.movedTo = moved;
       if (o === 'callback') f.callback = rd.when || 1;
       if (o === 'noanswer') f.callback = c.callback;
       /* Not a fit on a call was said on the call, so they have been told. */
@@ -2855,22 +2875,239 @@
       undo = () => { dropCall(t.id); paint(); };
     }
     const sess = call.sess, was = call.cand;
-    closeCall();
+    /* The read-back keeps its words as the record and loses its buttons,
+       so the same call cannot be logged twice. */
+    const ch = CHATS.filter((x) => x.id === call.chat)[0];
+    const rt = ch ? ch.turns.filter((x) => x.id === call.turn)[0] : null;
+    if (rt) rt.html = 'Logged: <b>' + esc(OUTCOME[o].label.toLowerCase()) + '</b>' + (c ? ' with ' + esc(first(c.name)) : '') + (call.movedTo ? ', moved to the HR interview' : '') + '.';
+    if (sess) (sess.log = sess.log || []).push({ cand: was, o: o, moved: !!call.movedTo });
+    PENDING = null;
+    saveChats();
     paint();
     toast(said, undo);
-    if (sess && !stop) advance(sess, was);
+    /* On a single call the conversation gets out of the way; in a run it
+       stays, as the run's record, and the next call is already counting. */
+    if (!sess) { closeCanvas(); return; }
+    if (stop) { runSummary(sess); return; }
+    advance(sess, was);
   }
-  /* Closing the panel without logging: one press, with Undo that brings
-     the call back exactly as it was, so an ended call can still be logged. */
+  /* ══ THE CALL GOES THROUGH THE CONVERSATION (Sales, 28 Oct) ══════════════
+     As AiMY Sales does it now. Pressing Call opens the conversation with
+     AiMY's brief as its turn, "Before you speak to Mariam Hamdy", and the
+     panel on the right is only the call: who, From, Call. Hanging up closes
+     the panel; the conversation asks "I read that as passed the screen. Is
+     that right?" with the outcome, what was said and where it moves them,
+     and Log it is one press, or one typed sentence corrects it. A run is
+     one conversation, the record of the run: each brief arrives in it, the
+     next call counts down in the panel with Call now, the brief carries
+     Skip this one and Stop the run, and the run ends with what it was
+     worth. Nothing here dials anything (the fixture is as before). */
+  let PENDING = null;
+  let CALL_WAIT = null;
+  const narrowCall = () => window.matchMedia('(max-width: 760px)').matches;
+  const WAIT_SECS = 30;
+  const answerBlock = (title, body, cite) => '<div class="s-ans"><div class="s-ans-title">' + esc(title) + '</div>' +
+    '<div class="s-ans-body">' + body + '</div>' + (cite ? '<div class="s-ans-cite"><span>' + esc(cite) + '</span></div>' : '') + '</div>';
+  const openQ = (cap, say) => '<blockquote class="b-open"><span class="b-open-cap">' + esc(cap) + '</span><p class="b-open-say">' + say + '</p></blockquote>';
+  /* The conversation a call speaks in: the run's own, or a new one. */
+  function callChat(sess, title) {
+    let ch = sess && sess.chat ? CHATS.filter((x) => x.id === sess.chat)[0] : null;
+    if (!ch) {
+      ch = { id: uid('ch'), desk: DESK, title: title, turns: [] };
+      CHATS.push(ch);
+      if (sess) sess.chat = ch.id;
+    }
+    CHAT_AT = ch.id;
+    return ch;
+  }
+  function callTurn(turn) {
+    const ch = chatNow() || callChat(null, 'A call');
+    turn.id = turn.id || uid('t');
+    ch.turns.push(turn);
+    saveChats();
+    if (canvasShown()) paintThread(); else openCanvas();
+    return turn;
+  }
+  /* How to open, by where they are: what the person on the other end is
+     expecting to hear in the first sentence. */
+  function openWith(c) {
+    const q = reqOf(c), a = accOf(q);
+    if (c.callback != null && c.callback <= 0) return 'They asked you to call back today: say so first, then ask if now is better.';
+    if (c.source === 'Found on the web') return 'Say who you are, that you are at FlairsTech, and where you saw their profile. Then ask if they have two minutes to hear about ' + esc(q.title) + '.';
+    if (c.stage === 'applied' || c.stage === 'phone' || c.stage === 'sourced') return 'Thank them for applying to ' + esc(q.title) + ' and say this first call takes about ten minutes.';
+    return 'A follow-up: say in one sentence why you are calling. They are ' + esc(atStage(c.stage)) + ' for ' + esc(q.title) + (a ? ' with ' + esc(a.name) : '') + '.';
+  }
+  /* What usually comes back on a screen, and what to say to it. */
+  const PUSH = [
+    ['Salary', 'Ask what matters to them besides pay before naming any number. The range is not promised on the phone.'],
+    ['Notice', 'Ask whether their employer can release them early, and write down the date they say.'],
+    ['Not looking', 'Ask what would make them look. If nothing, ask whether you may keep them for the next role.'],
+  ];
+  function briefHtml(t) {
+    const c = DB.byId[t.cand];
+    if (!c) return answerBlock('Before you speak to them', '<p class="b-prep-line">They are no longer on file.</p>');
+    const q = reqOf(c), a = accOf(q);
+    const call = CALL && CALL.brief === t.id ? CALL : null;
+    const silent = q.must.filter((m, i) => c.ev[i] === 'n'), partly = q.must.filter((m, i) => c.ev[i] === 'p');
+    const early = rank(q, c.stage) <= rank(q, 'phone');
+    const last = lastCall(c), calls = callsOf(c.id);
+    const body = '<div class="b-prep">' +
+      '<p class="b-prep-id">' + esc(q.title) + ' · ' + esc(a.name) + ' · ' + esc(STAGE[c.stage].label) + '</p>' +
+      (call && call.video ? videoBlock(c) : '') +
+      (t.inbound ? (openQ('Why they called', ringRead(c)) + openQ('What to get', early ? 'Their notice and the salary they expect, if they have time.' : 'Answer what they ask; nothing on this call moves their stage.'))
+        : openQ('Open with', openWith(c)) +
+          openQ('What to get', early
+            ? 'Their notice, the salary they expect' + (silent.length ? ', and what the CV is silent on: ' + esc(silent.join('; ')) + '.' : '.') +
+              (partly.length ? ' The CV only partly shows: ' + esc(partly.join('; ')) + '.' : '')
+            : 'A follow-up. They are ' + esc(atStage(c.stage)) + ', and nothing on this call moves their stage.') +
+          openQ('Last time', last ? esc(callSay(last)) + (last.note && !last.missed ? ' ' + esc(last.note) : '') : 'You have not spoken yet.') +
+          (early ? openQ('If they push back', PUSH.map((p) => '<b>' + esc(p[0]) + '.</b> ' + esc(p[1])).join('<br>')) : '') +
+          openQ('The role', esc(plural(q.seats || 1, 'seat')) + ' at ' + esc(a.name) + (q.place ? ', ' + esc(q.place) : '') +
+            (q.published ? '. It is on the careers page, so you can send them the link.' : '. It is not on the careers page; nothing public to send yet.'))) +
+      (call && call.sess && call.state === 'ready'
+        ? '<p class="t-acts"><button class="s-inline-btn" type="button" data-call-skip>Skip this one</button><button class="s-inline-btn" type="button" data-sess-stop>Stop the run</button></p>' : '') +
+    '</div>';
+    return answerBlock((t.inbound ? 'While you have ' : 'Before you speak to ') + c.name + (t.inbound ? ' on the line' : ''), body,
+      calls.length ? plural(calls.length, 'call') + ' on the record' : 'Nothing on the record yet');
+  }
+  function callBrief(c, inbound) {
+    callChat(CALL.sess, (inbound ? 'While you have ' : 'Before you speak to ') + c.name + (inbound ? ' on the line' : ''));
+    /* Named before it is drawn, so its first paint already knows its call. */
+    CALL.brief = uid('t');
+    const t = callTurn({ id: CALL.brief, who: 'aimy', kind: 'brief', cand: c.id, inbound: !!inbound });
+    /* On a call already under way the brief is final the moment it lands. */
+    if (inbound) { t.html = briefHtml(t); saveChats(); paintThread(); }
+  }
+  /* Frozen when the phone starts dialling: the record of the run keeps the
+     brief as it was read, without Skip and Stop, which no longer apply. */
+  function briefFreeze() {
+    const ch = CHATS.filter((x) => CALL && x.turns.some((y) => y.id === CALL.brief))[0];
+    const t = ch && CALL && CALL.brief ? ch.turns.filter((x) => x.id === CALL.brief)[0] : null;
+    if (t && !t.html) { const was = CALL.state; CALL.state = 'live'; t.html = briefHtml(t); CALL.state = was; saveChats(); paintThread(); }
+  }
+
+  /* ── THE READ-BACK ── what AiMY heard, to agree with or correct. */
+  function readbackHtml(t) {
+    const call = PENDING;
+    if (!call || call.turn !== t.id) return 'This call was left without a log.';
+    const c = DB.byId[call.cand], o = call.lit, rd = call.read || {};
+    const heard = call.recording && call.shown;
+    const said = call.note && o ? 'With what you told me, I have it as <b>' + esc(OUTCOME[o].label.toLowerCase()) + '</b>. Is that right?'
+      : call.dialing ? 'Nobody picked up, so I read that as <b>no answer</b>. Is that right?'
+      : heard ? (rd.outcome ? 'I read that as <b>' + esc(OUTCOME[rd.outcome].label.toLowerCase()) + '</b>. Is that right?' : 'I could not tell how it went from what was said.')
+      : o ? 'I have it as <b>' + esc(OUTCOME[o].label.toLowerCase()) + '</b>.' : 'Nothing was recorded, so I have nothing to read.';
+    const q = c ? reqOf(c) : null;
+    const moves = c && o === 'passed' && rank(q, c.stage) <= rank(q, 'phone');
+    const rows = [['Outcome', o ? OUTCOME[o].label : 'Not picked yet', o ? 'ok' : 'warn']];
+    if (rd.notice) rows.push(['Notice', rd.notice, 'neutral']);
+    if (rd.salary) rows.push(['Expects', rd.salary, 'neutral']);
+    if (moves) rows.push(['Stage', STAGE[c.stage].label + ' → HR interview', 'neutral']);
+    if (!c) rows.push(['Who', call.who || 'Not on file', 'neutral']);
+    const nx = call.dir === 'in' ? null : sessNext(call);
+    return said +
+      '<p class="s-callsum-note">Or tell me what I got wrong, or press 1 to 8 for the outcome.</p>' +
+      '<div class="s-callsum-in-turn"><div class="s-callsum"><div class="s-callsum-rows">' + rows.map((r) =>
+        '<div class="s-callsum-row"><span class="s-callsum-cap">' + esc(r[0]) + '</span><span class="s-callsum-val tone-' + r[2] + '">' + esc(r[1]) + '</span></div>').join('') + '</div>' +
+        (heard ? '<details class="s-trace"><summary class="s-trace-sum">Transcript<span class="s-trace-n">' + call.shown + '</span></summary>' +
+          '<div class="s-said-lines">' + transcriptHtml(call) + '</div></details>' : '') + '</div></div>' +
+      '<div class="b-cuts t-log-row" role="group" aria-label="What happened">' + OUTCOMES.map((x) =>
+        '<button class="filter-chip' + (o === x.k ? ' active' : '') + '" type="button" data-outcome="' + x.k + '" aria-pressed="' + (o === x.k) + '">' +
+          '<span class="t-key" aria-hidden="true">' + OUTCOME[x.k].n + '</span>' + esc(x.label) + '</button>').join('') + '</div>' +
+      '<p class="t-log-will">' + esc(willSay(call)) + '</p>' +
+      '<p class="t-acts">' +
+        (!c && call.who ? '<button class="btn btn-ghost btn-sm" type="button" data-add-stranger>Add ' + esc(first(call.who)) + ' as a candidate</button>' : '') +
+        (nx ? '<button class="btn btn-brand btn-sm" type="button" data-log>Log it and call ' + esc(first(nx.name)) + '</button><button class="btn btn-ghost btn-sm" type="button" data-log="stop">Log it and stop</button>'
+          : '<button class="btn btn-brand btn-sm" type="button" data-log>' + (call.sess ? 'Log it and finish' : 'Log it') + '</button>') +
+      '</p>';
+  }
+  function readbackSay() {
+    /* A new reading supersedes the last: the old one keeps its words and
+       loses its buttons, so the record cannot be logged twice. */
+    CHAT_AT = PENDING.chat;
+    const ch = chatNow();
+    const old = ch && PENDING.turn ? ch.turns.filter((x) => x.id === PENDING.turn)[0] : null;
+    if (old && !old.html) old.html = 'Read again below.';
+    PENDING.turn = uid('t');
+    callTurn({ id: PENDING.turn, who: 'aimy', kind: 'readback' });
+  }
+  /* A sentence typed while a call waits to be logged is a correction. */
+  function callCorrect(text) {
+    if (!PENDING) return false;
+    CHAT_AT = PENDING.chat;
+    const rd = readCall(text);
+    PENDING.note = text;
+    PENDING.read = PENDING.read || {};
+    if (rd.outcome) PENDING.lit = rd.outcome;
+    if (rd.notice) PENDING.read.notice = rd.notice;
+    if (rd.salary) PENDING.read.salary = rd.salary;
+    if (rd.when) PENDING.read.when = rd.when;
+    callTurn({ who: 'you', html: esc(text) });
+    readbackSay();
+    return true;
+  }
+
+  /* ── THE WAIT BETWEEN CALLS IN A RUN (Sales, AIMY-2667) ── the next call
+     places itself when the count runs out; Call now does not wait. */
+  function waitStart() {
+    if (!CALL || CALL.state !== 'ready' || !CALL.sess) return;
+    CALL.wait = { left: WAIT_SECS, total: WAIT_SECS, fresh: true };
+    paintCall();
+    CALL_WAIT = setInterval(() => {
+      const w = CALL && CALL.wait;
+      if (!w) { clearInterval(CALL_WAIT); CALL_WAIT = null; return; }
+      w.left = Math.max(0, w.left - 1);
+      if (!w.left) { callGo(); return; }
+      const left = byId('callWaitLeft');
+      if (left) left.textContent = fmtClock(w.left);
+      const bar = byId('callWaitBar');
+      if (bar) bar.style.transform = 'scaleX(' + (w.left / w.total).toFixed(4) + ')';
+    }, 1000);
+  }
+  function waitBlock(call) {
+    const w = call.wait, fresh = w.fresh, c = DB.byId[call.cand];
+    w.fresh = false;
+    return '<div class="call-wait' + (fresh ? ' is-new' : '') + '" role="group" aria-label="Wait before the next call">' +
+      '<div class="call-wait-top"><span class="call-wait-say">Calling ' + esc(c ? first(c.name) : 'them') + ' in</span>' +
+        '<span class="call-wait-left" id="callWaitLeft" role="timer">' + fmtClock(w.left) + '</span></div>' +
+      '<div class="call-wait-bar" aria-hidden="true"><span id="callWaitBar" style="transform:scaleX(' + (w.total ? w.left / w.total : 0).toFixed(4) + ')"></span></div>' +
+    '</div>';
+  }
+  /* ── WHAT THE RUN WAS WORTH ── said once, at its end, in its conversation. */
+  function runSummary(sess) {
+    const log = sess.log || [];
+    const by = {};
+    log.forEach((x) => { by[x.o] = (by[x.o] || 0) + 1; });
+    const got = log.filter((x) => x.o !== 'noanswer' && x.o !== 'wrong').length;
+    const moved = log.filter((x) => x.moved).length;
+    const TONE = { passed: 'ok', reached: 'neutral', callback: 'warn', noanswer: 'neutral', notfit: 'err', withdrew: 'err', wrong: 'err', dnc: 'err' };
+    const body = '<p class="s-callsum-note">' + plural(log.length, 'call') + ' · <b>' + got + '</b> got through' + (sess.skipped.length ? ' · ' + sess.skipped.length + ' skipped' : '') + '.</p>' +
+      (log.length ? '<div class="b-cuts">' + Object.keys(by).map((k) => '<span class="tag tag-' + TONE[k] + '">' + by[k] + ' ' + esc(OUTCOME[k].label) + '</span>').join('') + '</div>' : '') +
+      '<div class="s-callsum-rows"><div class="s-callsum-row"><span class="s-callsum-cap">What it was worth</span><span class="s-callsum-val">' +
+        (moved ? '<b>' + plural(moved, 'person', 'people') + '</b> passed the screen and ' + (moved === 1 ? 'is' : 'are') + ' booked for the HR interview.'
+          : got ? 'You spoke to ' + plural(got, 'person', 'people') + '; nobody passed the screen this time.' : log.length ? 'Nobody picked up.' : 'Nobody was called.') +
+      '</span></div></div>';
+    callChat(sess, 'A run of calls');
+    callTurn({ who: 'aimy', html: answerBlock('That run is finished', body, plural(log.length, 'call') + ' written to their records') });
+  }
+  function stopRun() {
+    const sess = CALL && CALL.sess;
+    if (!sess) return;
+    briefFreeze();
+    closeCall();
+    paint();
+    runSummary(sess);
+  }
+
+  /* Closing the panel before a call starts: one press, with Undo. In a run
+     it is Stop the run. */
   function dismissCall() {
     const was = CALL;
-    if (!was || (was.state !== 'ready' && was.state !== 'logging')) return;
+    if (!was || was.state !== 'ready') return;
+    if (was.sess) { stopRun(); return; }
     const minWas = CALL_MIN;
     closeCall();
     paint();
-    toast(was.state === 'logging' ? 'Closed without logging the call' : 'Closed',
-      () => { CALL = was; document.body.classList.add('is-calling'); callMin(minWas); paintCall(); },
-      was.state === 'logging' ? 'Nothing about it is saved. Undo brings it back to log.' : null);
+    toast('Closed', () => { CALL = was; document.body.classList.add('is-calling'); callMin(minWas); paintCall(); });
   }
   function closeCall() {
     clearCallTimers();
@@ -2886,19 +3123,20 @@
     const live = ids.filter((id) => canCall(DB.byId[id]));
     if (!live.length) { toast('Nobody here has a number to call.'); return; }
     const sess = { ids: live, done: [], skipped: [] };
-    if (startCall(live[0], sess)) callGo();
+    startCall(live[0], sess);
   }
   function advance(sess, was) {
     if (was && sess.done.indexOf(was) < 0) sess.done.push(was);
     const next = sess.ids.filter((id) => sess.done.indexOf(id) < 0 && sess.skipped.indexOf(id) < 0 && canCall(DB.byId[id]))[0];
-    if (!next) { toast('That is everyone', null, plural(sess.done.length, 'call') + ' logged' + (sess.skipped.length ? ', ' + sess.skipped.length + ' skipped.' : '.')); return; }
-    if (startCall(next, sess)) callGo();
+    if (!next) { runSummary(sess); return; }
+    if (startCall(next, sess)) waitStart();
   }
   function skipCall() {
     const call = CALL;
     if (!call || !call.sess || call.state !== 'ready') return;
     call.sess.skipped.push(call.cand);
     const sess = call.sess;
+    briefFreeze();
     closeCall();
     advance(sess);
   }
@@ -2918,27 +3156,6 @@
       '</div></span>';
   }
 
-  /* What to get on this call, before it starts. */
-  function prepHtml(c) {
-    const q = reqOf(c);
-    /* Silent means Not evidenced; Partly met is said apart from it. */
-    const silent = q.must.filter((m, i) => c.ev[i] === 'n');
-    const partly = q.must.filter((m, i) => c.ev[i] === 'p');
-    const last = lastCall(c);
-    const what = c.callback != null && c.callback <= 0 ? 'They asked to be called back today. ' : '';
-    const early = rank(q, c.stage) <= rank(q, 'phone');
-    return '<div class="b-prep">' +
-      '<p class="b-prep-id">' + esc(q.title) + ' · ' + esc(accOf(q).name) + '</p>' +
-      '<blockquote class="b-open"><span class="b-open-cap">What to get</span>' +
-        '<p class="b-open-say">' + esc(what) + (early
-          ? 'Their notice, the salary they expect' + (silent.length ? ', and what the CV is silent on: ' + esc(silent.join('; ')) + '.' : '.') +
-            (partly.length ? ' The CV only partly shows: ' + esc(partly.join('; ')) + '.' : '')
-          : 'A follow-up. They are ' + esc(atStage(c.stage)) + ', and nothing on this call moves their stage.') + '</p>' +
-      '</blockquote>' +
-      (last ? '<p class="b-prep-line">' + esc(callSay(last)) + (last.note && !last.missed ? ' ' + esc(last.note) : '') + '</p>' : '') +
-      (CALL && CALL.video ? videoBlock(c) : '') +
-    '</div>';
-  }
   /* ══ ON VIDEO (Sales) ══════════════════════════════════════════════════
      A screen can be on Teams instead of the phone, and on video how the
      recruiter comes across is read as closely as what they ask. Folded, so
@@ -2987,13 +3204,13 @@
         (st === 'connecting' || st === 'live'
           ? '<span class="call-live' + (st === 'connecting' ? ' is-dialing' : '') + '" aria-hidden="true"></span>' +
             '<span class="call-timer" id="callTimer">' + (st === 'connecting' ? 'Connecting…' : (call.held ? 'On hold · ' : '') + fmtClock(call.secs)) + '</span>'
-          : st === 'logging' ? '<span class="call-timer">Ended · ' + fmtClock(call.secs) + '</span>' : '') +
+          : '') +
         (sess ? '<span class="call-of">' + at + ' of ' + sess.ids.length + '</span>' : '') +
         '<span class="tag tag-warn" title="Telephony for Talent is on hold with AiMY Phone">Design target</span>' +
       '</div>' +
       /* A way out of the panel whenever no call is on the line: before it
          starts, and once it has ended. A live call ends with hang-up. */
-      (st === 'ready' || st === 'logging' ? '<button class="call-x" type="button" data-call-close aria-label="Close" title="Close">' + svg('x', 16) + '</button>' : '') +
+      (st === 'ready' ? '<button class="call-x" type="button" data-call-close aria-label="Close" title="Close">' + svg('x', 16) + '</button>' : '') +
       '</div>' +
       '<p class="call-sub">' + esc(sub) + '</p>' +
       (call.video ? '<p class="call-num call-vid">' + svg('video') + 'Video call on Teams' + (call.camOff && st === 'live' ? ' · your camera is off' : '') + '</p>'
@@ -3002,43 +3219,9 @@
         : st !== 'ready' && from ? '<p class="call-from-on">From ' + esc(from.num) + ', ' + esc(from.cc) + '</p>' : '') +
     '</div>';
 
-    if (st === 'logging') {
-      const rd = call.read || {};
-      const heard = call.recording && call.shown;
-      const facts = [['What happened', call.lit ? OUTCOME[call.lit].label : 'Not picked yet', call.lit ? 'ok' : 'warn']];
-      if (rd.notice) facts.push(['Notice', rd.notice, 'neutral']);
-      if (rd.salary) facts.push(['Expects', rd.salary, 'neutral']);
-      return head +
-        '<div class="call-lines t-call-log" id="callLines">' +
-          aimyBlock({ text: heard ? (rd.outcome ? 'I heard <b>' + esc(OUTCOME[rd.outcome].label.toLowerCase()) + '</b>' +
-              (rd.notice || rd.salary ? ', with ' + esc([rd.notice, rd.salary ? 'expects ' + rd.salary : null].filter(Boolean).join(' and ')) : '') + '. Is that right?'
-              : 'I could not tell how it went from what was said. Pick it below.')
-            : 'Nothing was recorded, so I have nothing to read. Pick what happened, or type it.' }, true) +
-          '<div class="s-callsum"><div class="s-callsum-rows">' + facts.map((f) => '<div class="s-callsum-row">' +
-            '<span class="s-callsum-cap">' + esc(f[0]) + '</span><span class="s-callsum-val tone-' + f[2] + '">' + esc(f[1]) + '</span></div>').join('') +
-          '</div>' +
-          (heard ? '<details class="s-trace"><summary class="s-trace-sum">Transcript<span class="s-trace-n">' + call.shown + '</span></summary>' +
-            '<div class="s-said-lines">' + transcriptHtml(call) + '</div></details>' : '') +
-          '</div>' +
-          /* Inside the scrolling region, so the Log button below is never
-             pushed out of a short panel. */
-          '<div class="b-cuts t-log-row" role="group" aria-label="What happened">' + OUTCOMES.map((o) =>
-            '<button class="filter-chip' + (call.lit === o.k ? ' active' : '') + '" type="button" data-outcome="' + o.k + '" aria-pressed="' + (call.lit === o.k) + '">' +
-              '<span class="t-key" aria-hidden="true">' + OUTCOME[o.k].n + '</span>' + esc(o.label) + '</button>').join('') + '</div>' +
-          '<input class="dial-input t-log-note" id="callNote" type="text" autocomplete="off" spellcheck="false" ' +
-            'placeholder="Say what happened, or correct me" aria-label="Say what happened" value="' + esc(call.note) + '">' +
-          '<p class="t-log-will">' + esc(willSay(call)) + '</p>' +
-        '</div>' +
-        '<div class="call-tools t-log-acts">' +
-          (!c && call.who ? '<button class="btn btn-ghost btn-sm" type="button" data-add-stranger>Add ' + esc(first(call.who)) + ' as a candidate</button>' : '') +
-          /* Calling down a list, the way out is always one press away. */
-          (sessNext(call) ? '<button class="btn btn-ghost btn-sm" type="button" data-log="stop">Log it and stop</button>' : '') +
-          '<button class="btn btn-brand btn-sm" type="button" data-log>' + esc(sessNext(call) ? 'Log it and call ' + first(sessNext(call).name) : 'Log it') + '</button>' +
-        '</div>';
-    }
-
     return head +
-      '<div class="call-lines" id="callLines">' + (st === 'ready' ? (c ? prepHtml(c) : '') : transcriptHtml(call)) + '</div>' +
+      '<div class="call-lines" id="callLines">' + (st === 'ready' ? (call.wait ? waitBlock(call) : '') +
+        (call.brief && (!canvasShown() || narrowCall()) ? '<button class="b-ghost" type="button" data-brief-open>Read the brief</button>' : '') : transcriptHtml(call)) + '</div>' +
       (call.asking ? '<div class="call-consent" role="group" aria-labelledby="callConsentSay">' +
         '<p class="call-consent-say" id="callConsentSay">They have to be told before this can start. Have you told them?</p>' +
         '<div class="call-consent-acts"><button class="btn btn-ghost btn-sm" type="button" data-call-consent="no">Not yet</button>' +
@@ -3052,7 +3235,7 @@
             (call.video
               ? '<button class="call-end call-go" type="button" data-callgo aria-label="Start the video call with ' + esc(name) + '">' + svg('video') + 'Start the video call</button>'
               : '<button class="call-end call-go" type="button" data-callgo aria-label="Start the call to ' + esc(name) + ' from ' + esc(from.num) + '">' +
-                svg('phone') + 'Call from ' + esc(telTag(from)) + '</button>')
+                svg('phone') + (call.wait ? 'Call now' : 'Call from ' + esc(telTag(from))) + '</button>')
           : (call.video ? '<button class="call-tool' + (call.camOff ? ' is-on' : '') + '" type="button" data-call-cam aria-pressed="' + call.camOff + '" aria-label="' +
               (call.camOff ? 'Turn your camera on' : 'Turn your camera off') + '" title="' + (call.camOff ? 'Turn your camera on' : 'Turn your camera off') + '">' + svg(call.camOff ? 'videooff' : 'video') + '</button>' : '') +
             '<button class="call-tool' + (call.recording ? ' is-rec' : '') + '" type="button" data-call-rec aria-pressed="' + call.recording + '" aria-label="' +
@@ -3078,7 +3261,7 @@
   /* A stranger who rang about a role becomes a candidate on the requisition
      their words point at, one press, with Undo. */
   function addStranger() {
-    const call = CALL;
+    const call = PENDING || CALL;
     if (!call || call.cand || !call.who) return;
     const text = heardText(call).toLowerCase();
     const open = myOpen();
@@ -3089,9 +3272,9 @@
       badNumber: false, callback: null };
     addCand(c);
     call.cand = c.id;
-    paintCall();
+    if (call === PENDING) readbackSay(); else paintCall();
     paint();
-    toast('Added ' + c.name + ' to ' + q.title, () => { dropCand(c); if (CALL && CALL.cand === c.id) { CALL.cand = null; paintCall(); } paint(); },
+    toast('Added ' + c.name + ' to ' + q.title, () => { dropCand(c); if (PENDING && PENDING.cand === c.id) { PENDING.cand = null; readbackSay(); } if (CALL && CALL.cand === c.id) { CALL.cand = null; paintCall(); } paint(); },
       'Applied, with the number they called from. The call is logged against them.');
   }
 
@@ -3164,6 +3347,7 @@
     document.body.classList.add('is-calling');
     callMin(false);
     liveNow();
+    if (c) callBrief(c, true);
     r.state = 'live';
     paintRing();
     RING_GONE = setTimeout(ringRetire, RING_HANDOFF_MS);
@@ -5390,9 +5574,10 @@
   const msgAvatar = (who) => who === 'you'
     ? '<div class="msg-avatar user-av">' + esc(me().name.split(' ').map((w) => w[0]).join('').slice(0, 2)) + '</div>'
     : '<div class="msg-avatar aimy-av">' + mark(14) + '</div>';
+  const turnBody = (t) => t.html || (t.kind === 'brief' ? briefHtml(t) : t.kind === 'readback' ? readbackHtml(t) : '');
   const turnHtml = (t) => t.who === 'you'
     ? '<div class="chat-msg user">' + msgAvatar('you') + '<div class="msg-bubble">' + t.html + '</div></div>'
-    : '<div class="chat-msg aimy">' + msgAvatar('aimy') + '<div class="msg-bubble">' + t.html +
+    : '<div class="chat-msg aimy">' + msgAvatar('aimy') + '<div class="msg-bubble">' + turnBody(t) +
         (t.acts && t.acts.length ? '<p class="t-acts">' + t.acts.map(actBtn).join('') + '</p>' : '') + '</div></div>';
   function paintThread() {
     const host = byId('overlayThread'), ch = chatNow();
@@ -5439,11 +5624,13 @@
     byId('aimyOverlay').classList.add('open');
     paintBasis();
     paintThread();
+    if (CALL) paintCall();
     byId('overlayInput').focus();
   }
   function closeCanvas() {
     byId('aimyOverlay').classList.remove('open');
     chatsDrawer(false);
+    if (CALL) paintCall();
   }
   function chatsDrawer(on) {
     byId('overlayChats').classList.toggle('is-open', on);
@@ -5457,6 +5644,7 @@
   function canvasAsk(text) {
     const t = String(text || '').trim();
     if (!t || THINK) return;
+    if (PENDING) { byId('overlayInput').value = ''; callCorrect(t); return; }
     const bar = document.querySelector('.overlay-input-bar');
     byId('overlayInput').value = '';
     THINK = t;
@@ -6420,7 +6608,7 @@
       paintCall(); return;
     }
     if ((el = at('[data-call-mute]'))) { CALL.muted = !CALL.muted; paintCall(); return; }
-    if ((el = at('[data-call-mode]'))) { CALL.video = el.getAttribute('data-call-mode') === 'video'; paintCall(); return; }
+    if ((el = at('[data-call-mode]'))) { CALL.video = el.getAttribute('data-call-mode') === 'video'; paintCall(); if (canvasShown()) paintThread(); return; }
     if ((el = at('[data-call-cam]'))) { CALL.camOff = !CALL.camOff; paintCall(); return; }
     if ((el = at('[data-vm]'))) { vmPlay(el.getAttribute('data-vm')); return; }
     if ((el = at('[data-live-mic]'))) { liveMic(); return; }
@@ -6433,7 +6621,10 @@
       if (!byId('dialPanel').hidden) dialOpen();
       return;
     }
-    if ((el = at('[data-outcome]'))) { CALL.lit = el.getAttribute('data-outcome'); paintCall(); return; }
+    if ((el = at('[data-outcome]'))) { if (PENDING) { PENDING.lit = el.getAttribute('data-outcome'); paintThread(); } return; }
+    if ((el = at('[data-sess-stop]'))) { stopRun(); return; }
+    /* On a phone the panel covers the conversation: it folds to its strip. */
+    if ((el = at('[data-brief-open]'))) { openCanvas(); if (narrowCall()) { callMin(true); paintCall(); } return; }
     if ((el = at('[data-log]'))) { logCall(el.getAttribute('data-log') === 'stop'); return; }
     if ((el = at('[data-add-stranger]'))) { addStranger(); return; }
     if ((el = at('[data-ring-yes]'))) { answerInbound(); return; }
@@ -6589,22 +6780,6 @@
       if (who) who.innerHTML = dialWho();
       return;
     }
-    /* The note is read as you type, and what it says overrides what the
-       transcript said (Sales's per-axis rule). */
-    if (e.target.id === 'callNote' && CALL) {
-      const v = e.target.value, pos = e.target.selectionStart;
-      CALL.note = v;
-      const rd = readCall(v);
-      CALL.read = CALL.read || {};
-      if (rd.outcome) CALL.lit = rd.outcome;
-      if (rd.notice) CALL.read.notice = rd.notice;
-      if (rd.salary) CALL.read.salary = rd.salary;
-      if (rd.when) CALL.read.when = rd.when;
-      paintCall();
-      const f = byId('callNote');
-      if (f) { f.focus(); f.setSelectionRange(pos, pos); }
-      return;
-    }
     if (!e.target.matches('[data-find]')) return;
     const v = e.target.value, pos = e.target.selectionStart;
     S.find = v || undefined;
@@ -6639,13 +6814,16 @@
       passWith(DB.byId[PASSING.id], 'other', e.target.value.trim()); return;
     }
     if (e.key === 'Escape' && PASSING) { PASSING = null; paint(); return; }
+    /* A call waiting to be logged: 1 to 8 pick the outcome and Enter logs
+       it, while nothing is typed; a typed sentence is a correction. */
+    if (PENDING && canvasShown()) {
+      const empty = e.target.id === 'overlayInput' ? !e.target.value.trim() : !typing;
+      if (empty && /^[1-8]$/.test(e.key)) { e.preventDefault(); PENDING.lit = OUTCOMES[Number(e.key) - 1].k; paintThread(); return; }
+      if (empty && e.key === 'Enter' && !/button/i.test(e.target.tagName)) { e.preventDefault(); logCall(); return; }
+    }
     if (e.target.id === 'overlayInput' && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); canvasAsk(e.target.value); return; }
     if (e.target.id === 'liveIn' && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); liveSend(); return; }
     if (e.key === 'Escape' && canvasShown()) { closeCanvas(); return; }
-    if (CALL && CALL.state === 'logging') {
-      if (e.key === 'Enter' && (e.target.id === 'callNote' || !typing) && !/button/i.test(e.target.tagName)) { e.preventDefault(); logCall(); return; }
-      if (!typing && /^[1-8]$/.test(e.key)) { CALL.lit = OUTCOMES[Number(e.key) - 1].k; paintCall(); return; }
-    }
     if (CALL && CALL.state === 'ready' && e.key === 'Enter' && !typing && !/button/i.test(e.target.tagName)) { e.preventDefault(); callGo(); return; }
     if (e.key === 'Escape') { closeDial(); document.querySelectorAll('.tel-menu').forEach((m) => { m.hidden = true; }); }
     if (e.key === 'Escape') { const p = byId('ntfPanel'); if (!p.hidden) { p.hidden = true; byId('ntfBell').setAttribute('aria-expanded', 'false'); } }
