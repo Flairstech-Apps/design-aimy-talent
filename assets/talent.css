@@ -545,6 +545,25 @@ body.is-portal .aimy-overlay { display: none !important; }
    cuts that add up to All, the way Sales keeps its Accounts chip apart. */
 .t-cut-apart { margin-inline-start: auto; }
 
+/* ══ CARDS, A LITTLE SEE-THROUGH ═══════════════════════════════════════════
+   Engy, 28 Oct: Sales's colours, the cards a little transparent. Each
+   card keeps Sales's own --card-bg (and --card-bg-raised where it is
+   raised), let through at 85%, with Sales's own 12px blur behind it, so
+   the page's glow shows faintly and the colour is still Sales's. Sections
+   stay flat on the page, as Sales draws them; menus, inputs and panels
+   stay solid, to be read. Both themes: the mix follows --card-bg. */
+:root {
+  --card-see: color-mix(in srgb, var(--card-bg) 85%, transparent);
+  --raised-see: color-mix(in srgb, var(--card-bg-raised) 85%, transparent);
+}
+.type-card, .bcard, .rail-card, .b-door, .s-start, .b-find, .t-iv, .t-kpi, .t-msg, .t-prop,
+.rc .card, .rc .tile, .rc .search {
+  background: var(--card-see) !important;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.rc .card .card { background: var(--raised-see) !important; }
+
 /* ══ THE RESEARCH COMPONENTS ═════════════════════════════════════════════════
    The eleven component cards drawn for the research, ingested as is: the
    rules below are knowledge-vault/30 Research/UI/source/components.html's
