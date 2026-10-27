@@ -1845,6 +1845,13 @@
           esc(x.label) + '<span class="b-cut-n">' + n(x.k) + '</span></button>').join('') +
           '<button class="filter-chip t-cut-apart' + (cut === 'untold' ? ' active' : '') + '" type="button"' + goAttr({ on: 'cands', q: 'untold' }) + '>Not told yet<span class="b-cut-n">' + owed.length + '</span></button>' +
         '</div>' +
+        /* Where the volume is, select many and act once (Batch bar, M7); the
+           answer owed is shown as it will read (Message preview, M4). */
+        (cut === 'untold' && owed.length ? msgPreview(DB.byId[Object.keys(SEL.tell)[0]] || owed[0]) +
+          (selN('tell') ? batchBar('tell', '<button class="s-insight-lnk primary" type="button" data-tell-sel>Send the answer to ' + plural(selN('tell'), 'person', 'people') + '</button>')
+            : '<p class="t-acts"><button class="b-ghost" type="button" data-sel-all="tell">Select all ' + owed.length + '</button></p>') : '') +
+        (cut === 'new' && list.length ? (selN('sourced') ? batchBar('sourced', '<button class="s-insight-lnk primary" type="button" data-contact-sel>Approve first contact for ' + plural(selN('sourced'), 'person', 'people') + '</button>')
+            : '<p class="t-acts"><button class="b-ghost" type="button" data-sel-all="sourced">Select all ' + list.length + '</button></p>') : '') +
         (list.length ? '<div class="b-grid">' + list.slice(from, to).map((c, i) => '<div class="b-slot" style="--i:' + i + '">' + candCard(c, i) + '</div>').join('') + '</div>' +
           '<div class="b-pager"><span class="b-vfoot">' + (from + 1) + '–' + to + ' of ' + plural(list.length, 'candidate') + ' · page ' + (page + 1) + ' of ' + pages + '</span>' +
             '<span class="b-pager-go">' + (page > 0 ? '<button class="s-inline-btn" type="button"' + goAttr({ on: 'cands', q: S.q, p: page > 1 ? String(page - 1) : undefined }) + '>Previous 15</button>' : '') +
@@ -2070,9 +2077,13 @@
     /* Pressing Pass, or the recruiter's Client declined, opens the reasons
        where the buttons were. */
     if (!c.exit && passOpen(c)) special = passPicker(c);
+    /* Owed an answer (M4): tick it into the batch, or send this one. */
+    const owedTell = c.exit && c.told === false && (isRec() || isHR());
+    if (owedTell) special = foot('<span class="b-kind">' + (c.since >= TELL_DAYS ? 'Past the ' + TELL_DAYS + '-day limit' : 'Tell them by ' + esc(sayDay(TELL_DAYS - c.since))) + '</span>',
+      '<button class="s-insight-lnk primary" type="button" data-tell="' + c.id + '">Send the answer</button>');
     const pick1 = !c.exit && c.stage === 'sourced' && !c.contactOk && (isRec() || isHR());
     return '<article class="type-card s-card b-qcard" style="--i:' + Math.min(i, 8) + '">' +
-      '<div class="tc-head">' + (pick1 ? selBox('sourced', c.id, c.name) : '') + stageTag(c) + '<span class="b-kind">' + esc(c.source) + '</span></div>' +
+      '<div class="tc-head">' + (pick1 ? selBox('sourced', c.id, c.name) : owedTell ? selBox('tell', c.id, c.name) : '') + stageTag(c) + '<span class="b-kind">' + esc(c.source) + '</span></div>' +
       '<div class="b-qcard-top"><button class="tc-title s-card-title" type="button" data-cand="' + c.id + '">' + esc(c.name) + '</button></div>' +
       '<p class="tc-summary b-qcard-role">' + esc(c.at) + '</p>' +
       '<p class="b-qcard-where">' + fact('job', plural(c.years, 'year') + ' of experience') + fact('pin', c.place) + '</p>' +
@@ -3276,7 +3287,8 @@
           : differs.length ? 'The CV and the interview differ on ' + differs.map((x) => x.must).join('; ') + '. Worth asking about in the next round.'
           : !ok ? (early ? 'Nothing is checked in an interview yet. The phone screen comes first.' : 'Nothing is checked in an interview yet.')
           : 'What the CV says has held up in interview so far.') + '</p>' +
-        (c.exit && c.told === false && works ? '<div class="s-lead-acts"><button class="s-insight-lnk primary" type="button" data-tell="' + c.id + '">Send the answer</button></div>' : '') +
+        /* Message preview (component library): what they will read, before Send. */
+        (c.exit && c.told === false && works ? msgPreview(c) + '<div class="s-lead-acts"><button class="s-insight-lnk primary" type="button" data-tell="' + c.id + '">Send the answer</button></div>' : '') +
         (c.exit || !works ? '' : passOpen(c) ? passPicker(c) : '<div class="s-lead-acts">' +
           (isRec() && canCall(c) ? '<button class="s-insight-lnk' + (early ? ' primary' : '') + '" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call ' + esc(first(c.name)) + '</button>' : '') +
           (nx && !early && (w === 'me' || w === 'client' || w === 'candidate') && c.stage !== 'offer' ? '<button class="s-insight-lnk primary" type="button" data-move="' + c.id + '|' + nx + '">' + esc(goSay(c)) + '</button>' : '') +
@@ -3478,7 +3490,10 @@
         esc(x[0].replace('{via}', c.wa ? 'on WhatsApp' : 'by email')) + '</span><span class="b-kind">' + esc(x[1]) + '</span></p>').join('') +
       '<h3 class="b-month">Check-ins</h3>' +
       checkRow(c, o, 30, CHECK30, c.d30) + checkRow(c, o, 90, CHECK90, c.d90) +
-      '<p class="b-vfoot">Day-90 check-ins recorded so far: ' + checkins() + ' of the ' + GATE + ' AiMY needs before it proposes anything from outcomes.</p>' +
+      /* Sample gate (component library): the count under the check-ins. */
+      gate(checkins(), GATE, 'day-90 check-ins recorded', checkins() < GATE
+        ? 'AiMY proposes nothing from outcomes until there are ' + GATE + '. This one counts once its day-90 outcome is in.'
+        : 'Enough to read. Outcomes now feed the learning proposals the HR Manager approves.') +
     '</div>';
   }
 
@@ -4780,11 +4795,12 @@
     const risky = open.filter((q) => health(q).risk);
     const said = declines(DB.reqs).filter((c) => c.decline.day >= -90);
     const top = declineCounts(said)[0];
-    const filled = deskReqs().filter((q) => q.state === 'filled' || q.state === 'started').length;
     return '<div class="s-home">' +
       deskBrief('Today', [
         a.length ? '<b>' + plural(a.length, 'offer') + '</b> ' + (a.length === 1 ? 'waits' : 'wait') + ' for your answer on budget and headcount. Fit is the hiring manager’s question, not yours.' : 'No offer is waiting for your answer.',
-        '<b>' + plural(open.length, 'requisition') + '</b> open in the unit' + (risky.length ? ', <b>' + risky.length + '</b> likely to miss the date' : '') + '; ' + plural(filled, 'seat') + ' filled this period.',
+        /* No bare count of seats filled: Hiring outcomes never shows hires
+           without acceptance and day-90 retention beside them (M10). */
+        '<b>' + plural(open.length, 'requisition') + '</b> open in the unit' + (risky.length ? ', <b>' + risky.length + '</b> likely to miss the date.' : '.'),
         top ? 'Clients gave <b>' + plural(said.length, 'reason') + '</b> for passing in 90 days; the most common is ' + esc(lower(top.d.label)) + '.' : 'No client has passed with a reason yet.',
       ], [
         { label: 'Answer the budget question', n: a.length, why: a[0] ? a[0].c.name + ', ' + reqOf(a[0].c).title : 'nothing is waiting', go: a[0] ? a[0].go : { on: 'reqs' } },
@@ -5851,6 +5867,7 @@
       const k = val('data-sel-all');
       if (k === 'tell') untold().forEach((c) => { SEL.tell[c.id] = true; });
       if (k === 'find') FIND.res.filter((x) => !FIND.done[x.i]).forEach((x) => { SEL.find[x.i] = true; });
+      if (k === 'sourced') queue().filter((c) => queueCut(c) === 'new').forEach((c) => { SEL.sourced[c.id] = true; });
       paint(); return;
     }
     if ((el = at('[data-tell]'))) { tell([val('data-tell')]); return; }
