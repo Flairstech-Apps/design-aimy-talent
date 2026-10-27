@@ -157,6 +157,7 @@
     info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
     arrow: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
     ring: '<circle cx="12" cy="12" r="10" stroke-dasharray="3 3"/>',
+    x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
     home: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
     badge: '<path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/>',
     mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
@@ -2859,6 +2860,18 @@
     toast(said, undo);
     if (sess && !stop) advance(sess, was);
   }
+  /* Closing the panel without logging: one press, with Undo that brings
+     the call back exactly as it was, so an ended call can still be logged. */
+  function dismissCall() {
+    const was = CALL;
+    if (!was || (was.state !== 'ready' && was.state !== 'logging')) return;
+    const minWas = CALL_MIN;
+    closeCall();
+    paint();
+    toast(was.state === 'logging' ? 'Closed without logging the call' : 'Closed',
+      () => { CALL = was; document.body.classList.add('is-calling'); callMin(minWas); paintCall(); },
+      was.state === 'logging' ? 'Nothing about it is saved. Undo brings it back to log.' : null);
+  }
   function closeCall() {
     clearCallTimers();
     CALL = null;
@@ -2977,7 +2990,11 @@
           : st === 'logging' ? '<span class="call-timer">Ended · ' + fmtClock(call.secs) + '</span>' : '') +
         (sess ? '<span class="call-of">' + at + ' of ' + sess.ids.length + '</span>' : '') +
         '<span class="tag tag-warn" title="Telephony for Talent is on hold with AiMY Phone">Design target</span>' +
-      '</div></div>' +
+      '</div>' +
+      /* A way out of the panel whenever no call is on the line: before it
+         starts, and once it has ended. A live call ends with hang-up. */
+      (st === 'ready' || st === 'logging' ? '<button class="call-x" type="button" data-call-close aria-label="Close" title="Close">' + svg('x', 16) + '</button>' : '') +
+      '</div>' +
       '<p class="call-sub">' + esc(sub) + '</p>' +
       (call.video ? '<p class="call-num call-vid">' + svg('video') + 'Video call on Teams' + (call.camOff && st === 'live' ? ' · your camera is off' : '') + '</p>'
         : '<p class="call-num">' + esc(call.phone) + '</p>') +
@@ -6389,6 +6406,7 @@
     if ((el = at('[data-call-all]'))) { callAll(toCall().map((x) => x.c.id)); return; }
     if ((el = at('[data-callgo]'))) { callGo(); return; }
     if ((el = at('[data-call-end]'))) { endCall(); return; }
+    if ((el = at('[data-call-close]'))) { dismissCall(); return; }
     if ((el = at('[data-call-skip]'))) { skipCall(); return; }
     if ((el = at('[data-call-rec]'))) {
       if (CALL.recording) { CALL.recording = false; toast('Recording stopped', null, 'What was said so far stays; nothing more is written down.'); }

@@ -798,3 +798,23 @@ body.is-portal .aimy-overlay { display: none !important; }
   .rc .btn { white-space: normal; text-align: left; }
   .rc .search { flex-wrap: wrap; border-radius: 14px; }
 }
+
+/* ══ CLOSING THE CALL PANEL ═══════════════════════════════════════════════
+   An × at the top right of the panel, before a call starts and once it has
+   ended (talent.js dismissCall). Sales's own quiet icon button: no fill,
+   muted ink, the hover lifts it. */
+.call-x {
+  flex: none; align-self: flex-start; display: inline-grid; place-items: center;
+  width: 28px; height: 28px; margin: -2px -6px 0 0; border-radius: 999px;
+  color: var(--ink-muted); cursor: pointer;
+  transition: color var(--t-fast), background-color var(--t-fast);
+}
+.call-x:hover { color: var(--text-strong); background: rgba(var(--accent-rgb), 0.10); }
+.call-x:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+/* With the × there, the name keeps its line beside it and the status
+   (Ended · 0:03, Design target) drops underneath, so a long name is never
+   squeezed under the timer. A live call keeps Sales's one-line head. */
+.call-who-top:has(.call-x) { flex-wrap: wrap; align-items: flex-start; }
+.call-who-top:has(.call-x) .call-name { flex: 1 1 0; }
+.call-who-top:has(.call-x) .call-x { order: 1; }
+.call-who-top:has(.call-x) .call-head { order: 2; flex: 1 1 100%; margin-left: 0; }
