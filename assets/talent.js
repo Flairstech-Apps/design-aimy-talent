@@ -376,7 +376,7 @@
     else if (n) out.notice = 'can ' + n[2].toLowerCase();
     const s = /(?:expect(?:ing)?|looking for|asking for)[^0-9]{0,24}([\d,]{5,7})/i.exec(t);
     if (s) out.salary = 'EGP ' + s[1] + ' a month';
-    out.when = /\btomorrow\b/i.test(t) ? 1 : /\bnext week\b/i.test(t) ? 7 : null;
+    out.when = /\btomorrow\b/i.test(t) ? 1 : /\bnext week\b/i.test(t) ? 7 : /\b(later today|this evening|tonight|in an hour)\b/i.test(t) ? 0 : null;
     return out;
   }
   /* A stranger's name, read off what they said (Sales's READ_WHO, cut down). */
@@ -2701,7 +2701,6 @@
     if (CALL_DIAL) { clearTimeout(CALL_DIAL); CALL_DIAL = null; }
     if (CALL_TICK) { clearInterval(CALL_TICK); CALL_TICK = null; }
     if (CALL_LINE) { clearInterval(CALL_LINE); CALL_LINE = null; }
-    if (CALL_WAIT) { clearInterval(CALL_WAIT); CALL_WAIT = null; }
   }
   /* Down to a strip so the page can be read mid-call (Sales's callMin). */
   function callMin(on) {
@@ -2744,9 +2743,6 @@
     if (!c || c.state !== 'ready') return;
     /* Call now while the run is paused for a tip is carrying on with it. */
     if (coachHeld(c)) coachAnswer('go', true);
-    /* Pressed before the count ran out, or the count running out. */
-    if (CALL_WAIT) { clearInterval(CALL_WAIT); CALL_WAIT = null; }
-    c.wait = null;
     briefFreeze();
     c.state = 'connecting';
     paintCall();
@@ -2823,7 +2819,7 @@
       passed: early ? 'Logs the call and moves ' + first(c.name) + ' to the HR interview. What they said about notice and salary goes on their record.'
         : 'Logs the call. ' + first(c.name) + ' is past the screen already, so nothing moves.',
       reached: 'Logs the call. Nothing moves.',
-      callback: 'Logs the call and puts them back in your calls ' + ((call.read && call.read.when) === 7 ? 'next week.' : 'tomorrow.'),
+      callback: 'Logs the call and puts them back in your calls ' + CB_SAY[cbWhen(call)] + '.',
       noanswer: 'Logs an attempt. They stay in your calls.',
       notfit: 'Logs the call and takes them out as not a fit. Nothing is sent to them until a person approves the message.',
       withdrew: 'Logs the call and takes them out: they are not interested.',
@@ -2860,7 +2856,7 @@
         Object.assign(f, { stage: 'hr', since: 0, meet: 2, slot: '11:00', fb: false, maxAt: rank(q, 'hr') > rank(q, c.maxAt) ? 'hr' : c.maxAt });
       }
       call.movedTo = moved;
-      if (o === 'callback') f.callback = rd.when || 1;
+      if (o === 'callback') f.callback = cbWhen(call);
       if (o === 'noanswer') f.callback = c.callback;
       /* Not a fit on a call was said on the call, so they have been told. */
       if (o === 'notfit') Object.assign(f, { exit: 'out', since: 0, told: true });
@@ -2901,13 +2897,24 @@
      that right?" with the outcome, what was said and where it moves them,
      and Log it is one press, or one typed sentence corrects it. A run is
      one conversation, the record of the run: each brief arrives in it, the
-     next call counts down in the panel with Call now, the brief carries
-     Skip this one and Stop the run, and the run ends with what it was
-     worth. Nothing here dials anything (the fixture is as before). */
+     brief carries Skip this one and Stop the run, and the run ends with
+     what it was worth. Nothing here dials anything (the fixture is as
+     before).
+
+     THE RECRUITER PLACES EVERY CALL (Engy, 28 Oct). Sales places the next
+     call of a run itself after a 30-second count (AIMY-2667). Talent does
+     not: the next person is set up with their brief, and the call goes when
+     the recruiter presses Call, once they have read it. A count that dials
+     somebody by itself read as calling back after thirty seconds. */
   let PENDING = null;
-  let CALL_WAIT = null;
+  /* WHEN TO CALL BACK IS THE RECRUITER'S CALL (Engy, 28 Oct): later today,
+     tomorrow or next week, read from what was said and changed in one
+     press. It is when they come back into Calls, never a call placed by
+     itself. */
+  const CB_WHEN = [[0, 'Later today'], [1, 'Tomorrow'], [7, 'Next week']];
+  const CB_SAY = { 0: 'later today', 1: 'tomorrow', 7: 'next week' };
+  const cbWhen = (call) => (call.read && call.read.when != null && CB_SAY[call.read.when] ? call.read.when : 1);
   const narrowCall = () => window.matchMedia('(max-width: 760px)').matches;
-  const WAIT_SECS = 30;
   const answerBlock = (title, body, cite) => '<div class="s-ans"><div class="s-ans-title">' + esc(title) + '</div>' +
     '<div class="s-ans-body">' + body + '</div>' + (cite ? '<div class="s-ans-cite"><span>' + esc(cite) + '</span></div>' : '') + '</div>';
   const openQ = (cap, say) => '<blockquote class="b-open"><span class="b-open-cap">' + esc(cap) + '</span><p class="b-open-say">' + say + '</p></blockquote>';
@@ -3004,6 +3011,7 @@
     if (rd.notice) rows.push(['Notice', rd.notice, 'neutral']);
     if (rd.salary) rows.push(['Expects', rd.salary, 'neutral']);
     if (moves) rows.push(['Stage', STAGE[c.stage].label + ' → HR interview', 'neutral']);
+    if (o === 'callback') rows.push(['Call back', CB_SAY[cbWhen(call)].replace(/^./, (x) => x.toUpperCase()), 'neutral']);
     if (!c) rows.push(['Who', call.who || 'Not on file', 'neutral']);
     const nx = call.dir === 'in' ? null : sessNext(call);
     return said +
@@ -3015,6 +3023,8 @@
       '<div class="b-cuts t-log-row" role="group" aria-label="What happened">' + OUTCOMES.map((x) =>
         '<button class="filter-chip' + (o === x.k ? ' active' : '') + '" type="button" data-outcome="' + x.k + '" aria-pressed="' + (o === x.k) + '">' +
           '<span class="t-key" aria-hidden="true">' + OUTCOME[x.k].n + '</span>' + esc(x.label) + '</button>').join('') + '</div>' +
+      (o === 'callback' ? '<div class="b-cuts t-log-row" role="group" aria-label="When to call back">' + CB_WHEN.map((w) =>
+        '<button class="filter-chip' + (cbWhen(call) === w[0] ? ' active' : '') + '" type="button" data-cb="' + w[0] + '" aria-pressed="' + (cbWhen(call) === w[0]) + '">' + esc(w[1]) + '</button>').join('') + '</div>' : '') +
       '<p class="t-log-will">' + esc(willSay(call)) + '</p>' +
       '<p class="t-acts">' +
         (!c && call.who ? '<button class="btn btn-ghost btn-sm" type="button" data-add-stranger>Add ' + esc(first(call.who)) + ' as a candidate</button>' : '') +
@@ -3042,38 +3052,12 @@
     if (rd.outcome) PENDING.lit = rd.outcome;
     if (rd.notice) PENDING.read.notice = rd.notice;
     if (rd.salary) PENDING.read.salary = rd.salary;
-    if (rd.when) PENDING.read.when = rd.when;
+    if (rd.when != null) PENDING.read.when = rd.when;
     callTurn({ who: 'you', html: esc(text) });
     readbackSay();
     return true;
   }
 
-  /* ── THE WAIT BETWEEN CALLS IN A RUN (Sales, AIMY-2667) ── the next call
-     places itself when the count runs out; Call now does not wait. */
-  function waitStart() {
-    if (!CALL || CALL.state !== 'ready' || !CALL.sess || coachHeld(CALL)) return;
-    CALL.wait = { left: WAIT_SECS, total: WAIT_SECS, fresh: true };
-    paintCall();
-    CALL_WAIT = setInterval(() => {
-      const w = CALL && CALL.wait;
-      if (!w) { clearInterval(CALL_WAIT); CALL_WAIT = null; return; }
-      w.left = Math.max(0, w.left - 1);
-      if (!w.left) { callGo(); return; }
-      const left = byId('callWaitLeft');
-      if (left) left.textContent = fmtClock(w.left);
-      const bar = byId('callWaitBar');
-      if (bar) bar.style.transform = 'scaleX(' + (w.left / w.total).toFixed(4) + ')';
-    }, 1000);
-  }
-  function waitBlock(call) {
-    const w = call.wait, fresh = w.fresh, c = DB.byId[call.cand];
-    w.fresh = false;
-    return '<div class="call-wait' + (fresh ? ' is-new' : '') + '" role="group" aria-label="Wait before the next call">' +
-      '<div class="call-wait-top"><span class="call-wait-say">Calling ' + esc(c ? first(c.name) : 'them') + ' in</span>' +
-        '<span class="call-wait-left" id="callWaitLeft" role="timer">' + fmtClock(w.left) + '</span></div>' +
-      '<div class="call-wait-bar" aria-hidden="true"><span id="callWaitBar" style="transform:scaleX(' + (w.total ? w.left / w.total : 0).toFixed(4) + ')"></span></div>' +
-    '</div>';
-  }
   /* ── WHAT THE RUN WAS WORTH ── said once, at its end, in its conversation. */
   function runSummary(sess) {
     const log = sess.log || [];
@@ -3117,7 +3101,7 @@
      For the demo, as in Sales, the run's first three calls always end in a
      tip: the run carries one habit in the recruiter's lines until they take
      the tip on, or the prototype panel picks one. Skip this one keeps the
-     run paused, and the wait between calls does not start while it is. */
+     run paused. */
   const COACH_N = 3;
   let COACH_FORCE = '';
   const COACH_GOT = ['pass', 'german', 'callback', 'notfit', 'withdrew'];
@@ -3276,17 +3260,13 @@
       coachTurn(sess, tip);
       if (!CALL || CALL.sess !== sess || CALL.state !== 'ready') return;
       coachRescript();
-      if (state === 'open') {
-        if (CALL_WAIT) { clearInterval(CALL_WAIT); CALL_WAIT = null; }
-        CALL.wait = null;
-        paintCall();
-      } else if (!quiet) waitStart();
+      paintCall();
     };
     apply(how);
     if (quiet) return;
     const nx = DB.byId[CALL.cand];
     const f = nx ? first(nx.name) : 'the next person';
-    toast(how === 'go' ? 'Carrying on with ' + f + '. Try the tip on this call.' : 'Set aside. Carrying on with ' + f + '.', () => apply('open'));
+    toast(how === 'go' ? 'Got it. ' + f + ' is next: try the tip on this call.' : 'Set aside. ' + f + ' is next.', () => apply('open'));
   }
   /* In the panel while the run is paused: that it is, the tip, and the two
      answers. The same tip stands in the conversation; either answers it. */
@@ -3359,7 +3339,7 @@
     const tip = coachCheck(sess);
     if (!next) { if (tip) { tip.state = 'later'; coachOf(sess).tips.push(tip); } runSummary(sess); return; }
     if (tip) coachSay(sess, tip);
-    if (startCall(next, sess)) waitStart();
+    startCall(next, sess);
   }
   function skipCall() {
     const call = CALL;
@@ -3450,7 +3430,7 @@
     '</div>';
 
     return head +
-      '<div class="call-lines" id="callLines">' + (st === 'ready' ? (coachHeld(call) ? coachBlock(call) : call.wait ? waitBlock(call) : '') +
+      '<div class="call-lines" id="callLines">' + (st === 'ready' ? (coachHeld(call) ? coachBlock(call) : call.sess ? '<p class="call-none">Next in the run. Call when you have read the brief.</p>' : '') +
         (call.brief && (!canvasShown() || narrowCall()) ? '<button class="b-ghost" type="button" data-brief-open>Read the brief</button>' : '') : transcriptHtml(call)) + '</div>' +
       (call.asking ? '<div class="call-consent" role="group" aria-labelledby="callConsentSay">' +
         '<p class="call-consent-say" id="callConsentSay">They have to be told before this can start. Have you told them?</p>' +
@@ -3465,7 +3445,7 @@
             (call.video
               ? '<button class="call-end call-go" type="button" data-callgo aria-label="Start the video call with ' + esc(name) + '">' + svg('video') + 'Start the video call</button>'
               : '<button class="call-end call-go" type="button" data-callgo aria-label="Start the call to ' + esc(name) + ' from ' + esc(from.num) + '">' +
-                svg('phone') + (call.wait ? 'Call now' : 'Call from ' + esc(telTag(from))) + '</button>')
+                svg('phone') + 'Call from ' + esc(telTag(from)) + '</button>')
           : (call.video ? '<button class="call-tool' + (call.camOff ? ' is-on' : '') + '" type="button" data-call-cam aria-pressed="' + call.camOff + '" aria-label="' +
               (call.camOff ? 'Turn your camera on' : 'Turn your camera off') + '" title="' + (call.camOff ? 'Turn your camera on' : 'Turn your camera off') + '">' + svg(call.camOff ? 'videooff' : 'video') + '</button>' : '') +
             '<button class="call-tool' + (call.recording ? ' is-rec' : '') + '" type="button" data-call-rec aria-pressed="' + call.recording + '" aria-label="' +
@@ -6859,6 +6839,7 @@
     }
     if ((el = at('[data-outcome]'))) { if (PENDING) { PENDING.lit = el.getAttribute('data-outcome'); paintThread(); } return; }
     if ((el = at('[data-sess-stop]'))) { stopRun(); return; }
+    if ((el = at('[data-cb]'))) { if (PENDING) { PENDING.read = PENDING.read || {}; PENDING.read.when = Number(val('data-cb')); paintThread(); } return; }
     if ((el = at('[data-coach]'))) { coachAnswer(val('data-coach')); return; }
     if ((el = at('[data-coachset]'))) { COACH_FORCE = val('data-coachset'); coachRescript(); paintProto(); return; }
     /* On a phone the panel covers the conversation: it folds to its strip. */
