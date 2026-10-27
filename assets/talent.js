@@ -1069,8 +1069,10 @@
   function load() {
     try { const s = localStorage.getItem(KEY); if (s) D = JSON.parse(s); } catch (e) { D = fresh(); }
     if (!D || !D.c) D = fresh();
-    D.calls = D.calls || []; D.added = D.added || [];
+    D.calls = D.calls || []; D.added = D.added || []; D.gone = D.gone || [];
     D.added.forEach((c) => { if (!DB.byId[c.id] && DB.byReq[c.req]) { DB.cands.push(c); DB.byId[c.id] = c; DB.byReq[c.req].push(c); } });
+    /* Deleted at their request: gone from the record on every load. */
+    D.gone.forEach((g) => { const c = DB.byId[g.id]; if (c) { DB.cands = DB.cands.filter((x) => x.id !== c.id); DB.byReq[c.req] = DB.byReq[c.req].filter((x) => x.id !== c.id); delete DB.byId[c.id]; } });
     D.x = D.x || {}; D.tpl = D.tpl || {}; D.auto = D.auto || {}; D.autoLog = D.autoLog || [];
     D.news = D.news || []; D.lists = D.lists || [];
     Object.keys(D.tpl).forEach((k) => { TEMPLATE[k] = D.tpl[k].slice(); });
@@ -1143,6 +1145,22 @@
     save();
   }
   function addCand(c) { D.added.push(c); DB.cands.push(c); DB.byId[c.id] = c; DB.byReq[c.req].push(c); save(); }
+  /* ── OBJECT AND BE DELETED (R8, Egypt Law 151) ── a prospect found on the
+     web who objects, by the link in the first email or by replying, is
+     deleted in one press, by them or by the recruiter on their word. The
+     record goes; one line stays (name, where they were found, when), so a
+     later search leaves them out and nobody contacts them again. Undo puts
+     it all back, as everywhere. */
+  function forget(c, byThem) {
+    const keep = { c: c, x: D.c[c.id], added: D.added.some((x) => x.id === c.id) };
+    const g = { id: c.id, pid: c.pid, name: c.name, src: c.page ? c.page + ', ' + c.link : c.source, day: 0, by: byThem ? null : DESK };
+    dropCand(c);
+    D.gone.push(g); save();
+    if (!byThem) go(TRAIL && TRAIL.cand !== c.id ? TRAIL : { on: 'cands', q: 'new' }); else paint();
+    toast(byThem ? tr('Deleted', 'حُذفت بياناتك') : 'Deleted ' + c.name + ' at their request',
+      () => { D.gone = D.gone.filter((x) => x !== g); if (keep.added) addCand(keep.c); else { DB.cands.push(c); DB.byId[c.id] = c; DB.byReq[c.req].push(c); } if (keep.x) D.c[c.id] = keep.x; save(); paint(); },
+      byThem ? tr('Nobody from FlairsTech will contact you again.', 'لن يتواصل معك أحد من فليرز تك مرة أخرى.') : 'Their record is gone. Their name stays on the do-not-contact line, so no search finds them again.');
+  }
   function dropCand(c) {
     if (D.c[c.id]) delete D.c[c.id];
     D.added = D.added.filter((x) => x.id !== c.id);
@@ -1540,7 +1558,7 @@
     if (DESK !== 'omar' && !('as' in over) && !OUTSIDE.some((k) => !!next[k])) next.as = DESK;
     if (!replace) TRAIL = Object.assign({}, S);
     /* A half-made pass and ticks on another page do not follow you. */
-    if (next.req !== S.req || next.cand !== S.cand || next.on !== S.on) { PASSING = null; SEL.sourced = {}; }
+    if (next.req !== S.req || next.cand !== S.cand || next.on !== S.on) { PASSING = null; WRITING = null; SEL.sourced = {}; }
     S = next;
     DESK = DESKS[S.as] ? S.as : 'omar';
     const u = urlOf(S);
@@ -2099,6 +2117,7 @@
     /* Pressing Pass, or the recruiter's Client declined, opens the reasons
        where the buttons were. */
     if (!c.exit && passOpen(c)) special = passPicker(c);
+    if (!c.exit && writeOpen(c)) special = writeBox(c);
     /* Owed an answer (M4): tick it into the batch, or send this one. */
     const owedTell = c.exit && c.told === false && (isRec() || isHR());
     if (owedTell) special = foot('<span class="b-kind">' + (c.since >= TELL_DAYS ? 'Past the ' + TELL_DAYS + '-day limit' : 'Tell them by ' + esc(sayDay(TELL_DAYS - c.since))) + '</span>',
@@ -2210,6 +2229,40 @@
     return inCard ? body : '<div class="rc rc-pick">' + body + '</div>';
   }
 
+  /* ── THE WRITE-UP BEFORE A PROFILE GOES (AI submission write-up) ── Send
+     opens AiMY's draft in place: who they are, the must-haves they meet,
+     what an interview confirmed, what is not known yet, and their notice.
+     Never salary, margin or an internal note: the client reads this. The
+     recruiter edits it, and Approve and send is the send, with Undo. */
+  let WRITING = null;
+  const writeOpen = (c) => !!WRITING && WRITING.id === c.id;
+  function writeUp(c) {
+    const q = reqOf(c);
+    const conf = verified(c).filter((x) => x.state === 'verified').map((x) => x.must);
+    /* Silent in the CV but confirmed in an interview is known. */
+    const met = q.must.filter((m, i) => c.ev[i] === 'm'), unk = q.must.filter((m, i) => c.ev[i] === 'n' && conf.indexOf(m) < 0);
+    return first(c.name) + ': ' + c.at + ', ' + plural(c.years, 'year') + ' of experience; speaks ' + c.langs.join(', ') + '. ' +
+      'Meets ' + met.length + ' of ' + q.must.length + ' must-haves' + (met.length ? ': ' + met.join('; ') : '') + '. ' +
+      (conf.length ? 'Confirmed in interview: ' + conf.join('; ') + '. ' : '') +
+      (unk.length ? 'Not known yet: ' + unk.join('; ') + '. ' : '') +
+      (c.notice ? 'Notice: ' + c.notice + '.' : '');
+  }
+  /* The write-up that went with a profile. One sent before this record was
+     kept is the draft as AiMY would have written it, approved by the
+     requisition's recruiter, which is what the sendout already said. */
+  const wuOf = (c) => c.writeup || (c.sentDay != null ? { text: writeUp(c), by: reqOf(c).rec, day: c.sentDay } : null);
+  function writeBox(c, inCard) {
+    const a = accOf(reqOf(c));
+    const body = '<div style="margin-top:12px">' + rcCaps('The write-up · what ' + a.name + ' reads') +
+      rcAimy('AiMY drafted this from the CV, the interviews and the evidence. Salary, margin and internal notes are left out. Edit anything before it goes.', 'from ' + plural(ivsOf(c).filter((v) => v.status === 'done').length, 'interview') + ' and the success profile') +
+      '<div class="t-input-wrap" id="wrapWu" style="margin-top:10px"><textarea class="dial-input t-area t-input" id="wuText" rows="5" aria-label="The write-up the client reads">' + esc(WRITING.text) + '</textarea>' +
+        '<p class="t-error-msg">The client needs a line or two about them.</p></div>' +
+      '<div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">' + rcBtn('Approve and send to ' + a.name, 'data-wu-send="' + c.id + '"', 'primary', 'send') +
+        rcBtn('Not yet', 'data-wu-cancel', 'quiet') + '</div>' +
+    '</div>';
+    return inCard ? body : '<div class="rc rc-pick">' + body + '</div>';
+  }
+
   /* ── 1. THE SENDOUT, WITH THE CLIENT'S REASON (client-sendout-reason-codes) ── */
   function sendoutCard(c) {
     if (c.sentDay == null) return '';
@@ -2219,7 +2272,8 @@
     const pill = passed ? rcChip(isClient() ? 'You declined' : 'Client declined', 'err') : met ? rcChip('Wants to meet', 'ok')
       : c.openDay != null ? rcChip('Opened, no decision', 'warn') : rcChip('Not opened yet');
     const ev = (tone, head, rest) => '<div class="' + RC_EV[tone] + '"><b>' + head + '</b>' + (rest ? ' <span class="sub">· ' + rest + '</span>' : '') + '</div>';
-    const sentSay = isClient() ? 'by ' + esc(DESKS.omar.name) + ', FlairsTech' : (c.sentDay - q.opened) + ' days after the request opened · write-up approved by the recruiter';
+    const wu = wuOf(c), wuBy = wu && DESKS[wu.by] ? DESKS[wu.by].name : 'the recruiter';
+    const sentSay = isClient() ? 'by ' + esc(wuBy) + ', FlairsTech' : (c.sentDay - q.opened) + ' days after the request opened · write-up approved by ' + esc(wuBy);
     const pick = passed && c.decline ? '<div style="margin-top:12px">' + rcCaps(isClient() ? 'Why · you picked one' : 'Why · the client picks one') +
       '<div class="reasons">' + DECLINE.map((d) => d.k === c.decline.why ? '<span class="chip on">' + svg('check', 12) + ' ' + esc(d.label) + '</span>' : '<span class="chip">' + esc(d.label) + '</span>').join('') + '</div></div>' : '';
     const n = passed && c.decline ? accDeclines(a.id, MONTH).filter((x) => x.decline.why === c.decline.why).length : 0;
@@ -2232,6 +2286,7 @@
             : met ? ev('ok', 'Wants to meet · ' + esc(sayDay(c.decideDay)), 'the client interview is next')
             : c.openDay != null ? ev('wait', 'Decision', 'waiting ' + days(-c.openDay)) : '') +
         '</div>' +
+        (wu ? '<div style="margin-top:12px">' + rcCaps(isClient() ? 'What we wrote' : 'The write-up · what the client read') + rcQuote(esc(wu.text)) + '</div>' : '') +
         (passOpen(c) ? passPicker(c, true) : pick) +
         (passed && c.decline ? rcAimy('This is the ' + nth(Math.max(1, n)) + ' ' + esc(shortAcc(a)) + ' decline this month for ' + esc(DECLINE_K[c.decline.why].say) + '. It now counts in ' + esc(shortAcc(a)) + '’s success profile as a learning signal.',
           'Reason codes · not free text · feeds matching for this account only') : '') +
@@ -2409,7 +2464,7 @@
      recording are decided: the law's deadline, what first contact may use
      and what it never may, and what a recording needs. Shown on the First
      contact cut and on a prospect's own page. */
-  function trustCard(list, who) {
+  function trustCard(list, who, c) {
     const n = list.length;
     return rcard({ cap: 'Trust and law', ico: 'shield', amber: true, label: 'Trust and law', cards: [
       '<div class="errbox">' + svg('tri', 14) + '<span><b>Egypt Law 151/2020:</b> the grace period ends around 1 Nov 2026. Licence, data protection officer and transfer permit are with legal.</span></div>',
@@ -2417,6 +2472,8 @@
         '<div class="gate" style="border-top:0;margin-top:6px"><span class="ico ok">' + svg('mail', 18) + '</span><div><b>Email with a privacy notice</b><div class="sub">Says where we found them; one click to object and be deleted</div></div>' + rcChip('Allowed', 'ok') + '</div>' +
         rcGate('msg', 'err', 'WhatsApp', 'Needs their opt-in to FlairsTech first. Bought numbers don’t count', rcChip('Blocked', 'err', 'ban')) +
         rcGate('globe', 'err', 'Scrape LinkedIn', 'Against LinkedIn’s user agreement', rcChip('Never', 'err', 'ban')) +
+        (c ? '<div class="row between" style="margin-top:10px;flex-wrap:wrap"><span class="sub">' + svg('trash', 12) + ' If ' + esc(first(c.name)) + ' objects, by the link in the email or by reply, delete them. One line stays so no search finds them again.</span>' +
+          rcBtn('Delete at their request', 'data-forget="' + c.id + '"', 'small', 'trash') + '</div>' : '') +
       '</div>',
       '<div class="card"><h4>Recording an interview</h4>' +
         '<div class="reasons" style="margin-top:10px">' + ['Notice in the invite', 'Opt-out link', 'Spoken notice on calls', 'No bot after opt-out'].map((t) => rcChip(t, 'ok', 'check')).join('') + rcChip('Retention period set per client') + '</div>' +
@@ -3465,13 +3522,13 @@
         /* Message preview (component library): what they will read, before Send. */
         (c.exit && c.told === false && works ? msgPreview(c) + '<div class="s-lead-acts"><button class="s-insight-lnk primary" type="button" data-tell="' + c.id + '">Send the answer</button></div>' : '') +
         /* With a sendout, the reasons open inside its card instead. */
-        (c.exit || !works ? '' : passOpen(c) && c.sentDay == null ? passPicker(c) : '<div class="s-lead-acts">' +
+        (c.exit || !works ? '' : passOpen(c) && c.sentDay == null ? passPicker(c) : writeOpen(c) ? writeBox(c) : '<div class="s-lead-acts">' +
           (isRec() && canCall(c) ? '<button class="s-insight-lnk' + (early ? ' primary' : '') + '" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call ' + esc(first(c.name)) + '</button>' : '') +
           (nx && !early && (w === 'me' || w === 'client' || w === 'candidate') && c.stage !== 'offer' ? '<button class="s-insight-lnk primary" type="button" data-move="' + c.id + '|' + nx + '">' + esc(goSay(c)) + '</button>' : '') +
           exitBtn(c, outK) +
         '</div>') +
       '</section>' +
-      (works && /^Found on/.test(c.source) && c.stage === 'sourced' && !c.contactOk ? trustCard([c], first(c.name) + ', a web prospect') : '') +
+      (works && /^Found on/.test(c.source) && c.stage === 'sourced' ? trustCard([c], first(c.name) + ', a web prospect', c) : '') +
       sendoutCard(c) +
       evidenceCard(c) +
       verifiedCard(c, v) +
@@ -4096,7 +4153,7 @@
     [/excel/i, 'Advanced Excel'], [/reconcil/i, 'Bank reconciliations'], [/process|operation/i, 'Process documentation'],
     [/jira/i, 'Jira'], [/api/i, 'REST APIs'],
   ];
-  let FIND = { q: '', req: null, src: { pool: true, web: true, apollo: true, signal: false }, step: 'ask', i: 0, res: [], done: {}, tab: 'pool' };
+  let FIND = { q: '', req: null, src: { pool: true, web: true, apollo: true, signal: false }, step: 'ask', i: 0, res: [], done: {}, tab: 'pool', why: {} };
   function findCriteria() {
     if (FIND.req && DB.reqById[FIND.req]) return DB.reqById[FIND.req].must.slice();
     const t = FIND.q || '';
@@ -4114,6 +4171,7 @@
     FIND.step = 'searching';
     FIND.i = 0;
     FIND.done = {};
+    FIND.why = {};
     SEL.find = {};
     FIND.res = gatherFind(crit);
     paint();
@@ -4135,6 +4193,7 @@
     const fam = FIND.req ? DB.reqById[FIND.req].fam : famOf(FIND.q);
     const res = [];
     const fromPerson = (p, src, extra) => {
+      if (D.gone.some((g) => g.name === p.name)) return;
       const ev = evFor(crit, { langs: p.langs, skills: p.skills || [], years: p.years });
       res.push(Object.assign({ src: src, name: p.name, at: p.at, place: p.place, years: p.years, langs: p.langs, skills: p.skills || [], ev: ev,
         score: ev.filter((x) => x === 'm').length + ev.filter((x) => x === 'p').length * 0.5, phone: p.phone || null, email: p.email || null }, extra || {}));
@@ -4369,14 +4428,21 @@
      the web people counted apart as prospects, not candidates until they
      reply; and how first contact goes. Each row adds the person in one
      press, with Undo. */
+  const findTab = () => FIND.tab === 'web' && FIND.res.some((x) => x.src !== 'pool') || !FIND.res.some((x) => x.src === 'pool') ? 'web' : 'pool';
+  const inTab = (x) => (findTab() === 'pool') === (x.src === 'pool');
   function sourcingCard() {
     const pool = FIND.res.filter((x) => x.src === 'pool'), web = FIND.res.filter((x) => x.src !== 'pool');
-    const tab = FIND.tab === 'web' && web.length || !pool.length ? 'web' : 'pool';
+    const tab = findTab();
+    const open = DB.reqs.filter(isOpen).filter((r) => isHR() || r.rec === DESK);
+    const n = selN('find'), left = FIND.res.filter((x) => inTab(x) && !FIND.done[x.i]).length;
     const q = FIND.req ? DB.reqById[FIND.req] : null;
     const asked = FIND.q.trim() ? FIND.q.trim().split('\n')[0] : q ? 'People who fit ' + q.title : 'Anyone who fits';
     const mails = web.filter((x) => x.emailFrom).length;
     const known = (x) => x.ev.filter((e) => e === 'm').length + ' of ' + x.ev.length + ' known';
-    const row = (x, k, body, right) => '<div class="person"' + (k ? '' : ' style="border-top:0"') + '>' + body + '<div class="row" style="gap:8px">' + right + '</div></div>';
+    const why = (x) => '<div class="reasons" style="grid-column:2 / -1;margin-top:0">' + FIND.crit.map((m, k) => rcChip(EVW[x.ev[k]] + ' · ' + m, x.ev[k] === 'm' ? 'ok' : x.ev[k] === 'p' ? 'warn' : 'dash')).join('') + '</div>';
+    const row = (x, k, body, right) => '<div class="person"' + (k ? '' : ' style="border-top:0"') + '>' + body + '<div class="row" style="gap:8px">' + right +
+      rcBtn(FIND.why[x.i] ? 'Hide why' : 'Why', 'data-find-why="' + x.i + '" aria-expanded="' + !!FIND.why[x.i] + '"', 'quiet') +
+      (FIND.done[x.i] ? '' : selBox('find', x.i, x.name)) + '</div>' + (FIND.why[x.i] ? why(x) : '') + '</div>';
     const add = (x) => FIND.done[x.i] ? '<span class="sub">Added to ' + esc(FIND.done[x.i]) + '</span>' : findAddBtn(x);
     const rows = tab === 'pool'
       ? pool.map((x, k) => row(x, k, '<div class="av" aria-hidden="true">' + esc(initials(x.name)) + '</div><div><h4>' + esc(x.name) + '</h4><div class="sub">' + esc(x.was) + ' · ' + esc(known(x)) + ' · ' + esc(x.consent) + '</div></div>',
@@ -4394,8 +4460,15 @@
       '<div class="card" style="padding:4px 16px 12px">' + (rows || '<div class="person" style="border-top:0"><div class="av g" aria-hidden="true">' + svg('find', 15) + '</div><div><h4>Nobody here</h4><div class="sub">Try the other sources above</div></div><span></span></div>') +
         '<div class="row between" style="margin-top:10px;flex-wrap:wrap"><span class="sub">' + svg('mail', 12) + ' First contact by email with a privacy notice' +
           (tab === 'web' ? ', once you approve it' + (mails ? ' · ' + mails + ' with a work email from Apollo' : '') : '') + '</span>' +
-          (q && FIND.res.some((x) => !FIND.done[x.i]) ? rcBtn('Add the 5 strongest to ' + q.title, 'data-find-top', 'primary') : '') + '</div>' +
-      '</div></section>';
+          '<span class="row" style="gap:8px;flex-wrap:wrap">' + (left ? rcBtn('Select all ' + left, 'data-sel-all="find"', 'small') : '') +
+          (q && FIND.res.some((x) => !FIND.done[x.i]) ? rcBtn('Add the 5 strongest to ' + q.title, 'data-find-top', 'primary') : '') + '</span></div>' +
+        (D.gone.length ? rcNote('ban', plural(D.gone.length, 'person', 'people') + ' asked to be deleted. They stay out of every search.') : '') +
+      '</div>' +
+      /* Select many, act once (M7): one press adds them all, one Undo. */
+      batchBar('find', q ? '<button class="s-insight-lnk primary" type="button" data-find-sel="' + q.id + '">Add ' + n + ' to ' + esc(q.title) + '</button>'
+        : '<span class="b-menu-wrap"><button class="s-insight-lnk primary b-menu-open" type="button" data-pickopen="faSel" aria-haspopup="menu">Add ' + n + ' to a requisition' + svg('down', 14) + '</button>' +
+          '<div class="b-menu" id="faSel" role="menu" hidden>' + open.map((r) => '<button class="b-menu-item" type="button" role="menuitem" data-find-sel="' + r.id + '"><span class="b-menu-name">' + esc(r.title) + '</span><span class="tel-menu-cc">' + esc(accOf(r).name) + '</span></button>').join('') + '</div></span>') +
+    '</section>';
   }
   function findAddBtn(x) {
     const open = DB.reqs.filter(isOpen).filter((q) => isHR() || q.rec === DESK);
@@ -4409,7 +4482,7 @@
     if (!x || !q || FIND.done[i]) return null;
     const id = uid('k');
     const c = { id: id, pid: x.pid || id, name: x.name, req: q.id, stage: 'sourced', exit: null, since: 0, meet: null, fb: false, nudged: null,
-      years: x.years, at: x.at, place: x.place, langs: x.langs, skills: x.skills, source: x.src === 'pool' ? 'From the talent pool' : 'Found on the web',
+      years: x.years, at: x.at, place: x.place, langs: x.langs, skills: x.skills, source: x.src === 'pool' ? 'From the talent pool' : 'Found on the web', page: x.page || null, link: x.link || null,
       ev: evFor(q.must, x), maxAt: 'sourced', phone: x.phone, email: x.email, fate: 'pass', dnc: false, badNumber: false, callback: null, applied: 0,
       contactOk: x.src === 'pool' && x.consent.indexOf('Withdrew') < 0, summary: x.years + ' years, now ' + lower(x.at) + '.' };
     addCand(c);
@@ -5037,6 +5110,7 @@
               '<div><h4><button type="button" data-cand="' + c.id + '">' + esc(c.name) + '</button></h4>' +
                 '<div class="sub">' + esc(c.at) + ', ' + plural(c.years, 'year') + ' · ' + esc(c.langs.join(', ')) + (v.length ? ' · ' + esc(v[0]) + ' (verified in interview)' : '') + (c.notice ? ' · ' + esc(c.notice) : '') + '</div></div></div>' +
               rcChip(met + ' of ' + all + ' met', met === all ? 'ok' : 'warn') + '</div>' +
+            (wuOf(c) ? '<div style="margin-top:10px">' + rcQuote(esc(wuOf(c).text)) + '</div>' : '') +
             (passOpen(c) ? passPicker(c, true) : '<div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">' + rcBtn('Invite to interview', 'data-move="' + c.id + '|client"', 'primary', 'cal') + rcBtn('Decline with a reason', 'data-pass-open="' + c.id + '"') + '</div>') +
             rcNote('lock', 'Each person on your team decides on their own; nobody’s rating shows to the others until they have given theirs.') +
           '</div>';
@@ -5198,6 +5272,8 @@
   function portalMe() {
     const list = DB.cands.filter((c) => c.pid === S.me);
     const head = outsideHead(tr('Your profile', 'ملفك الشخصي'), tr('FlairsTech careers', 'وظائف فليرز تك'), true);
+    if (!list.length && D.gone.some((g) => g.pid === S.me)) return outOpen() + head + '<section class="t-out-card"><h1 class="t-out-h">' + tr('Your details are deleted', 'حُذفت بياناتك') + '</h1><p>' +
+      tr('We keep only your name, on a do-not-contact line, so we never find or contact you again.', 'لا نحتفظ إلا باسمك في قائمة عدم التواصل، حتى لا نعثر عليك أو نتواصل معك مرة أخرى.') + '</p></section></div>';
     if (!list.length) return outOpen() + head + '<p class="s-none">' + tr('This link has expired.', 'انتهت صلاحية هذا الرابط.') + '</p></div>';
     const p = list[0];
     if (!ME_OK[S.me]) return outOpen() + head + '<section class="t-out-card">' +
@@ -5209,6 +5285,7 @@
       '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-me-code>' + tr('Open my profile', 'افتح ملفي') + '</button></p>' +
       '<p class="b-vfoot">' + tr('This prototype accepts any six digits.', 'هذا النموذج يقبل أي ستة أرقام.') + '</p></section></div>';
     const send = (c) => DB.sends.filter((x) => x.cand === c.id && x.status === 'sent')[0];
+    const pros = list.filter((c) => c.source === 'Found on the web' && c.stage === 'sourced' && !c.exit)[0];
     /* Where each application stands, in plain words, with the date they
        will hear by (M4). A decision nobody has told them yet still reads
        as waiting, with that date: the profile never breaks the news. */
@@ -5218,6 +5295,12 @@
       : (isAr() ? PLAIN_AR[c.stage] : PLAIN[c.stage]) + (c.stage === 'joined' || c.stage === 'accepted' ? '' : '. ' + tr('You will hear from us by {d}.', 'سيصلك رد منا قبل {d}.', { d: sayDayL(hearBy(c)) }));
     return outOpen() + head +
       '<section class="t-out-card"><h1 class="t-out-h">' + esc(p.name) + '</h1><p lang="en" dir="ltr">' + esc(p.at) + '</p>' +
+        /* A prospect found on the web has applied to nothing: what we hold,
+           where it came from, and the one press that deletes it (R8). */
+        (pros ? '<h2 class="t-out-sub">' + tr('Why you are hearing from us', 'لماذا نتواصل معك') + '</h2>' +
+          '<p>' + tr('We found your public profile on {where}. We keep only your name, your current role and that page. You have not applied to anything.',
+            'وجدنا ملفك العام على {where}. لا نحتفظ إلا باسمك ووظيفتك الحالية وتلك الصفحة. لم تتقدم لأي وظيفة.', { where: '<bdi dir="ltr">' + esc(pros.page ? pros.page + ', ' + pros.link : 'a public web page') + '</bdi>' }) + '</p>' +
+          '<p class="t-acts"><button class="b-ghost" type="button" data-me-forget="' + pros.id + '">' + tr('Object and delete my details', 'أعترض، احذفوا بياناتي') + '</button></p>' : '') +
         '<h2 class="t-out-sub">' + tr('Your applications', 'طلباتك') + '</h2>' +
         list.map((c) => '<div class="t-me-app"><p><b lang="en">' + esc(reqOf(c).title) + '</b></p>' +
           '<p>' + esc(stand(c)) + '</p>' +
@@ -5930,9 +6013,9 @@
 
   /* A move, with its own Undo. The stage only goes forward here; Undo puts
      back exactly the fields it changed. */
-  function move(c, to) {
+  function move(c, to, extra) {
     const was = { stage: c.stage, since: c.since, meet: c.meet, fb: c.fb, maxAt: c.maxAt, exit: c.exit, nudged: c.nudged,
-      sentDay: c.sentDay, openDay: c.openDay, decideDay: c.decideDay };
+      sentDay: c.sentDay, openDay: c.openDay, decideDay: c.decideDay, writeup: c.writeup || null };
     const q = reqOf(c);
     const fields = { stage: to, since: 0, fb: false, nudged: null,
       meet: MEETS[to] ? 2 : null, slot: c.slot || '11:00',
@@ -5941,6 +6024,8 @@
        client says they want to meet. */
     if (to === 'sent') Object.assign(fields, { sentDay: 0, openDay: null, decideDay: null });
     if (c.stage === 'sent' && to === 'client') fields.decideDay = 0;
+    Object.assign(fields, extra || {});
+    WRITING = null;
     write(c, fields);
     /* AiMY books the next interview inside the interviewer's free slots and
        tells the candidate from the booking (do and notify). */
@@ -5950,7 +6035,7 @@
     const o = offerOf(c);
     const oWas = o ? { status: o.status, joinDay: o.joinDay } : null;
     if (to === 'joined' && o) put('offers', o, { status: 'joined', joinDay: 0 });
-    const e = note(c, 'move', 'Moved to ' + lower(STAGE[to].label) + ' by ' + me().name + '.');
+    const e = note(c, 'move', to === 'sent' && fields.writeup ? 'Profile sent to ' + accOf(q).name + ' by ' + me().name + ', with the write-up they approved.' : 'Moved to ' + lower(STAGE[to].label) + ' by ' + me().name + '.');
     const n = isClient() && to === 'client' ? tellDesk(q.rec, { sev: 'p1', type: 'Client decision', cta: 'Open ' + first(c.name), go: { cand: c.id },
       body: accOf(q).name + ' wants to meet ' + c.name + ' for ' + q.title + '. AiMY booked it for ' + sayDay(2) + '.' }) : null;
     paint();
@@ -6117,7 +6202,7 @@
     if ((el = at('[data-sel-all]'))) {
       const k = val('data-sel-all');
       if (k === 'tell') untold().forEach((c) => { SEL.tell[c.id] = true; });
-      if (k === 'find') FIND.res.filter((x) => !FIND.done[x.i]).forEach((x) => { SEL.find[x.i] = true; });
+      if (k === 'find') FIND.res.filter((x) => inTab(x) && !FIND.done[x.i]).forEach((x) => { SEL.find[x.i] = true; });
       if (k === 'sourced') queue().filter((c) => queueCut(c) === 'new').forEach((c) => { SEL.sourced[c.id] = true; });
       paint(); return;
     }
@@ -6197,6 +6282,7 @@
     if ((el = at('[data-find-src]'))) { const k = val('data-find-src'); FIND.src[k] = !FIND.src[k]; paint(); return; }
     if ((el = at('[data-find-go]'))) { runFind(); return; }
     if ((el = at('[data-find-tab]'))) { FIND.tab = val('data-find-tab'); paint(); return; }
+    if ((el = at('[data-find-why]'))) { const i = val('data-find-why'); FIND.why[i] = !FIND.why[i]; paint(); return; }
     if ((el = at('[data-find-add]'))) { const p = two('data-find-add'); findAdd(Number(p[0]), p[1]); return; }
     if ((el = at('[data-find-top]'))) {
       const made = FIND.res.filter((x) => !FIND.done[x.i]).slice(0, 5).map((x) => ({ i: x.i, c: findAdd(x.i, FIND.req, true) })).filter((x) => x.c);
@@ -6281,6 +6367,8 @@
     if ((el = at('[data-apply-consent]'))) { const k = val('data-apply-consent'); APPLY[k] = !APPLY[k]; paint(); return; }
     if ((el = at('[data-apply-send]'))) { applySend(); return; }
     if ((el = at('[data-me-code]'))) { meCode(); return; }
+    if ((el = at('[data-forget]'))) { forget(DB.byId[val('data-forget')], false); return; }
+    if ((el = at('[data-me-forget]'))) { forget(DB.byId[val('data-me-forget')], true); return; }
     if ((el = at('[data-me-withdraw]'))) {
       const c = DB.byId[val('data-me-withdraw')];
       write(c, { exit: 'withdrew', since: 0 });
@@ -6342,7 +6430,24 @@
       return;
     }
     if ((el = at('[data-cand]'))) { go({ cand: el.getAttribute('data-cand') }); return; }
-    if ((el = at('[data-move]'))) { const p = el.getAttribute('data-move').split('|'); move(DB.byId[p[0]], p[1]); return; }
+    if ((el = at('[data-move]'))) {
+      const p = el.getAttribute('data-move').split('|'), c = DB.byId[p[0]];
+      /* A profile goes to a client with its write-up, read and approved first. */
+      if (p[1] === 'sent' && !isClient()) {
+        if (!el.closest('#wbStage')) go({ cand: c.id });
+        WRITING = { id: c.id, text: writeUp(c) }; PASSING = null;
+        paint();
+        return;
+      }
+      move(c, p[1]); return;
+    }
+    if ((el = at('[data-wu-send]'))) {
+      const c = DB.byId[val('data-wu-send')], t = byId('wuText').value.trim();
+      if (!t) { shake('wrapWu'); return; }
+      move(c, 'sent', { writeup: { text: t, by: DESK, day: 0 } });
+      return;
+    }
+    if ((el = at('[data-wu-cancel]'))) { WRITING = null; paint(); return; }
     if ((el = at('[data-out]'))) { const p = el.getAttribute('data-out').split('|'); out(DB.byId[p[0]], p[1]); return; }
     if ((el = at('[data-nudge]'))) { nudge(DB.byId[el.getAttribute('data-nudge')]); return; }
     if ((el = at('[data-start]'))) { start(el.getAttribute('data-start')); return; }

@@ -770,3 +770,12 @@ body.is-portal .aimy-overlay { display: none !important; }
   .b-topbar > .s-back:not(.t-home) { flex: 1 1 180px; min-width: 0; text-align: left; }
   .b-topbar > .b-draft-acts { flex: 1 1 100%; }
 }
+/* A sourcing row at phone width: the person takes the line, and the chip,
+   Add, Why and the tick go underneath, starting under the name. */
+@media (max-width: 760px) {
+  .rc .person { grid-template-columns: 34px minmax(0, 1fr); row-gap: 8px; }
+  .rc .person > .row { grid-column: 2 / -1; flex-wrap: wrap; }
+  .rc .person > .reasons .chip { white-space: normal; }
+  .rc .btn { white-space: normal; text-align: left; }
+  .rc .search { flex-wrap: wrap; border-radius: 14px; }
+}
