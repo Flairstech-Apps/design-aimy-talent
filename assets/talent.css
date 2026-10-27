@@ -545,73 +545,17 @@ body.is-portal .aimy-overlay { display: none !important; }
    cuts that add up to All, the way Sales keeps its Accounts chip apart. */
 .t-cut-apart { margin-inline-start: auto; }
 
-/* ══ GLASS ══════════════════════════════════════════════════════════════════
-   See-through surfaces (27 Oct, Engy's pick): cards, sections, rows and
-   panels take a translucent fill and blur what is behind them, so the
-   page's gradient shows through. An override of sales.css, bdr.css and
-   aimy-ds.css, kept here because those files are never edited; the fills
-   carry !important only where the shell sets its own.
-
-   THE VALUES ARE AiMY QA'S (28 Oct, Engy: "too light for a dark theme").
-   A white wash at 4.5% read grey, and a row on a section stacked two of
-   them. QA's glass is its own dark card colour, #141b24, let through at
-   72%, its panels at 82%, a 8% hairline and an 18px blur
-   (design-AiMY-QA index.html --glass-bg, .ai-insight, the toast). What
-   sits inside a glass section is not a second pane of glass: it takes
-   QA's 3% wash, so it stays dark. */
-:root {
-  --glass-bg: rgba(20, 27, 36, 0.72);
-  --glass-bg-2: rgba(255, 255, 255, 0.035);
-  --glass-inset: rgba(255, 255, 255, 0.03);
-  --glass-panel: rgba(22, 30, 42, 0.82);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-blur: blur(18px) saturate(1.2);
-}
-:root[data-theme="light"] {
-  --glass-bg: rgba(255, 255, 255, 0.85);
-  --glass-bg-2: rgba(16, 24, 40, 0.04);
-  --glass-inset: rgba(16, 24, 40, 0.035);
-  --glass-panel: rgba(255, 255, 255, 0.9);
-  --glass-border: rgba(16, 24, 40, 0.10);
-}
-.type-card, .s-card, .slv, .bcard, .rail-card, .b-door, .b-owed-row, .s-insight, .t-out-card,
-.t-kpi, .t-prop, .t-msg, .t-batch, .t-gate, .b-cal-ev {
-  background: var(--glass-bg) !important;
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  border-color: var(--glass-border) !important;
-}
-.s-home > .s-block {
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
-  padding: 20px 22px;
-  margin-top: 16px;
-}
-.s-home > .s-block :is(.type-card, .s-card, .b-owed-row, .t-kpi, .t-prop, .t-msg, .t-batch, .t-gate, .b-cal-ev) {
-  background: var(--glass-inset) !important;
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
-.ntf-panel, .b-menu, .b-peek-card, .app-call, .aimy-float-bar, .proto-panel, .dial-panel, .aimy-toast {
-  background: var(--glass-panel) !important;
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  border-color: var(--glass-border) !important;
-}
-
 /* ══ THE RESEARCH COMPONENTS ═════════════════════════════════════════════════
    The eleven component cards drawn for the research, ingested as is: the
    rules below are knowledge-vault/30 Research/UI/source/components.html's
    own stylesheet, each selector scoped under .rc so its plain names (.card,
    .chip, .btn) cannot reach Sales's. Its tokens are the AiMY Sales tokens,
    so they are mapped onto aimy-ds.css's here and follow the theme; the
-   card fill is the glass Engy chose. Built by rcard() and the rc* helpers
+   card fill is Sales's own --card-bg, the raised one --card-bg-raised
+   (Engy, 28 Oct: Sales's colours, not glass). Built by rcard() and the rc* helpers
    in talent.js. */
 .rc {
-  --card-bg: var(--glass-bg); --raised: var(--glass-bg-2);
+  --raised: var(--card-bg-raised);
   --line: var(--card-border); --line2: var(--card-border-hover);
   --t1: var(--text-strong); --t2: var(--ink-secondary); --t3: var(--ink-muted);
   --ok-bd: var(--ok-border); --warn-bd: var(--warn-border); --err-bd: var(--err-border);
@@ -726,7 +670,7 @@ body.is-portal .aimy-overlay { display: none !important; }
 }
 .s-block-h > svg { width: 14px; height: 14px; flex: none; }
 .s-block-say { font-size: 12px; color: var(--ink-muted); }
-.s-home > .s-block, .type-card { border-radius: 14px; }
+.type-card { border-radius: 14px; }
 .tag { font-size: 11.5px; font-weight: 500; padding: 3px 10px; line-height: 1.3; gap: 5px; }
 .tag-neutral { background: transparent; border: 1px solid var(--card-border-hover); color: var(--ink-secondary); }
 :root[data-theme="light"] .tag-neutral { background: transparent; border-color: var(--card-border-hover); }
@@ -786,7 +730,7 @@ body.is-portal .aimy-overlay { display: none !important; }
 .rc .rate input { margin-top: 8px; width: 100%; }
 .rc .agenda { padding-left: 18px; color: var(--t2); }
 .rc .t-addnote { margin-top: 8px; }
-/* Light theme: the source's light-on-dark literals, made readable on light glass. */
+/* Light theme: the source's light-on-dark literals, made readable on light cards. */
 :root[data-theme="light"] .rc .warnbox { color: #6b4300; }
 :root[data-theme="light"] .rc .errbox { color: #8a1c2b; }
 :root[data-theme="light"] .rc .g1 { color: var(--brand); }
@@ -794,7 +738,6 @@ body.is-portal .aimy-overlay { display: none !important; }
 :root[data-theme="light"] .rc .g5 { color: var(--err); }
 :root[data-theme="light"] .rc .ico.brand { color: var(--brand); }
 :root[data-theme="light"] .rc .chip.on { color: var(--err); }
-.rc .card, .rc .tile { -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
 
 @media (max-width: 760px) {
   .rc .row.between { flex-wrap: wrap; }
@@ -807,8 +750,7 @@ body.is-portal .aimy-overlay { display: none !important; }
   .rc td { border: 0; padding: 3px 0; }
   .rc .verdict { flex-wrap: wrap; }
   .rc .verdict button { flex: 1 1 40%; }
-  .s-home > .s-block { padding: 16px; }
-  /* The glass sections' padding leaves less width, so these wrap. */
+  /* At phone width these wrap rather than run past the edge. */
   .t-iv-main .b-kind { white-space: normal; }
   .t-rungs { flex-wrap: wrap; max-width: 100%; }
 }
