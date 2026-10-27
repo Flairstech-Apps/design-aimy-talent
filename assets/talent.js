@@ -6588,7 +6588,7 @@
           '<span class="s-block-say">' + share + '% of requests replace someone, so that comes first</span></div>' +
         '<div class="t-starts">' +
           '<div class="t-start">' +
-            '<h3 class="t-start-h">' + svg('loop', 16) + 'Replace someone who left</h3>' +
+            '<h3 class="t-start-h">Replace someone who left</h3>' +
             '<p class="t-start-say">The role, its must-haves and its account come from theirs. You change what is different.</p>' +
             (left.length ? '<div class="b-log">' + left.map((p, i) => logRow({ tone: '', ico: svg('user'), who: p.name,
                 meta: logMeta([p.title, accOf(p).name, 'joined ' + sayDay(p.join)]), say: 'Why they left: ' + esc(lower(p.why)) + '.',
@@ -6596,7 +6596,7 @@
               : '<p class="s-none">Nobody has left on ' + (accIn ? esc(accIn.name) : 'these accounts') + '.</p>') +
           '</div>' +
           '<div class="t-start">' +
-            '<h3 class="t-start-h">' + svg('doc', 16) + 'From a briefing</h3>' +
+            '<h3 class="t-start-h">From a briefing</h3>' +
             '<p class="t-start-say">Paste the notes from the kickoff call or the hiring manager’s email. AiMY drafts it and says what it could not find.</p>' +
             '<div class="t-input-wrap" id="wrapBrief"><textarea class="b-draft-in b-draft-area t-area t-input" id="briefText" rows="6" aria-label="The briefing" ' +
               'placeholder="For example: Northwind needs two German-speaking support agents, C1, at least a year of software support, by mid-December. Budget up to 30,000."></textarea>' +
@@ -7037,12 +7037,6 @@
     bar.style.transform = 'translate(' + on.offsetLeft + 'px, ' + (on.offsetTop + on.offsetHeight - 2) + 'px) scaleX(' + on.offsetWidth + ')';
   }
 
-  /* A SECTION'S HEADING IS THE EYEBROW (the research components): a caps
-     label led by its icon, the icon chosen from what the heading names. */
-  const CAP_ICO = [[/interview/i, 'mic'], [/offer/i, 'job'], [/call/i, 'phone'], [/proposal|learning/i, 'loop'], [/assessment|question|result/i, 'clip'],
-    [/passed|why/i, 'listc'], [/funnel|how far|by role|by account|by recruiter|load/i, 'bars'], [/feedback|told|waiting|miss/i, 'clock'],
-    [/AiMY may do/i, 'shield'], [/add a candidate/i, 'plus'], [/hiring with us/i, 'acc'], [/request|requisition/i, 'req'],
-    [/candidate|profile|who is on|people|application|shortlist/i, 'users']];
   /* THE WAY HOME FROM ANYWHERE. A list page carries Today in its switcher;
      a record (a candidate, a requisition, an account, a test) had only
      Back, which goes one step and can lead deeper. Every page's top bar
@@ -7051,8 +7045,6 @@
     /* Where Back already leads to Today, it is the way home on its own. */
     html.slice(at, at + 600).indexOf('Back to Today</button>') >= 0 ? m
       : m + '<button class="s-back t-home" type="button" data-home>' + svg('home', 14) + 'Today</button><span class="t-crumb" aria-hidden="true">/</span>');
-  const capIcons = (html) => html.replace(/<h2 class="s-block-h">([^<]*)/g, (m, t) =>
-    '<h2 class="s-block-h">' + svg((CAP_ICO.filter((x) => x[0].test(t))[0] || [0, 'listc'])[1], 14) + t);
   function paint() {
     /* Somebody outside the team gets the page alone, with none of the
        product's chrome (the careers page, a profile, a test, a debrief). */
@@ -7072,7 +7064,7 @@
     }
     /* Adding someone carries the requisition they are for, so it is asked
        before the requisition's own page. */
-    byId('wbStage').innerHTML = homeCrumb(capIcons(S.on === 'add' && isRec() ? addPage() : S.on === 'find' ? findPage()
+    byId('wbStage').innerHTML = homeCrumb((S.on === 'add' && isRec() ? addPage() : S.on === 'find' ? findPage()
       : S.on === 'newreq' && !isClient() && !isBU() ? newReqPage()
       : S.on === 'draft' && (isRec() || isHR()) ? draftPage() : S.on === 'cands' && (isRec() || isHR()) && !S.cand ? candsPage() : S.cand ? candPage() : S.req ? reqPage() : S.asmt ? asmtPage() : S.acc ? accPage()
       : S.on === 'reqs' ? reqsPage() : S.on === 'calls' && isRec() ? callsPage()
