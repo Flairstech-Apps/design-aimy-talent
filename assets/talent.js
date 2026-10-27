@@ -4100,13 +4100,19 @@
       body = list.length
         ? aimyBlock({ text: '<b>' + plural(list.length, 'person', 'people') + '</b> to call: ' +
             [counts.callback ? counts.callback + ' asked for a callback' : null, counts.screen ? counts.screen + ' due a phone screen' : null,
-              counts.applied ? counts.applied + ' applied and not called yet' : null].filter(Boolean).join(', ') + '. Callbacks first.' }, true) +
+              counts.applied ? counts.applied + ' applied and not called yet' : null].filter(Boolean).join(', ') + '. Callbacks first. ' +
+            /* The run's size and its time ride on AiMY's line and the one
+               button, not on a row of their own: the tabs above are the
+               page's only filter. */
+            (runN(list.length) < list.length ? 'The first ' + runN(list.length) + ' take' : list.length === 1 ? 'It takes' : 'All ' + list.length + ' take') +
+            ' about <b>' + runMins(runN(list.length)) + ' minutes</b>, if about six in ten pick up. You press Call for each one.' }, true) +
           '<div class="b-acts t-run">' +
-            (list.length > RUN_N[0] ? '<span class="t-runsize" role="group" aria-label="How many to call"><span class="t-rpt-lab">How many</span>' + RUN_N.filter((k) => k < list.length).map((k) => {
-              const on = runN(list.length) === (k || list.length);
-              return '<button class="s-view' + (on ? ' is-on' : '') + '" type="button" data-runn="' + k + '" aria-pressed="' + on + '">' + (k ? 'The first ' + k : 'All ' + list.length) + '</button>'; }).join('') + '</span>' : '') +
             '<button class="s-insight-lnk primary" type="button" data-call-all>' + svg('phone', 14) + (runN(list.length) < list.length ? 'Call the first ' + runN(list.length) + ' in order' : 'Call ' + (list.length === 1 ? 'them' : 'all ' + list.length + ' in order')) + '</button>' +
-            '<span class="t-run-say">About ' + runMins(runN(list.length)) + ' minutes, if about six in ten pick up. You press Call for each one.</span>' +
+            (list.length > RUN_N[0] ? '<span class="b-menu-wrap"><button class="b-ghost t-run-more" type="button" data-pickopen="runMenu" aria-haspopup="menu" aria-expanded="false">How many' + svg('down', 14) + '</button>' +
+              '<div class="b-menu" id="runMenu" role="menu" hidden><span class="b-menu-cap">How many to call</span>' + RUN_N.filter((k) => k < list.length).map((k) => {
+                const n = k || list.length, on = runN(list.length) === n;
+                return '<button class="b-menu-item" type="button" role="menuitem" data-runn="' + k + '"' + (on ? ' aria-current="true"' : '') + '><span class="b-menu-name">' + (k ? 'The first ' + k : 'All ' + list.length) + '</span>' +
+                  '<span class="tel-menu-cc">about ' + runMins(n) + ' min</span></button>'; }).join('') + '</div></span>' : '') +
           '</div>' +
           '<div class="b-log">' + list.map((x, i) => logRow({
             tone: '', ico: svg('phone'), who: x.c.name,
