@@ -85,6 +85,22 @@ Everything in the New Operations list and the Product Overview now has a surface
 
 Motion uses transitions.dev pieces on the shell's own timing: the error shake on a wrong field, shimmer on the step AiMY is on, the accordion on interview details, the success check when an outside page is done, and a short reveal for results. All stop under reduced motion.
 
+## Closing the loop (the UI/UX plan, built 26 Oct)
+
+The market research found that single steps of hiring are solved and the loop is not. These parts make the prototype's loop learn and keep it lawful. Each is one press with Undo, and AiMY suggests while a person decides.
+
+- **Client decline reasons (P1).** Pass, and the recruiter's Client declined, open six reasons in place: spoken language, experience, salary, notice period, skills gap, or other with one line. The toast says what the reason feeds ("4th decline at Northwind this month for spoken language"). The sendout is a record: sent, opened (set when the client opens the profile), decided, each dated. Reasons are counted on the requisition, the account and the reports.
+- **Learning proposals (P5).** When one reason dominates a client's declines (five in 90 days, one reason behind three and a third of them), AiMY proposes a rule for that client only. A question most people miss becomes a proposal to reword or drop it. The HR Manager approves; a question keeps its earlier wordings as versions.
+- **Honest reports (P2, P6).** The reports lead with where people are lost, upstream, and the days to send, compare profiles per client interview with the 3 to 5 agency norm on whichever side it falls, say the benchmark is weak, and carry one action ("No profile after 10 days" is a new requisition cut). By recruiter is an alphabetical table of counts.
+- **Safe sourcing (P4).** Find searches the talent pool first and the public web second, in one list; each web result names its page, Apollo only adds a work email, and SignalHire is shown parked (D10). The CV being silent on a must-have reads Not known, with Ask them.
+- **Consent (P9).** The candidate page lists CV, WhatsApp and recording consent with dates. Assessment invites, offer questions and onboarding documents go on WhatsApp only with the opt-in, which the candidate can switch on their own profile.
+- **Nobody waits without hearing back (M4).** Exits are owed an answer within five days: Today's Not told yet shows the HR template filled in, and one press (or one batch) sends it. The candidate's own profile says when they will hear, and never breaks the news first.
+- **Select many, act once (M7)** on Find results, sourced prospects and declines.
+- **Wave 3, gated by data.** Each assessment question shows whether people who got it right met the client more often, once 20 have been sent (P3). Day-30 and day-90 check-ins are records, and outcome proposals wait for 20 day-90 check-ins (P7). The HR Manager sets what AiMY may do on three rungs, and only a person moves it up (m4).
+- **Smaller ones.** Today names the records each block reads (M8). The hiring manager's asks are grouped by account, oldest first, and include answers clients owe (M11). Clients see billed hires beside acceptance and day-90 retention (M10). The BU Director's page asks about budget and headcount only (M3). Calls carry a Design target label (P8). The careers page and own profile switch to Arabic, right to left (M9; the Arabic needs a native read). The debrief quotes the recording marked Check it, and names the agenda topic it never reached.
+
+Every part is documented, with a screenshot, in the local knowledge vault: `knowledge-vault/50 Design system/Component library.md`.
+
 ## Rules carried over from Sales
 
 - **The stage is stored.** `cand.stage` moves only through `move` (one press, with Undo). It never moves backwards except by Undo. An exit is not a stage.

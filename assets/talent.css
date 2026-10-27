@@ -247,7 +247,7 @@ textarea.dial-input.t-area { height: auto; padding: 10px 12px; }
 /* Skills, verified: each must-have, what the CV says, what an interview found. */
 .t-vlist { display: grid; gap: 0; margin: 4px 0 0; }
 .t-vrow {
-  display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr) minmax(0, 1.6fr) max-content;
+  display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr) minmax(0, 1.6fr) 190px;
   gap: 16px; align-items: start; padding: 12px 0; border-top: 1px solid var(--card-border);
 }
 .t-vrow:first-child { border-top: 0; padding-top: 4px; }
@@ -351,9 +351,9 @@ body.is-portal .b-ring-host { display: none !important; }
 .t-out { max-width: 680px; margin: 0 auto; padding: 32px 16px 80px; display: grid; gap: 16px; align-content: start; }
 .t-out-wide { max-width: 1000px; }
 .t-out-head { display: flex; align-items: center; gap: 12px; padding-bottom: 8px; }
-.t-out-head > span:last-child { display: flex; flex-direction: column; gap: 2px; }
+.t-out-head > span:nth-child(2) { display: flex; flex-direction: column; gap: 2px; }
 .t-out-head b { color: var(--d50); font-weight: var(--fw-bold); font-size: var(--t-body); }
-.t-out-head > span:last-child > span { color: var(--d100); font-size: var(--fs-sm); }
+.t-out-head > span:nth-child(2) > span { color: var(--d100); font-size: var(--fs-sm); }
 .t-out-mark { display: inline-flex; width: 36px; height: 36px; border-radius: 10px; align-items: center; justify-content: center; background: rgba(var(--accent-rgb), 0.12); }
 .t-out-card { border: 1px solid var(--card-border); border-radius: var(--r-lg); background: var(--card-bg); padding: 24px; display: grid; gap: 12px; align-content: start; }
 .t-out-h { margin: 0; font-family: var(--font-display); font-size: 24px; line-height: 1.2; font-weight: var(--fw-bold); color: var(--d50); text-wrap: balance; }
@@ -413,3 +413,170 @@ body.is-portal .aimy-overlay { display: none !important; }
 /* Sales draws a face and clears the monogram's ground for it (bdr.css §52).
    Talent has no faces yet, so the monogram keeps its circle. */
 .topnav-avatar, .msg-avatar.user-av { background: var(--grad-avatar); color: #fff; border-radius: 50%; }
+
+/* ══ 12. THE LOOP: PARTS FROM THE UI/UX PLAN ══════════════════════════════
+   Each part below is named after the finding it carries. They reuse the
+   shell's ink, lines and radii; nothing here introduces a colour. */
+
+/* A pass with its reason (P1): the reasons open where the buttons were. */
+.t-reason { display: grid; gap: 8px; padding: 12px 0 2px; border-top: 1px solid var(--card-border); margin-top: 4px; }
+.t-reason-q { margin: 0; font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--d50); }
+.t-reason-foot { margin: 0; font-size: var(--fs-xs); color: var(--d100); line-height: var(--lh-base); }
+.t-reason .t-addnote { margin: 0; }
+/* On a card, each child pads itself (aimy-ds.css .tc-head), so these do too. */
+.b-qcard > .t-reason, .b-qcard > .t-sendout { margin-left: 14px; margin-right: 14px; }
+.b-qcard > .t-reason { padding-bottom: 14px; }
+.b-qcard > .t-sendout { margin-bottom: 4px; }
+.t-row-more { padding: 0 0 8px 28px; }
+/* On a phone a row's verbs go under its reading, not beside it. */
+@media (max-width: 560px) {
+  .t-row { flex-wrap: wrap; }
+  .t-row > .t-acts { flex-basis: 100%; flex-wrap: nowrap; margin: 4px 0 0 28px; }
+  .t-row > .t-acts > .t-row-go { margin: 0; }
+  .t-row-more { padding-left: 0; }
+}
+
+/* The sendout (P1): sent, opened, decided, as three dated steps. */
+.t-sendout { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; }
+.t-so-step { position: relative; display: grid; gap: 2px; padding: 16px 8px 0 0; font-size: var(--fs-xs); color: var(--d100); }
+.t-so-step::before { content: ""; position: absolute; top: 4px; left: 10px; right: 0; height: 2px; background: var(--card-border); }
+.t-so-step:last-child::before { display: none; }
+.t-so-dot { position: absolute; top: 0; left: 0; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--card-border-hover); background: var(--card-bg); }
+.t-so-step.is-done .t-so-dot { background: var(--ok); border-color: var(--ok); }
+.t-so-step.is-done::before { background: rgba(var(--accent-rgb), 0.35); }
+.t-so-step.is-now .t-so-dot { border-color: var(--warn); }
+.t-so-cap { color: var(--d50); font-weight: var(--fw-semibold); }
+.t-so-step.is-now .t-so-day { color: var(--warn-text); }
+
+/* Why clients pass: the lead reason in the accent, and in words beside it. */
+.t-fn-row.is-top .t-fn-fill { background: var(--accent); }
+.t-fn-row.is-top .t-fn-label { color: var(--d50); font-weight: var(--fw-semibold); }
+
+/* An insight's definitions, behind How it is counted. */
+.t-def { display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr); gap: 8px 16px; margin: 0; font-size: var(--fs-sm); line-height: var(--lh-base); }
+.t-def dt { color: var(--d50); font-weight: var(--fw-semibold); }
+.t-def dd { margin: 0; color: var(--d100); }
+@media (max-width: 560px) { .t-def { grid-template-columns: minmax(0, 1fr); gap: 2px; } .t-def dd { margin-bottom: 8px; } }
+
+/* What a block reads (M8). */
+.t-src { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 10px; font-size: var(--fs-2xs); color: var(--d100); }
+.t-src-cap { font-weight: var(--fw-medium); letter-spacing: 0.08em; text-transform: uppercase; }
+.t-src-k { padding: 2px 8px; border-radius: 999px; border: 1px solid var(--card-border); }
+.t-src-k.is-new { border-style: dashed; border-color: rgba(var(--accent-rgb), 0.5); color: var(--accent-text); }
+
+/* Select many, act once (M7). The bar holds while anything is ticked. */
+.t-sel { margin-right: 4px; }
+.t-row > .t-sel { align-self: center; margin: 0 8px 0 2px; }
+.t-batch {
+  position: sticky; bottom: 92px; z-index: 5;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px;
+  margin: 12px 0 0; padding: 10px 14px; border-radius: var(--r-lg);
+  border: 1px solid rgba(var(--accent-rgb), 0.45); background: var(--card-bg-raised);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  animation: t-reveal-in var(--reveal-dur) ease-in-out both;
+}
+.t-batch-n { font-size: var(--fs-sm); color: var(--d100); }
+.t-batch-n b { color: var(--d50); font-variant-numeric: tabular-nums; }
+.t-batch .t-acts { margin: 0; }
+.t-menu-up { top: auto; bottom: calc(100% + 6px); }
+@media (prefers-reduced-motion: reduce) { .t-batch { animation: none; } }
+
+/* A message before it goes (M4). */
+.t-msg { margin: 0 0 12px; padding: 12px 14px; border-radius: var(--r-md); border: 1px solid var(--card-border); background: var(--card-bg); display: grid; gap: 6px; }
+.t-msg-cap { margin: 0; font-size: var(--t-micro); font-weight: var(--fw-medium); letter-spacing: 0.08em; text-transform: uppercase; color: var(--d100); }
+.t-msg-body { margin: 0; color: var(--d50); font-size: var(--fs-sm); line-height: var(--lh-base); max-width: 72ch; }
+.t-msg-foot { margin: 0; font-size: var(--fs-xs); color: var(--d100); }
+
+/* Consent, as given (P9). */
+.t-consent { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.t-cons { display: grid; grid-template-columns: 10px minmax(0, 110px) minmax(0, 1fr); gap: 8px; align-items: baseline; font-size: var(--fs-sm); line-height: var(--lh-snug); }
+.t-cons-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--card-border-hover); transform: translateY(-1px); }
+.t-cons-dot.is-ok { background: var(--ok); }
+.t-cons-dot.is-warn { background: var(--warn); }
+.t-cons-k { color: var(--d50); font-weight: var(--fw-semibold); }
+.t-cons-v { color: var(--d100); }
+
+/* A Learning proposal (P5): the change as Now against Proposed. */
+.t-props { display: grid; gap: 12px; }
+.t-prop { display: grid; gap: 10px; padding: 14px 16px; border: 1px solid var(--card-border); border-radius: var(--r-lg); background: var(--card-bg); }
+.s-insight .t-prop { margin-top: 14px; }
+.t-prop .b-aimy { margin: 0; }
+.t-prop-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.t-prop-title { color: var(--d50); font-weight: var(--fw-semibold); font-size: var(--t-body); }
+.t-prop-diff { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.t-prop-was, .t-prop-to { margin: 0; display: grid; gap: 4px; align-content: start; padding: 10px 12px; border-radius: var(--r-md); font-size: var(--fs-sm); line-height: var(--lh-base); color: var(--d100); }
+.t-prop-was { background: rgba(var(--accent-rgb), 0.04); }
+.t-prop-to { background: rgba(var(--accent-rgb), 0.10); color: var(--d50); }
+.t-prop .t-acts { margin: 0; }
+@media (max-width: 720px) { .t-prop-diff { grid-template-columns: minmax(0, 1fr); } }
+
+/* The sample gate (P7). */
+.t-gate { display: grid; gap: 6px; margin: 4px 0 16px; padding: 12px 14px; border-radius: var(--r-md); border: 1px dashed var(--card-border-hover); }
+.t-gate.is-open { border-style: solid; border-color: rgba(var(--accent-rgb), 0.45); }
+.t-gate-top { margin: 0; font-size: var(--fs-sm); color: var(--d100); }
+.t-gate-top b { color: var(--d50); font-variant-numeric: tabular-nums; }
+.t-gate-track { position: relative; height: 8px; border-radius: 4px; background: rgba(var(--accent-rgb), 0.10); overflow: hidden; }
+.t-gate-fill { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--warn); }
+.t-gate.is-open .t-gate-fill { background: var(--ok); }
+.t-gate-say { margin: 0; font-size: var(--fs-xs); color: var(--d100); line-height: var(--lh-base); }
+
+/* Does a question predict anything (P3). */
+.t-olink { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: var(--fs-xs); color: var(--d100); }
+.t-olink b { color: var(--d50); font-variant-numeric: tabular-nums; }
+
+/* What AiMY may do (m4): three rungs, filled up to where it stands. */
+.t-ladder { display: grid; gap: 0; }
+.t-ladder-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 20px; align-items: center; padding: 12px 0; border-top: 1px solid var(--card-border); }
+.t-ladder-row:first-child { border-top: 0; }
+.t-ladder-what { display: grid; gap: 4px; min-width: 0; }
+.t-ladder-what b { color: var(--d50); font-weight: var(--fw-semibold); font-size: var(--fs-sm); }
+.t-ladder-why { display: flex; gap: 6px; align-items: flex-start; font-size: var(--fs-xs); color: var(--d100); line-height: var(--lh-base); }
+.t-ladder-why svg { flex-shrink: 0; margin-top: 2px; }
+.t-rungs { display: inline-flex; border: 1px solid var(--card-border); border-radius: 999px; overflow: hidden; }
+.t-rung {
+  font: inherit; font-size: var(--fs-xs); font-weight: var(--fw-medium); padding: 6px 12px; border: 0; cursor: pointer;
+  background: none; color: var(--d100); white-space: nowrap;
+  transition: background-color var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out);
+}
+.t-rung + .t-rung { border-left: 1px solid var(--card-border); }
+.t-rung.is-on { background: rgba(var(--accent-rgb), 0.16); color: var(--d50); }
+.t-rung:hover { color: var(--d50); }
+.t-rung:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
+@media (max-width: 720px) { .t-ladder-row { grid-template-columns: minmax(0, 1fr); } .t-rungs { justify-self: start; } }
+
+/* A check-in with its outcome (Day 90). */
+.t-checkin { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 10px; font-size: var(--fs-sm); color: var(--d100); line-height: var(--lh-base); }
+.t-checkin > .tag { min-width: 64px; justify-content: center; }
+.t-checkin-say { flex: 1; min-width: 220px; }
+.t-checkin-say b { color: var(--d50); }
+
+/* The debrief: AiMY's quote, marked Check it, and the topic it missed. */
+.t-quote { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: var(--fs-sm); color: var(--d100); line-height: var(--lh-base); }
+.t-quote > span:nth-child(2) { font-style: italic; }
+.t-gap { display: grid; gap: 0; }
+.t-gap .t-acts { margin-top: 8px; }
+
+/* By recruiter (P6): counts in a table, alphabetical, no bars. */
+.t-tbl { display: grid; margin: 4px 0 0; font-size: var(--fs-sm); }
+.t-tbl-row { display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr)); gap: 12px; padding: 8px 0; border-top: 1px solid var(--card-border); color: var(--d50); font-variant-numeric: tabular-nums; }
+.t-tbl-head { border-top: 0; color: var(--d100); font-size: var(--t-micro); font-weight: var(--fw-medium); letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* Small marks: scope, a learned rule, a parked source. */
+.t-scope { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 12px; font-size: var(--fs-sm); color: var(--d100); }
+.t-rule { display: flex; gap: 6px; align-items: flex-start; color: var(--accent-text); }
+.t-rule svg { flex-shrink: 0; margin-top: 4px; }
+.t-parked { opacity: 0.55; cursor: not-allowed; }
+
+/* English or Arabic on the pages candidates see (M9). */
+.t-lang { margin-left: auto; display: inline-flex; border: 1px solid var(--card-border); border-radius: 999px; overflow: hidden; }
+.t-lang-btn { font: inherit; font-size: var(--fs-xs); font-weight: var(--fw-medium); padding: 6px 12px; border: 0; background: none; color: var(--d100); cursor: pointer; }
+.t-lang-btn + .t-lang-btn { border-left: 1px solid var(--card-border); }
+.t-lang-btn.is-on { background: rgba(var(--accent-rgb), 0.16); color: var(--d50); }
+.t-lang-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
+.t-out[lang="ar"], .t-out[lang="ar"] :where(h1, h2, p, span, b, label, button, input, li) { font-family: 'IBM Plex Sans Arabic', 'Poppins', system-ui, sans-serif; }
+.t-out[lang="ar"] [lang="en"] { font-family: 'Poppins', system-ui, sans-serif; }
+.t-out[dir="rtl"] .t-lang { margin-left: 0; margin-right: auto; }
+.t-out[dir="rtl"] .t-chat-ai p { border-top-left-radius: 14px; border-top-right-radius: 4px; }
+.t-out[dir="rtl"] .t-chat-you p { border-top-right-radius: 14px; border-top-left-radius: 4px; }
+.t-out[dir="rtl"] .t-chat .b-cuts.t-col { margin-left: 0; margin-right: 28px; }
+.t-out[dir="rtl"] .t-apply-form .t-q .t-check { margin-left: 0; }
