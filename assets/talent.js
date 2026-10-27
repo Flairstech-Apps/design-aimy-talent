@@ -5573,6 +5573,29 @@
     const end = ok[ok.length - 1];
     return '<svg class="t-spark" viewBox="0 0 64 20" width="64" height="20" aria-hidden="true"><path d="' + d + '"/><circle cx="' + end[0] + '" cy="' + y(end[1]) + '" r="2.5"/></svg>';
   }
+  /* HOW IT IS COUNTED, AS A PANEL (Engy, 29 Oct): it opens while the
+     pointer is on it and closes when it leaves; a press pins it open until
+     a press anywhere else. Not one long list of labels but the definition's
+     own shape: what the measure is and its unit, where it starts and stops,
+     what it counts out of what, and under a rule the target, what it is not
+     to be mixed with, and how the trend is read. */
+  const DEF_MAIN = ['Of', 'Counts', 'Counts at', 'Hired at', 'Beside it', 'Norm', 'Read with', 'Why 6', 'Why 60'];
+  const DEF_FOOT = ['Target', 'Not to mix', 'Trend'];
+  const DEF_SAY = { 'Of': 'Out of', 'Not to mix': 'Not the same as', 'Counts at': 'Counts when', 'Hired at': 'Hired when', 'Why 6': 'Why 6', 'Why 60': 'Why 60' };
+  function defPop(cap, def) {
+    const get = (k) => def.filter((d) => d[0] === k).map((d) => d[1]);
+    const row = (d) => '<div class="t-def-row"><span class="t-def-k">' + esc(DEF_SAY[d[0]] || d[0]) + '</span><span class="t-def-v">' + esc(d[1]) + '</span></div>';
+    const starts = get('Starts')[0], stops = get('Stops')[0];
+    const main = def.filter((d) => DEF_MAIN.indexOf(d[0]) >= 0), foot = def.filter((d) => DEF_FOOT.indexOf(d[0]) >= 0);
+    return '<span class="t-def"><button class="t-def-btn" type="button" data-def aria-expanded="false">How it is counted</button>' +
+      '<span class="t-def-pop" role="tooltip">' +
+        '<span class="t-def-head"><b>' + esc(cap) + '</b>' + (get('Unit')[0] ? '<span class="t-def-unit">per ' + esc(lower(get('Unit')[0])) + '</span>' : '') + '</span>' +
+        (starts || stops ? '<span class="t-def-span"><span class="t-def-pt"><span class="t-def-k">Starts</span>' + esc(starts || '') + '</span>' +
+          '<span class="t-def-arrow" aria-hidden="true">' + svg('arrow', 14) + '</span><span class="t-def-pt"><span class="t-def-k">Stops</span>' + esc(stops || '') + '</span></span>' : '') +
+        (main.length ? '<span class="t-def-sec">' + main.map(row).join('') + '</span>' : '') +
+        (foot.length ? '<span class="t-def-sec t-def-foot">' + foot.map(row).join('') + '</span>' : '') +
+      '</span></span>';
+  }
   /* A target said with how far off it is, in the tile's own unit. */
   function tgtSay(t, v, lead) {
     const pc = t.unit === '%';
@@ -5595,13 +5618,15 @@
     const st = rstats(reqs);
     /* The three spans the trend reads, on the same account, whatever the period. */
     const WS = [[60, 90], [30, 60], [0, 30]].map((w) => rstats(inAcc.filter((q) => openedIn(q, w[0], w[1]))));
+    /* The widest view this desk has, for a card the period leaves empty. */
+    const stWide = rstats(inAcc);
     const reached = st.reached;
     const offers = st.offers, hiredO = st.hiredO, hiredSeats = st.hiredSeats;
     const sendAvg = st.sendAvg, phones = st.phones;
     const num = (x) => (x == null ? '·' : String(x));
     const pcS = (x) => (x == null ? '·' : x + '%');
     const TARGET_BY = 'Set by ' + DESKS.dina.name + ', the HR Manager. A sample until the team sets its own.';
-    const TREND_DEF = ['Trend', 'Three spans of 30 days, oldest first, by the day each requisition opened. A span with fewer than ' + TREND_MIN + ' to count from shows ·. The latest span is still running, so its days and rates can move.'];
+    const TREND_DEF = ['Trend', 'Three spans of 30 days, oldest first, by opening day. Fewer than ' + TREND_MIN + ' to count from shows ·; the latest span is still running.'];
     /* Day 90 is read for the hires whose day 90 has passed, which are older
        than any period here, so the period cannot apply to them; the account
        does. */
@@ -5623,22 +5648,22 @@
       { cap: 'Seats', v: (s) => s.seats, show: num,
         say: (s) => s.hiredSeats + ' hired, ' + s.openSeats + ' still open',
         def: () => [['Unit', 'Seat, one vacancy'], ['Hired at', 'Its requisition is filled or its people have started'], ['Not to mix', 'People hired: an offer accepted counts a person, not a seat.'], ['Target', 'None, as for requisitions.']] },
-      { cap: 'Days to send profiles', v: (s) => s.sendAvg, base: (s) => s.sentN0, show: num, tgt: { v: 7, dir: 'le', unit: 'days' },
+      { cap: 'Days to send profiles', none: () => 'None sent yet', v: (s) => s.sendAvg, base: (s) => s.sentN0, show: num, tgt: { v: 7, dir: 'le', unit: 'days' },
         say: (s) => 'from opening to the first profile sent, on average · ' + plural(s.sentN0, 'requisition'),
         def: (s) => [['Unit', 'Requisition'], ['Starts', 'The requisition opens'], ['Stops', 'Its first profile is sent to the client'], ['Counts', plural(s.sentN0, 'requisition') + ' that have sent one. The rest are still waiting and are left out.']] },
-      { cap: 'Days to hire', v: (s) => s.toHire, base: (s) => s.hiredO.length, show: num, tgt: { v: 30, dir: 'le', unit: 'days' },
+      { cap: 'Days to hire', none: () => 'No hire yet', v: (s) => s.toHire, base: (s) => s.hiredO.length, show: num, tgt: { v: 30, dir: 'le', unit: 'days' },
         say: (s) => 'from opening to the offer, on average · ' + plural(s.hiredO.length, 'person', 'people'),
         def: (s) => [['Unit', 'Person'], ['Starts', 'Their requisition opens'], ['Stops', 'The offer is sent'], ['Counts', plural(s.hiredO.length, 'person', 'people') + ' with an accepted offer. Fewer than the requisitions above, so the two are not one timeline.']] },
-      { cap: 'Days to join', v: (s) => s.toJoin, base: (s) => s.hiredO.length, show: num, tgt: { v: 60, dir: 'le', unit: 'days' },
+      { cap: 'Days to join', none: () => 'No hire yet', v: (s) => s.toJoin, base: (s) => s.hiredO.length, show: num, tgt: { v: 60, dir: 'le', unit: 'days' },
         say: (s) => 'from opening to day one, on average · ' + plural(s.hiredO.length, 'person', 'people'),
         def: () => [['Unit', 'Person'], ['Starts', 'Their requisition opens'], ['Stops', 'Their first day at work'], ['Counts', 'People with an accepted offer; a date not reached yet is the agreed start date.'], ['Why 60', 'Most notice periods here are one or two months.']] },
-      { cap: 'HR after the phone screen', v: (s, m) => rate(s.reached('hr'), s.phones, m), show: pcS, tgt: { v: 70, dir: 'ge', unit: '%' },
+      { cap: 'HR after the phone screen', none: () => 'No screens yet', v: (s, m) => rate(s.reached('hr'), s.phones, m), show: pcS, tgt: { v: 70, dir: 'ge', unit: '%' },
         say: (s) => 'of people who passed the call went on to HR · ' + plural(s.phones, 'person', 'people'),
         def: (s) => [['Unit', 'Person'], ['Of', plural(s.phones, 'person', 'people') + ' who finished a phone screen: went on to HR, or left at it'], ['Counts', 'Those who reached the HR interview']] },
-      { cap: 'Technical after HR', v: (s, m) => rate(s.reached('tech'), s.reached('hr'), m), show: pcS, tgt: { v: 55, dir: 'ge', unit: '%' },
+      { cap: 'Technical after HR', none: () => 'Nobody at HR yet', v: (s, m) => rate(s.reached('tech'), s.reached('hr'), m), show: pcS, tgt: { v: 55, dir: 'ge', unit: '%' },
         say: (s) => 'of people past HR reached the technical round · ' + plural(s.reached('hr'), 'person', 'people'),
         def: (s) => [['Unit', 'Person'], ['Of', plural(s.reached('hr'), 'person', 'people') + ' who reached the HR interview'], ['Counts', 'Those who reached the technical interview']] },
-      { cap: 'Client interview per profile sent', v: (s, m) => rate(s.reached('client'), s.reached('sent'), m), show: pcS, tgt: { v: 25, dir: 'ge', unit: '%' },
+      { cap: 'Client interview per profile sent', none: () => 'None sent yet', v: (s, m) => rate(s.reached('client'), s.reached('sent'), m), show: pcS, tgt: { v: 25, dir: 'ge', unit: '%' },
         say: (s) => 'of profiles sent got a client interview · ' + plural(s.reached('sent'), 'profile'),
         def: (s) => [['Unit', 'Person'], ['Of', plural(s.reached('sent'), 'profile') + ' sent to a client'], ['Counts', 'Those the client agreed to meet'], ['Norm', 'About 3 to 5 profiles per client interview is usual for agencies; a weak benchmark. 25% is one in four.']] },
     ];
@@ -5647,10 +5672,10 @@
        side. Billed hires are never shown alone, always beside who stayed to
        day 90 (M10), as they are on the client's own page. */
     const staffing = [
-      { cap: 'Profiles sent per hire', v: (s, m) => (s.hiresSent && s.hiresSent >= (m || 1) ? Math.round(s.reached('sent') / s.hiresSent * 10) / 10 : null), show: num, tgt: { v: 6, dir: 'le', unit: '' },
+      { cap: 'Profiles sent per hire', none: (s) => (s.reached('sent') ? s.reached('sent') + ' sent, no hire' : 'None sent yet'), v: (s, m) => (s.hiresSent && s.hiresSent >= (m || 1) ? Math.round(s.reached('sent') / s.hiresSent * 10) / 10 : null), show: num, tgt: { v: 6, dir: 'le', unit: '' },
         say: (s) => s.reached('sent') + ' profiles sent for ' + plural(s.hiresSent, 'hire'),
         def: () => [['Unit', 'Profile, per person hired'], ['Of', 'People with an accepted offer, on requisitions that send profiles to a client'], ['Counts', 'Every profile sent on those requisitions, hired or not'], ['Why 6', 'About 3 to 5 profiles per client interview, and most client interviews end in a hire.']] },
-      { cap: 'Offers declined', v: (s, m) => rate(s.declined, s.made, m), show: pcS, tgt: { v: 15, dir: 'le', unit: '%' },
+      { cap: 'Offers declined', none: () => 'No offers yet', v: (s, m) => rate(s.declined, s.made, m), show: pcS, tgt: { v: 15, dir: 'le', unit: '%' },
         say: (s) => s.declined + ' of ' + plural(s.made, 'offer') + ' made were turned down',
         def: () => [['Unit', 'Offer'], ['Of', 'Offers sent to the candidate. Ones still being approved are left out.'], ['Counts', 'Offers the candidate turned down'], ['Read with', 'Their reasons, on each candidate. A counter-offer is the usual one.']] },
       { cap: 'Hired, not started', v: (s) => s.notStarted.length, show: num,
@@ -5664,10 +5689,17 @@
         say: (s) => 'hired on billable requisitions · ' + stayed + ' of ' + past.length + ' earlier ones stayed to day 90',
         def: () => [['Unit', 'Person'], ['Counts', 'People with an accepted offer on a billable requisition'], ['Beside it', plural(past.length, 'billed hire') + ' whose day 90 has passed, on ' + (accIn ? accIn.name : 'these accounts') + '. Older than any period here, so the period does not apply to them.'], ['Target', 'For day 90: 85% or more. ' + TARGET_BY]] },
     ];
+    /* EVERY CARD SAYS SOMETHING (Engy, 29 Oct). A measure the period has
+       nothing to count from shows the same measure over all 90 days, and
+       says so; one with nothing to count from at all shows what there is
+       ("9 sent", "No hire yet") in place of a bare dot. */
     const tile = (t) => {
-      const v = t.v(st);
+      let v = t.v(st), lead = '';
+      if (v == null && stWide.reqs.length > st.reqs.length && t.v(stWide) != null) { v = t.v(stWide); lead = 'Over all 90 days; none in the last ' + per + ' yet. '; }
+      const none = v == null && t.none ? t.none(st) : null;
+      const sayOf = () => (lead ? lead + t.say(stWide).replace(/^./, (x) => x.toUpperCase()) : t.say(st));
       const tv = WS.map((s) => (t.base && t.base(s) < TREND_MIN ? null : t.v(s, TREND_MIN)));
-      const def = t.def(st).concat(t.tgt && !t.tgtV ? [['Target', TARGET_BY]] : [], [TREND_DEF]);
+      const def = t.def(lead ? stWide : st).concat(t.tgt && !t.tgtV ? [['Target', TARGET_BY]] : [], [TREND_DEF]);
       /* ONE SHAPE A CARD (Engy, 29 Oct: thirteen tiles of different heights
          read as untidy). Every card has the same slots in the same order:
          the measure, the number, its target, one line of what it counts,
@@ -5675,11 +5707,11 @@
          height, and How it is counted opens over the card, not inside it. */
       return '<div class="t-kpi t-kpi-eq">' +
         '<span class="t-kpi-cap">' + esc(t.cap) + '</span>' +
-        '<b class="t-kpi-n">' + esc(t.show(v)) + '</b>' +
+        (none ? '<b class="t-kpi-n is-none">' + esc(none) + '</b>' : '<b class="t-kpi-n">' + esc(t.show(v)) + '</b>') +
         (t.tgt ? tgtSay(t.tgt, t.tgtV ? t.tgtV(st) : v, t.tgtLead) : '<span class="t-kpi-tgt">No target</span>') +
-        '<span class="t-kpi-say" title="' + esc(t.say(st)) + '">' + esc(t.say(st)) + '</span>' +
+        '<span class="t-kpi-say" title="' + esc(sayOf(t)) + '">' + esc(sayOf(t)) + '</span>' +
         '<span class="t-kpi-trend">' + (spark(tv) || '<span class="t-spark-none" aria-hidden="true"></span>') + '<span>' + tv.map((x) => esc(t.show(x))).join(' → ') + '</span></span>' +
-        '<details class="t-kpi-def"><summary>How it is counted</summary><dl>' + def.map((d) => '<dt>' + esc(d[0]) + '</dt><dd>' + esc(d[1]) + '</dd>').join('') + '</dl></details>' +
+        defPop(t.cap, def) +
       '</div>';
     };
     const board = (label, list) => '<div class="t-kpis t-kpis-eq" aria-label="' + esc(label) + '">' + list.map(tile).join('') + '</div>';
@@ -6974,6 +7006,10 @@
     go({});
   }
 
+  /* A pinned How it is counted lets go on a press anywhere outside it, or Escape. */
+  const unpinDefs = () => document.querySelectorAll('.t-def.is-pinned').forEach((x) => { x.classList.remove('is-pinned'); x.querySelector('[data-def]').setAttribute('aria-expanded', 'false'); });
+  document.addEventListener('click', (e) => { if (!e.target.closest('.t-def')) unpinDefs(); }, true);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') unpinDefs(); });
   document.addEventListener('click', (e) => {
     const t = e.target;
     const at = (sel) => t.closest(sel);
@@ -7339,6 +7375,11 @@
     if ((el = at('[data-more]'))) { const k = val('data-more'); TODAY_MORE[k] = !TODAY_MORE[k]; paint(); return; }
     if ((el = at('[data-ask-date]'))) { askMove(DB.reqById[val('data-ask-date')]); return; }
     if ((el = at('[data-prep]'))) { prepMe(DB.byId[val('data-prep')]); return; }
+    if ((el = at('[data-def]'))) {
+      const box = el.closest('.t-def'), on = !box.classList.contains('is-pinned');
+      unpinDefs();
+      box.classList.toggle('is-pinned', on); el.setAttribute('aria-expanded', String(on)); return;
+    }
     if ((el = at('[data-cb]'))) { if (PENDING) { PENDING.cb = val('data-cb'); paintThread(); } return; }
     if ((el = at('[data-fu]'))) { if (PENDING) { PENDING.fu = !fuOn(PENDING); paintThread(); } return; }
     if ((el = at('[data-runn]'))) { UI.runN = Number(val('data-runn')); saveUI(); paint(); return; }
