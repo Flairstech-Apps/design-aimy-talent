@@ -1058,3 +1058,17 @@ body.is-portal .aimy-overlay { display: none !important; }
 .rc.t-cscore .big { font-size: 20px; }
 .rc.t-cscore .segs { margin-top: 8px; }
 .t-cnow { margin-top: 10px; }
+
+/* ══ ASSESSMENTS: CHECKS, INTEGRITY, CONSENT ══════════════════════════════
+   On each card, the length and the phone check as two short words and how
+   many checks it meets; on a result, integrity on its own line, apart from
+   the score; on the test, consent on the first screen. */
+.t-checks { display: flex; flex-wrap: wrap; gap: 6px; }
+.t-check-say { padding: 2px 8px; border-radius: var(--r-pill); border: 1px solid var(--card-border); font-size: var(--fs-2xs); color: var(--d100); }
+.t-check-say.is-warn { color: var(--warn-text, var(--warn)); border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
+.t-integ { padding-left: 10px; border-left: 2px solid var(--card-border-hover); color: var(--d100); }
+.t-consent { margin: 14px 0 4px; padding: 14px 16px; border: 1px solid var(--card-border); border-radius: var(--r-lg); display: grid; gap: 8px; font-size: var(--fs-sm); line-height: var(--lh-snug); }
+.t-consent p { margin: 0; }
+.t-consent-h { font-weight: var(--fw-semibold); color: var(--d50); }
+.t-consent-keep { font-size: var(--fs-xs); color: var(--ink-muted); }
+.t-practice { padding: 10px 12px; border: 1px dashed var(--card-border-hover); border-radius: var(--r-lg); }

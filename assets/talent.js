@@ -420,7 +420,7 @@
      against the points listed). `fails` is the share that got it wrong in
      the seed, so the insight "everyone fails Q5" has something to read. */
   const ASMT_SEED = [
-    { id: 'a1', title: 'Support troubleshooting and written English', kind: 'quiz', fam: 'support', pass: 70, mins: 20, questions: [
+    { id: 'a1', title: 'Support troubleshooting and written English', kind: 'quiz', fam: 'support', pass: 70, mins: 20, practice: true, questions: [
       { q: 'A customer says the app logs them out every few minutes. What do you check first?', type: 'choice', options: ['Their session timeout settings', 'Their screen resolution', 'Their invoice history', 'The app’s colour theme'], right: 0, fails: 0.18 },
       { q: 'Which SQL finds the 10 most recent errors in a table called logs?', type: 'choice', options: ['SELECT * FROM logs ORDER BY created_at DESC LIMIT 10', 'SELECT TOP logs 10', 'GET logs LAST 10', 'SELECT * FROM logs WHERE 10'], right: 0, fails: 0.31 },
       { q: 'Write a two-sentence reply to a customer whose ticket you must escalate.', type: 'open', points: ['says it is escalated', 'says when they will hear back', 'polite and plain'], fails: 0.22 },
@@ -428,7 +428,7 @@
       { q: 'What does an HTTP 502 usually mean?', type: 'choice', options: ['A server upstream gave a bad response', 'The page was not found', 'The user is not logged in', 'The request was too large'], right: 0, fails: 0.79 },
       { q: 'Put these in order of urgency: a typo on the help page, checkout is down, one user cannot reset a password.', type: 'open', points: ['checkout first', 'password second', 'typo last'], fails: 0.27 },
     ] },
-    { id: 'a2', title: 'German language check', kind: 'live', fam: 'support', pass: 75, mins: 12, questions: [
+    { id: 'a2', title: 'German language check', kind: 'live', fam: 'support', pass: 75, mins: 12, lang: 'German', level: 'C1', feedback: true, questions: [
       { q: 'Stellen Sie sich bitte kurz vor.', type: 'open', points: ['fluent', 'clear structure'], fails: 0.2 },
       { q: 'Ein Kunde ist verärgert, weil seine Bestellung fehlt. Wie reagieren Sie?', type: 'open', points: ['apologises', 'next step', 'polite register'], fails: 0.34 },
       { q: 'Erklären Sie einem Kunden, wie er sein Passwort zurücksetzt.', type: 'open', points: ['clear steps', 'correct grammar'], fails: 0.28 },
@@ -859,6 +859,24 @@
     seedWork(r);
     seedLoop();
     seedApproval();
+    seedAsmtTrust();
+  }
+  /* Consent and integrity on the seeded results, drawn from each result's
+     id rather than the random stream, so nothing else moves. Most agreed
+     to AiMY scoring; about one in nine asked for a person; about one in
+     four carries an integrity flag; a few asked for a review after. */
+  function seedAsmtTrust() {
+    const h = (t) => { let x = 7; for (let i = 0; i < t.length; i++) x = (x * 31 + t.charCodeAt(i)) >>> 0; return x; };
+    DB.sends.forEach((x) => {
+      if (x.status !== 'done') return;
+      const n = h(x.id + 'trust'), a = DB.asmts.filter((y) => y.id === x.asmt)[0];
+      x.consent = n % 9 === 0 ? 'person' : 'ai';
+      x.reviewed = x.consent === 'person' && n % 2 ? { by: DB.reqById[DB.byId[x.cand].req].rec, day: Math.min(0, x.doneDay + 1) } : null;
+      x.review = x.consent === 'ai' && n % 13 === 5 ? 'asked' : null;
+      const q = n % a.questions.length;
+      x.flags = n % 4 !== 1 ? [] : [n % 3 === 0 ? { k: 'paste', q: q } : n % 3 === 1 ? { k: 'fast', mins: Math.max(2, Math.round(a.mins / 4)) }
+        : a.kind === 'live' ? { k: 'voice', q: q } : { k: 'away', n: 2 + (n % 3) }];
+    });
   }
   /* One requisition waits on the BU Director, so the approver's desk has
      its case: three new seats at once, not replacements. Built without
@@ -1515,7 +1533,7 @@
       const a = asmtOf(x.asmt);
       out.push({ day: x.day, time: '10:00', kind: 'asmt', text: 'Sent the ' + a.title + ' assessment.' });
       if (x.status === 'done') out.push({ day: x.doneDay != null ? x.doneDay : x.day, time: '18:00', kind: 'asmt',
-        text: 'Finished the assessment: ' + x.score + '%' + (x.score >= a.pass ? ', a pass.' : ', under the ' + a.pass + '% pass mark.') });
+        text: 'Finished the assessment: ' + scoreSay(a, x) + '.' + (x.flags && x.flags.length ? ' Integrity: ' + flagsOf(a, x).join('; ') + '.' : '') });
     });
     ivsOf(c).forEach((v) => out.push({ day: v.day, time: v.slot, kind: 'iv', text: STAGE[v.stage].label + ' with ' + v.by +
       (v.status === 'booked' ? ' is booked.' : v.status === 'owed' ? '. The result is still owed.' : v.verdict === 'yes' ? '. Result: proceed.' : '. Result: do not proceed.') +
@@ -2339,7 +2357,7 @@
         return '<div class="rc t-cscore"><div class="row between" style="align-items:flex-end"><div><div class="big">' + evMet(c) + ' of ' + c.ev.length + '</div>' +
           '<div class="sub">must-haves the CV shows</div></div>' + (unk ? rcChip(unk + ' not known yet', 'warn', 'qc') : part ? rcChip(part + ' partly', 'warn') : rcChip(fitLane(c)[0], 'ok')) + '</div>' +
           fitSegs(c, null) + '</div>'; })() +
-      '<p class="b-qcard-where t-cnow">' + fact('clock', say + (s && s.status === 'done' ? ' Assessment ' + s.score + '%.' : '')) + '</p>' +
+      '<p class="b-qcard-where t-cnow">' + fact('clock', say + (s && s.status === 'done' ? ' Assessment ' + scoreShort(asmtOf(s.asmt), s) + '.' : '')) + '</p>' +
       (c.stage === 'sent' || (isClient() && c.exit === 'clientno') ? sendout(c) : '') +
       /* AT THE SCREEN, THE CALL IS THE MOVE. Someone who applied or is due a
          phone screen moves forward by being called and the call being
@@ -4280,7 +4298,14 @@
     else if (s.status === 'sent') body = '<p class="b-cmeta-p">Sent ' + esc(sayWhen(s.day)) + '. Not taken yet.</p>' +
       (works ? '<p class="b-cmeta-p t-acts"><button class="s-insight-lnk" type="button" data-copy="' + esc('https://talent.flairstech.com/test/' + s.id) + '">Copy their test link</button>' +
         '<button class="s-insight-lnk" type="button"' + goAttr({ take: s.id }) + '>Open it as them</button></p>' : '');
-    else body = '<p class="b-cmeta-p"><b>' + s.score + '%</b>, ' + (s.score >= a.pass ? 'a pass' : 'under the ' + a.pass + '% pass mark') + '. Scored by AiMY ' + esc(sayWhen(s.doneDay != null ? s.doneDay : s.day)) + '.' + (s.probed && s.probed.length ? ' Taken live; AiMY asked for more on ' + s.probed.map((i) => 'Q' + (i + 1)).join(' and ') + '.' : '') + '</p>' +
+    else body = '<p class="b-cmeta-p"><b>' + esc(scoreSay(a, s)) + '</b>.' + (s.probed && s.probed.length ? ' Taken live; AiMY asked for more on ' + s.probed.map((i) => 'Q' + (i + 1)).join(' and ') + '.' : '') + '</p>' +
+      /* How it was scored, and by whom: their consent is part of the result. */
+      '<p class="b-cmeta-p">' + (s.consent === 'person' ? (s.reviewed ? 'They asked for a person to score it; ' + esc(DESKS[s.reviewed.by] ? DESKS[s.reviewed.by].name : 'a recruiter') + ' did, ' + esc(sayWhen(s.reviewed.day)) + '.'
+          : 'They asked for a person to score it. AiMY’s suggestion above does not count until a person confirms it.')
+        : 'Scored by AiMY ' + esc(sayWhen(s.doneDay != null ? s.doneDay : s.day)) + ', with their consent' + (s.review === 'asked' ? (s.reviewed ? '; reviewed by ' + esc(DESKS[s.reviewed.by] ? DESKS[s.reviewed.by].name : 'a recruiter') + ' at their request.' : '. They asked for a person to review it.') : '.')) + '</p>' +
+      /* Integrity, said apart: what happened, never a verdict. */
+      '<p class="b-cmeta-p t-integ"><b>Integrity, apart from the score:</b> ' + (flagsOf(a, s).length ? esc(flagsOf(a, s).join('; ')) + '. Look at the answer; a flag never changes the score.' : 'nothing to look at.') + '</p>' +
+      (needsPerson(s) && works ? '<p class="b-cmeta-p t-acts"><button class="s-insight-lnk primary" type="button" data-asmt-review="' + s.id + '">Confirm ' + esc(scoreShort(a, s)) + ' as the score</button></p>' : '') +
       '<div class="t-qlist">' + a.questions.map((qq, i) => '<p class="t-q"><span class="tag tag-' + (s.answers[i] ? 'ok' : 'neutral') + '">' + (s.answers[i] ? 'Right' : 'Missed') + '</span>' +
         '<span>Q' + (i + 1) + '. ' + esc(qq.q) + '</span></p>').join('') + '</div>';
     return '<section class="s-block s-block-wide" aria-label="Assessment">' +
@@ -5355,6 +5380,49 @@
      and the questions everyone fails come back as something to fix (New
      Operations list: "people have always been failing Q5"). */
   const ASMT_KIND = { quiz: 'Questionnaire', live: 'Live with the AiMY agent' };
+  /* A LANGUAGE CHECK GIVES A LEVEL (Assessments, 29 Oct; R4). Clients ask
+     for "German at C1", so the result is said on the CEFR scale the
+     requisition uses, read off the spoken answers, and the pass is the
+     level, not a percentage. */
+  const CEFR = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+  const cefrOf = (score) => (score >= 90 ? 'C2' : score >= 78 ? 'C1' : score >= 62 ? 'B2' : score >= 45 ? 'B1' : score >= 30 ? 'A2' : 'A1');
+  const asmtPass = (a, x) => (a.lang ? CEFR.indexOf(cefrOf(x.score)) >= CEFR.indexOf(a.level || 'C1') : x.score >= a.pass);
+  const scoreShort = (a, x) => (a.lang ? cefrOf(x.score) + ' ' + a.lang : x.score + '%');
+  const scoreSay = (a, x) => (a.lang ? cefrOf(x.score) + ' in spoken ' + a.lang + (asmtPass(a, x) ? ', at or above the ' + (a.level || 'C1') + ' needed' : ', under the ' + (a.level || 'C1') + ' needed')
+    : x.score + '%, ' + (asmtPass(a, x) ? 'a pass' : 'under the ' + a.pass + '% pass mark'));
+  const passSayOf = (a) => (a.lang ? (a.level || 'C1') + ' or above' : a.pass + '%');
+  /* INTEGRITY, APART FROM THE SCORE (R4). What happened while they took
+     it, said as what happened, never folded into the score and never a
+     verdict: a person looks at the answer and decides. */
+  const FLAG_SAY = {
+    paste: (f) => 'Q' + (f.q + 1) + ' was answered by pasting text in',
+    fast: (f, a) => 'finished in ' + plural(f.mins, 'minute') + ' of the ' + a.mins + ' it usually takes',
+    away: (f) => 'left the test page ' + f.n + ' times',
+    voice: (f) => 'a second voice was heard on Q' + (f.q + 1),
+  };
+  const flagsOf = (a, x) => (x.flags || []).map((f) => FLAG_SAY[f.k](f, a));
+  /* Waiting on a person: they asked for one to score it, or for a review. */
+  const needsPerson = (x) => x.status === 'done' && !x.reviewed && (x.consent === 'person' || x.review === 'asked');
+  /* WHAT KEEPS PEOPLE FINISHING, AND KEEPS IT FAIR (R4): ten to fifteen
+     minutes, workable on a phone, a practice question first, a note for
+     everyone after, and consent before AiMY scores. Each line says why,
+     and the ones that are a setting are one press. */
+  const ASMT_GOOD = 15;
+  function asmtChecks(a) {
+    const open = a.questions.filter((qq) => qq.type === 'open').length;
+    return [
+      { k: 'length', ok: a.mins <= ASMT_GOOD, label: 'About ' + a.mins + ' minutes',
+        say: a.mins <= ASMT_GOOD ? 'Inside the 10 to 15 minutes that most people finish.' : 'Past 15 minutes, more people stop before the end. Drop a question or split it in two.' },
+      { k: 'phone', ok: a.kind === 'live' || open <= 2, label: a.kind === 'live' ? 'Works on a phone' : open <= 2 ? 'Works on a phone' : 'Long typing on a phone',
+        say: a.kind === 'live' ? 'Spoken, so a phone is enough.' : open <= 2 ? 'Choices and ' + plural(open, 'short written answer') + '.' : plural(open, 'written answer') + ': most people take these on a phone, where typing is slow.' },
+      { k: 'practice', ok: !!a.practice, label: a.practice ? 'A practice question first' : 'No practice question',
+        say: a.practice ? 'Not scored. People see how it works before it counts.' : 'One unscored question first lowers the nerves that cost good people marks.' },
+      { k: 'feedback', ok: !!a.feedback, label: a.feedback ? 'Everyone hears how they did' : 'Nobody hears how they did',
+        say: a.feedback ? 'A short note within five days, pass or not.' : 'A short note to everyone, pass or not, is what people remember about a test.' },
+      { k: 'consent', ok: true, label: 'Consent before AiMY scores',
+        say: 'Asked on the first screen; anyone can choose a person to score it instead, or ask for a review after.' },
+    ];
+  }
   const resultsOf = (a) => DB.sends.filter((s) => s.asmt === a.id && s.status === 'done');
   /* The share of people who got each question right, out of those who took it. */
   function qRates(a) {
@@ -5375,8 +5443,12 @@
           return '<div class="b-slot"><article class="type-card s-card b-qcard" data-open="asmt:' + a.id + '" style="--i:' + Math.min(i, 8) + '">' +
             '<div class="tc-head">' + tag(ASMT_KIND[a.kind]) + '<span class="b-kind">' + a.mins + ' minutes</span></div>' +
             '<button class="tc-title s-card-title" type="button" data-asmt="' + a.id + '">' + esc(a.title) + '</button>' +
-            '<p class="tc-summary b-qcard-what b-fact">' + svg('goal') + '<span>' + plural(a.questions.length, 'question') + ' · pass mark ' + a.pass + '%</span></p>' +
-            '<div class="b-qcard-why"><b>' + r.length + '</b> taken' + (avg != null ? ', average ' + avg + '%' : '') + ' · on ' + plural(used, 'open requisition') + '</div>' +
+            '<p class="tc-summary b-qcard-what b-fact">' + svg('goal') + '<span>' + plural(a.questions.length, 'question') + ' · pass ' + esc(passSayOf(a)) + '</span></p>' +
+            (function () { const ck = asmtChecks(a), ok = ck.filter((x) => x.ok).length;
+              return '<p class="b-qcard-where t-checks">' + ck.filter((x) => x.k === 'length' || x.k === 'phone').map((x) => '<span class="t-check-say' + (x.ok ? '' : ' is-warn') + '">' + esc(x.label) + '</span>').join('') +
+                '<span class="t-check-say' + (ok === ck.length ? '' : ' is-warn') + '">' + ok + ' of ' + ck.length + ' checks</span></p>'; })() +
+            '<div class="b-qcard-why"><b>' + r.length + '</b> taken' + (avg != null ? ', average ' + (a.lang ? cefrOf(avg) : avg + '%') : '') + ' · on ' + plural(used, 'open requisition') +
+              (r.some(needsPerson) ? ' · <b>' + r.filter(needsPerson).length + '</b> waiting on a person' : '') + '</div>' +
             (worst != null && rates[worst] < 40 ? aimyBlock({ text: 'Only <b>' + rates[worst] + '%</b> get Q' + (worst + 1) + ' right. Worth rewording.', from: 'every result' }) : '') +
             '<div class="tc-gov b-qcard-foot"><span class="b-kind">' + (a.kind === 'live' ? 'Spoken, then transcribed' : 'Written') + '</span><button class="s-insight-lnk primary" type="button" data-asmt="' + a.id + '">Open it</button></div>' +
           '</article></div>';
@@ -5409,13 +5481,16 @@
           '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">How it is taken</h2><div class="b-cmeta-say">' + (edit
             ? Object.keys(ASMT_KIND).map((k) => '<button class="filter-chip' + (a.kind === k ? ' active' : '') + '" type="button" data-aset="kind|' + k + '">' + ASMT_KIND[k] + '</button>').join('')
             : '<p class="b-cmeta-p">' + esc(ASMT_KIND[a.kind]) + '</p>') + '</div></div>' +
-          '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Pass mark</h2><div class="b-cmeta-say">' + (edit
+          '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Pass mark</h2><div class="b-cmeta-say">' + (a.lang ? (edit
+            ? CEFR.slice(2).map((l) => '<button class="filter-chip' + ((a.level || 'C1') === l ? ' active' : '') + '" type="button" data-aset="level|' + l + '">' + l + '</button>').join('')
+            : '<p class="b-cmeta-p"><b>' + esc(a.level || 'C1') + ' or above</b> in spoken ' + esc(a.lang) + ', on the CEFR scale the requisition uses</p>') : edit
             ? '<span class="t-step"><button class="b-ghost" type="button" data-aset="pass|-5" aria-label="Lower">−</button><b class="t-step-n">' + a.pass + '%</b><button class="b-ghost" type="button" data-aset="pass|5" aria-label="Higher">+</button></span>'
             : '<p class="b-cmeta-p"><b>' + a.pass + '%</b></p>') + '</div></div>' +
           '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Link to share</h2><div class="b-cmeta-say"><p class="b-cmeta-p"><b class="t-link-text">' + esc(link) + '</b></p>' +
             '<p class="b-cmeta-p t-acts"><button class="s-insight-lnk" type="button" data-copy="https://' + esc(link) + '">Copy the link</button></p></div></div>' +
         '</div>' +
       '</section>' +
+      (edit ? '' : checksCard(a)) +
       (r.length && !edit ? itemInsights(a, rates, outs, worst, link) : '') +
       '<section class="s-block s-block-wide" aria-label="Questions">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">Questions</h2><span class="s-block-say">' + plural(a.questions.length, 'question') + (r.length ? ' · share who got each right' : '') + '</span></div>' +
@@ -5437,11 +5512,22 @@
         (a.dropped && a.dropped.length && !edit ? '<p class="b-vfoot">' + a.dropped.map((x) => 'Dropped by ' + esc(DESKS[x.by] ? DESKS[x.by].name : 'the HR Manager') + ' ' + esc(sayWhen(x.day)) + ': “' + esc(x.q) + '”').join(' · ') + '</p>' : '') +
         (edit ? '<p class="t-acts"><button class="s-insight-lnk" type="button" data-q-add="' + a.id + '">Add a question</button></p>' : '') +
       '</section>' +
-      (r.length && !edit ? '<section class="s-block s-block-wide" aria-label="Results"><div class="s-camp-list-head"><h2 class="s-block-h">Results</h2><span class="s-block-say">' + r.length + ', newest first</span></div>' +
+      (r.length && !edit ? '<section class="s-block s-block-wide" aria-label="Results"><div class="s-camp-list-head"><h2 class="s-block-h">Results</h2><span class="s-block-say">' + r.length + ', newest first · ' +
+          plural(r.filter((x) => x.flags && x.flags.length).length, 'with an integrity flag', 'with an integrity flag') + ', said apart: a flag never changes a score</span></div>' +
         '<div class="b-log">' + r.slice().sort((x, y) => (y.doneDay || 0) - (x.doneDay || 0)).slice(0, 20).map((s, i) => { const c = DB.byId[s.cand];
-          return c ? logRow({ tone: '', ico: svg('goal'), who: c.name, meta: logMeta([s.score + '%', s.score >= a.pass ? 'a pass' : 'under the pass mark', reqOf(c).title, sayWhen(s.doneDay != null ? s.doneDay : s.day)]),
+          return c ? logRow({ tone: '', ico: svg('goal'), who: c.name, meta: logMeta([scoreShort(a, s), asmtPass(a, s) ? 'a pass' : 'under the pass mark',
+              s.flags && s.flags.length ? plural(s.flags.length, 'integrity flag') : null, needsPerson(s) ? (s.consent === 'person' ? 'asked for a person to score it' : 'asked for a review') : s.consent === 'person' ? 'scored by a person' : null,
+              reqOf(c).title, sayWhen(s.doneDay != null ? s.doneDay : s.day)]),
             act: 'data-cand="' + c.id + '"', go: 'Open' }, i) : ''; }).join('') + '</div></section>' : '') +
     '</div>';
+  }
+  function checksCard(a) {
+    const ck = asmtChecks(a), ok = ck.filter((x) => x.ok).length, can = isRec() || isHR();
+    return rcard({ cap: 'Assessments · before anyone takes it', ico: 'shield', label: 'Checklist',
+      body: rcHead('What keeps people finishing, and keeps it fair', 'From the assessment research (R4) · the settings are one press', rcChip(ok + ' of ' + ck.length, ok === ck.length ? 'ok' : 'warn')) +
+        '<div style="margin-top:12px">' + ck.map((x) => rcGate(x.ok ? 'okc' : 'warnc', x.ok ? 'ok' : 'warn', esc(x.label), esc(x.say),
+          (x.k === 'practice' || x.k === 'feedback') && can ? rcBtn(x.ok ? 'Turn it off' : x.k === 'practice' ? 'Add one' : 'Turn it on', 'data-asmt-check="' + a.id + '|' + x.k + '"', x.ok ? 'quiet' : 'small')
+            : x.k === 'length' && !x.ok && can ? rcBtn('Shorten it', goAttr({ asmt: a.id, edit: '1' }).trim(), 'small') : rcChip(x.ok ? 'Done' : 'To do', x.ok ? 'ok' : 'warn'))).join('') + '</div>' });
   }
   /* ── 8. ITEM INSIGHTS (assessment-item-insights) ── each question's pass
      rate against what happened next, and the question to fix as a learning
@@ -5473,7 +5559,7 @@
           'Learning Proposal · from ' + plural(r.length, 'result') + ' and ' + plural(sentN, 'client decision') + ' · an HR Manager approves', acts) : '') });
   }
   function asmtSet(a, fields, say) {
-    const before = JSON.parse(JSON.stringify({ title: a.title, kind: a.kind, pass: a.pass, questions: a.questions }));
+    const before = JSON.parse(JSON.stringify({ title: a.title, kind: a.kind, pass: a.pass, questions: a.questions, level: a.level || null, practice: !!a.practice, feedback: !!a.feedback }));
     put('asmts', a, fields);
     paint();
     if (say) toast(say, () => { put('asmts', a, before); paint(); });
@@ -5486,14 +5572,36 @@
     if (!s) return '<div class="t-out">' + outsideHead('Assessment', 'FlairsTech careers') + '<p class="s-none">This link has expired.</p></div>';
     const a = asmtOf(s.asmt), c = DB.byId[s.cand];
     if (s.status === 'done') return '<div class="t-out">' + outsideHead('Assessment', 'FlairsTech careers') + '<section class="t-out-card t-done">' + successCheck() +
-      '<h1 class="t-out-h">Thank you, ' + esc(first(c.name)) + '. It is in.</h1><p>The recruiting team will be in touch about next steps. We do not share scores; a person reads every result.</p></section></div>';
+      '<h1 class="t-out-h">Thank you, ' + esc(first(c.name)) + '. It is in.</h1><p>The recruiting team will be in touch about next steps. ' +
+        (s.consent === 'person' ? 'A person scores it, as you asked.' : 'AiMY scored it and a person reads every result.') + (a.feedback ? ' You will get a short note on how you did within five days.' : '') + '</p>' +
+        (s.consent === 'ai' && !s.review ? '<p class="t-acts"><button class="btn btn-ghost btn-sm" type="button" data-take-review="' + s.id + '">Ask a person to look at it again</button></p>'
+          : s.review === 'asked' ? '<p class="b-vfoot">You asked for a person to look again. They will.</p>' : '') + '</section></div>';
     if (!TAKE || TAKE.id !== s.id) TAKE = { id: s.id, a: [] };
+    /* CONSENT BEFORE AiMY SCORES (R4, the EU AI Act's line for hiring):
+       what scores it, that a person decides, and the choice of a person
+       instead, before the first question. */
+    if (!TAKE.consent) return '<div class="t-out">' + outsideHead('Assessment', 'FlairsTech careers') +
+      '<section class="t-out-card">' +
+        '<p class="t-out-kicker">Before you start · about ' + a.mins + ' minutes</p>' +
+        '<h1 class="t-out-h">' + esc(a.title) + '</h1>' +
+        '<p>For ' + esc(reqOf(c).title) + '. ' + (a.kind === 'live' ? 'AiMY asks the questions; you answer out loud or typed, on a phone or a computer.' : 'Answer every question; there is no trick to it.') +
+          (a.practice ? ' A practice question comes first and is not scored.' : '') + '</p>' +
+        '<div class="t-consent"><p class="t-consent-h">How your answers are scored</p>' +
+          '<p>AiMY, our AI, scores each answer against what a good answer covers' + (a.lang ? ', and gives your ' + esc(a.lang) + ' a level from A1 to C2' : '') + '. A person at FlairsTech reads every result and makes the decision; AiMY never decides on its own.</p>' +
+          '<p>If you would rather, a person scores it instead. It takes a few days longer, and it is never held against you. You can also ask for a person to look again after.</p>' +
+          '<p class="t-consent-keep">We keep your answers and the result for this application only. ' + (a.feedback ? 'Everyone gets a short note on how they did.' : '') + '</p></div>' +
+        '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-take-consent="ai">Start: AiMY scores it, a person decides</button>' +
+          '<button class="btn btn-ghost btn-sm" type="button" data-take-consent="person">Start: a person scores it</button></p>' +
+      '</section></div>';
     if (a.kind === 'live') return liveTake(s, a, c);
     return '<div class="t-out">' + outsideHead('Assessment', 'FlairsTech careers') +
       '<section class="t-out-card">' +
         '<p class="t-out-kicker">' + esc(ASMT_KIND[a.kind]) + ' · about ' + a.mins + ' minutes</p>' +
         '<h1 class="t-out-h">' + esc(a.title) + '</h1>' +
         '<p>For ' + esc(reqOf(c).title) + '. ' + (a.kind === 'live' ? 'AiMY asks each question; answer in your own words, out loud or typed.' : 'Answer every question. There is no trick to it.') + '</p>' +
+        (a.practice ? '<div class="t-dr t-practice"><p class="t-dr-must">Practice, not scored. Which day comes after Monday?</p>' +
+          (TAKE.practiced ? '<p class="b-vfoot">That is how it works. The questions below count.</p>'
+            : '<div class="b-cuts t-col">' + ['Sunday', 'Tuesday', 'Friday'].map((d) => '<button class="filter-chip" type="button" data-take-practice>' + d + '</button>').join('') + '</div>') + '</div>' : '') +
         '<div class="t-input-wrap" id="wrapTake"><div class="t-input">' + a.questions.map((qq, i) => '<div class="t-dr">' +
           '<p class="t-dr-must">' + (a.kind === 'live' ? mark(12) + ' ' : '') + 'Q' + (i + 1) + '. ' + esc(qq.q) + '</p>' +
           /* The options are written right answer first; the person taking
@@ -5606,8 +5714,13 @@
        good answer covers (fixture: enough said, in enough words). */
     const answers = a.questions.map((qq, i) => qq.type === 'choice' ? TAKE.a[i] === qq.right : String(TAKE.a[i]).trim().split(/\s+/).length >= 8);
     const score = Math.round(answers.filter(Boolean).length / answers.length * 100);
-    put('sends', s, { status: 'done', answers: answers, score: score, doneDay: 0, probed: TAKE.live ? Object.keys(TAKE.live.probed).map(Number) : null });
-    note(c, 'asmt', 'Finished the ' + a.title + ' assessment: ' + score + '%.');
+    const mins = TAKE.t0 ? (Date.now() - TAKE.t0) / 60000 : null;
+    const pasted = Object.keys(TAKE.paste || {}).map(Number)[0];
+    const flags = [pasted != null ? { k: 'paste', q: pasted } : null, mins != null && mins < a.mins / 4 ? { k: 'fast', mins: Math.max(1, Math.round(mins)) } : null,
+      TAKE.away >= 2 ? { k: 'away', n: TAKE.away } : null].filter(Boolean);
+    put('sends', s, { status: 'done', answers: answers, score: score, doneDay: 0, probed: TAKE.live ? Object.keys(TAKE.live.probed).map(Number) : null,
+      consent: TAKE.consent, flags: flags, review: null, reviewed: null });
+    note(c, 'asmt', 'Finished the ' + a.title + ' assessment: ' + scoreSay(a, { score: score }) + '.' + (TAKE.consent === 'person' ? ' Asked for a person to score it.' : ''));
     TAKE = null;
     paint();
   }
@@ -6966,7 +7079,7 @@
         '</div></div>' +
         (a ? '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Assessment</h2><div class="b-cmeta-say">' +
           '<p class="b-cmeta-p"><button class="t-inline-link" type="button" data-asmt="' + a.id + '">' + esc(a.title) + '</button></p>' +
-          '<p class="b-cmeta-p">' + (a.kind === 'live' ? 'A live interview with the AiMY agent' : 'A questionnaire') + ', before the phone screen. Pass mark ' + a.pass + '%.</p>' +
+          '<p class="b-cmeta-p">' + (a.kind === 'live' ? 'A live interview with the AiMY agent' : 'A questionnaire') + ', before the phone screen. Pass ' + esc(passSayOf(a)) + '.</p>' +
         '</div></div>' : '') +
       '</div>' +
     '</section>';
@@ -7630,6 +7743,7 @@
     if ((el = at('[data-aset]'))) {
       const p = two('data-aset'), a = asmtOf(S.asmt);
       if (p[0] === 'pass') asmtSet(a, { pass: Math.max(30, Math.min(100, a.pass + Number(p[1]))) });
+      else if (p[0] === 'level') asmtSet(a, { level: p[1] });
       else asmtSet(a, { kind: p[1] });
       return;
     }
@@ -7695,6 +7809,22 @@
     if ((el = at('[data-appr]'))) { const p = two('data-appr'); approve(DB.offers.filter((o) => o.id === p[0])[0], p[1], p[2]); return; }
     if ((el = at('[data-ans]'))) { const p = two('data-ans'); TAKE.a[Number(p[0])] = Number(p[1]); paint(); return; }
     if ((el = at('[data-take-submit]'))) { takeSubmit(); return; }
+    if ((el = at('[data-take-consent]'))) { TAKE.consent = val('data-take-consent'); TAKE.t0 = Date.now(); TAKE.away = 0; TAKE.paste = {}; paint(); return; }
+    if ((el = at('[data-take-practice]'))) { TAKE.practiced = true; paint(); return; }
+    if ((el = at('[data-take-review]'))) { const x = DB.sends.filter((y) => y.id === val('data-take-review'))[0]; put('sends', x, { review: 'asked' }); paint(); return; }
+    if ((el = at('[data-asmt-review]'))) {
+      const x = DB.sends.filter((y) => y.id === val('data-asmt-review'))[0], a = asmtOf(x.asmt), was = x.reviewed || null;
+      put('sends', x, { reviewed: { by: DESK, day: 0 } });
+      const e = note(DB.byId[x.cand], 'asmt', 'Score confirmed by ' + me().name + ': ' + scoreSay(a, x) + '.');
+      paint();
+      toast('Confirmed ' + scoreShort(a, x), () => { put('sends', x, { reviewed: was }); unmake('events', e); paint(); }, 'It counts now. They are not told the score; they hear the decision.');
+      return;
+    }
+    if ((el = at('[data-asmt-check]'))) {
+      const p = two('data-asmt-check'), a = asmtOf(p[0]), on = !a[p[1]];
+      asmtSet(a, { [p[1]]: on }, (p[1] === 'practice' ? (on ? 'Practice question added' : 'Practice question taken off') : on ? 'Everyone hears how they did' : 'No note after'));
+      return;
+    }
     if ((el = at('[data-live-send]'))) { liveSend(); return; }
     if ((el = at('[data-live-pick]'))) { const p = two('data-live-pick'); livePick(Number(p[0]), Number(p[1])); return; }
     if ((el = at('[data-apply-sample]'))) { applyRead(null); return; }
@@ -7943,6 +8073,15 @@
   });
   /* The composer finds, for now: Enter takes what was typed to the
      requisitions it matches. Asking AiMY arrives with the canvas. */
+  /* What happens while a test is open, kept as it happened, for the
+     integrity line: an answer pasted in, the page left. */
+  document.addEventListener('paste', (e) => {
+    if (!TAKE || !TAKE.t0) return;
+    const t = e.target;
+    if (t.matches && t.matches('[data-anstext]')) TAKE.paste[Number(t.getAttribute('data-anstext'))] = true;
+    else if (t.id === 'liveIn') TAKE.paste[liveAt().i] = true;
+  });
+  document.addEventListener('visibilitychange', () => { if (TAKE && TAKE.t0 && document.hidden) TAKE.away = (TAKE.away || 0) + 1; });
   document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'critNew') { e.preventDefault(); const b = document.querySelector('[data-crit-add]'); if (b) b.click(); } });
   byId('floatInput').addEventListener('keydown', (e) => {
     if (e.key !== 'Enter') return;
