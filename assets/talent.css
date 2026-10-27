@@ -1049,3 +1049,12 @@ body.is-portal .aimy-overlay { display: none !important; }
   .t-crit-need { grid-column: 1; justify-self: start; }
   .t-crit-x { grid-column: 2; grid-row: 1; }
 }
+
+/* ══ THE CANDIDATE CARD'S SCORE ═══════════════════════════════════════════
+   The scoring component's number, bar and chip, small, inside the card:
+   it replaces the AiMY line that said the same count in a sentence. Where
+   they stand is one line under it. */
+.rc.t-cscore { margin: 12px 0 0; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; }
+.rc.t-cscore .big { font-size: 20px; }
+.rc.t-cscore .segs { margin-top: 8px; }
+.t-cnow { margin-top: 10px; }

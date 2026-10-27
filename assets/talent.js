@@ -2326,14 +2326,20 @@
     if (owedTell) special = foot('<span class="b-kind">' + (c.since >= TELL_DAYS ? 'Past the ' + TELL_DAYS + '-day limit' : 'Tell them by ' + esc(sayDay(TELL_DAYS - c.since))) + '</span>',
       '<button class="s-insight-lnk primary" type="button" data-tell="' + c.id + '">Send the answer</button>');
     const pick1 = !c.exit && c.stage === 'sourced' && !c.contactOk && (isRec() || isHR());
-    return '<article class="type-card s-card b-qcard" style="--i:' + Math.min(i, 8) + '">' +
+    return '<article class="type-card s-card b-qcard" data-open="cand:' + c.id + '" style="--i:' + Math.min(i, 8) + '">' +
       '<div class="tc-head">' + (pick1 ? selBox('sourced', c.id, c.name) : owedTell ? selBox('tell', c.id, c.name) : '') + stageTag(c) + (was ? tag('Returning', 'info') : '') + '<span class="b-kind">' + esc(c.source) + '</span></div>' +
       '<div class="b-qcard-top"><button class="tc-title s-card-title" type="button" data-cand="' + c.id + '">' + esc(c.name) + '</button></div>' +
       '<p class="tc-summary b-qcard-role">' + esc(c.at) + '</p>' +
       '<p class="b-qcard-where">' + fact('job', plural(c.years, 'year') + ' of experience') + fact('pin', c.place) + '</p>' +
       '<p class="b-qcard-where">' + fact('lang', c.langs.join(', ')) + '</p>' +
       (was ? '<p class="b-qcard-where t-before">' + fact('hist', beforeSay(was)) + '</p>' : '') +
-      aimyBlock({ text: esc(say) + ' ' + evSay(c) + '.' + (s && s.status === 'done' ? ' Assessment ' + s.score + '%.' : ''), from: 'the CV, read against the success profile' }) +
+      /* The score, as the scoring component draws it, said once: what the
+         AiMY line used to repeat is the number, the bar and the chip. */
+      (function () { const unk = c.ev.filter((e) => e === 'n').length, part = c.ev.filter((e) => e === 'p').length;
+        return '<div class="rc t-cscore"><div class="row between" style="align-items:flex-end"><div><div class="big">' + evMet(c) + ' of ' + c.ev.length + '</div>' +
+          '<div class="sub">must-haves the CV shows</div></div>' + (unk ? rcChip(unk + ' not known yet', 'warn', 'qc') : part ? rcChip(part + ' partly', 'warn') : rcChip(fitLane(c)[0], 'ok')) + '</div>' +
+          fitSegs(c, null) + '</div>'; })() +
+      '<p class="b-qcard-where t-cnow">' + fact('clock', say + (s && s.status === 'done' ? ' Assessment ' + s.score + '%.' : '')) + '</p>' +
       (c.stage === 'sent' || (isClient() && c.exit === 'clientno') ? sendout(c) : '') +
       /* AT THE SCREEN, THE CALL IS THE MOVE. Someone who applied or is due a
          phone screen moves forward by being called and the call being
@@ -2523,53 +2529,50 @@
           rcBtn('Invite to interview', 'data-move="' + c.id + '|client"', 'primary', 'cal') + rcBtn('Decline with a reason', 'data-pass-open="' + c.id + '"') + '</div>' : '') });
   }
 
-  /* ── 3. EVIDENCE PER CRITERION (scoring-evidence-per-criterion) ── the
-     count is the score, each criterion quoted, an unknown said as unknown
-     with one way to find out. Never a percentage (D2). */
-  function evidenceCard(c) {
-    const q = reqOf(c), works = isRec() || isHR();
-    const met = c.ev.filter((e) => e === 'm').length, unk = c.ev.filter((e) => e === 'n').length, part = c.ev.filter((e) => e === 'p').length, all = c.ev.length;
-    const lane = met === all ? ['Lane · Strong fit', 'ok'] : met + unk === all ? ['Lane · Fit, to check', 'warn'] : met * 2 >= all ? ['Lane · Partial fit', 'warn'] : ['Lane · Weak fit', ''];
-    const asks = c.asks || [];
-    return rcard({ cap: 'Scoring and matching', ico: 'listc', label: 'Against the success profile',
-      body: rcHead(esc(c.name), esc(q.title) + ' · ' + esc(accOf(q).name), rcChip(lane[0], lane[1])) +
-        '<div class="row between" style="margin-top:14px;align-items:flex-end"><div><div class="big">' + met + ' of ' + all + '</div><div class="sub" style="margin-top:4px">required criteria met, each quoted</div></div>' +
-          (unk ? rcChip(unk + ' not known yet', 'warn', 'qc') : part ? rcChip(part + ' partly', 'warn') : '') + '</div>' +
-        '<div class="segs" aria-hidden="true">' + c.ev.map((e) => e === 'm' ? '<i class="ok"></i>' : '<i class="warn"></i>').join('') + '</div>' +
-        '<div style="margin-top:12px">' + q.must.map((m, i) => {
-          const e = c.ev[i];
-          if (e === 'n') return rcCrit('qc', 'warn', esc(m), rcSay('The CV is silent here. Not the same as Not met.'),
-            works && !c.exit ? (asks.indexOf(i) >= 0 ? rcChip('On the list') : rcBtn('Ask ' + first(c.name), 'data-ask-must="' + c.id + '|' + i + '"', 'small', 'msg')) : rcChip('Not known', 'dash'));
-          return rcCrit(e === 'm' ? 'okc' : 'warnc', e === 'm' ? 'ok' : 'warn', esc(m), rcQuote('“' + esc(cvSays(c, m)) + '”'), rcChip(EVW[e], e === 'm' ? 'ok' : 'warn'));
-        }).join('') + '</div>' +
-        rcFoot(svg('hist', 12) + ' Criteria v' + ((q.mustV || 0) + 1) + ' · set by ' + esc(hmOf(q).name) + ', ' + esc(sayDay(q.opened)), works ? 'Overridable · you decide' : 'Read against your success profile') });
-  }
+  /* ── 3. EVIDENCE PER CRITERION, AGAINST THE SUCCESS PROFILE (scoring-
+     evidence-per-criterion and candidate-verified-skills, as one). The
+     count is the score, never a percentage (D2); an unknown is said as
+     unknown with one way to find out.
 
-  /* ── 2. WHAT WE VERIFIED (candidate-verified-skills) ── CV says next to
-     interview found, each finding confirmed by the interviewer, with where
-     it was said. */
-  function verifiedCard(c, v) {
-    const works = isRec() || isHR();
-    const asks = c.asks || [];
-    const ivN = ivsOf(c).filter((x) => x.status === 'done').length, asN = DB.sends.filter((s) => s.cand === c.id && s.status === 'done').length;
+     The two cards listed every must-have twice, once for what the CV says and once for what the
+     interviews found, and the page's lead counted them a third time. Now
+     each must-have is one row with both: the CV quoted, what an interview
+     found under it, and one status. The score on top counts what the CV
+     shows and says how many an interview has confirmed. */
+  const FIT_ST = { verified: ['Confirmed', 'ok', 'okc'], differs: ['Differs', 'err', 'warnc'], partly: ['Partly shown', 'warn', 'warnc'], notshown: ['Not shown', '', 'warnc'] };
+  const fitLane = (c) => { const met = evMet(c), unk = c.ev.filter((e) => e === 'n').length, all = c.ev.length;
+    return met === all ? ['Strong fit', 'ok'] : met + unk === all ? ['Fit, to check', 'warn'] : met * 2 >= all ? ['Partial fit', 'warn'] : ['Weak fit', '']; };
+  /* The segments: green met (or confirmed), amber partly, red where the
+     interview differs, empty where nobody knows yet. */
+  const fitSegs = (c, v) => '<div class="segs" aria-hidden="true">' + c.ev.map((e, i) => {
+    const st = v ? v[i].state : null;
+    return st === 'differs' ? '<i class="err"></i>' : st === 'verified' || e === 'm' ? '<i class="ok"></i>' : e === 'p' || st === 'partly' ? '<i class="warn"></i>' : '<i></i>';
+  }).join('') + '</div>';
+  function fitCard(c, v) {
+    const q = reqOf(c), works = isRec() || isHR(), asks = c.asks || [];
+    const met = evMet(c), unk = c.ev.filter((e) => e === 'n').length, all = c.ev.length;
+    const conf = v.filter((x) => x.state === 'verified').length, diff = v.filter((x) => x.state === 'differs').length;
     const last = v.reduce((d, x) => (x.seen[0] && (d == null || x.seen[0].day > d) ? x.seen[0].day : d), null);
-    const STV = { verified: ['Confirmed', 'ok'], differs: ['Differs', 'warn'], partly: ['Partly shown', 'warn'], notshown: ['Not shown', ''], unproven: ['Not checked', 'dash'] };
-    return rcard({ cap: 'Candidates and history', ico: 'badge', label: 'What we verified',
-      body: rcHead(esc(c.name) + ' · what we verified', 'Across ' + plural(ivN, 'interview') + ' and ' + plural(asN, 'assessment') + ' · every new requisition starts here',
-          last != null ? rcChip('Last checked ' + sayDay(last), 'acc', 'hist') : rcChip('Nothing checked yet', 'dash')) +
-        '<table style="margin-top:14px"><tr><th>Skill or experience</th><th>CV says</th><th>Interview found</th><th></th><th>Evidence</th></tr>' +
-          v.map((x, i) => {
-            const best = x.seen[0], s = STV[x.state];
-            const asked = asks.indexOf(i) >= 0;
-            return '<tr><td><b>' + esc(x.must) + '</b></td>' +
-              '<td>' + esc(x.cv === 'n' ? 'Silent' : cvSays(c, x.must)) + '</td>' +
-              '<td>' + (best ? esc(best.note || RATE[best.r]) : 'Not asked yet') + '</td>' +
-              '<td>' + rcChip(s[0], s[1]) + '</td>' +
-              '<td class="sub"><span class="row" style="gap:5px">' + (best ? '<span class="ico brand">' + svg('play', 14) + '</span>' + esc(STAGE[best.stage].label) + ', ' + esc(sayDay(best.day))
-                : '<span class="ico brand">' + svg('ring', 14) + '</span>' + (asked ? 'On the list for the next interview' : works && !c.exit ? rcBtn('Ask in the next interview', 'data-ask-must="' + c.id + '|' + i + '"', 'quiet') : 'Not asked yet')) + '</span></td></tr>';
-          }).join('') +
-        '</table>' +
-        (isClient() ? '' : rcNote('info', 'AiMY suggests each finding from the transcript; the interviewer confirms it before it lands here. The candidate sees and edits only their own layer: what the CV says.')) });
+    const lane = fitLane(c);
+    return rcard({ cap: 'Scoring and matching', ico: 'listc', label: 'Against the success profile',
+      body: rcHead(esc(c.name), esc(q.title) + ' · ' + esc(accOf(q).name), rcChip('Lane · ' + lane[0], lane[1])) +
+        '<div class="row between" style="margin-top:14px;align-items:flex-end;flex-wrap:wrap"><div><div class="big">' + met + ' of ' + all + '</div>' +
+          '<div class="sub" style="margin-top:4px">must-haves the CV shows, each quoted · ' + (conf ? conf + ' confirmed in interview' : 'none confirmed in interview yet') + '</div></div>' +
+          '<span class="row" style="gap:6px">' + (diff ? rcChip(diff + (diff === 1 ? ' differs' : ' differ') + ' in interview', 'err') : '') + (unk ? rcChip(unk + ' not known yet', 'warn', 'qc') : '') + '</span></div>' +
+        fitSegs(c, v) +
+        '<div style="margin-top:12px">' + q.must.map((m, i) => {
+          const e = c.ev[i], x = v[i], best = x.seen[0], st = best ? FIT_ST[x.state] : null;
+          const cv = e === 'n' ? rcSay('The CV is silent here. Not the same as Not met.') : rcQuote('“' + esc(cvSays(c, m)) + '”');
+          const iv = best ? rcSay('<b>' + esc(STAGE[best.stage].label) + ', ' + esc(sayDay(best.day)) + ':</b> ' + esc(best.note || RATE[best.r])) : '';
+          const asked = asks.indexOf(i) >= 0, can = works && !c.exit && !best;
+          const right = '<span class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-end">' +
+            (st ? rcChip(st[0], st[1]) : e === 'n' ? (can ? '' : rcChip('Not known', 'dash')) : rcChip(EVW[e] + ' on the CV', e === 'm' ? 'ok' : 'warn')) +
+            (can ? (asked ? rcChip('On the list') : rcBtn(e === 'n' ? 'Ask ' + first(c.name) : 'Check in interview', 'data-ask-must="' + c.id + '|' + i + '"', e === 'n' ? 'small' : 'quiet', e === 'n' ? 'msg' : null)) : '') + '</span>';
+          return rcCrit(st ? st[2] : e === 'm' ? 'okc' : e === 'p' ? 'warnc' : 'qc', st ? (st[1] || 'mute') : e === 'm' ? 'ok' : 'warn', esc(m), cv + iv, right);
+        }).join('') + '</div>' +
+        rcFoot(svg('hist', 12) + ' Criteria v' + ((q.mustV || 0) + 1) + ' · set by ' + esc(hmOf(q).name) + ', ' + esc(sayDay(q.opened)) +
+          (last != null ? ' · last checked in interview ' + esc(sayDay(last)) : ''), works ? 'Overridable · you decide' : 'Read against your success profile') +
+        (isClient() ? '' : rcNote('info', 'AiMY suggests each interview finding from the transcript; the interviewer confirms it before it lands here. The candidate sees and edits only what the CV says.')) });
   }
   function passWith(c, why, line) {
     const was = { exit: c.exit, since: c.since, decline: c.decline || null, decideDay: c.decideDay, told: c.told };
@@ -4187,8 +4190,6 @@
     const nx = nextOf(c);
     const calls = callsOf(c.id);
     const v = verified(c);
-    const ok = v.filter((x) => x.state === 'verified').length;
-    const differs = v.filter((x) => x.state === 'differs');
     const early = !c.exit && rank(q, c.stage) <= rank(q, 'phone');
     const outK = c.stage === 'sent' || c.stage === 'client' || c.stage === 'ctech' ? 'clientno' : c.stage === 'offer' ? 'offerno' : 'out';
     const w = waitsOn(c);
@@ -4231,12 +4232,9 @@
       '<section class="s-insight is-lead s-block-wide" aria-label="Where they are">' +
         '<div class="s-lead-mark"><svg class="s-insight-mark" viewBox="0 0 18 20" width="14" height="14" aria-hidden="true"><use href="#aimy-logo-small"/></svg>' +
           '<span class="work-state ws-detected">Read off the record</span></div>' +
-        '<div class="s-lead-line"><span class="s-lead-n">' + ok + '</span><span class="s-lead-say">of the <span class="s-lead-of">' + v.length + '</span> must-haves verified in interview. The CV meets ' + evMet(c) + '.</span></div>' +
         '<p class="s-lead-deck">' + esc(c.exit ? exitSay(c).charAt(0).toUpperCase() + exitSay(c).slice(1) + '.' +
             (c.told === false && !isClient() ? ' Not told yet; they hear by ' + sayDay(hearBy(c)) + '.' : c.told ? ' They have been told.' : '')
-          : differs.length ? 'The CV and the interview differ on ' + differs.map((x) => x.must).join('; ') + '. Worth asking about in the next round.'
-          : !ok ? (early ? 'Nothing is checked in an interview yet. The phone screen comes first.' : 'Nothing is checked in an interview yet.')
-          : 'What the CV says has held up in interview so far.') + '</p>' +
+          : candSay(c)) + '</p>' +
         /* Message preview (component library): what they will read, before Send. */
         (c.exit && c.told === false && works ? msgPreview(c) + '<div class="s-lead-acts"><button class="s-insight-lnk primary" type="button" data-tell="' + c.id + '">Send the answer</button></div>' : '') +
         /* With a sendout, the reasons open inside its card instead. */
@@ -4248,8 +4246,7 @@
       '</section>' +
       (works && /^Found on/.test(c.source) && c.stage === 'sourced' ? trustCard([c], first(c.name) + ', a web prospect', c) : '') +
       sendoutCard(c) +
-      evidenceCard(c) +
-      verifiedCard(c, v) +
+      fitCard(c, v) +
       (others.length ? appsBlock(c, others) : '') +
       (isClient() ? '' : asmtBlock(c)) +
       ivBlock(c) +
@@ -7844,7 +7841,7 @@
     if ((el = at('[data-go]'))) { go(JSON.parse(el.getAttribute('data-go'))); return; }
     /* The whole card is a door, written as the trailing fallback so any
        control inside it wins (Sales's rule). */
-    if ((el = at('[data-open]'))) { const p = el.getAttribute('data-open').split(':'); if (p[0] === 'req') go({ req: p[1] }); return; }
+    if ((el = at('[data-open]'))) { const p = el.getAttribute('data-open').split(':'); if (p[0] === 'req') go({ req: p[1] }); else if (p[0] === 'cand') go({ cand: p[1] }); return; }
     /* A click outside the bell, the dialer or an open menu closes it. */
     if (!at('#ntfPanel') && !at('#ntfBell')) { const p = byId('ntfPanel'); if (!p.hidden) { p.hidden = true; byId('ntfBell').setAttribute('aria-expanded', 'false'); } }
     if (!at('#dialAnchor')) closeDial();
