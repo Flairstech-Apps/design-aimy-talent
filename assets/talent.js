@@ -2731,7 +2731,7 @@
     if (c.badNumber) { toast('The number on file for ' + c.name + ' did not work.'); return false; }
     clearCallTimers();
     CALL = { cand: id, state: 'ready', secs: 0, dir: 'out', from: UI.line, phone: c.phone,
-      script: scriptFor(c), shown: 0, note: '', recording: false, asking: false, muted: false,
+      script: sess ? coachScript(c, sess) : scriptFor(c), shown: 0, note: '', recording: false, asking: false, muted: false,
       held: false, sess: sess || null, lit: null, read: null, video: false, camOff: false };
     document.body.classList.add('is-calling');
     callMin(false);
@@ -2742,6 +2742,8 @@
   function callGo() {
     const c = CALL;
     if (!c || c.state !== 'ready') return;
+    /* Call now while the run is paused for a tip is carrying on with it. */
+    if (coachHeld(c)) coachAnswer('go', true);
     /* Pressed before the count ran out, or the count running out. */
     if (CALL_WAIT) { clearInterval(CALL_WAIT); CALL_WAIT = null; }
     c.wait = null;
@@ -2880,7 +2882,7 @@
     const ch = CHATS.filter((x) => x.id === call.chat)[0];
     const rt = ch ? ch.turns.filter((x) => x.id === call.turn)[0] : null;
     if (rt) rt.html = 'Logged: <b>' + esc(OUTCOME[o].label.toLowerCase()) + '</b>' + (c ? ' with ' + esc(first(c.name)) : '') + (call.movedTo ? ', moved to the HR interview' : '') + '.';
-    if (sess) (sess.log = sess.log || []).push({ cand: was, o: o, moved: !!call.movedTo });
+    if (sess) { (sess.log = sess.log || []).push({ cand: was, o: o, moved: !!call.movedTo }); coachNote(call); }
     PENDING = null;
     saveChats();
     paint();
@@ -3049,7 +3051,7 @@
   /* ── THE WAIT BETWEEN CALLS IN A RUN (Sales, AIMY-2667) ── the next call
      places itself when the count runs out; Call now does not wait. */
   function waitStart() {
-    if (!CALL || CALL.state !== 'ready' || !CALL.sess) return;
+    if (!CALL || CALL.state !== 'ready' || !CALL.sess || coachHeld(CALL)) return;
     CALL.wait = { left: WAIT_SECS, total: WAIT_SECS, fresh: true };
     paintCall();
     CALL_WAIT = setInterval(() => {
@@ -3082,10 +3084,10 @@
     const TONE = { passed: 'ok', reached: 'neutral', callback: 'warn', noanswer: 'neutral', notfit: 'err', withdrew: 'err', wrong: 'err', dnc: 'err' };
     const body = '<p class="s-callsum-note">' + plural(log.length, 'call') + ' · <b>' + got + '</b> got through' + (sess.skipped.length ? ' · ' + sess.skipped.length + ' skipped' : '') + '.</p>' +
       (log.length ? '<div class="b-cuts">' + Object.keys(by).map((k) => '<span class="tag tag-' + TONE[k] + '">' + by[k] + ' ' + esc(OUTCOME[k].label) + '</span>').join('') + '</div>' : '') +
-      '<div class="s-callsum-rows"><div class="s-callsum-row"><span class="s-callsum-cap">What it was worth</span><span class="s-callsum-val">' +
+      '<div class="s-callsum-rows"><div class="s-callsum-row"><span class="s-callsum-mem">What it was worth</span><span class="s-callsum-val">' +
         (moved ? '<b>' + plural(moved, 'person', 'people') + '</b> passed the screen and ' + (moved === 1 ? 'is' : 'are') + ' booked for the HR interview.'
           : got ? 'You spoke to ' + plural(got, 'person', 'people') + '; nobody passed the screen this time.' : log.length ? 'Nobody picked up.' : 'Nobody was called.') +
-      '</span></div></div>';
+      '</span></div>' + coachSum(sess) + '</div>';
     callChat(sess, 'A run of calls');
     callTurn({ who: 'aimy', html: answerBlock('That run is finished', body, plural(log.length, 'call') + ' written to their records') });
   }
@@ -3096,6 +3098,229 @@
     closeCall();
     paint();
     runSummary(sess);
+  }
+
+  /* ══ AiMY COACHES THE RUN (Sales, AIMY-2666) ═════════════════════════════
+     While a run goes, AiMY hears the recruiter's calls in threes. When the
+     same thing goes less well on two of the three, it pauses the run before
+     the next call and says one thing to try, as a suggestion and never as a
+     score: in the call panel, and as its turn in the run's conversation.
+     "Got it, carry on" or "Not now" resumes the run in one press, with
+     Undo. When nothing is wrong, nothing interrupts.
+
+     It coaches the recruiter's own way of speaking (a hello, asking and
+     listening, saying what happens next), never anything about the
+     candidate: no emotion or personality is read from anyone's voice
+     (R8). Recording is not needed; a call nobody picked up says nothing
+     about how anyone speaks, so only the calls that got through count.
+
+     For the demo, as in Sales, the run's first three calls always end in a
+     tip: the run carries one habit in the recruiter's lines until they take
+     the tip on, or the prototype panel picks one. Skip this one keeps the
+     run paused, and the wait between calls does not start while it is. */
+  const COACH_N = 3;
+  let COACH_FORCE = '';
+  const COACH_GOT = ['pass', 'german', 'callback', 'notfit', 'withdrew'];
+  const COACH_HELLO = /\b(good morning|morning|afternoon|evening|hello|hi|hey)\b/i;
+  const COACH_TALK = [
+    'FlairsTech has been placing people for twelve years, with teams in Cairo, Lisbon and Warsaw, and this client is one of our oldest accounts.',
+    'The team you would join looks after customers across Europe on every shift, and they are known for keeping their people a long time.',
+  ];
+  const COACH_RUSH = 'Great, thanks, bye.';
+  const coachOn = (n) => (n ? 'On ' + n + ' of your last 3 calls' : 'On your calls so far');
+  const COACH = {
+    greet: {
+      label: 'Say hello first',
+      saw: (n) => coachOn(n) + ' you went straight to the role without a hello.',
+      tip: 'Try opening with “Good morning, how are you?” before the role. It gives them a moment to settle, and they answer more openly.',
+    },
+    talk: {
+      label: 'Ask, then listen',
+      saw: (n, x) => coachOn(n) + ' you did most of the talking, about ' + (x || 8) + ' words in every 10.',
+      tip: 'Ask one open question early, like “What are you looking for in your next role?”, and then let them answer. A screen is for hearing them.',
+    },
+    rush: {
+      label: 'Say what happens next',
+      saw: (n) => coachOn(n) + ' you said goodbye straight after their last word.',
+      tip: 'Before you hang up, say what happens next, like “You will hear from me by Thursday about the HR interview.” They leave sure of the next step.',
+    },
+  };
+  const COACH_KEYS = ['greet', 'talk', 'rush'];
+  function coachOf(sess) {
+    if (!sess.coach) {
+      const h = String(sess.id || '').split('').reduce((n, ch) => n + ch.charCodeAt(0), 0);
+      sess.coach = { habit: COACH_KEYS[h % COACH_KEYS.length], log: [], from: 0, checks: 0, tips: [], open: null, fixed: {}, snooze: {} };
+    }
+    return sess.coach;
+  }
+  const coachHeld = (call) => !!(call && call.sess && call.sess.coach && call.sess.coach.open);
+  /* The habit the recruiter's next call carries, if any. Taking the tip on
+     is what ends it. */
+  function coachHabit(sess) {
+    if (!sess) return null;
+    const co = coachOf(sess);
+    const h = COACH[COACH_FORCE] ? COACH_FORCE : COACH_FORCE ? null : co.habit;
+    return h && !co.fixed[h] ? h : null;
+  }
+  /* A script with the habit in the recruiter's lines only. Calls that never
+     reach the person are left alone. None of the words added is in the
+     reader's lexicon, so the read-back is the same either way. */
+  function coachScript(c, sess) {
+    const lines = scriptFor(c);
+    const h = coachHabit(sess);
+    if (!h || COACH_GOT.indexOf(c.fate || 'pass') < 0) return lines;
+    const out = lines.map((l) => l.slice());
+    const opener = out.findIndex((l) => l[0] === 'you');
+    if (h === 'greet' && opener >= 0) {
+      const s = out[opener][1].replace(/^(hi|hello|good morning|good afternoon)[\s,]*/i, '');
+      out[opener][1] = s.charAt(0).toUpperCase() + s.slice(1);
+    }
+    if (h === 'talk') {
+      const pitch = out.findIndex((l, i) => i > opener && l[0] === 'you');
+      out.splice(pitch >= 0 ? pitch + 1 : out.length, 0, ['you', COACH_TALK[0]], ['you', COACH_TALK[1]]);
+    }
+    if (h === 'rush') out.push(['you', COACH_RUSH]);
+    return out;
+  }
+  function coachRescript() {
+    const c = CALL && DB.byId[CALL.cand];
+    if (c && CALL.sess && CALL.state === 'ready' && CALL.dir !== 'in') CALL.script = coachScript(c, CALL.sess);
+  }
+  /* What AiMY heard of a call, kept when it is logged: everything said,
+     recorded or not. */
+  function coachNote(call) {
+    const sess = call.sess;
+    if (!sess || call.dir === 'in') return;
+    const c = DB.byId[call.cand];
+    coachOf(sess).log.push({ cand: call.cand, lines: call.script.map((l) => l.slice()), got: !call.dialing && COACH_GOT.indexOf((c && c.fate) || 'pass') >= 0 });
+  }
+  function coachSigns(calls) {
+    const n = { greet: { n: 0 }, talk: { n: 0, x: 0 }, rush: { n: 0 } };
+    const words = (ls) => ls.reduce((s, l) => s + l[1].split(/\s+/).length, 0);
+    calls.forEach((c) => {
+      const you = c.lines.filter((l) => l[0] === 'you');
+      if (you.length && !COACH_HELLO.test(you[0][1])) n.greet.n++;
+      const share = words(you) / Math.max(1, words(c.lines));
+      if (share > 0.65) { n.talk.n++; n.talk.x += share; }
+      const last = c.lines[c.lines.length - 1];
+      if (last && last[0] === 'you' && /\bbye\b/i.test(last[1]) && last[1].split(/\s+/).length <= 5) n.rush.n++;
+    });
+    if (n.talk.n) n.talk.x = Math.round((n.talk.x / n.talk.n) * 10);
+    return n;
+  }
+  /* Once three calls have been placed since the last check, AiMY reads the
+     ones that got through. A habit on two of the three is a tip; one set
+     aside waits a batch. The run's first check always tips (the demo). */
+  function coachCheck(sess) {
+    const co = coachOf(sess);
+    const win = co.log.slice(co.from);
+    if (win.length < COACH_N) return null;
+    co.from = co.log.length;
+    const n = coachSigns(win.filter((x) => x.got));
+    co.tips.forEach((t) => { if (t.state === 'go' && !t.after) t.after = n[t.k].n >= 2 ? 'still' : 'better'; });
+    const open = (x) => !(co.snooze[x] > co.checks);
+    let k = COACH_KEYS.filter((x) => n[x].n >= 2 && open(x)).sort((a, b) => n[b].n - n[a].n)[0];
+    if (!k && !co.checks) k = coachHabit(sess) || COACH_KEYS.filter((x) => n[x].n && open(x)).sort((a, b) => n[b].n - n[a].n)[0];
+    co.checks++;
+    return k ? { k: k, n: n[k].n, x: n[k].x, state: 'open', after: '' } : null;
+  }
+  /* The tip as a turn. Its last line says where it stands, so the run's
+     conversation keeps the record after the buttons are spent. */
+  function coachHtml(tip) {
+    const m = COACH[tip.k];
+    const where = {
+      open: 'The run is paused. It carries on with the next call when you answer.',
+      go: 'You took this on, and the run carried on.',
+      skip: 'Set aside for now. It will not come up again straight away.',
+      stopped: 'The run stopped before this was answered.',
+    }[tip.state];
+    return answerBlock('A tip for your next calls',
+      '<p class="b-coach-saw">' + esc(m.saw(tip.n, tip.x)) + '</p>' +
+      '<p class="b-coach-tip">' + esc(m.tip) + '</p>' +
+      '<p class="b-coach-state' + (tip.state === 'open' ? ' is-open' : '') + '">' + svg(tip.state === 'open' ? 'pause' : tip.state === 'go' ? 'check' : 'clock', 14) +
+        '<span>' + esc(where) + '</span></p>' +
+      (tip.state === 'open' ? '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-coach="go">Got it, carry on</button>' +
+        '<button class="btn btn-ghost btn-sm" type="button" data-coach="skip">Not now</button></p>' : ''),
+      'From your last 3 calls');
+  }
+  function coachSay(sess, tip) {
+    const co = coachOf(sess);
+    co.tips.push(tip);
+    co.open = tip;
+    callChat(sess, 'A run of calls');
+    tip.turn = uid('t');
+    callTurn({ id: tip.turn, who: 'aimy', html: coachHtml(tip) });
+  }
+  function coachTurn(sess, tip) {
+    const ch = CHATS.filter((x) => x.id === sess.chat)[0];
+    const t = ch ? ch.turns.filter((x) => x.id === tip.turn)[0] : null;
+    if (!t) return;
+    t.html = coachHtml(tip);
+    saveChats();
+    if (canvasShown()) paintThread();
+  }
+  /* The answer, from the turn or the panel, or from Call now (`quiet`: the
+     call is being placed, so no wait and no toast). Undo puts the run back
+     on hold if the next call has not gone yet. */
+  function coachAnswer(how, quiet) {
+    const sess = CALL && CALL.sess;
+    const co = sess && sess.coach;
+    const tip = co && co.open;
+    if (!tip || (how !== 'go' && how !== 'skip')) return;
+    const was = { fixed: co.fixed[tip.k], snooze: co.snooze[tip.k] };
+    const apply = (state) => {
+      tip.state = state;
+      co.open = state === 'open' ? tip : null;
+      co.fixed[tip.k] = state === 'go' ? true : was.fixed;
+      co.snooze[tip.k] = state === 'skip' ? co.checks + 1 : was.snooze;
+      coachTurn(sess, tip);
+      if (!CALL || CALL.sess !== sess || CALL.state !== 'ready') return;
+      coachRescript();
+      if (state === 'open') {
+        if (CALL_WAIT) { clearInterval(CALL_WAIT); CALL_WAIT = null; }
+        CALL.wait = null;
+        paintCall();
+      } else if (!quiet) waitStart();
+    };
+    apply(how);
+    if (quiet) return;
+    const nx = DB.byId[CALL.cand];
+    const f = nx ? first(nx.name) : 'the next person';
+    toast(how === 'go' ? 'Carrying on with ' + f + '. Try the tip on this call.' : 'Set aside. Carrying on with ' + f + '.', () => apply('open'));
+  }
+  /* In the panel while the run is paused: that it is, the tip, and the two
+     answers. The same tip stands in the conversation; either answers it. */
+  function coachBlock(call) {
+    const tip = call.sess.coach.open, m = COACH[tip.k];
+    const nx = DB.byId[call.cand];
+    return '<div class="call-wait call-held" role="group" aria-labelledby="callHeldSay">' +
+      '<p class="call-held-say" id="callHeldSay">' + svg('pause', 16) + '<span>Paused before ' + esc(nx ? first(nx.name) : 'the next call') + '</span></p>' +
+      '<div class="call-held-tip">' +
+        '<p class="call-held-cap"><svg class="b-aimy-mark" width="13" height="15" viewBox="0 0 18 20" aria-hidden="true"><use href="#aimy-logo-small"/></svg>A tip for your next calls</p>' +
+        '<p class="call-held-saw">' + esc(m.saw(tip.n, tip.x)) + '</p>' +
+        '<p class="call-held-do">' + esc(m.tip) + '</p>' +
+      '</div>' +
+      '<div class="call-held-acts"><button class="btn btn-brand btn-sm" type="button" data-coach="go">Got it, carry on</button>' +
+        '<button class="btn btn-ghost btn-sm" type="button" data-coach="skip">Not now</button></div>' +
+    '</div>';
+  }
+  /* The run's wrap-up row: every tip and what became of it. */
+  function coachSum(sess) {
+    const co = sess.coach;
+    if (!co) return '';
+    if (co.open) { co.open.state = 'stopped'; coachTurn(sess, co.open); co.open = null; }
+    const said = co.tips.map((t) => {
+      const m = COACH[t.k];
+      return '<span class="b-coach-sum"><b>' + esc(m.label) + '.</b> ' + esc(
+        t.state === 'go' ? (t.after === 'better' ? 'You took it on, and it showed on the calls after.'
+          : t.after === 'still' ? 'You took it on. It still came up on the calls after.' : 'You took it on.')
+        : t.state === 'skip' ? 'You set it aside.'
+        : t.state === 'later' ? 'For your next run: ' + m.tip
+        : 'The run stopped before you answered it.') + '</span>';
+    }).join('');
+    if (!said && !co.checks) return '';
+    return '<div class="s-callsum-row"><span class="s-callsum-mem">What AiMY suggested</span><span class="s-callsum-val">' +
+      (said || 'Nothing. AiMY heard ' + plural(co.log.length, 'call') + ' and had nothing to change.') + '</span></div>';
   }
 
   /* Closing the panel before a call starts: one press, with Undo. In a run
@@ -3122,13 +3347,18 @@
   function callAll(ids) {
     const live = ids.filter((id) => canCall(DB.byId[id]));
     if (!live.length) { toast('Nobody here has a number to call.'); return; }
-    const sess = { ids: live, done: [], skipped: [] };
+    const sess = { id: uid('s'), ids: live, done: [], skipped: [] };
     startCall(live[0], sess);
   }
   function advance(sess, was) {
     if (was && sess.done.indexOf(was) < 0) sess.done.push(was);
     const next = sess.ids.filter((id) => sess.done.indexOf(id) < 0 && sess.skipped.indexOf(id) < 0 && canCall(DB.byId[id]))[0];
-    if (!next) { runSummary(sess); return; }
+    /* AiMY reads the last three calls before the next one is set up, so a
+       tip lands above the next brief and the run waits on it. One found
+       after the last call goes to the wrap-up, for the next run. */
+    const tip = coachCheck(sess);
+    if (!next) { if (tip) { tip.state = 'later'; coachOf(sess).tips.push(tip); } runSummary(sess); return; }
+    if (tip) coachSay(sess, tip);
     if (startCall(next, sess)) waitStart();
   }
   function skipCall() {
@@ -3220,7 +3450,7 @@
     '</div>';
 
     return head +
-      '<div class="call-lines" id="callLines">' + (st === 'ready' ? (call.wait ? waitBlock(call) : '') +
+      '<div class="call-lines" id="callLines">' + (st === 'ready' ? (coachHeld(call) ? coachBlock(call) : call.wait ? waitBlock(call) : '') +
         (call.brief && (!canvasShown() || narrowCall()) ? '<button class="b-ghost" type="button" data-brief-open>Read the brief</button>' : '') : transcriptHtml(call)) + '</div>' +
       (call.asking ? '<div class="call-consent" role="group" aria-labelledby="callConsentSay">' +
         '<p class="call-consent-say" id="callConsentSay">They have to be told before this can start. Have you told them?</p>' +
@@ -6063,6 +6293,12 @@
         '<button class="proto-link" type="button" data-ring="anon">A stranger calls in, and will not say</button>' +
         '<button class="proto-link" type="button" data-quiet>' + (UI.quiet ? 'Sound on' : 'Sound off') + '</button>' +
       '</div>' +
+      /* AiMY coaching a run: the habit the recruiter's calls carry, for the demo. */
+      '<div class="proto-sec">' +
+        '<div class="proto-h">AiMY coaching a run</div>' +
+        [['', 'The run picks one'], ['greet', 'No hello'], ['talk', 'Talks over them'], ['rush', 'Rushes the goodbye'], ['none', 'Nothing to coach']].map((x) =>
+          '<button class="proto-link" type="button" data-coachset="' + x[0] + '" aria-pressed="' + (COACH_FORCE === x[0]) + '">' + esc(x[1]) + '</button>').join('') +
+      '</div>' +
       '<div class="proto-sec">' +
         '<div class="proto-h">Sample data · ' + DB.reqs.length + ' requisitions, ' + DB.cands.length + ' candidates, ' + DB.calls.length + ' calls</div>' +
         '<button class="proto-link" type="button" data-reset>Reset to seed</button>' +
@@ -6623,6 +6859,8 @@
     }
     if ((el = at('[data-outcome]'))) { if (PENDING) { PENDING.lit = el.getAttribute('data-outcome'); paintThread(); } return; }
     if ((el = at('[data-sess-stop]'))) { stopRun(); return; }
+    if ((el = at('[data-coach]'))) { coachAnswer(val('data-coach')); return; }
+    if ((el = at('[data-coachset]'))) { COACH_FORCE = val('data-coachset'); coachRescript(); paintProto(); return; }
     /* On a phone the panel covers the conversation: it folds to its strip. */
     if ((el = at('[data-brief-open]'))) { openCanvas(); if (narrowCall()) { callMin(true); paintCall(); } return; }
     if ((el = at('[data-log]'))) { logCall(el.getAttribute('data-log') === 'stop'); return; }
