@@ -2014,13 +2014,93 @@
   }
 
   /* ── TODAY ── */
+  /* ══ WHAT AIMY NOTICED (from the standalone recruiter home, 29 Oct) ══════
+     The information from that home that this system holds, said as Sales's
+     insight: AiMY's mark, a work state, one sentence with its facts in
+     bold, and one button that opens the chat with the question asked and
+     answered from the record. Small, two to a row. */
+  let CHAT_Q = {}, CHAT_N = 0;
+  function insightRow(o) {
+    const k = 'q' + (++CHAT_N);
+    CHAT_Q[k] = { q: o.q, html: o.a, acts: o.acts || [] };
+    return '<div class="s-insight t-insight">' +
+      '<svg class="s-insight-mark" viewBox="0 0 18 20" aria-hidden="true"><use href="#aimy-logo-small"/></svg>' +
+      (o.ws ? '<span class="work-state ws-' + o.ws + '"><span class="ws-dot"></span>' + esc(o.wsSay) + '</span>' : '') +
+      '<p class="s-insight-txt">' + o.say + '</p>' +
+      '<div class="s-insight-acts"><button class="s-insight-lnk" type="button" data-chat="' + k + '">' + mark(12) + esc(o.btn || 'Ask AiMY') + '</button></div></div>';
+  }
+  const listSay = (l) => l.length > 1 ? l.slice(0, -1).join(', ') + ' and ' + l[l.length - 1] : l[0] || '';
+  function todayInsights() {
+    const out = [], open = myOpen(), on = (c) => !!c && open.indexOf(reqOf(c)) >= 0;
+    /* Results in, waiting on your call (standalone: What needs you). */
+    const d = decisions();
+    if (d.length) out.push(insightRow({ ws: 'staged', wsSay: 'Your call',
+      say: '<b>' + plural(d.length, 'result') + '</b> ' + (d.length === 1 ? 'is' : 'are') + ' in and waiting on your call, the oldest <b>' + days(d[0].since) + '</b>: ' + esc(d[0].name) + ', ' + esc(lower(STAGE[d[0].stage].label)) + '.',
+      q: 'Which results are waiting on me?',
+      a: '<p>' + d.map((c) => '<b>' + esc(c.name) + '</b>, ' + esc(lower(STAGE[c.stage].label)) + ' for ' + esc(reqOf(c).title) + ': proceed. Next is ' + esc(goSay(c).toLowerCase()) + '.').join('<br>') + '</p>',
+      acts: [{ label: 'Open the diary', go: { on: 'diary' }, primary: true }] }));
+    /* The next working day (standalone: interviews booked, kits sent). */
+    const tm = DB.ivs.filter((v) => v.status === 'booked' && v.day === 1 && on(DB.byId[v.cand]));
+    const td = today();
+    out.push(insightRow({ ws: 'detected', wsSay: 'Tomorrow',
+      say: tm.length ? '<b>' + plural(tm.length, 'interview') + '</b> booked for tomorrow, ' + esc(sayDay(1)) + ', each with its kit sent.'
+        : 'Nothing is booked for tomorrow yet. Today has <b>' + plural(td.length, 'interview') + '</b>' + (td.length ? ', the first at <b>' + esc(td[0].slot) + '</b>.' : '.'),
+      q: 'What is booked for tomorrow?',
+      a: '<p>' + (tm.length ? tm.map((v) => esc(v.slot) + ' · <b>' + esc(DB.byId[v.cand].name) + '</b>, ' + esc(lower(STAGE[v.stage].label)) + ' with ' + esc(v.by.split(',')[0])).join('<br>')
+        : 'Nothing yet for tomorrow. Today: ' + (td.length ? td.map((c) => esc(c.slot) + ' ' + esc(c.name)).join(', ') : 'nothing') + '.') + '</p>',
+      acts: [{ label: 'Open the diary', go: { on: 'diary', day: '1' }, primary: true }] }));
+    /* First contact waiting on your yes (standalone: approval queue). */
+    const fc = queue().filter((c) => c.stage === 'sourced' && !c.contactOk);
+    if (fc.length) {
+      const reqs = open.filter((q) => fc.some((c) => c.req === q.id)), wa = fc.filter((c) => c.wa).length;
+      out.push(insightRow({ ws: 'staged', wsSay: 'Your yes',
+        say: '<b>' + plural(fc.length, 'person', 'people') + '</b> found ' + (fc.length === 1 ? 'is' : 'are') + ' waiting on your yes for first contact, on ' + plural(reqs.length, 'requisition') + '. <b>' + wa + '</b> opted in to WhatsApp; the rest get an email.',
+        q: 'Who is waiting on first contact?',
+        a: '<p>' + reqs.map((q) => '<b>' + esc(q.title) + '</b>: ' + esc(listSay(fc.filter((c) => c.req === q.id).map((c) => c.name))) + '.').join('<br>') + ' Each gets one short message naming the role, nothing about pay, once you approve.</p>',
+        acts: [{ label: 'Open them', go: { on: 'cands', q: 'new' }, primary: true }] }));
+    }
+    /* Screening on the busiest requisition (standalone: lanes, not a ranking). */
+    const early = (q, c) => rank(q, c.stage) <= rank(q, 'phone');
+    const pick = open.map((q) => ({ q: q, l: activeOf(q).filter((c) => early(q, c)) })).sort((a, b) => b.l.length - a.l.length)[0];
+    if (pick && pick.l.length >= 3) {
+      const all = (c) => c.ev.every((e) => e === 'm'), unk = (c) => c.ev.filter((e) => e === 'n').length * 2 > c.ev.length;
+      const strong = pick.l.filter(all), info = pick.l.filter((c) => !all(c) && unk(c)), talk = pick.l.filter((c) => !all(c) && !unk(c));
+      out.push(insightRow({ ws: 'recommended', wsSay: 'Screening',
+        say: 'On <b>' + esc(pick.q.title) + '</b>, ' + plural(pick.l.length, 'application') + ' ' + (pick.l.length === 1 ? 'is' : 'are') + ' under review: ' +
+          (strong.length ? '<b>' + strong.length + '</b> show every must-have, ' : 'none shows every must-have yet, ') + '<b>' + talk.length + '</b> answer half or more, and <b>' + info.length + '</b> leave most unknown.',
+        q: 'Where do the ' + pick.q.title + ' applications stand?',
+        a: '<p>' + (strong.length ? '<b>Every must-have shown:</b> ' + esc(listSay(strong.map((c) => c.name))) + '.<br>' : '') +
+          (talk.length ? '<b>Worth a conversation:</b> ' + esc(listSay(talk.map((c) => c.name))) + '.<br>' : '') +
+          (info.length ? '<b>Needs info:</b> ' + esc(listSay(info.map((c) => c.name))) + '. The CV is silent on most of what matters, which is not a no.' : '') + '</p>',
+        acts: [{ label: 'Open them', go: { on: 'cands', rq: pick.q.id }, primary: true }] }));
+    }
+    /* What is on the careers page (standalone: published on the website). */
+    const off = open.filter((q) => !q.published);
+    out.push(insightRow({ ws: 'detected', wsSay: 'Careers page',
+      say: '<b>' + (open.length - off.length) + ' of ' + open.length + '</b> open requisitions are on the careers page.' + (off.length ? ' ' + esc(off[0].title) + (off.length > 1 ? ' and ' + plural(off.length - 1, 'other') + ' stay' : ' stays') + ' off; off is the default.' : ''),
+      q: 'Which requisitions are off the careers page?',
+      a: '<p>' + (off.length ? off.map((q) => '<b>' + esc(q.title) + '</b>, ' + esc(accOf(q).name)).join('<br>') + '<br>Off is the default; a client-linked replacement usually stays off.' : 'Every open requisition is on the careers page.') + '</p>',
+      acts: [{ label: 'Open requisitions', go: { on: 'reqs' }, primary: true }] }));
+    /* What AiMY did without asking (standalone: the closing line). */
+    const booked = DB.ivs.filter((v) => v.status === 'booked' && on(DB.byId[v.cand])).length;
+    const tests = DB.sends.filter((x) => x.status === 'sent' && on(DB.byId[x.cand])).length;
+    if (booked + tests) out.push(insightRow({ ws: 'completed', wsSay: 'Done for you',
+      say: 'Under rules a person approved, AiMY has <b>' + plural(booked, 'interview') + '</b> booked with their kits' + (tests ? ' and <b>' + plural(tests, 'assessment') + '</b> out' : '') + '. Each has an undo.',
+      q: 'What did you do without asking me?',
+      a: '<p>' + plural(booked, 'interview') + ' booked inside the interviewers’ free slots, each with its kit sent' + (tests ? '; ' + plural(tests, 'assessment') + ' sent from the link on the requisition' : '') +
+        '. Nothing reached a candidate outside a rule ' + esc(DESKS.dina.name) + ' approved, and each can be undone from the record it sits on.</p>' }));
+    return out;
+  }
   function homePage() {
     const owed = untold();
     const late = owed.filter((c) => c.since >= TELL_DAYS);
+    const ins = todayInsights();
     return '<div class="s-home">' +
       topBrief() +
-      '<section class="s-block s-block-wide">' +
+      '<section class="s-block s-block-wide" aria-label="What AiMY noticed">' +
         '<div class="s-camp-list-head">' + switcher('') + '</div>' +
+        (ins.length ? '<p class="b-tocall">AiMY noticed <b>' + plural(ins.length, 'thing') + '</b> on your requisitions. Each opens in the chat, with the record behind it.</p>' +
+          '<div class="t-insights">' + ins.join('') + '</div>' : '') +
       '</section>' +
       (owed.length ? '<section class="s-block s-block-wide" aria-label="Not told yet">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">Not told yet</h2>' +
@@ -7701,6 +7781,7 @@
   function paint() {
     /* The name a CV card hangs from is about to be redrawn. */
     cvHide();
+    CHAT_Q = {}; CHAT_N = 0;
     /* Somebody outside the team gets the page alone, with none of the
        product's chrome (the careers page, a profile, a test, a debrief). */
     document.body.classList.toggle('is-portal', outside());
@@ -7908,6 +7989,8 @@
     if (at('#ovChatsToggle')) { chatsDrawer(!byId('overlayChats').classList.contains('is-open')); return; }
     if (at('#ovChatsScrim')) { chatsDrawer(false); return; }
     if (at('#overlaySend')) { canvasAsk(byId('overlayInput').value); return; }
+    /* An insight's button: the chat opens with its question and the answer. */
+    if ((el = at('[data-chat]'))) { const a = CHAT_Q[el.getAttribute('data-chat')]; if (!a) return; if (!canvasShown()) openCanvas(); ASKING = a.q; peek(a.html, a.acts); return; }
     if ((el = at('[data-ask]'))) { if (!canvasShown()) openCanvas(); canvasAsk(el.getAttribute('data-ask')); return; }
     if ((el = at('[data-newchat]'))) { CHAT_AT = null; THREAD_SEEN = 0; paintThread(); chatsDrawer(false); byId('overlayInput').focus(); return; }
     if ((el = at('[data-chat-del]'))) {

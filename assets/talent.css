@@ -1206,3 +1206,15 @@ body.is-portal .aimy-overlay { display: none !important; }
    the CV on hover: the card's own AiMY note, not grown to fill the card. */
 .b-qcard > .b-aimy.t-why-say { flex: none; margin: 12px 14px 0; }
 .t-cv .b-aimy.t-why-say { flex: none; margin: 0; }
+
+/* ══ WHAT AIMY NOTICED (Today, 29 Oct) ════════════════════════════════════
+   Sales's insight block (sales.css .s-insight), small and two to a row: the
+   mark, the state, the sentence, and the one button that opens the chat. */
+.t-insights { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 10px; margin-top: 8px; }
+.t-insights > .s-insight { margin-top: 0; align-content: flex-start; }
+/* Half a row is too narrow to share with the state pill: the sentence
+   takes its own line under the mark and the state. */
+.t-insight .s-insight-txt { font-size: var(--fs-sm); flex-basis: 100%; }
+.t-insight .s-insight-acts { margin-top: auto; }
+.t-insight .s-insight-lnk { display: inline-flex; align-items: center; gap: 6px; }
+.t-insight .s-insight-lnk svg { flex: none; }
