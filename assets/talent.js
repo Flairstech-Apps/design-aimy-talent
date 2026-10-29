@@ -2027,7 +2027,32 @@
       '<svg class="s-insight-mark" viewBox="0 0 18 20" aria-hidden="true"><use href="#aimy-logo-small"/></svg>' +
       (o.ws ? '<span class="work-state ws-' + o.ws + '"><span class="ws-dot"></span>' + esc(o.wsSay) + '</span>' : '') +
       '<p class="s-insight-txt">' + o.say + '</p>' +
-      '<div class="s-insight-acts"><button class="s-insight-lnk" type="button" data-chat="' + k + '">' + mark(12) + esc(o.btn || 'Ask AiMY') + '</button></div></div>';
+      '<div class="s-insight-acts"><button class="t-ask" type="button" data-chat="' + k + '">' +
+        '<span class="t-ask-mark" aria-hidden="true">' + mark(12) + '</span><span class="t-ask-text">' + esc(o.q) + '</span>' +
+        '<span class="t-ask-go" aria-hidden="true">' + svg('send', 11) + '</span></button></div></div>';
+  }
+  /* THE QUESTION GOES TO THE BAR (standalone prototype, 29 Oct): pressed, it
+     lifts out of the insight and lands in the AiMY bar it is about to fill,
+     then the chat opens on it. Reduced motion goes straight to the chat. */
+  function flyToBar(btn, then) {
+    const bar = byId('aimyFloatBar');
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !bar) { then(); return; }
+    btn.classList.add('is-armed'); void btn.offsetWidth;
+    const a = btn.getBoundingClientRect(), b = bar.getBoundingClientRect();
+    if (!a.width || !b.width) { btn.classList.remove('is-armed'); then(); return; }
+    const z = parseFloat(getComputedStyle(document.body).zoom) || 1;
+    const fl = document.createElement('div');
+    fl.className = 't-ask-flier';
+    fl.innerHTML = btn.innerHTML;
+    fl.style.left = (a.left / z) + 'px'; fl.style.top = (a.top / z) + 'px';
+    document.body.appendChild(fl);
+    btn.style.visibility = 'hidden';
+    requestAnimationFrame(() => {
+      const r = fl.getBoundingClientRect();
+      fl.style.transform = 'translate(' + ((b.left + 52 - r.left) / z) + 'px, ' + ((b.top + b.height / 2 - (r.top + r.height / 2)) / z) + 'px) scale(0.97)';
+      fl.style.opacity = '0.04';
+    });
+    setTimeout(() => { fl.remove(); btn.style.visibility = ''; btn.classList.remove('is-armed'); then(); }, 460);
   }
   const listSay = (l) => l.length > 1 ? l.slice(0, -1).join(', ') + ' and ' + l[l.length - 1] : l[0] || '';
   function todayInsights() {
@@ -7990,7 +8015,7 @@
     if (at('#ovChatsScrim')) { chatsDrawer(false); return; }
     if (at('#overlaySend')) { canvasAsk(byId('overlayInput').value); return; }
     /* An insight's button: the chat opens with its question and the answer. */
-    if ((el = at('[data-chat]'))) { const a = CHAT_Q[el.getAttribute('data-chat')]; if (!a) return; if (!canvasShown()) openCanvas(); ASKING = a.q; peek(a.html, a.acts); return; }
+    if ((el = at('[data-chat]'))) { const a = CHAT_Q[el.getAttribute('data-chat')]; if (!a) return; flyToBar(el, () => { if (!canvasShown()) openCanvas(); ASKING = a.q; peek(a.html, a.acts); }); return; }
     if ((el = at('[data-ask]'))) { if (!canvasShown()) openCanvas(); canvasAsk(el.getAttribute('data-ask')); return; }
     if ((el = at('[data-newchat]'))) { CHAT_AT = null; THREAD_SEEN = 0; paintThread(); chatsDrawer(false); byId('overlayInput').focus(); return; }
     if ((el = at('[data-chat-del]'))) {
