@@ -1835,15 +1835,15 @@
      handoff, 'The page title is the tab switcher'). It stood above
      Requisitions and Calls as well until 28 Oct. ── */
   function topBrief() {
-    const d = decisions(), w = waits();
+    const d = decisions(), w = waits(), t = today();
     const risky = myOpen().filter((q) => health(q).risk);
     const client = w.filter((c) => waitsOn(c) === 'client');
     const oldest = d[0];
     const lines = [];
-    /* Today's interviews are said in the Diary, beside the day they are on. */
     lines.push(d.length
-      ? '<b>' + plural(d.length, 'decision') + '</b> ' + (d.length === 1 ? 'waits' : 'wait') + ' on you, the oldest <b>' + days(oldest.since) + '</b>.'
-      : 'Nothing waits on your call.');
+      ? '<b>' + plural(d.length, 'decision') + '</b> ' + (d.length === 1 ? 'waits' : 'wait') + ' on you, the oldest <b>' + days(oldest.since) + '</b>. ' +
+        (t.length ? '<b>' + plural(t.length, 'interview') + '</b> today, the first at <b>' + esc(t[0].slot) + '</b> with ' + esc(t[0].name) + '.' : 'No interviews today.')
+      : 'Nothing waits on your call. ' + (t.length ? '<b>' + plural(t.length, 'interview') + '</b> today.' : ''));
     if (risky.length) {
       const q = risky[0], h = health(q);
       lines.push('<button class="slv-n" type="button"' + goAttr({ req: q.id }) + '>' + esc(q.title) + '</button> for ' + esc(accOf(q).name) +
@@ -2005,7 +2005,7 @@
 
   /* ── TODAY ── */
   function homePage() {
-    const d = decisions(), w = waits();
+    const w = waits(), t = today();
     const risky = myOpen().map((q) => ({ q: q, h: health(q) })).filter((x) => x.h.risk);
     const owed = untold();
     const late = owed.filter((c) => c.since >= TELL_DAYS);
@@ -2013,10 +2013,6 @@
       topBrief() +
       '<section class="s-block s-block-wide">' +
         '<div class="s-camp-list-head">' + switcher('') + '</div>' +
-        '<p class="b-tocall">' + (d.length ? '<b>' + plural(d.length, 'decision') + '</b> waiting on you, oldest first. Each is one press, and each can be undone.'
-          : 'Nothing is waiting on your call.') + '</p>' +
-        srcNote([['Debrief results', true], ['Assessment results', true]]) +
-        (d.length ? '<div class="b-owed">' + topN('decide', d).map((c, i) => workRow(c, i)).join('') + '</div>' + moreLinks('decide', d.length) : '') +
       '</section>' +
       (owed.length ? '<section class="s-block s-block-wide" aria-label="Not told yet">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">Not told yet</h2>' +
@@ -2034,8 +2030,19 @@
         (selN('tell') ? batchBar('tell', '<button class="s-insight-lnk primary" type="button" data-tell-sel>Send the answer to ' + plural(selN('tell'), 'person', 'people') + '</button>')
           : '<p class="t-acts"><button class="b-ghost" type="button" data-sel-all="tell">Select all ' + owed.length + '</button></p>') +
       '</section>' : '') +
-      /* Today's interviews are in the Diary: its line says them, its agenda
-         lists them with Prepare me. */
+      (t.length ? '<section class="s-block s-block-wide" aria-label="Interviews today">' +
+        '<div class="s-camp-list-head"><h2 class="s-block-h">Interviews today</h2>' +
+          '<span class="s-block-say">' + plural(t.length, 'interview') + ' · earliest first</span></div>' +
+        srcNote([['Bookings calendar', false]]) +
+        '<div class="b-cal-agenda">' + topN('iv', t).map((c) => '<div class="b-cal-ev is-plain t-cal-ev">' +
+          '<button class="t-cal-open" type="button"' + goAttr({ cand: c.id }) + '>' +
+            '<span class="b-cal-evtop"><span class="b-cal-dot k-meeting"></span><span class="b-cal-etime">' + esc(c.slot) + '</span>' +
+              '<span class="b-kind">' + esc(STAGE[c.stage].label) + '</span></span>' +
+            '<span class="b-cal-ename"><b>' + esc(c.name) + '</b><span class="b-cal-ewhat">' + esc(reqOf(c).title) + ' · ' + esc(accOf(reqOf(c)).name) + '</span></span>' +
+          '</button>' +
+          '<button class="s-inline-btn t-prep-btn" type="button" data-prep="' + c.id + '">' + mark(12) + 'Prepare me</button>' +
+        '</div>').join('') + '</div>' + moreLinks('iv', t.length) +
+      '</section>' : '') +
       (w.length ? '<section class="s-block s-block-wide" aria-label="Waiting on others">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">Waiting on others</h2>' +
           '<span class="s-block-say">' + plural(w.length, 'candidate') + ' · <b>' + plural(w.reduce((n, c) => n + lostDays(c), 0), 'day') + '</b> past the usual time · longest first</span></div>' +
@@ -6417,14 +6424,11 @@
     }).join('');
     const day = diaryItems(sel, sel), soon = diaryItems(sel + 1, sel + 60).slice(0, 3);
     const step = (k) => dOff(new Date(y, mo + k, 1));
-    const week = diaryItems(0, 6), owed = resultsOwed();
+    const week = diaryItems(0, 6), owed = resultsOwed(), dec = isRec() ? decisions() : [];
     const cnt = (k) => week.filter((m) => m.kind === k && !m.done).length;
     const said = [[cnt('iv') + cnt('client'), 'interview'], [cnt('callback'), 'callback'], [cnt('start'), 'start date'], [cnt('check'), 'check-in']]
       .filter((x) => x[0]).map((x) => '<b>' + plural(x[0], x[1]) + '</b>');
-    /* Today's interviews lead, as they used to on Today's briefing. */
-    const ivs = today();
-    const lead1 = aimyBlock({ text: (ivs.length ? '<b>' + plural(ivs.length, 'interview') + '</b> today, the first at <b>' + esc(ivs[0].slot) + '</b> with ' + esc(ivs[0].name) + '. ' : 'No interviews today. ') +
-      (said.length ? 'This week: ' + said.join(', ').replace(/, ([^,]*)$/, ' and $1') + '.' : 'Nothing is in the diary this week.') +
+    const lead1 = aimyBlock({ text: (said.length ? 'This week: ' + said.join(', ').replace(/, ([^,]*)$/, ' and $1') + '.' : 'Nothing is in the diary this week.') +
       (owed.length ? ' <b>' + plural(owed.length, 'result') + '</b> not in yet, the oldest from ' + esc(sayWhen(owed[0].day)) + '.' : ' Every interview so far has its result.'),
       from: 'the interviews, callbacks and offers on ' + (isHM() ? 'the requisitions you asked for' : 'your requisitions') }, true);
     const keyRow = '<p class="t-diary-key">' + ['iv', 'client', 'callback', 'start', 'check', 'owed'].filter((k) => isRec() || k !== 'callback')
@@ -6445,6 +6449,14 @@
     return '<div class="s-home">' +
       '<section class="s-block s-block-wide" aria-label="The diary"><div class="s-camp-list-head">' + switcher('diary') + '</div>' + lead1 +
         '<div class="b-diary">' + cal + '</div></section>' +
+      /* Results that are in and wait on your move, beside the ones that are
+         not. They stood under Today's tabs until 29 Oct. */
+      (isRec() ? '<section class="s-block s-block-wide" aria-label="Results in"><div class="s-camp-list-head"><h2 class="s-block-h">Results in</h2></div>' +
+        '<p class="b-tocall">' + (dec.length ? '<b>' + plural(dec.length, 'decision') + '</b> waiting on you, oldest first. Each is one press, and each can be undone.'
+          : 'Nothing is waiting on your call.') + '</p>' +
+        srcNote([['Debrief results', true], ['Assessment results', true]]) +
+        (dec.length ? '<div class="b-owed">' + topN('decide', dec).map((c, i) => workRow(c, i)).join('') + '</div>' + moreLinks('decide', dec.length) : '') +
+      '</section>' : '') +
       '<section class="s-block s-block-wide" aria-label="Results not in"><div class="s-camp-list-head"><h2 class="s-block-h">Results not in</h2>' +
         '<span class="s-block-say">interviews that happened with no result yet · oldest first</span></div>' +
         (owed.length ? '<div class="b-owed">' + owed.map((m, i) => '<div class="b-owed-row t-row" style="--i:' + Math.min(i, 8) + '"><span class="b-owed-sev" aria-hidden="true"></span>' +
