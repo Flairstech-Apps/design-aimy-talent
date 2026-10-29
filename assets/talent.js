@@ -1163,6 +1163,20 @@
     D.news = D.news || []; D.lists = D.lists || [];
     D.flags = D.flags || []; D.searches = D.searches || []; D.searchRun = D.searchRun || {}; D.searchGone = D.searchGone || [];
     Object.keys(D.tpl).forEach((k) => { TEMPLATE[k] = D.tpl[k].slice(); });
+    /* A SENT ANSWER LASTS UNTIL THE PROTOTYPE RESTARTS (Engy, 29 Oct), so
+       the send can be shown again: everyone it went to is owed it again on
+       load, and its "Told by" line leaves their history. Nothing else a
+       person did is undone; Reset to seed does that. */
+    /* Only answers sent from a message: someone told on the call itself
+       (logged as not a fit) stays told. */
+    const ev = (D.x && D.x.events) || {};
+    Object.keys(ev).forEach((id) => {
+      const e = ev[id];
+      if (!e._new || e.kind !== 'out' || !/^Told by /.test(e.text || '')) return;
+      if (D.c[e.cand] && D.c[e.cand].told === true) D.c[e.cand].told = false;
+      delete ev[id];
+    });
+    save();
     COLS.forEach((col) => {
       const m = D.x[col] || {};
       Object.keys(m).forEach((id) => {
@@ -2804,8 +2818,9 @@
      only (Engy, 29 Oct: it carried too much): the message, and one line
      under it saying who it goes to, how, under which approved template,
      with the button that sends it. The row below already names the role. */
-  function msgPreview(c, withSend) {
-    const many = withSend && selN('tell') > 1;
+  function msgPreview(c, withSend, alone) {
+    /* `alone`: the profile, where ticks on a list do not apply. */
+    const many = withSend && !alone && selN('tell') > 1;
     const say = many ? 'Shown for ' + first(c.name) + '. Each of the ' + selN('tell') + ' ticked gets their own name and role.'
       : 'To ' + first(c.name) + ' by ' + (c.wa ? 'WhatsApp and email' : 'email (no WhatsApp opt-in)') + ' · HR template, approved by ' + DESKS.dina.name + '.';
     return '<div class="t-msg">' +
@@ -4383,7 +4398,8 @@
             (c.told === false && !isClient() ? ' Not told yet; they hear by ' + sayDay(hearBy(c)) + '.' : c.told ? ' They have been told.' : '')
           : candSay(c)) + '</p>' +
         /* Message preview (component library): what they will read, before Send. */
-        (c.exit && c.told === false && works ? msgPreview(c) + '<div class="s-lead-acts"><button class="s-insight-lnk primary" type="button" data-tell="' + c.id + '">Send the answer</button></div>' : '') +
+        /* The same message as the lists, sent from inside it. */
+        (c.exit && c.told === false && works ? msgPreview(c, true, true) : '') +
         /* With a sendout, the reasons open inside its card instead. */
         (c.exit || !works ? '' : passOpen(c) && c.sentDay == null ? passPicker(c) : outPicking(c) ? outPicker(c) : writeOpen(c) ? writeBox(c) : '<div class="s-lead-acts">' +
           (isRec() && canCall(c) ? '<button class="s-insight-lnk' + (early ? ' primary' : '') + '" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call ' + esc(first(c.name)) + '</button>' : '') +
