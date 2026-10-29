@@ -38,11 +38,74 @@
 .t-fn-fill { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--brand); }
 .t-fn-n { text-align: right; color: var(--d100); font-variant-numeric: tabular-nums; }
 .t-fn-n b { color: var(--d50); font-weight: var(--fw-bold); }
-.t-fn-row.is-leak .t-fn-fill { background: var(--warn); }
-.t-fn-row.is-leak .t-fn-label, .t-fn-row.is-leak .t-fn-n b { color: var(--warn); }
 @media (max-width: 560px) {
   .t-fn-row { grid-template-columns: minmax(0, 1fr) 84px; }
   .t-fn-track { grid-column: 1 / -1; order: 3; }
+}
+
+/* The funnel with stage health (talent.js stageFunnel), on a requisition
+   and on Reports. Per stage: a health dot, how many reached it (the bar),
+   who moved on and the days in it, each with its usual beneath. The off
+   value is coloured as well as the dot, so colour is never the only sign. */
+.t-sf { display: grid; gap: 2px; margin: 4px 0 12px; }
+.t-sf-legend {
+  position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px;
+  margin-bottom: 10px; font-size: var(--fs-xs); color: var(--d100);
+}
+.t-sf-key { display: inline-flex; align-items: center; gap: 6px; }
+.t-sf-legend .t-def { margin-left: auto; }
+.t-sf-legend .t-def-pop { left: auto; right: 0; width: min(380px, calc(100vw - 48px)); }
+.t-sf-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; box-sizing: border-box; }
+.t-sf-dot.is-ok { background: var(--ok); }
+.t-sf-dot.is-warn { background: var(--warn); }
+.t-sf-dot.is-err { background: var(--err); }
+.t-sf-dot.is-few { border: 1.5px solid var(--ink-muted); }
+.t-sf-row {
+  display: grid; grid-template-columns: minmax(0, 250px) minmax(0, 1fr) 52px 112px 112px;
+  grid-template-areas: "stage track num pass time";
+  gap: 12px; align-items: center; padding: 6px 8px; margin: 0 -8px; border-radius: 8px; font-size: var(--fs-sm);
+}
+.t-sf-row > .t-sf-stage { grid-area: stage; }
+.t-sf-row > .t-fn-track { grid-area: track; }
+.t-sf-row > .t-sf-num { grid-area: num; }
+.t-sf-row > .t-sf-val:nth-of-type(4) { grid-area: pass; }
+.t-sf-row > .t-sf-val:nth-of-type(5) { grid-area: time; }
+.t-sf-cols { padding-block: 0 4px; font-size: var(--fs-2xs); font-weight: var(--fw-medium); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); }
+.t-sf-cols > span:nth-child(n+3) { text-align: right; }
+.t-sf-door {
+  width: calc(100% + 16px); border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer;
+  transition: background-color var(--t-fast) var(--ease-out);
+}
+.t-sf-door:hover { background: rgba(var(--accent-rgb), 0.06); }
+.t-sf-door:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.t-sf-door:hover .t-sf-label { color: var(--d50); text-decoration: underline; text-underline-offset: 3px; }
+.t-sf-stage { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.t-sf-name { display: flex; flex-direction: column; min-width: 0; }
+.t-sf-label { color: var(--d100); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t-sf-sub { font-size: var(--fs-2xs); color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t-sf-door .t-sf-sub { color: var(--accent-label, var(--accent)); }
+.t-sf-num { text-align: right; font-variant-numeric: tabular-nums; }
+.t-sf-num b { color: var(--d50); font-weight: var(--fw-bold); }
+.t-sf-val { display: flex; flex-direction: column; align-items: flex-end; font-variant-numeric: tabular-nums; line-height: 1.3; }
+.t-sf-val b { color: var(--d50); font-weight: var(--fw-semibold); }
+.t-sf-val > span { font-size: var(--fs-2xs); color: var(--ink-muted); white-space: nowrap; }
+.t-sf-val.is-warn b { color: var(--warn-text); }
+.t-sf-val.is-err b { color: var(--err-text); }
+.t-sf-cap { display: none; }
+.t-fn-head .b-menu-wrap { margin-left: auto; }
+.t-fn-head .t-fn-menu { left: auto; right: 0; }
+@media (max-width: 640px) {
+  .t-sf-cols { display: none; }
+  .t-sf-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px;
+    grid-template-areas: "stage stage num" "track track track" "pass time time";
+    row-gap: 6px; padding-block: 10px;
+  }
+  .t-sf-row + .t-sf-row { border-top: 1px solid var(--card-border); border-radius: 0; }
+  .t-sf-val { align-items: flex-start; }
+  .t-sf-cap { display: block; text-transform: uppercase; letter-spacing: 0.06em; }
+  .t-sf-legend .t-def { margin-left: 0; flex-basis: 100%; }
+  .t-sf-legend .t-def-pop { right: auto; left: 0; }
 }
 
 /* ══ 3. LOGGING A CALL, IN THE CONVERSATION ══════════════════════════════
