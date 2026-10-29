@@ -1678,7 +1678,7 @@
      `approve` are the screens people outside the recruiting team reach from a
      link: the careers page, a candidate's own profile, an assessment, an
      interviewer's debrief and an approver's offer packet. */
-  const KEYS = ['as', 'on', 'req', 'cand', 'asmt', 'acc', 'q', 'p', 'list', 'find', 'edit', 'apply', 'me', 'take', 'debrief', 'approve', 'by', 'src', 'period', 'account', 'rq', 'day', 'st'];
+  const KEYS = ['as', 'on', 'req', 'cand', 'asmt', 'acc', 'q', 'p', 'list', 'find', 'edit', 'apply', 'me', 'take', 'debrief', 'approve', 'by', 'src', 'period', 'account', 'rq', 'day', 'st', 'pv'];
   const OUTSIDE = ['apply', 'me', 'take', 'debrief', 'approve'];
   const outside = () => OUTSIDE.some((k) => !!S[k]);
   function parse() {
@@ -1687,6 +1687,7 @@
     KEYS.forEach((k) => { if (p.get(k)) S[k] = p.get(k); });
     if (S.req && !DB.reqById[S.req]) delete S.req;
     if (S.cand && !DB.byId[S.cand]) delete S.cand;
+    if (S.pv && !DB.byId[S.pv]) delete S.pv;
     if (S.asmt && !asmtOf(S.asmt)) delete S.asmt;
     DESK = DESKS[S.as] ? S.as : 'omar';
   }
@@ -1710,7 +1711,7 @@
     if (DESK !== 'omar' && !('as' in over) && !OUTSIDE.some((k) => !!next[k])) next.as = DESK;
     if (!replace) TRAIL = Object.assign({}, S);
     /* A half-made pass and ticks on another page do not follow you. */
-    if (next.req !== S.req || next.cand !== S.cand || next.on !== S.on) { PASSING = null; OUTING = null; WRITING = null; SEL.sourced = {}; }
+    if (next.req !== S.req || next.cand !== S.cand || next.on !== S.on || next.pv !== S.pv) { PASSING = null; OUTING = null; WRITING = null; SEL.sourced = {}; }
     S = next;
     DESK = DESKS[S.as] ? S.as : 'omar';
     const u = urlOf(S);
@@ -2423,8 +2424,9 @@
   /* The earlier application, said with what stopped it. */
   const beforeSay = (x) => 'Applied before for ' + reqOf(x).title + ': ' + lower(EXIT[x.exit].label) +
     (x.outWhy && x.exit === 'out' ? ', ' + lower(OUT_K[x.outWhy.why].label) : x.decline ? ', ' + lower(DECLINE_K[x.decline.why].label) : '');
-  /* One candidate, as the same card. */
-  function candCard(c, i) {
+  /* One candidate, as the same card. In the quick view the card is not a
+     door: it is already open. */
+  function candCard(c, i, inQv) {
     const q = reqOf(c);
     const nx = nextOf(c);
     const w = waitsOn(c);
@@ -2462,7 +2464,7 @@
     if (owedTell) special = foot('<span class="b-kind">' + (c.since >= TELL_DAYS ? 'Past the ' + TELL_DAYS + '-day limit' : 'Tell them by ' + esc(sayDay(TELL_DAYS - c.since))) + '</span>',
       '<button class="s-insight-lnk primary" type="button" data-tell="' + c.id + '">Send the answer</button>');
     const pick1 = !c.exit && c.stage === 'sourced' && !c.contactOk && (isRec() || isHR());
-    return '<article class="type-card s-card b-qcard" data-open="cand:' + c.id + '" style="--i:' + Math.min(i, 8) + '">' +
+    return '<article class="type-card s-card b-qcard"' + (inQv ? '' : ' data-open="cand:' + c.id + '"') + ' style="--i:' + Math.min(i, 8) + '">' +
       '<div class="tc-head">' + (pick1 ? selBox('sourced', c.id, c.name) : owedTell ? selBox('tell', c.id, c.name) : '') + stageTag(c) + (was ? tag('Returning', 'info') : '') + '<span class="b-kind">' + esc(c.source) + '</span></div>' +
       '<div class="b-qcard-top"><button class="tc-title s-card-title" type="button" data-cand="' + c.id + '">' + esc(c.name) + '</button></div>' +
       '<p class="tc-summary b-qcard-role">' + esc(c.at) + '</p>' +
@@ -4616,6 +4618,88 @@
   /* A note says someone passed or did not, in plain words. */
   const readNote = (t) => /\b(not|didn'?t|did not|no)\b.{0,20}\b(pass|proceed|fit|good)|\bsaid no\b|\brejected\b|\bnot a fit\b/i.test(t) ? 'no'
     : /\b(passed|proceed|said yes|liked (him|her|them)|good fit|move (him|her|them) on|approved)\b/i.test(t) ? 'yes' : null;
+
+  /* ══ THE QUICK VIEW ══════════════════════════════════════════════════════
+     A name in a list opens that person over the list (?pv=), with ‹ › through
+     the same list, so a requisition's people are read one after another
+     without going back each time. Who they are and their stage's verb on
+     the left (the list's own card, so its pickers work here too), their
+     history on the right, and Full profile is the page. The list is read off
+     the page it was opened from, so a search, a cut or a stage narrows it
+     the same way. */
+  let QV = [], QV_AT = null;
+  const QV_NAMES = '.tc-title, .t-crow-name, .t-row-open';
+  /* The people in the list a link sits in, in the order shown. */
+  function qvListAt(el) {
+    const box = el.closest('.b-grid, .t-clist, section') || byId('wbStage');
+    const ids = [];
+    box.querySelectorAll('[data-cand], [data-open^="cand:"]').forEach((x) => {
+      const id = x.getAttribute('data-cand') || x.getAttribute('data-open').slice(5);
+      if (DB.byId[id] && ids.indexOf(id) < 0) ids.push(id);
+    });
+    return ids;
+  }
+  /* The list behind stays where it was: go() would put it back at the top. */
+  function qvGo(over, replace) {
+    const y = byId('pageScroll').scrollTop;
+    go(over, replace);
+    byId('pageScroll').scrollTop = y;
+  }
+  function qvOpen(id, el) {
+    QV = qvListAt(el);
+    qvGo(Object.assign({}, S, { pv: id }));
+  }
+  function qvStep(d) {
+    const nx = QV[QV.indexOf(S.pv) + d];
+    if (!nx) return;
+    qvGo(Object.assign({}, S, { pv: nx }), true);
+    const b = document.querySelector('[data-qv-step="' + d + '"]');
+    if (b && !b.disabled) b.focus();
+  }
+  function qvClose() {
+    const id = S.pv, o = Object.assign({}, S);
+    delete o.pv;
+    qvGo(o, true);
+    const back = byId('wbStage').querySelector('[data-cand="' + id + '"]');
+    if (back) back.focus();
+  }
+  /* How to reach them and what they are on: the card says the rest. */
+  function qvContact(c) {
+    const q = reqOf(c);
+    return '<div class="t-qv-facts">' + fact('req', q.title + (isClient() ? '' : ', ' + accOf(q).name)) +
+      (isClient() ? '' : (c.phone ? fact('phone', c.phone) : '') + (c.email ? fact('mail', c.email) : '')) +
+      (isRec() && !c.exit && canCall(c) ? '<button class="b-ghost" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call ' + esc(first(c.name)) + '</button>' : '') +
+    '</div>';
+  }
+  function paintQv() {
+    const host = byId('qvHost');
+    const c = S.pv && !S.cand && !outside() ? DB.byId[S.pv] : null;
+    document.body.classList.toggle('is-qv', !!(c && sees(c)));
+    if (!c || !sees(c)) { host.innerHTML = ''; QV_AT = null; return; }
+    /* The list as the page draws it now; someone a move took off it keeps
+       the list they were opened from. A reload starts a list of one. */
+    const here = byId('wbStage').querySelector('[data-cand="' + c.id + '"]');
+    if (here) QV = qvListAt(here);
+    if (QV.indexOf(c.id) < 0) QV = [c.id];
+    const i = QV.indexOf(c.id), n = QV.length, fresh = QV_AT === null;
+    QV_AT = c.id;
+    const step = (d, label, ico) => '<button class="b-ghost t-qv-step" type="button" data-qv-step="' + d + '"' + (QV[i + d] ? '' : ' disabled') +
+      ' aria-label="' + label + '" title="' + label + '">' + svg(ico, 16) + '</button>';
+    host.innerHTML = '<div class="t-qv-scrim' + (fresh ? ' is-in' : '') + '" data-qv-close></div>' +
+      '<aside class="t-qv' + (fresh ? ' is-in' : '') + '" role="dialog" aria-modal="true" aria-label="' + esc(c.name) + '" tabindex="-1">' +
+        '<header class="t-qv-head">' +
+          (n > 1 ? '<span class="t-qv-steps">' + step(-1, 'Previous candidate', 'back') + step(1, 'Next candidate', 'go') +
+            '<span class="t-qv-at">' + (i + 1) + ' of ' + n + '</span></span>' : '<span></span>') +
+          '<span class="t-qv-steps"><button class="b-ghost" type="button" data-cand="' + c.id + '">Full profile</button>' +
+            '<button class="b-ghost t-qv-step" type="button" data-qv-close aria-label="Close" title="Close">' + svg('x', 16) + '</button></span>' +
+        '</header>' +
+        '<div class="t-qv-body">' +
+          '<div class="t-qv-who">' + candCard(c, 0, true) + qvContact(c) + '</div>' +
+          '<div class="t-qv-hist">' + historyBlock(c) + '</div>' +
+        '</div>' +
+      '</aside>';
+    if (fresh) host.querySelector('.t-qv').focus();
+  }
 
   /* ── Editing a candidate's details ── */
   function candEditPage(c) {
@@ -7621,12 +7705,13 @@
     if (outside()) {
       byId('wbStage').innerHTML = S.apply ? portalApply() : S.me ? portalMe() : S.take ? portalTake()
         : S.debrief ? debriefPage() : approvePage();
+      paintQv();
       requestAnimationFrame(afterPaint);
       return;
     }
     paintWho();
     /* A client opening a profile sent to them is the sendout's Opened. */
-    const seen = isClient() && S.cand ? DB.byId[S.cand] : null;
+    const seen = isClient() && (S.cand || S.pv) ? DB.byId[S.cand || S.pv] : null;
     if (seen && sees(seen) && seen.stage === 'sent' && !seen.exit && seen.openDay == null) {
       write(seen, { openDay: 0 });
       note(seen, 'note', 'Opened by ' + me().name + '.');
@@ -7640,6 +7725,7 @@
       : S.on === 'reqs' ? reqsPage() : S.on === 'calls' && isRec() ? callsPage()
       : S.on === 'asmts' ? asmtsPage() : S.on === 'templates' ? templatesPage()
       : S.on === 'reports' ? reportsPage() : deskHome()));
+    paintQv();
     paintRail();
     paintBell();
     paintProto();
@@ -8238,7 +8324,14 @@
       if (byId('dialPanel').hidden) dialOpen(); else closeDial();
       return;
     }
-    if ((el = at('[data-cand]'))) { go({ cand: el.getAttribute('data-cand') }); return; }
+    /* A name in a list opens them over it; anything else, a name in the
+       quick view, or a held Ctrl or ⌘, is the profile. */
+    if ((el = at('[data-cand]'))) {
+      if (el.matches(QV_NAMES) && !el.closest('.t-qv') && !S.cand && !e.ctrlKey && !e.metaKey) { qvOpen(val('data-cand'), el); return; }
+      go({ cand: val('data-cand') }); return;
+    }
+    if ((el = at('[data-qv-step]'))) { qvStep(Number(val('data-qv-step'))); return; }
+    if ((el = at('[data-qv-close]'))) { qvClose(); return; }
     if ((el = at('[data-move]'))) {
       const p = el.getAttribute('data-move').split('|'), c = DB.byId[p[0]];
       /* A profile goes to a client with its write-up, read and approved first. */
@@ -8311,7 +8404,7 @@
     if ((el = at('[data-go]'))) { go(JSON.parse(el.getAttribute('data-go'))); return; }
     /* The whole card is a door, written as the trailing fallback so any
        control inside it wins (Sales's rule). */
-    if ((el = at('[data-open]'))) { const p = el.getAttribute('data-open').split(':'); if (p[0] === 'req') go({ req: p[1] }); else if (p[0] === 'cand') go({ cand: p[1] }); return; }
+    if ((el = at('[data-open]'))) { const p = el.getAttribute('data-open').split(':'); if (p[0] === 'req') go({ req: p[1] }); else if (p[0] === 'cand') { if (S.cand) go({ cand: p[1] }); else qvOpen(p[1], el); } return; }
     /* A click outside the bell, the dialer or an open menu closes it. */
     if (!at('#ntfPanel') && !at('#ntfBell')) { const p = byId('ntfPanel'); if (!p.hidden) { p.hidden = true; byId('ntfBell').setAttribute('aria-expanded', 'false'); } }
     if (!at('#dialAnchor')) closeDial();
@@ -8439,7 +8532,7 @@
     /* Enter means the obvious next thing at every state of a call (Sales):
        start it, log it. 1 to 8 pick the outcome while logging. */
     if (e.target.id === 'dialNum' && e.key === 'Enter') { e.preventDefault(); dialGo(); return; }
-    if (e.target.id === 'histNote' && e.key === 'Enter') { e.preventDefault(); histAdd(DB.byId[S.cand]); return; }
+    if (e.target.id === 'histNote' && e.key === 'Enter') { e.preventDefault(); histAdd(DB.byId[S.cand || S.pv]); return; }
     if (e.target.id === 'meCode' && e.key === 'Enter') { e.preventDefault(); meCode(); return; }
     if (e.target.id === 'passNote' && e.key === 'Enter' && PASSING) {
       e.preventDefault();
@@ -8447,6 +8540,11 @@
       passWith(DB.byId[PASSING.id], 'other', e.target.value.trim()); return;
     }
     if (e.key === 'Escape' && PASSING) { PASSING = null; paint(); return; }
+    /* The quick view: ← and → step through the list, Escape puts it away. */
+    if (S.pv && byId('qvHost').firstChild && !canvasShown()) {
+      if (!typing && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { e.preventDefault(); qvStep(e.key === 'ArrowRight' ? 1 : -1); return; }
+      if (e.key === 'Escape') { qvClose(); return; }
+    }
     /* A call waiting to be logged: 1 to 8 pick the outcome and Enter logs
        it, while nothing is typed; a typed sentence is a correction. */
     if (PENDING && canvasShown()) {

@@ -1195,3 +1195,69 @@ body.is-portal .aimy-overlay { display: none !important; }
 .aimy-toast-undo:hover { background: color-mix(in srgb, var(--brand) 14%, transparent); }
 .aimy-toast-undo:active { transform: scale(0.97); }
 .aimy-toast-undo:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* ══ THE QUICK VIEW ═══════════════════════════════════════════════════════
+   A candidate opened from a list, over the list. Sales's drawer mechanism
+   (the rail's on a narrow screen): the same scrim, ground, edge and shadow,
+   starting below the top bar, from the right because the list it came
+   from stays readable on the left. Two columns: who they are and the verb
+   their stage asks for, then everything that happened to them. Each
+   scrolls on its own so the verb never leaves while the history is read. */
+.t-qv-scrim {
+  position: fixed; z-index: 690;
+  top: var(--topbar-height); right: 0; bottom: 0; left: 0;
+  background: rgba(10, 14, 18, 0.5);
+}
+:root[data-theme="light"] .t-qv-scrim { background: rgba(16, 24, 40, 0.28); }
+.t-qv {
+  position: fixed; z-index: 700;
+  top: var(--topbar-height); right: 0; bottom: 0;
+  width: min(1040px, calc(var(--vp-w) - 56px));
+  display: flex; flex-direction: column;
+  background: var(--panel-bg);
+  border-left: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-xl);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  outline: none;
+}
+.t-qv-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 20px; border-bottom: 1px solid var(--glass-border);
+}
+.t-qv-steps { display: inline-flex; align-items: center; gap: 6px; }
+.t-qv-step { width: 34px; padding: 0; justify-content: center; }
+.t-qv-step:disabled { opacity: 0.4; cursor: default; }
+.t-qv-at { margin-left: 6px; font-size: 13px; color: var(--d100); font-variant-numeric: tabular-nums; }
+.t-qv-body {
+  flex: 1; min-height: 0;
+  display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+}
+.t-qv-who, .t-qv-hist { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 20px; }
+.t-qv-who { display: flex; flex-direction: column; gap: 14px; border-right: 1px solid var(--glass-border); }
+.t-qv-hist > .rc { margin-top: 0; }
+/* The card keeps its height on a short screen; the column scrolls instead. */
+.t-qv-who > * { flex-shrink: 0; }
+.t-qv-facts { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 0 4px; font-size: 13px; color: var(--d100); }
+.t-qv-facts .b-ghost { margin-top: 4px; }
+/* The page behind does not scroll under the panel. */
+.is-qv .page-scroll { overflow: hidden; }
+
+/* Narrower: one column, who they are above the history, one scroll. */
+@media (max-width: 860px) {
+  .t-qv-body { display: block; overflow-y: auto; overscroll-behavior: contain; }
+  .t-qv-who, .t-qv-hist { overflow: visible; }
+  .t-qv-who { border-right: 0; border-bottom: 1px solid var(--glass-border); }
+}
+@media (max-width: 640px) {
+  .t-qv { width: var(--vp-w); border-left: 0; }
+  .t-qv-head { padding: 8px 16px; }
+  .t-qv-who, .t-qv-hist { padding: 16px; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .t-qv.is-in { animation: t-qv-in 220ms var(--ease-out); }
+  .t-qv-scrim.is-in { animation: t-qv-fade 220ms var(--ease-out); }
+}
+@keyframes t-qv-in { from { transform: translateX(32px); opacity: 0; } }
+@keyframes t-qv-fade { from { opacity: 0; } }
