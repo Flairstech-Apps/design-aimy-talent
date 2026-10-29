@@ -1,0 +1,18 @@
+{
+  "v": 4,
+  "createdOnFiles": { "v": 1, "at": "2026-10-27T21:00:00Z" },
+  "lists": "css",
+  "title": "AiMY Talent",
+  "order": ["cover", "funnel", "leak", "gaps", "opening", "loop", "built", "today", "candidates", "requisitions", "calls", "diary", "find", "assessments", "client", "reports", "trust", "decisions", "tests", "close"],
+  "sections": {
+    "research": { "description": "What the research found: today’s funnel, the market and the open ground", "start": "cover" },
+    "product": { "description": "What we built in AiMY Talent, desk by desk and tab by tab", "start": "built" },
+    "next": { "description": "Trust and the law, the decisions we need, and what we test first", "start": "trust" }
+  },
+  "faces": {
+    "poppins": { "family": "Poppins", "href": "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" }
+  },
+  "designSystems": [
+    { "title": "AiMY Design System", "namespace": "aimy", "artifact": "https://claude.ai/artifact/N4FiqRMgLAZ1LQhqBwRMTo", "version": null, "copiedAt": "2026-10-27T21:00:00Z" }
+  ]
+}

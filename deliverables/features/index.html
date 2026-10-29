@@ -1,0 +1,845 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AiMY Talent Features</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f6f7fb;
+  --surface: #ffffff;
+  --surface-2: #f1f2f8;
+  --line: #e2e4ee;
+  --ink: #171a1c;
+  --ink-2: #4a5160;
+  --ink-3: #737b8c;
+  --purple: #7a3ff0;
+  --purple-soft: #efe8fe;
+  --blue: #3369ff;
+  --blue-soft: #e8eeff;
+  --mark: #fff0b3;
+  --shadow: 0 1px 2px rgba(23,26,28,.04), 0 6px 20px rgba(23,26,28,.05);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #171a1c;
+    --surface: #1f2326;
+    --surface-2: #262b2f;
+    --line: #333a40;
+    --ink: #eef2f6;
+    --ink-2: #b9c2cc;
+    --ink-3: #8b95a1;
+    --purple: #b28cff;
+    --purple-soft: #2c2440;
+    --blue: #7c9dff;
+    --blue-soft: #1f2a48;
+    --mark: #5a4a12;
+    --shadow: none;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #171a1c;
+  --surface: #1f2326;
+  --surface-2: #262b2f;
+  --line: #333a40;
+  --ink: #eef2f6;
+  --ink-2: #b9c2cc;
+  --ink-3: #8b95a1;
+  --purple: #b28cff;
+  --purple-soft: #2c2440;
+  --blue: #7c9dff;
+  --blue-soft: #1f2a48;
+  --mark: #5a4a12;
+  --shadow: none;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 88px; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.6 'Poppins', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--blue); }
+code {
+  font: 12.5px/1.4 ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 1px 6px;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+mark { background: var(--mark); color: inherit; border-radius: 3px; }
+
+.wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+
+/* Head */
+.hero { padding: 56px 0 28px; }
+.eyebrow {
+  font-size: 12px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--purple); margin: 0 0 10px;
+}
+.hero h1 { font-size: clamp(30px, 4.4vw, 46px); line-height: 1.12; font-weight: 600; margin: 0 0 14px; letter-spacing: -.01em; }
+.hero p.lead { font-size: 17px; color: var(--ink-2); max-width: 70ch; margin: 0 0 22px; }
+.facts { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.facts li {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+  padding: 6px 14px; font-size: 13px; color: var(--ink-2);
+}
+.facts b { color: var(--ink); font-weight: 600; }
+
+/* Toolbar */
+.bar {
+  position: sticky; top: 0; z-index: 20;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.bar .wrap { display: flex; align-items: center; gap: 12px; padding-top: 12px; padding-bottom: 12px; }
+.search {
+  flex: 1 1 auto; display: flex; align-items: center; gap: 8px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 0 12px;
+}
+.search:focus-within { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-soft); }
+.search svg { flex: none; color: var(--ink-3); }
+.search input {
+  flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink);
+  font: inherit; padding: 10px 0;
+}
+.count { font-size: 13px; color: var(--ink-3); white-space: nowrap; }
+.theme {
+  flex: none; width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink-2); cursor: pointer; display: grid; place-items: center;
+  transition: transform 140ms ease-out;
+}
+.theme:active { transform: scale(.96); }
+
+/* Layout */
+.layout { display: grid; grid-template-columns: 236px minmax(0, 1fr); gap: 40px; padding-top: 28px; padding-bottom: 80px; }
+nav.toc { position: sticky; top: 88px; align-self: start; max-height: calc(100vh - 110px); overflow: auto; padding-bottom: 20px; }
+.toc h4 { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin: 18px 0 6px; }
+.toc h4:first-child { margin-top: 0; }
+.toc a {
+  display: flex; justify-content: space-between; gap: 8px;
+  padding: 5px 10px; border-radius: 8px; text-decoration: none; color: var(--ink-2); font-size: 14px;
+}
+.toc a:hover { background: var(--surface-2); color: var(--ink); }
+.toc a.on { background: var(--purple-soft); color: var(--purple); font-weight: 500; }
+.toc a span { color: var(--ink-3); font-size: 12px; }
+.toc a.on span { color: inherit; }
+.toc a.gone { display: none; }
+
+/* Groups and sections */
+.group-h { font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--purple); margin: 8px 0 4px; }
+.group + .group { margin-top: 56px; }
+.group-say { color: var(--ink-2); margin: 0 0 22px; max-width: 72ch; }
+section.sec { margin-bottom: 40px; }
+section.sec[hidden] { display: none; }
+.sec-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 14px; margin: 0 0 6px; }
+.sec-h h2 { font-size: 24px; font-weight: 600; margin: 0; line-height: 1.25; }
+.sec-say { color: var(--ink-2); margin: 0 0 16px; max-width: 76ch; }
+
+.shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin: 0 0 18px; }
+.shot {
+  margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.shot button { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
+.shot img { display: block; width: 100%; height: 220px; object-fit: cover; object-position: top left; }
+.shots.one .shot img { height: 340px; }
+.shot figcaption { font-size: 13px; color: var(--ink-3); padding: 9px 14px; border-top: 1px solid var(--line); }
+
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px 16px;
+  box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px; min-width: 0;
+}
+.card[hidden] { display: none; }
+.card.wide { grid-column: 1 / -1; }
+.card h3 { font-size: 16px; font-weight: 600; margin: 0; line-height: 1.35; }
+.where { display: flex; flex-wrap: wrap; gap: 6px; }
+.card ul { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 14px; }
+.card li { margin: 3px 0; }
+.card li::marker { color: var(--purple); }
+.card ul ul { padding-left: 16px; margin-top: 2px; }
+.card ul ul li::marker { color: var(--ink-3); }
+.rule {
+  font-size: 13.5px; color: var(--ink-2); background: var(--blue-soft); border-radius: 10px; padding: 9px 12px; margin: 0;
+}
+.rule b { color: var(--blue); font-weight: 600; }
+.refs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 4px; }
+.ref {
+  font-size: 11.5px; font-weight: 500; color: var(--purple); background: var(--purple-soft);
+  border-radius: 999px; padding: 2px 9px;
+}
+
+.empty { display: none; text-align: center; padding: 60px 20px; color: var(--ink-3); }
+.empty.on { display: block; }
+
+/* Legend */
+.legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.legend div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; font-size: 14px; color: var(--ink-2); }
+.legend b { display: block; color: var(--ink); font-weight: 600; margin-bottom: 2px; }
+
+/* Lightbox */
+dialog.lb {
+  border: 0; padding: 0; background: transparent; max-width: min(1400px, 96vw); max-height: 94vh; overflow: auto;
+}
+dialog.lb::backdrop { background: rgba(10,12,14,.78); }
+dialog.lb img { display: block; width: 100%; height: auto; border-radius: 10px; }
+dialog.lb form { position: sticky; top: 0; display: flex; justify-content: flex-end; }
+dialog.lb button {
+  margin: 8px; border: 0; border-radius: 999px; padding: 6px 14px; font: 500 13px 'Poppins', sans-serif;
+  background: #fff; color: #171a1c; cursor: pointer;
+}
+dialog.lb[open] { animation: lbIn 200ms cubic-bezier(.23,1,.32,1); }
+@keyframes lbIn { from { opacity: 0; transform: scale(.97); } }
+
+footer { color: var(--ink-3); font-size: 13px; border-top: 1px solid var(--line); padding: 24px 0 48px; }
+
+@media (max-width: 1000px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 0; padding-top: 0; }
+  nav.toc {
+    position: sticky; top: 65px; z-index: 15; max-height: none; overflow-x: auto; overflow-y: hidden;
+    display: flex; gap: 6px; padding: 10px 16px; margin: 0 -16px 20px;
+    background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line); scrollbar-width: none;
+  }
+  nav.toc::-webkit-scrollbar { display: none; }
+  .toc h4 { display: none; }
+  .toc a { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 12px; font-size: 13px; }
+  .toc a span { display: none; }
+  html { scroll-padding-top: 130px; }
+}
+@media (max-width: 720px) {
+  .wrap { padding: 0 16px; }
+  .hero { padding: 36px 0 20px; }
+  .cards { grid-template-columns: minmax(0, 1fr); }
+  .shot img, .shots.one .shot img { height: 200px; }
+  .count { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  dialog.lb[open] { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="hero wrap">
+  <p class="eyebrow">AiMY Talent · prototype</p>
+  <h1>Every feature we built, and how it works</h1>
+  <p class="lead">Read from the prototype's code (<code>assets/talent.js</code> and <code>index.html</code>). Each card says where the feature lives, what it does, the rule behind it and the research or decision it answers. Nothing here is a plan: it all runs in the prototype today, on sample data.</p>
+  <ul class="facts" id="facts"></ul>
+</header>
+
+<div class="bar">
+  <div class="wrap">
+    <label class="search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Search features, e.g. Undo, callback, CEFR, approval" autocomplete="off" aria-label="Search features">
+    </label>
+    <span class="count" id="count" aria-live="polite"></span>
+    <button class="theme" id="theme" type="button" aria-label="Switch light or dark">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="wrap layout">
+  <nav class="toc" id="toc" aria-label="Sections"></nav>
+  <main id="main">
+    <p class="empty" id="empty">Nothing matches that. Try a shorter word.</p>
+  </main>
+</div>
+
+<footer class="wrap">
+  Read from the <code>engy/aimy-talent</code> branch of the Talent prototype. Telephony, CV reading, transcripts and scoring are fixtures: the screens and rules are real, the data is sample data.
+</footer>
+
+<dialog class="lb" id="lb">
+  <form method="dialog"><button>Close</button></form>
+  <img id="lbImg" alt="">
+</dialog>
+
+<script>
+/* Each section: id, title, where, say, shots, cards.
+   Each card: n (name), at (where, list), d (what it does, list; a nested array is sub-points), r (the rule), refs. */
+const GROUPS = [
+{ id: 'how', title: 'How it works underneath', say: 'Three things every screen relies on.',
+  secs: [
+  { id: 'basics', title: 'Desks, Undo and saved state', cards: [
+    { n: 'Desks and who sees what', at: ['?as=rania', '?as=hesham', '?as=dina', '?as=jana'],
+      d: ['The default desk is Omar, the recruiter. Switching desk shows the same data through another person\'s eyes: Rania (hiring manager), Hesham (BU Director), Dina (HR Manager), Jana (client, Northwind).',
+          'Recruiter and HR see every candidate.',
+          'The hiring manager and BU Director see a candidate only once they reach the technical round.',
+          'The client sees only profiles sent to them, and never those marked Not progressing.'],
+      r: '<b>Rule:</b> the desk travels with every in-product link, never onto outside pages.' },
+    { n: 'Undo on every write', at: ['toast(msg, undo, sub)'],
+      d: ['Almost every action is one press, with no confirm dialog, followed by a toast with Undo.',
+          'The toast lasts 6 seconds with Undo and 4 without. A new toast replaces the current one.',
+          'Undo restores exactly the fields that changed and removes records, history events and bell items the action created.'],
+      r: '<b>Rule:</b> one press plus Undo, never "Are you sure?".' },
+    { n: 'Saved state', at: ['localStorage: aimy-talent:db:v1'],
+      d: ['Only the changes are saved, on top of the seed data, so "Reset to seed" in the prototype panel wipes them cleanly.',
+          'Chats, UI preferences and the chosen language each have their own key.'] }
+  ]}
+  ]},
+
+{ id: 'rec', title: 'The recruiter\'s tabs', say: 'Omar\'s row: Today, Candidates, Requisitions, Calls, Diary, Find candidates, Assessments, Reports. The heading of every tab is the tab switcher, as in Sales.',
+  secs: [
+  { id: 'today', title: 'Today', where: 'no ?on', say: 'Opens on a briefing of exceptions, not a database.', shots: [['today', 'Today, the recruiter\'s briefing']], cards: [
+    { n: 'Today briefing and Start tiles', at: ['topBrief', 'data-start'], refs: ['Sales: open on a briefing'],
+      d: ['Lists decisions owed (with the oldest one\'s age), interviews today, the first requisition at risk, how long clients have owed answers, missed calls and callbacks due.',
+          'Four Start tiles:', ['Decide the oldest one: opens its requisition at its stage', 'Send profiles: jumps to technical results that are in', 'Call the next one: starts a call run', 'Find people: opens the find chat']] },
+    { n: 'The rail', at: ['paintRail'],
+      d: ['A reading card: decisions out of the people on your open requisitions, with open requisitions and interviews today as pills.',
+          'Doors to the next interview, to Calls (to call, missed, callbacks due) and to profiles to clients (your average days to the first profile against the team\'s).',
+          'Other desks get their own version: what waits on them, or for HR, requisitions at risk.'] },
+    { n: 'Decisions waiting on you', at: ['data-more'], refs: ['M8'],
+      d: ['A decision is an interview whose result is in, or an assessment that is done, on an open requisition.',
+          'Oldest first. Each row has a stage verb ("Send the profile", "Passed HR") that moves the person forward in one press.',
+          'Three rows, then "Show the other N".',
+          'A plain-text Reads line names the records each block uses, flagging those new to Talent.'] },
+    { n: 'Not told yet', at: ['TELL_DAYS = 5'], refs: ['M4', 'M7'],
+      d: ['People marked Not progressing or Client declined who have not been told, against a 5-day limit: "Tell them by…" or "Past the 5-day limit".',
+          'Shows the HR template filled in for one real person, in a message bubble, with the channel it goes by.',
+          'Send one row, or tick several and "Send the answer to N people".'],
+      r: '<b>Rule:</b> a person sends it; AiMY only suggests. WhatsApp only if they opted in, otherwise email.' },
+    { n: 'Interviews today, with Prepare me', refs: ['Sales M1'],
+      d: ['Today\'s interviews by time. "Prepare me" opens a brief in the AiMY canvas:',
+          ['who is in the room, and asking consent to record', 'the interview template\'s agenda', 'what to probe: must-haves the CV is silent on, or where an interview found something different', 'what is already confirmed', 'what the candidate told us']],
+      r: '<b>Rule:</b> "Your verdict: AiMY never fills it." Other interviewers\' feedback stays hidden until yours is sent.' },
+    { n: 'Waiting on others, with Nudge', refs: ['R5'],
+      d: ['Candidates waiting on a client, interviewer, hiring manager or candidate past the stage\'s usual days, with the sum in the header.',
+          'Cites the research: 46 of 105 lost days were spent waiting for feedback.',
+          '"Nudge the client / Rania / the interviewer": one press, once per person. Nothing goes to the candidate.'] },
+    { n: 'Likely to miss their date', at: ['askMove'],
+      d: ['At risk when the usual days from the furthest candidate\'s stage to an accepted offer are more than the days left.',
+          'The one action depends on why: before the technical round it is "Find more people"; otherwise "Ask Rania to move it", which puts a Target date item in her bell.',
+          '"Open all N in Requisitions" links to the At risk filter.'],
+      r: '<b>Rule:</b> rule-based arithmetic, not a model. Each row says its reason.' }
+  ]},
+
+  { id: 'cands', title: 'Candidates', where: '?on=cands', say: 'Everyone active on your open requisitions. Recruiter and HR.', shots: [['candidates', 'Candidates, cards view']], cards: [
+    { n: 'Candidate queue', at: ['?q=', '?find=', '?rq=', '?p='], refs: ['Sales B1'],
+      d: ['Five filters that add up to All: All, Waiting on you, First contact, With the client, Waiting on others. "Not told yet" sits apart.',
+          'Search by name, skill, phone, email, role or account. A requisition menu narrows to one. "Show everyone" clears both.',
+          'Cards or List, remembered per device: 15 cards or 40 list rows a page.',
+          'Each list row has one verb: Send the answer, Approve first contact, Call, or Open.'] },
+    { n: 'First contact, with the trust card', refs: ['R8', 'Egypt Law 151/2020'],
+      d: ['For web prospects, a Trust and law card:', ['Egypt Law 151 grace period ends around 1 Nov 2026', 'Email with a privacy notice: allowed', 'WhatsApp: blocked without opt-in', 'Scraping LinkedIn: never', 'No emotion or personality read from face or voice'],
+          'Tick several and "Approve first contact for N people". One Undo reverts all.'],
+      r: '<b>Rule:</b> AiMY sends one short message naming the role, nothing about pay.' },
+    { n: 'Candidate card', at: ['candCard', 'data-open="cand:id"'], refs: ['R2', 'R3'],
+      d: ['Stage, a Returning tag, source, role, experience, place, languages. If they applied before, a line says what stopped them last time.',
+          'Score: "N of M" with a dot per must-have. Full purple means shown on the CV, dashed means not. Plus a chip: "N not known yet", "N partly" or a fit lane.',
+          'One verb by stage (Approve first contact, Send the assessment, Book the interview, Prepare the offer, Send the offer, Call…) and an exit button beside it.',
+          'Pressing the card opens the profile.'],
+      r: '<b>Rule:</b> the score is a count, never a percentage.' },
+    { n: 'Not progressing, with a reason', at: ['outPicker'],
+      d: ['Pressing an exit opens its reason picker in place. Not progressing has 7 reasons; "Other" needs one line.',
+          'The reason is kept with us: the answer they get does not quote it.',
+          '"Keep X in" cancels. Pressing a reason is the exit, with Undo.'] }
+  ]},
+
+  { id: 'cand', title: 'One candidate', where: '?cand=k41', say: 'The full record, read off the record in one line at the top.', shots: [['profile', 'A candidate\'s profile']], cards: [
+    { n: 'Header, contact and consent', at: ['?edit=1', '?me='], refs: ['P9', 'R8'],
+      d: ['Breadcrumb: Today / Requisitions / the requisition / the candidate, the current page set apart.',
+          'Edit, and "Add to another requisition": a second application for the same person.',
+          'Now, experience, how to reach them (phone, email, do-not-call, callback window), skills, what they said on calls, summary.',
+          'Their own profile link with Copy and "See what they see".',
+          'Consent: CV and details (when, how), WhatsApp (opted in, or blocked), recording.'],
+      r: '<b>Rule:</b> the client sees none of the contact, calls or consent parts.' },
+    { n: 'The lead line and its actions',
+      d: ['One sentence on where they stand. For exits it gives the reason and whether they have been told.',
+          'If owed an answer: the message as it will arrive, and "Send the answer".',
+          'Otherwise: Call (first at early stages), the stage move and the exit button.'] },
+    { n: 'Client pass with a reason', refs: ['P1', 'R2'],
+      d: ['Reasons: Spoken language, Experience, Salary, Notice period, Skills gap, Other.',
+          'Recorded with the day and who, and the recruiter gets a bell item: owed an answer within 5 days.',
+          'The toast counts it: "Nth decline at Northwind this month for spoken language. It feeds matching for Northwind only."'] },
+    { n: 'Write-up before a profile goes',
+      d: ['"Send the profile" never sends at once. It opens AiMY\'s draft in place: who they are, must-haves met, what interviews confirmed, what is not known yet, notice.',
+          'Editable, never empty. "Approve and send to <client>" moves them to Sent; "Not yet" cancels.',
+          'The sendout record starts: sent, then opened by the client, then decided.'],
+      r: '<b>Rule:</b> never salary, margin or internal notes.' },
+    { n: 'Evidence against the success profile', at: ['fitCard', 'data-ask-must'], refs: ['D2', 'R3'],
+      d: ['One row per must-have: the CV quoted (or "The CV is silent here. Not the same as Not met"), what the deepest interview found, and a status: Confirmed, Differs, Partly shown, Not shown, Not known.',
+          'For unknowns: "Ask <name>" or "Check in interview" adds it to the next call and interview kit.',
+          'Footer: the criteria version, set by the hiring manager. "Overridable · you decide".'] },
+    { n: 'Assessment on this application', refs: ['R4'],
+      d: ['Not sent: "Send the assessment". Sent: copy their test link, or open it as them.',
+          'Done: the score (a percent, or a CEFR level for language checks), how it was scored, integrity flags apart from the score, and each question right or missed.',
+          '"Confirm X as the score" when a person is needed.'],
+      r: '<b>Rule:</b> a flag never changes the score.' },
+    { n: 'Interviews: book, debrief, recording', at: ['?debrief='],
+      d: ['Booking: 9 slots from the interviewer\'s free time (tomorrow to 3 days ahead).',
+          'Each interview: Open the debrief, Nudge the interviewer once, Upload the recording.',
+          'A recording is transcribed with a summary, and AiMY\'s suggested ratings are kept apart from the interviewer\'s.'] },
+    { n: 'Offer, approvals and onboarding', at: ['?approve='], refs: ['M3'],
+      d: ['"Prepare the offer" drafts the packet: salary inside the budget band, near what they expect. It goes to the hiring manager and BU Director at once.',
+          'A salary stepper (±500): changing it after an approval sends it back to both.',
+          '"Send the offer" appears only when both said yes. "They accepted" sets a join day from the notice period.',
+          'Once accepted: an onboarding checklist with owners (IT access, contract, documents, a buddy, day one).'] },
+    { n: 'Day-30 and day-90 check-ins', refs: ['P7'],
+      d: ['Day 30: settling in well, some concerns, at risk of leaving. Day 90: stayed or left. Buttons appear when each is due.',
+          'A learning card shows N of 20 day-90 check-ins before AiMY proposes anything.'],
+      r: '<b>Rule:</b> separate from probation. Answers feed learning in aggregate only.' },
+    { n: 'History, read for meaning',
+      d: ['Everything, newest first, grouped by day. Recruiter, HR or hiring manager can add a line.',
+          'If a note reads as a pass or a no, AiMY says how it read it and offers "Move them to X" or "Mark as not progressing", plus "Leave it".'],
+      r: '<b>Rule:</b> AiMY never moves anyone itself.' },
+    { n: 'Add a candidate from a CV', at: ['?on=add&req='],
+      d: ['Drop a PDF or Word file, or use a sample CV. AiMY shows its reading steps, including "Checking whether they are already in the pool".',
+          'Review: editable fields, a warning if there is no phone, a must-have reading.',
+          'A duplicate by name or phone becomes another application of the same person.'],
+      r: '<b>Rule:</b> the CV is read as data; nothing written in it is followed as an instruction.' },
+    { n: 'Moving a stage', at: ['move()'],
+      d: ['One press, forward only. Undo restores the exact fields.',
+          'Moving into an interview stage books it 2 days ahead in the interviewer\'s free slots and tells the candidate.',
+          'Moving to Sent starts the sendout.'] }
+  ]},
+
+  { id: 'reqs', title: 'Requisitions', where: '?on=reqs', say: 'Every requisition, at risk first, each with a forecast.', shots: [['requisitions', 'Requisitions with forecasts'], ['newreq', 'Where a new requisition starts'], ['approval', 'A requisition waiting for approval']], cards: [
+    { n: 'Requisitions list', at: ['?q=risk', '?q=nosend'],
+      d: ['Filters with counts: Open, At risk, Waiting on the client, Waiting on you, No profile after 10 days, On hold, Closed, Drafts. The client sees only Open and Closed.',
+          'Find by title, account, hiring manager or candidate.',
+          'Each card: state, days left, seats, replacement or new, level, in progress, with the client, the forecast and an AiMY line.'] },
+    { n: 'Forecast on each card', at: ['FIRST_TARGET = 7'], refs: ['R6'],
+      d: ['"At this pace": the likely fill date against the target, flagged late.',
+          '"First profile": the day it went, or "Not yet, day N", against a 7-day target.'],
+      r: '<b>Rule:</b> rule-based, the same arithmetic as at risk. Not shown to the client.' },
+    { n: 'One requisition', at: ['?req=r1'],
+      d: ['Account, place, seats, dates, state, the need, hiring manager, the stage chain, the success profile (and any rule learned from the client\'s declines).',
+          'Lead: "M of the N profiles sent got a client interview", with the biggest drop, compared to the agency norm of 3 to 5 profiles per interview.',
+          'A funnel (stages reached by 3 or more people), why the client passed, and the candidates.',
+          'Edit, Clone it, Find candidates, Add a candidate.'] },
+    { n: 'Posting and state',
+      d: ['Careers page: publish or unpublish, with the public link.',
+          'Put on hold, reopen, or close it (filled, cancelled by the client, cancelled by the manager). Closing unpublishes.',
+          'HR can reassign the recruiter.'],
+      r: '<b>Rule:</b> candidates still on a closed requisition are told by a person, not by AiMY.' },
+    { n: 'New requisition: where it starts', at: ['?on=newreq&account='],
+      d: ['Replace someone who left (82% of requests are replacements; the share is shown live): pick a leaver and it drafts the same title, level and must-haves, and flags the budget if they left over salary.',
+          'From a briefing: paste kickoff notes and AiMY reads role, account, seats, level, date ("by mid-Dec"), budget, language level, replacement or new. It says what it found and which defaults it used.',
+          'Or start from nothing.'],
+      r: '<b>Rule:</b> the careers page never names the person who left.' },
+    { n: 'Requisition editor', at: ['?req=&edit=1'],
+      d: ['Title, account, level (resets the budget band), seats, target date, replacement or new, billable, place, budget.',
+          'Stage template, assessment, about the role ("Write it with AiMY"), success profile one must-have per line.',
+          'An AiMY line predicts whether opening it needs approval.',
+          'A live edit re-reads candidates against the new profile.'] },
+    { n: 'Approval by exception', at: ['REQ_RULES'], refs: ['D7', 'Ashby / Lever pattern'],
+      d: ['New seat, more than 2 seats, or a budget above its band: the BU Director approves.',
+          'An unbilled client role: the HR Manager approves.',
+          'Anything else opens straight away, and says so.',
+          'The draft shows "Waiting on…, because of…" with Approve and Send it back; each approver gets a bell item.'],
+      r: '<b>Rule:</b> only the exceptions reach approvers; nobody approves their own.' },
+    { n: 'Account page', at: ['?acc=northwind'],
+      d: ['Client since, account manager, the stages they run, the learned rule from their declines.',
+          '"M of N profiles we sent got a client interview", days to the first profile, hiring outcomes, why they passed, open requisitions.'] }
+  ]},
+
+  { id: 'calls', title: 'Calls', where: '?on=calls', say: 'Marked "Design target": telephony for Talent waits on AiMY Phone. Nothing dials; the rules are real.', shots: [['calls', 'Calls, the To call list']], cards: [
+    { n: 'To call, Missed, Today', at: ['?q=missed', '?q=log'],
+      d: ['Order: callbacks first, then phone screens due, then applied and not called, longest waiting first. Do-not-call and bad numbers are left out.',
+          'Each row: the reason, phone, role, and a "Get:" line (notice or salary not on file, then the first must-have the CV is silent on).',
+          'An AiMY line gives the run\'s minutes: about 10 a screen, about 6 in 10 pick up.',
+          'One button, "Call the first N in order", with a menu on it for 5, 10 or all, remembered.'] },
+    { n: 'Callback windows', at: ['CB_WIN'],
+      d: ['This afternoon, This evening, Tomorrow morning, Tomorrow afternoon, Next week. Windows already past are not offered.',
+          'The person comes back into Calls in that window; a window not open yet waits at the end.'],
+      r: '<b>Rule:</b> nothing auto-dials.' },
+    { n: 'Call panel and the brief', refs: ['Sales'],
+      d: ['Ready: who, number, phone or video, which line, "Read the brief". Then live: timer, hold, mute, record, minimise, hang up.',
+          'The brief: how to open, what to get, last time, if they push back, the role.',
+          'Record asks "Have you told them?" first; nothing is transcribed until they are told.'] },
+    { n: 'Read-back and logging',
+      d: ['After hanging up, AiMY reads the call and asks "I read that as passed the screen. Is that right?"',
+          'Eight outcomes, keys 1 to 8. A typed sentence corrects the reading. "What Log will do" is said before the press.',
+          'No answer: "Also send them a message", on by default and previewed. WhatsApp if opted in, else email.',
+          'Passed moves them to the HR interview and saves notice and salary.'] },
+    { n: 'Call runs', refs: ['Sales callAll'],
+      d: ['A run is one conversation: each brief arrives in turn and the recruiter presses Call for every person.',
+          '"Log it and call <next>", Skip, Stop the run. Ends with what it was worth: got through, passed, booked for HR.'],
+      r: '<b>Rule:</b> unlike Sales\'s 30-second auto-dial, Talent never dials the next person by itself.' },
+    { n: 'AiMY coaches the run', refs: ['AIMY-2666', 'R8'],
+      d: ['Every 3 calls, AiMY reads those that got through. If one habit shows on 2 of 3, it pauses with one tip: say hello first, ask then listen, say what happens next.',
+          '"Got it, carry on" or "Not now". The summary says whether the tip showed on the calls after.'],
+      r: '<b>Rule:</b> coaches only the recruiter\'s speech; no emotion or personality is read.' },
+    { n: 'Inbound, dialer and voicemail',
+      d: ['A ringing card says why a known caller is probably calling. Missed calls leave a voicemail strip with play and a waveform.',
+          'The dialer names the number as you type: on file, not on file, or asked not to be called.'] }
+  ]},
+
+  { id: 'diary', title: 'Diary', where: '?on=diary&day=', say: 'Ported from Sales. Recruiter and hiring manager.', shots: [['diary', 'The Diary: month and the day\'s agenda']], cards: [
+    { n: 'Month and the day\'s agenda', refs: ['Sales B11'],
+      d: ['Monday first, Friday and Saturday shaded as the Cairo weekend. Up to 3 dots a day: interviews, client interviews, callbacks, start dates, day-30 and day-90 check-ins, results not in.',
+          'The chosen day\'s agenda with row actions: Prepare me, Call <name> in their window, Nudge.',
+          '"Next in the diary" and an AiMY line on the week.'] },
+    { n: 'Results not in',
+      d: ['Every interview held with no result, oldest first, with how many days.',
+          'The recruiter can nudge once; the hiring manager gets "Write it" for their own.'] }
+  ]},
+
+  { id: 'find', title: 'Find candidates', where: '?on=find', say: 'Pool first, then the web. Criteria are shown before the search, not after.', shots: [['find', 'Find, with editable criteria']], cards: [
+    { n: 'Start from', refs: ['P4', 'R3'],
+      d: ['Like the person who left (the default; 82% are replacements): their role\'s must-haves become the criteria.',
+          'An open requisition (its success profile), or describe or paste a JD, CV or skills.'] },
+    { n: 'Criteria editor', at: ['data-crit-ed'],
+      d: ['Each line editable, Required or Preferred, removable. Up to 8; "four to six works best", with a warning past 6.',
+          'Required counts double in the score.'] },
+    { n: 'Where to look', refs: ['D10'],
+      d: ['Our talent pool, the public web, Apollo (work emails only). SignalHire is shown but parked.'],
+      r: '<b>Rule:</b> never LinkedIn scraping. People deleted at their request never appear.' },
+    { n: 'Results, pool first',
+      d: ['Two tabs: In your pool and Web prospects. Pool people are recent leavers in the same role family, Warm or "Ask first".',
+          'Web people name the page and when it was read; nobody is contacted.',
+          'Each row: "N of M required met, N preferred, N not known yet", and Why.',
+          'Add one, add several, or "Add the 5 strongest". Web people need first-contact approval.'] },
+    { n: 'Report wrong data',
+      d: ['On web people: Not this person, Wrong job or company, Wrong email, Out of date. Reported to the data team, with Undo.',
+          '"Not this person" leaves them out of every search.'] },
+    { n: 'Saved searches', refs: ['R3'],
+      d: ['A saved search keeps its start, criteria and sources, and reruns quietly each time Find opens.',
+          'Pool people new since the last run show as "N new" on the row and on the tab. "Run it" marks them seen.'] },
+    { n: 'Finding through the chat and shortlists', at: ['?on=draft'], refs: ['Sales B8'],
+      d: ['Typing "find…" in the bar opens the canvas: AiMY asks pool or web, reads the criteria back, then proposes names.',
+          'A draft shortlist is "Not saved yet". Leaving it shows a gate at the top of the page: Save, Discard or Stay.'] }
+  ]},
+
+  { id: 'asmts', title: 'Assessments', where: '?on=asmts', say: 'Short, phone-friendly tests, scored with consent, with a person in the loop.', shots: [['assessments', 'Assessments with their checks'], ['assessment', 'One assessment, the checklist']], cards: [
+    { n: 'Assessments list',
+      d: ['Kind, minutes, questions, pass mark (a percent or CEFR level), "N of 5 checks", taken, average, requisitions using it, "N waiting on a person".',
+          'A question under 40% right says "Worth rewording".'] },
+    { n: 'The checklist', at: ['ASMT_GOOD = 15'], refs: ['R4'],
+      d: ['About N minutes (15 or less is good), works on a phone, a practice question first, everyone hears how they did within 5 days, consent before AiMY scores.',
+          'Practice and Feedback toggle in one press; "Shorten it" opens the editor.'] },
+    { n: 'Language checks give a level', refs: ['R4'],
+      d: ['A language assessment scores on CEFR, A1 to C2. The pass is a level (default C1), not a percentage.',
+          'It reads, for example, "C1 in spoken German, at or above the C1 needed".'] },
+    { n: 'Integrity flags and person review', refs: ['R4'],
+      d: ['Captured while a test is taken: an answer pasted in, left the page twice or more, finished in under a quarter of the usual time, a second voice.',
+          'Candidates can ask a person to score it, or ask for a review after. Those wait on a person until a recruiter confirms the score.'],
+      r: '<b>Rule:</b> flags are said apart from the score, never folded into it, never a verdict.' },
+    { n: 'Item insights', refs: ['P3'],
+      d: ['Each question\'s pass rate against later outcomes: predicts client acceptance, points the wrong way, or predicts nothing.',
+          'For the worst question, AiMY proposes a rewording for HR to approve.'],
+      r: '<b>Rule:</b> only after 20 people were sent to a client, with at least 5 right and 5 wrong.' },
+    { n: 'Editor and new assessments', at: ['?asmt=&edit=1'],
+      d: ['Title, kind, pass mark or CEFR level, questions with right answers or the points a good answer covers.',
+          'From the bar, AiMY drafts one open question per must-have.'] }
+  ]},
+
+  { id: 'reports', title: 'Reports', where: '?on=reports&period=&account=', say: 'Equal cards, each with a target and a trend. Details show on hover and pin on press.', shots: [['reports', 'Reports, the tiles and the staffing board']], cards: [
+    { n: 'Report tiles', refs: ['R6'],
+      d: ['Filters: Opened in 30, 60 or 90 days, and account. Kept in the link; every figure counts the same requisitions.',
+          'Tiles: requisitions, seats, days to send profiles (target 7), days to hire (30), days to join (60), HR after phone screen (70%), technical after HR (55%), client interview per profile sent (25%).',
+          'Each: the number, the target and how far off, one line, a 3-span sparkline.',
+          'An empty period falls back to all 90 days and says so.'] },
+    { n: 'How it is counted', at: ['defPop', 'data-def'],
+      d: ['Opens on hover, pins on press; Escape or a click outside unpins.',
+          'Unit, where it starts and stops, out of what, what not to mix it with, the norm, the target and who set it, how the trend is read.'],
+      r: '<b>Rule:</b> one definition per number before any number ships.' },
+    { n: 'Staffing board', refs: ['R2', 'R6', 'M10'],
+      d: ['Profiles sent per hire (target 6), offers declined (15%), hired not started, cancelled by the client.',
+          'Billed hires, always beside day-90 retention (target 85%).'],
+      r: '<b>Rule:</b> billed hires are never shown alone.' },
+    { n: 'Where people are lost', refs: ['P2'],
+      d: ['"N of M screened were sent to a client. Most are lost before the client, not at it."',
+          'Profiles per client interview against the agency norm of 3 to 5, and "Open the N requisitions with no profile after 10 days".'] },
+    { n: 'Where time goes', refs: ['R5'],
+      d: ['Days past the usual time on open requisitions, by step and who it waits on, the recruiter\'s own steps included.',
+          '"X of Y days are spent waiting on someone else\'s answer."'] },
+    { n: 'Funnel and breakdowns', refs: ['D5', 'P6'],
+      d: ['The funnel with the biggest loss marked, why clients passed, by account, by role.',
+          'By recruiter (HR only): alphabetical, no bars.'],
+      r: '<b>Rule:</b> not a ranking. Coaching one person lives in AiMY QA.' }
+  ]},
+
+  { id: 'templates', title: 'Templates', where: '?on=templates', say: 'HR Manager only.', cards: [
+    { n: 'Stage templates',
+      d: ['Three templates: client roles, Northwind, FlairsTech\'s own roles. Stage chips in a fixed order; one press toggles a stage.',
+          'Each stage maps to one of six groups (Screen, Assess, Interview, Client, Offer, Hired) so funnels compare across clients.'],
+      r: '<b>Rule:</b> core stages can\'t be switched off, nor a stage someone is on.' },
+    { n: 'Interview templates',
+      d: ['Agendas for HR, technical, managerial, client and client technical interviews. Edit, add or remove items.',
+          'AiMY adds what the CV is silent on to whichever template is used.'] }
+  ]}
+  ]},
+
+{ id: 'desks', title: 'The other desks', say: 'The same data, shown to each person for the question they own.',
+  secs: [
+  { id: 'hm', title: 'Hiring manager', where: '?as=rania', refs: ['M11'], cards: [
+    { n: 'Hiring manager desk', refs: ['M11', 'M3'],
+      d: ['Brief: asks waiting, open requisitions across accounts, at risk. "You see candidates once the recruiter advances them; until then they are a count."',
+          'Starts: Approve offers, Debriefs you owe, Ask for a hire, Reports.',
+          'Asks grouped by account: approve an offer (fit and salary), your debriefs, clients owing an answer, new on your shortlist, hiring requests landing as drafts.',
+          'Tabs: Today, Requisitions, Diary, Reports.'] }
+  ]},
+  { id: 'hr', title: 'HR Manager', where: '?as=dina', shots: [['hrdesk', 'The HR Manager\'s desk']], cards: [
+    { n: 'HR Manager desk', refs: ['P6'],
+      d: ['Brief: at risk, offers waiting on an approver, debriefs owed, a load imbalance (a recruiter over 1.4 times the average).',
+          'Requisitions to approve (only the exceptions).',
+          'At-risk rows with Reassign: each recruiter\'s load and "AiMY\'s pick", the lightest load.',
+          'The team\'s load, alphabetical, not a league table. Learning proposals behind the sample gate.'] }
+  ]},
+  { id: 'bu', title: 'BU Director', where: '?as=hesham', cards: [
+    { n: 'BU Director desk', refs: ['S1', 'S3', 'M10'],
+      d: ['Brief: offers waiting on budget and headcount ("Fit is the hiring manager\'s question, not yours"), requisitions at risk, the most common client pass reason.',
+          'Starts: Answer the budget question, Request a hire, Why clients pass, Reports.',
+          'Read-mostly; sees candidates from the technical round on.'],
+      r: '<b>Rule:</b> no bare count of seats filled.' }
+  ]},
+  { id: 'client', title: 'Client', where: '?as=jana', shots: [['client', 'The client\'s desk, Northwind']], cards: [
+    { n: 'Client desk',
+      d: ['Brief: profiles waiting on your answer, interviews booked, open requests, your account manager.',
+          'Profiles for you: the match count, the interview-verified must-have, notice and the write-up, then "Invite to interview" or "Decline with a reason".',
+          'Your hiring with us: the outcome strip. Ask for a hire lands as a draft with the account manager.'],
+      r: '<b>Rule:</b> the client never sees salary, margin, internal notes or other clients.' }
+  ]}
+  ]},
+
+{ id: 'out', title: 'Outside links', say: 'Pages for candidates, interviewers and approvers. No product chrome, and the desk never travels onto them.',
+  secs: [
+  { id: 'apply', title: 'Careers page and the candidate\'s own profile', where: '?apply= · ?me=', cards: [
+    { n: 'Careers page and applying', at: ['?apply=r1'],
+      d: ['Only a published, open requisition shows. The candidate applies by chatting with AiMY: attach a CV, AiMY asks only for what is missing.',
+          'A required consent box ("A person decides; AiMY organises") and an optional WhatsApp opt-in.'],
+      r: '<b>Rule:</b> never names the client; no salary published.' },
+    { n: 'Arabic on candidate pages', refs: ['M9'],
+      d: ['An English / العربية switch, remembered per device, right-to-left with IBM Plex Sans Arabic.',
+          'Needs a native speaker\'s read before it ships.'] },
+    { n: 'The candidate\'s own profile', at: ['?me=<pid>'], refs: ['R8'],
+      d: ['A one-time code first. Applications in plain words, never a score, with "You will hear from us by <date>".',
+          'Take the assessment, withdraw an application, update details and the WhatsApp opt-in.',
+          'A web prospect sees why they are hearing from us, and "Object and delete my details".'],
+      r: '<b>Rule:</b> never breaks bad news first. A decision not yet told reads as waiting until a person sends it.' }
+  ]},
+  { id: 'take', title: 'Taking an assessment', where: '?take=', shots: [['consent', 'Consent before AiMY scores']], cards: [
+    { n: 'Consent, then the test', refs: ['R4', 'EU AI Act'],
+      d: ['Consent screen first: about N minutes, how it is scored, the choice of a person scoring instead ("never held against you"), and a review after.',
+          'An optional practice question, options in a rotated order, all required.',
+          'Done page: "A person reads every result", and "Ask a person to look at it again".'] },
+    { n: 'Live with the AiMY agent',
+      d: ['The same questions as a chat, one at a time. A short open answer gets one follow-up.',
+          'Answers typed, or dictated with "Say it". It never invents words.'] }
+  ]},
+  { id: 'debrief', title: 'Debrief and offer approval', where: '?debrief= · ?approve=', cards: [
+    { n: 'Interviewer debrief', refs: ['R5'],
+      d: ['From the transcript: each must-have\'s quoted answer, with AiMY\'s suggested rating to check.',
+          'Gap warnings: an agenda topic the recording never reached, with "Ask <name> by message".',
+          'Required: a rating per must-have with a note, and Proceed or Do not proceed.'],
+      r: '<b>Rule:</b> AiMY never fills this. Others\' feedback stays hidden until you submit.' },
+    { n: 'Offer approval', at: ['&by=hm', '&by=bu'], refs: ['M3', 'D7'],
+      d: ['One packet, one question per approver. The hiring manager: fit and salary. The BU Director: budget and headcount.',
+          'Approve or Send it back, with an optional note. Both approved tells the recruiter "A person sends it".'] }
+  ]}
+  ]},
+
+{ id: 'across', title: 'Across the product', say: 'What every desk shares.',
+  secs: [
+  { id: 'aimy', title: 'AiMY, the bell and feedback', cards: [
+    { n: 'AiMY bar and peek card',
+      d: ['"Ask AiMY, or find a requisition or a candidate". / focuses it.',
+          'It reads intent and acts: why clients pass, a hiring request, a new requisition, find, add a CV, draft an assessment, call someone, what needs me, risk and funnel questions, or a name search.',
+          'The answer lands in a peek card with one or two actions.'] },
+    { n: 'AiMY canvas', refs: ['Sales'],
+      d: ['A full overlay with conversations, a "Based on" bar, the thread and an input.',
+          'It hosts call briefs, read-backs, coaching, Prepare me and the find chat.'] },
+    { n: 'The bell',
+      d: ['The recruiter: missed calls, decisions, waiting on others. Other desks: their asks.',
+          'Plus news from other desks: assignments, client decisions, debriefs in, offers, approvals, target-date and hiring requests.',
+          'Undo of the causing action removes the item.'] },
+    { n: 'Toasts with Undo',
+      d: ['Wide enough to read: a message, an optional second line, Undo and a progress bar.'] },
+    { n: 'Breadcrumb',
+      d: ['A trail by hierarchy, not history: Today / Requisitions / <requisition> / <candidate>.',
+          'Each step is a link; the current page is last, set apart and not a link.'] },
+    { n: 'Select many, act once', refs: ['M7'],
+      d: ['In three places: Not told yet, First contact and Find results.',
+          'A batch bar with "N selected", the verb and Clear. One press acts on all; one Undo reverts all.'] }
+  ]},
+  { id: 'trust', title: 'Trust and learning', cards: [
+    { n: 'Consent and deletion', refs: ['P9', 'R8', 'Egypt Law 151'],
+      d: ['Per-candidate consent: CV, WhatsApp opt-in with the date, recording.',
+          'Deletion by the recruiter or the prospect keeps only a name on a do-not-contact line, and they are left out of every search.'],
+      r: '<b>Rule:</b> WhatsApp only with the person\'s own opt-in; email everywhere else.' },
+    { n: 'Learning proposals', refs: ['P5', 'R6'],
+      d: ['AiMY proposes changes to its own rules; the HR Manager approves, and the version before is kept.',
+          'From questions under 40% right: reword or drop.',
+          'From client declines: 5 or more in 90 days at one account with one reason behind 3 or more, for example "Check spoken language on the phone screen before a profile goes to Northwind".'] },
+    { n: 'Sample gate', refs: ['P7'],
+      d: ['Proposals from outcomes need 20 day-90 check-ins: "about 21 hires in two months means months, not weeks".',
+          'Shown as a meter wherever it applies.'] },
+    { n: 'What AiMY may do', refs: ['m4'],
+      d: ['Six actions, from booking in free slots to answering offer questions, each on one rung: Suggests, Does with Undo, or Does and tells.',
+          'Only a person moves a rung. Every move is logged with who, when and why.'],
+      r: '<b>Rule:</b> AiMY never moves itself up.' },
+    { n: 'Hiring outcomes', refs: ['M10'],
+      d: ['Four tiles together: hires billed, profiles that met the team, yes after a client interview, still there at day 90.',
+          'On the client desk, the account page and the reports.'] }
+  ]},
+  { id: 'proto', title: 'Shell and prototype tools', cards: [
+    { n: 'Keyboard',
+      d: ['/ focuses the bar. Enter starts a ready call or logs one; 1 to 8 pick an outcome.',
+          'Escape closes the canvas, dialer, menus, bell, pickers and pinned definitions.'] },
+    { n: 'Prototype panel (not product UI)',
+      d: ['Incoming calls on demand, forcing a coaching habit, sound on or off.',
+          'Sample data counts and "Reset to seed".'] }
+  ]}
+  ]}
+];
+
+const LEGEND = [
+  ['R1 to R8', 'Research findings, from the research summary.'],
+  ['P and M numbers', 'Items from the UI/UX plan: P for the plan, M for must-haves.'],
+  ['D numbers', 'Open decisions, with the recommendation in the deck.'],
+  ['Sales B, S, M', 'Flows and stakeholders from the Sales handoff, reused here.'],
+  ['AIMY-2666', 'Jira: the Sales call-coaching ticket.']
+];
+
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const bullets = (d) => {
+  let out = '';
+  d.forEach((x) => {
+    if (Array.isArray(x)) out = out.replace(/<\/li>$/, '<ul>' + x.map((y) => '<li>' + esc(y) + '</li>').join('') + '</ul></li>');
+    else out += '<li>' + esc(x) + '</li>';
+  });
+  return '<ul>' + out + '</ul>';
+};
+
+let total = 0;
+const main = $('#main');
+let mainHtml = '';
+let tocHtml = '';
+GROUPS.forEach((g) => {
+  tocHtml += '<h4>' + esc(g.title) + '</h4>';
+  mainHtml += '<div class="group" id="g-' + g.id + '"><p class="group-h">' + esc(g.title) + '</p><p class="group-say">' + esc(g.say) + '</p>';
+  g.secs.forEach((s) => {
+    total += s.cards.length;
+    tocHtml += '<a href="#' + s.id + '" data-sec="' + s.id + '">' + esc(s.title) + '<span>' + s.cards.length + '</span></a>';
+    const shots = s.shots ? '<div class="shots' + (s.shots.length === 1 ? ' one' : '') + '">' + s.shots.map(([f, cap]) =>
+      '<figure class="shot"><button type="button" data-full="shots/' + f + '.jpg" aria-label="Open the screenshot larger: ' + esc(cap) + '"><img src="shots/' + f + '.jpg" alt="' + esc(cap) + '" loading="lazy"></button><figcaption>' + esc(cap) + '</figcaption></figure>').join('') + '</div>' : '';
+    const cards = s.cards.map((c) => {
+      const at = c.at ? '<div class="where">' + c.at.map((a) => '<code>' + esc(a) + '</code>').join('') + '</div>' : '';
+      const refs = c.refs ? '<div class="refs">' + c.refs.map((r) => '<span class="ref">' + esc(r) + '</span>').join('') + '</div>' : '';
+      const rule = c.r ? '<p class="rule">' + c.r + '</p>' : '';
+      const wide = s.cards.length === 1 ? ' wide' : '';
+      return '<article class="card' + wide + '"><h3>' + esc(c.n) + '</h3>' + at + bullets(c.d) + rule + refs + '</article>';
+    }).join('');
+    mainHtml += '<section class="sec" id="' + s.id + '"><div class="sec-h"><h2>' + esc(s.title) + '</h2>' + (s.where ? '<code>' + esc(s.where) + '</code>' : '') + '</div>' +
+      (s.say ? '<p class="sec-say">' + esc(s.say) + '</p>' : '') + shots + '<div class="cards">' + cards + '</div></section>';
+  });
+  mainHtml += '</div>';
+});
+mainHtml += '<div class="group" id="g-legend"><p class="group-h">Reference codes</p><p class="group-say">The chips on each card point back to where a feature came from.</p><div class="legend">' +
+  LEGEND.map(([k, v]) => '<div><b>' + esc(k) + '</b>' + esc(v) + '</div>').join('') + '</div></div>';
+main.insertAdjacentHTML('beforeend', mainHtml);
+$('#toc').innerHTML = tocHtml;
+
+const secCount = GROUPS.reduce((n, g) => n + g.secs.length, 0);
+$('#facts').innerHTML = [
+  ['' + total, 'features'], ['' + secCount, 'areas'], ['5', 'desks'], ['8', 'recruiter tabs'], ['5', 'outside pages']
+].map(([b, t]) => '<li><b>' + b + '</b> ' + t + '</li>').join('');
+
+/* Search */
+const cards = [...document.querySelectorAll('.card')];
+const original = new Map(cards.map((c) => [c, c.innerHTML]));
+const count = $('#count');
+const setCount = (n) => { count.textContent = n === total ? total + ' features' : n + ' of ' + total; };
+setCount(total);
+let timer;
+$('#q').addEventListener('input', (e) => {
+  clearTimeout(timer);
+  timer = setTimeout(() => run(e.target.value.trim()), 80);
+});
+function run(q) {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  let shown = 0;
+  cards.forEach((c) => {
+    c.innerHTML = original.get(c);
+    const hit = !words.length || words.every((w) => c.textContent.toLowerCase().includes(w));
+    c.hidden = !hit;
+    if (hit) shown++;
+    if (hit && words.length) mark(c, words);
+  });
+  document.querySelectorAll('section.sec').forEach((s) => {
+    const any = s.querySelector('.card:not([hidden])');
+    s.hidden = !any;
+    const a = document.querySelector('.toc a[data-sec="' + s.id + '"]');
+    if (a) a.classList.toggle('gone', !any);
+    const shots = s.querySelector('.shots');
+    if (shots) shots.style.display = words.length ? 'none' : '';
+  });
+  document.querySelectorAll('.group').forEach((g) => {
+    if (g.id === 'g-legend') { g.hidden = !!words.length; return; }
+    g.hidden = !g.querySelector('section.sec:not([hidden])');
+  });
+  $('#empty').classList.toggle('on', shown === 0);
+  setCount(shown);
+}
+function mark(el, words) {
+  const re = new RegExp('(' + words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'gi');
+  const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walk.nextNode()) nodes.push(walk.currentNode);
+  nodes.forEach((n) => {
+    if (!re.test(n.nodeValue)) return;
+    re.lastIndex = 0;
+    const span = document.createElement('span');
+    span.innerHTML = esc(n.nodeValue).replace(re, '<mark>$1</mark>');
+    n.replaceWith(...span.childNodes);
+  });
+}
+
+/* Current section in the nav */
+const links = new Map([...document.querySelectorAll('.toc a')].map((a) => [a.dataset.sec, a]));
+const io = new IntersectionObserver((entries) => {
+  entries.forEach((en) => {
+    if (!en.isIntersecting) return;
+    links.forEach((a) => a.classList.remove('on'));
+    const a = links.get(en.target.id);
+    if (a) {
+      a.classList.add('on');
+      if (getComputedStyle($('#toc')).display === 'flex') a.scrollIntoView({ block: 'nearest', inline: 'center' });
+    }
+  });
+}, { rootMargin: '-30% 0px -60% 0px' });
+document.querySelectorAll('section.sec').forEach((s) => io.observe(s));
+
+/* Screenshots larger */
+const lb = $('#lb');
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-full]');
+  if (b) {
+    $('#lbImg').src = b.dataset.full;
+    $('#lbImg').alt = b.querySelector('img').alt;
+    lb.showModal();
+    return;
+  }
+  if (e.target === lb) lb.close();
+});
+
+/* Theme */
+const root = document.documentElement;
+try { const t = localStorage.getItem('features-theme'); if (t) root.dataset.theme = t; } catch (e) {}
+$('#theme').addEventListener('click', () => {
+  const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  root.dataset.theme = dark ? 'light' : 'dark';
+  try { localStorage.setItem('features-theme', root.dataset.theme); } catch (e) {}
+});
+</script>
+</body>
+</html>

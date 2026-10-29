@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AiMY Talent UI/UX plan</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  /* AiMY dark: the tokens AiMY Sales and the research mockups use. */
+  :root{
+    --bg:#0d1117; --card:#141b24; --raised:#1c2630; --line:#2a3644;
+    --t1:#f5f7fb; --t2:#c3cedb; --t3:#93a2b4;
+    --brand:#3369ff; --link:#7ea7ff; --accent:#8b4ff4; --accent-label:#ab7ffb;
+    --ok:#4ed6a1; --warn:#f7c95c; --err:#ff7282;
+  }
+  /* Margin 0 so the dark ground reaches the paper's edge; the page margin is the
+     wrapper's padding, cloned onto every page it breaks across. */
+  @page { size: A4; margin: 0; }
+  html { background: var(--bg); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--t2); font-family: "Poppins", system-ui, sans-serif; font-size: 9.6pt; line-height: 1.55; }
+  .sheet { padding: 16mm 15mm 18mm; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+  h1, h2, h3, h4 { color: var(--t1); line-height: 1.25; break-after: avoid; }
+  h2 { font-size: 15pt; font-weight: 600; margin: 26px 0 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+  h3 { font-size: 11.5pt; font-weight: 600; margin: 0 0 8px; }
+  p { margin: 0 0 8px; }
+  b, strong { color: var(--t1); font-weight: 600; }
+  a { color: var(--link); text-decoration: none; }
+  code { font-family: "JetBrains Mono", monospace; font-size: 8.4pt; color: var(--t2); background: var(--raised); padding: 1px 5px; border-radius: 4px; }
+  ul { margin: 0 0 8px 18px; }
+  li { margin: 3px 0; }
+  li::marker { color: var(--accent-label); }
+
+  .eyebrow { font-size: 8.4pt; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-label); }
+  .hero { padding: 26px 26px 22px; border-radius: 16px; background: radial-gradient(120% 140% at 0% 0%, #2a1a5c 0%, #141b3a 38%, var(--card) 75%); border: 1px solid #3b2a6e; margin-bottom: 6px; }
+  .hero h1 { font-size: 26pt; font-weight: 700; letter-spacing: -.01em; margin: 8px 0 8px; }
+  .hero .meta { color: var(--t3); font-size: 8.8pt; }
+  .lead { font-size: 11pt; color: var(--t1); line-height: 1.5; margin: 16px 0 4px; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; break-inside: avoid; }
+  .card h4 { font-size: 9.6pt; font-weight: 600; margin-bottom: 6px; }
+  .card.violet { border-color: #3b2a6e; }
+  .card.violet h4 { color: var(--accent-label); }
+
+  table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 8.6pt; background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin: 6px 0 4px; }
+  thead { display: table-header-group; }
+  th { text-align: left; font-size: 7.6pt; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-label); padding: 9px 10px; background: var(--raised); border-bottom: 1px solid var(--line); }
+  td { padding: 8px 10px; vertical-align: top; border-top: 1px solid var(--line); color: var(--t2); }
+  tbody tr:first-child td { border-top: 0; }
+  tr { break-inside: avoid; }
+  td.id { color: var(--t1); font-weight: 600; white-space: nowrap; }
+
+  .pill { display: inline-block; white-space: nowrap; font-size: 7.6pt; font-weight: 600; padding: 2px 9px; border-radius: 999px; border: 1px solid; }
+  .w1 { color: #c9b0ff; background: rgba(139,79,244,.18); border-color: rgba(139,79,244,.45); }
+  .w2 { color: #9db8ff; background: rgba(51,105,255,.16); border-color: rgba(51,105,255,.45); }
+  .w3 { color: var(--warn); background: rgba(247,201,92,.12); border-color: rgba(247,201,92,.35); }
+  .st { color: var(--t3); background: transparent; border-color: var(--line); }
+
+  .pattern { display: grid; grid-template-columns: 300px 1fr; gap: 16px; align-items: start; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 10px 0; break-inside: avoid; }
+  .pattern img { width: 300px; border-radius: 10px; display: block; }
+  .pattern ul { margin-top: 2px; }
+
+  .tasks { list-style: none; margin: 6px 0 0; }
+  .tasks li { display: grid; grid-template-columns: 16px 1fr; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); break-inside: avoid; }
+  .tasks li:first-child { border-top: 0; }
+  .box { width: 13px; height: 13px; border: 1.5px solid var(--t3); border-radius: 3px; margin-top: 3px; }
+
+  .legal { background: rgba(247,201,92,.10); border: 1px solid rgba(247,201,92,.35); color: #ffe3a3; border-radius: 10px; padding: 9px 14px; text-align: center; font-size: 9.4pt; margin: 8px 0 12px; }
+  .waves { display: grid; grid-template-columns: 1fr 28px 1fr 28px 1fr; align-items: stretch; break-inside: avoid; }
+  .wave { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 14px 10px; }
+  .wave.now { border: 2px solid var(--accent); background: linear-gradient(160deg, rgba(139,79,244,.20), var(--card) 70%); }
+  .wave h3 { margin-bottom: 8px; }
+  .wave ul { list-style: none; margin: 0; }
+  .wave li { margin: 4px 0; color: var(--t1); font-size: 9pt; }
+  .wave li.q { color: var(--t3); }
+  .gate { display: grid; place-items: center; }
+  .gate span { width: 22px; height: 22px; transform: rotate(45deg); border: 1.5px solid var(--t3); display: grid; place-items: center; background: var(--bg); }
+  .gate b { transform: rotate(-45deg); font-size: 8.4pt; }
+  .gates { margin-top: 10px; color: var(--t3); font-size: 8.8pt; }
+  .gates p { margin: 3px 0; }
+  .note { color: var(--t3); font-size: 8.6pt; }
+  .foot { margin-top: 22px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--t3); font-size: 8pt; }
+</style>
+</head>
+<body>
+<main class="sheet">
+
+<header class="hero">
+  <div class="eyebrow">AiMY Talent · UI/UX plan</div>
+  <h1>AiMY Talent UI/UX plan</h1>
+  <div class="meta">26 October 2026 · Engy · Sources: the knowledge vault, the prototype on <code>main</code>, and the market research</div>
+</header>
+
+<p class="lead">Fix the prototype in three waves: first the changes that make the hiring loop learn (client decline reasons, honest insights, safe sourcing, WhatsApp opt-in), then the open audit gaps on each desk, then the outcome-linked work that needs months of data.</p>
+
+<h2>Design rules</h2>
+<p>Every screen keeps the AiMY Sales rules the prototype already follows, plus four guardrails the research added.</p>
+<div class="two">
+  <div class="card">
+    <h4>Kept from AiMY Sales and the product overview</h4>
+    <ul>
+      <li>One press with Undo, never “are you sure”. Prose sits behind Edit; no form is the only way.</li>
+      <li>The stage is stored and moves forward only; an exit is a reason, not a stage.</li>
+      <li>One definition per figure, each with its unit, start event and stop event.</li>
+      <li>Evidence as counts (“4 of 5 must-haves met”), never a bare match percentage.</li>
+      <li>Nothing is public by default; a requisition reaches candidates only when flagged Published.</li>
+      <li>The hiring manager sees only what the recruiter advanced; the client sees nothing internal.</li>
+    </ul>
+  </div>
+  <div class="card violet">
+    <h4>Added by the research</h4>
+    <ul>
+      <li><b>Design evidence to be checked, not trusted.</b> People follow AI picks about 90% of the time even when they are wrong, so unknowns are shown as unknown and a sample of the knockout lane is reviewed.</li>
+      <li><b>AI fills facts, people give the verdict.</b> AiMY never pre-fills a rating or a proceed decision.</li>
+      <li><b>No ranking of individual recruiters</b> in Talent; team and request views only.</li>
+      <li><b>Consent before contact and before recording.</b> A web-found person is a prospect until they reply; WhatsApp only after opt-in; no emotion read from face or voice.</li>
+    </ul>
+  </div>
+</div>
+
+<h2>Prototype fixes P1–P10</h2>
+<p>Four fixes go first because they make the loop learn or keep it lawful: P1, P2, P4 and P9. P10 is for legal, not design. Each fix comes from comparing the prototype on <code>main</code> with the research; walk each flow in the browser before it becomes a ticket.</p>
+<table>
+  <thead><tr><th style="width:5%">#</th><th style="width:30%">Change</th><th style="width:19%">Screen</th><th style="width:26%">Why (research)</th><th style="width:11%">Wave</th><th style="width:9%">Status</th></tr></thead>
+  <tbody>
+    <tr><td class="id">P1</td><td>Ask for one reason when a client presses Pass: spoken language, experience, salary, notice, skills gap, other</td><td>Client desk, profiles sent (<code>?as=jana</code>)</td><td>None of 8 staffing tools records decline reasons; they are the signal that teaches matching</td><td><span class="pill w1">Wave 1 · now</span></td><td><span class="pill st">Not started</span></td></tr>
+    <tr><td class="id">P2</td><td>Reword “the biggest drop is at the client” to show the upstream loss (268 → 81) and days to send, with the weak-benchmark caveat</td><td>Reports (<code>?on=reports</code>)</td><td>3.4 profiles per client interview is inside the 3:1–5:1 agency range</td><td><span class="pill w1">Wave 1 · now</span></td><td><span class="pill st">Not started</span></td></tr>
+    <tr><td class="id">P3</td><td>Show whether passing each question predicts client acceptance or hire, beside its pass rate</td><td>Assessment (<code>?asmt=</code>)</td><td>No vendor links questions to later outcomes</td><td><span class="pill w3">Wave 3 · needs data</span></td><td><span class="pill st">Not started</span></td></tr>
+    <tr><td class="id">P4</td><td>Keep SignalHire off; label each web result’s source; Apollo for enrichment only</td><td>Find (<code>?on=find</code>)</td><td>LinkedIn bans scraping; SignalHire has consent and accuracy complaints</td><td><span class="pill w1">Wave 1 · now</span></td><td><span class="pill st">Not started</span></td></tr>
+    <tr><td class="id">P5</td><td>Route Reword and Drop to the HR Manager’s approval; keep each question’s versions</td><td>Assessment, HR desk</td><td>Changes to AiMY’s own rules are Learning Proposals a person approves</td><td><span class="pill w2">Wave 2 · next</span></td><td><span class="pill st">Not started</span></td></tr>
+    <tr><td class="id">P6</td><td>Show per-recruiter numbers as counts, never sorted as a league table, until decision D5</td><td>Reports, HR desk (<code>?as=dina</code>)</td><td>Rank incentives cut productivity 14% in a field experiment</td><td><span class="pill w2">Wave 2 · next</span></td><td><span class="pill st">Not started</span></td></tr>
+    <tr><td class="id">P7</td><td>Show “12 of 20 check-ins” before any Learning Proposal can be drafted</td><td>Onboarding, HR desk</td><td>About 21 hires in two months; patterns need months of data</td><td><span class="pill w3">Wave 3 · needs data</span></td><td><span class="pill st">Not started</span></td></tr>
+    <tr><td class="id">P8</td><td>Label the call model as a design target while telephony is on hold</td><td>Calls (<code>?on=calls</code>)</td><td>The Talent calling path is on hold with AiMY Phone</td><td><span class="pill w2">Wave 2 · next</span></td><td><span class="pill st">Not started</span></td></tr>
+    <tr><td class="id">P9</td><td>Send on WhatsApp only with a recorded opt-in; show the opt-in state on the record</td><td>Candidate record, assessment invites, offers</td><td>WhatsApp needs opt-in to the named business; bought numbers don’t count</td><td><span class="pill w1">Wave 1 · now</span></td><td><span class="pill st">Not started</span></td></tr>
+    <tr><td class="id">P10</td><td>Take Egypt’s data protection deadline to legal this week</td><td>None (legal)</td><td>The grace period ends around 1 Nov 2026; exact dates unverified</td><td><span class="pill w1">Wave 1 · now</span></td><td><span class="pill st">Not started</span></td></tr>
+  </tbody>
+</table>
+
+<h2>Open audit gaps</h2>
+<p>Of the 18 findings in the prototype audit, 7 are built in the new prototype (C1–C3, M1, M5, M6, m3) and M9 is partly built. These 11 remain open or need a check in the browser.</p>
+<table>
+  <thead><tr><th style="width:5%">#</th><th style="width:20%">Gap</th><th style="width:19%">Screen</th><th style="width:36%">Design move</th><th style="width:11%">Wave</th><th style="width:9%">Status</th></tr></thead>
+  <tbody>
+    <tr><td class="id">M3</td><td>Unclear what the BU Director approves</td><td>Offer approval (<code>?approve=&amp;by=bu</code>)</td><td>Write the BU Director’s question in one sentence; if it is headcount and budget, move it to requisition approval</td><td><span class="pill w2">Wave 2 · next</span></td><td><span class="pill st">Not started</span></td></tr>
+    <tr><td class="id">M4</td><td>Held candidates never hear back</td><td>Candidate record, own profile (<code>?me=</code>)</td><td>A time limit on each held state; then a person approves a batch decline under an HR template, after legal review</td><td><span class="pill w2">Wave 2 · next</span></td><td><span class="pill st">Not started</span></td></tr>
+    <tr><td class="id">M7</td><td>No bulk actions where the volume is</td><td>Find, first contact, declines</td><td>Select many, act once, one Undo</td><td><span class="pill w2">Wave 2 · next</span></td><td><span class="pill st">Not started</span></td></tr>
+    <tr><td class="id">M8</td><td>The briefing needs data that doesn’t exist yet</td><td>Today (<code>/</code>)</td><td>Label each block with the record it needs; design the “Now” release on today’s data</td><td><span class="pill w1">Wave 1 · now</span></td><td><span class="pill st">Not started</span></td></tr>
+    <tr><td class="id">M10</td><td>Billed counts shown alone</td><td>Reports, “Your hiring with us”</td><td>Show the proceed rate, client acceptance and 90-day retention beside every billed count</td><td><span class="pill w2">Wave 2 · next</span></td><td><span class="pill st">Not started</span></td></tr>
+    <tr><td class="id">M11</td><td>The hiring manager holds 20 requests</td><td>Hiring manager desk (<code>?as=rania</code>)</td><td>Group asks by account, oldest first; one requisition open at a time. Check what the prototype does first</td><td><span class="pill w1">Wave 1 · now</span></td><td><span class="pill st">Not started</span></td></tr>
+    <tr><td class="id">m1</td><td>Buttons worded as questions</td><td>Every desk</td><td>Label the action (“Review offer”); keep the question in the conversation. Check the new prototype</td><td><span class="pill w1">Wave 1 · now</span></td><td><span class="pill st">Not started</span></td></tr>
+    <tr><td class="id">m2</td><td>Three rehearsals, three different controls</td><td>Requisition settings</td><td>One rehearsal pattern with “nothing is applied” in one place, if rehearsals carry over</td><td><span class="pill w2">Wave 2 · next</span></td><td><span class="pill st">Not started</span></td></tr>
+    <tr><td class="id">m4</td><td>Trust only goes down on the autonomy ladder</td><td>Autonomy settings</td><td>A person-made promotion, logged with AiMY’s reason</td><td><span class="pill w3">Wave 3 · needs data</span></td><td><span class="pill st">Not started</span></td></tr>
+    <tr><td class="id">M2</td><td>Margin in the offer packet</td><td>Offer</td><td>Not found in <code>talent.js</code>: confirm in the browser and close</td><td><span class="pill w1">Wave 1 · now</span></td><td><span class="pill st">Not started</span></td></tr>
+    <tr><td class="id">M9</td><td>Arabic is only a candidate language</td><td>Careers page, templates, WhatsApp</td><td>Arabic interface and message templates, moved from Later to Next</td><td><span class="pill w2">Wave 2 · next</span></td><td><span class="pill st">Not started</span></td></tr>
+  </tbody>
+</table>
+
+<h2>By desk</h2>
+<p>The recruiter’s desk carries most of Wave 1; the client desk gets the single most valuable change (P1).</p>
+<table>
+  <thead><tr><th style="width:16%">Desk</th><th style="width:26%">Who in the prototype</th><th style="width:58%">Changes in this plan</th></tr></thead>
+  <tbody>
+    <tr><td class="id">Recruiter</td><td>Omar Saeed (<code>?as=omar</code>, default)</td><td>P4 safe sourcing, P9 WhatsApp opt-in, M8 briefing on today’s data, M7 bulk actions, M4 time-limited holds, m1 button labels</td></tr>
+    <tr><td class="id">Hiring manager</td><td>Rania Samir (<code>?as=rania</code>)</td><td>M11 asks grouped by account, M3 what the BU Director approves</td></tr>
+    <tr><td class="id">HR Manager</td><td>Dina Ragab (<code>?as=dina</code>)</td><td>P5 approve question changes, P6 recruiter counts without a league table, P7 minimum sample, m4 trust promotion</td></tr>
+    <tr><td class="id">Client</td><td>Jana Weber, Northwind (<code>?as=jana</code>)</td><td><b>P1 a reason on every Pass</b>, M10 retention beside billed counts in “Your hiring with us”</td></tr>
+    <tr><td class="id">Outside links</td><td>Candidate, interviewer, approvers</td><td>M9 Arabic on the careers page and messages, P9 opt-in on assessment invites, M3 on the BU approval link</td></tr>
+    <tr><td class="id">Every desk</td><td></td><td>P2 honest insight lines, P8 calls labelled as a target, M2 margin check</td></tr>
+  </tbody>
+</table>
+
+<h2>Component patterns</h2>
+<p>Four patterns carry this plan; each mockup is a spec drawn in the AiMY Sales style with invented people. The other seven (sourcing, stage templates, the client view, assessment items, insights, day 90, consent) are in the vault’s Research results canvas.</p>
+
+<div class="pattern">
+  <img src="../../30%20Research/UI/client-sendout-reason-codes.png" alt="Profile sent to a client: timeline, then the reason the client picks when declining">
+  <div><h3>Client decision with a reason (P1)</h3><ul>
+    <li>The sendout is its own record: sent, opened, decided, each dated.</li>
+    <li>Pass asks for exactly one reason from a fixed list; “Other” takes one line of text.</li>
+    <li>AiMY says what the reason now feeds (“4th decline this month for spoken German”) and that it feeds matching for this client only.</li></ul></div>
+</div>
+<div class="pattern">
+  <img src="../../30%20Research/UI/scoring-evidence-per-criterion.png" alt="Candidate card: 4 of 5 required criteria met, each quoted, one not known yet">
+  <div><h3>Evidence per criterion</h3><ul>
+    <li>The roll-up is a count (“4 of 5 required met”), never a percentage.</li>
+    <li>Each criterion shows Meets, Not met or <b>Not known</b>, with the CV passage quoted; “The CV is silent here” is not Not met.</li>
+    <li>An unknown offers one action: ask the candidate. The footer names the criteria version and who changed it.</li></ul></div>
+</div>
+<div class="pattern">
+  <img src="../../30%20Research/UI/interview-debrief.png" alt="Interviewer debrief: quotes from the transcript, a gap warning, and an empty verdict">
+  <div><h3>Debrief: AI fills facts, you give the verdict</h3><ul>
+    <li>Transcript quotes are labelled “check it” and are editable; the verdict starts empty and AiMY never fills it.</li>
+    <li>A gap warning names the template topic that did not come up and offers to ask by message.</li>
+    <li>Others’ feedback stays hidden until this interviewer submits.</li></ul></div>
+</div>
+<div class="pattern">
+  <img src="../../30%20Research/UI/candidate-verified-skills.png" alt="Candidate’s verified skills: CV says next to interview found, with evidence links">
+  <div><h3>Verified skills over time</h3><ul>
+    <li>Columns: skill, CV says, interview found, status (Confirmed, Differs, Not checked), evidence with a link to the moment.</li>
+    <li>AiMY suggests each finding; the interviewer confirms it before it lands.</li>
+    <li>The candidate sees and edits only their own layer: what the CV says.</li></ul></div>
+</div>
+
+<h2>Validation</h2>
+<p>Run the client-feedback study first: it decides the reason codes in P1 and what matching must learn.</p>
+<ul class="tasks">
+  <li><span class="box"></span><span>Code the client feedback on the last 50 profiles sent: skills, language, salary, notice or other. Decides the P1 reason list.</span></li>
+  <li><span class="box"></span><span>Shadow 5 recruiters for a day and count actions by type. Decides how much of Today is briefing and how much is records.</span></li>
+  <li><span class="box"></span><span>Run an assessment before the call on one high-volume support role for 2 weeks; compare recruiter hours and drop-off. Decides whether assessments are Now or Later.</span></li>
+  <li><span class="box"></span><span>Think-aloud with 5 hiring managers, starting with the one who holds 20 requests. Decides M11 and where asks reach them.</span></li>
+  <li><span class="box"></span><span>Ask 2 account managers how clients send feedback today. Decides the client screen’s channel.</span></li>
+  <li><span class="box"></span><span>Walk every Wave 1 flow in the prototype in the browser at 1536 px and at phone width before writing tickets.</span></li>
+</ul>
+
+<h2>Roadmap</h2>
+<div style="break-inside:avoid">
+  <h3>Wave 1 makes the loop learn; Wave 3 waits for data</h3>
+  <div class="legal">In parallel, now: P10, Egypt’s data protection deadline, goes to legal</div>
+  <div class="waves">
+    <div class="wave now"><h3>Wave 1 · now</h3><ul>
+      <li><b>P1 Reason on client Pass</b></li><li>P2 Honest insight lines</li><li>P4 Safe sourcing</li><li>P9 WhatsApp opt-in</li><li>M8 Briefing on today’s data</li><li class="q">M11, m1, M2 browser checks</li></ul></div>
+    <div class="gate"><span><b>1</b></span></div>
+    <div class="wave"><h3>Wave 2 · next</h3><ul>
+      <li>P5 HR approves question edits</li><li>P6 Counts, no league table</li><li>P8 Calls labelled as target</li><li>M3 BU Director approval</li><li>M4 Time-limited holds</li><li>M7 Bulk actions</li><li>M10 Retention beside billing</li><li>M9 Arabic, m2 rehearsals</li></ul></div>
+    <div class="gate"><span><b>2</b></span></div>
+    <div class="wave"><h3>Wave 3 · needs data</h3><ul>
+      <li>P3 Questions tied to outcomes</li><li>P7 Minimum sample shown</li><li>m4 Trust promotion</li><li>Day-90 Learning Proposals</li></ul></div>
+  </div>
+  <div class="gates">
+    <p><b>Gate 1</b> · Wave 1 flows walked in the browser, and client feedback on 50 profiles coded</p>
+    <p><b>Gate 2</b> · enough outcomes: 20 day-90 check-ins, and client decisions that carry a reason</p>
+  </div>
+  <p class="note" style="margin-top:8px">Wave 2 starts once the Wave 1 flows are walked in the browser and the client feedback is coded; Wave 3 waits for outcomes, not for a date.</p>
+</div>
+
+<h2>Decisions this plan waits on</h2>
+<table>
+  <thead><tr><th style="width:34%">Decision</th><th style="width:30%">What it unblocks</th><th style="width:36%">Research leaning</th></tr></thead>
+  <tbody>
+    <tr><td><b>D2</b> Match score or evidence counts?</td><td>Candidate cards, finder, client desk</td><td>Evidence counts, as the prototype shows</td></tr>
+    <tr><td><b>D4</b> Is the client a Talent user?</td><td>P1, the client desk, M10</td><td>Yes, with a desk that shows nothing internal</td></tr>
+    <tr><td><b>D5</b> Rank recruiters?</td><td>P6</td><td>No: team views in Talent, individuals in AiMY QA</td></tr>
+    <tr><td><b>D7</b> What does the BU Director approve?</td><td>M3</td><td>Headcount and budget at the requisition stage</td></tr>
+    <tr><td><b>D8</b> May AiMY send a batch decline under a policy?</td><td>M4</td><td>Yes, after legal review</td></tr>
+    <tr><td><b>D10</b> LinkedIn and SignalHire in search?</td><td>P4</td><td>Keep both parked</td></tr>
+  </tbody>
+</table>
+
+<h2>Sources</h2>
+<ul>
+  <li>Knowledge vault (local): Prototype against the research, Known gaps, Open decisions, Research results canvas, Closing the loop</li>
+  <li>Prototype: repo <code>design-aimy-talent</code>, <code>main</code> at <code>e91d994</code></li>
+  <li><a href="https://claude.ai/artifact/9bYpRdtjuZKRGUGAcPsTmh">Presentation: AiMY Talent, Closing the Loop</a></li>
+  <li><a href="https://claude.ai/artifact/PGmYnMYfeXPs2fUG7rYZe7">Prototype audit, version 3</a></li>
+  <li><a href="https://flairstechdev.atlassian.net/wiki/spaces/AC2/pages/539754497/AiMY+Talent+Product+Overview">AiMY Talent product overview</a></li>
+  <li><a href="https://claude.ai/artifact/QPU9azSzzcZSwxDasNy4Wt">This plan as an editable doc</a></li>
+</ul>
+<p class="foot">Mockups are illustrative: invented people, AiMY Sales styling. Research, not legal advice. Exported from the AiMY Talent UI/UX Plan doc, 26 October 2026.</p>
+
+</main>
+</body>
+</html>

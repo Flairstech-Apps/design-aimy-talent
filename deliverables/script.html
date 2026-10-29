@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AiMY Talent · Presentation script</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+  @page { size: A4; margin: 16mm 18mm; }
+  :root { --ink: #1c2026; --soft: #4a5560; --mute: #6b7682; --line: #dfe3e8; --tint: #f5f3fd; --purple: #6a3fd6; }
+  body { font-family: 'Poppins', Arial, sans-serif; color: var(--ink); font-size: 10.5pt; line-height: 1.6; margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  h1 { font-size: 24pt; margin: 0 0 4pt; }
+  h2 { font-size: 13pt; margin: 0 0 4pt; }
+  p { margin: 0 0 6pt; }
+  .eyebrow { font-size: 8.5pt; font-weight: 600; letter-spacing: 1.6pt; text-transform: uppercase; color: var(--purple); }
+  .meta { font-size: 9pt; color: var(--mute); margin-bottom: 12pt; }
+  .slide { border-top: 1px solid var(--line); padding-top: 10pt; margin-top: 12pt; break-inside: avoid; page-break-inside: avoid; }
+  .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12pt; }
+  .time { font-size: 8.5pt; font-weight: 600; color: var(--purple); white-space: nowrap; }
+  .cue { font-size: 9pt; color: var(--purple); font-weight: 500; }
+  .say p { font-size: 10.5pt; }
+  .box { background: var(--tint); border: 1px solid #d9d0f6; border-radius: 7pt; padding: 8pt 10pt; margin: 8pt 0; font-size: 9.5pt; }
+  ul { margin: 0 0 6pt; padding-left: 16pt; }
+  li { margin-bottom: 2pt; }
+</style>
+</head>
+<body>
+<div class="eyebrow">AiMY Talent · what to say</div>
+<h1>Presentation script</h1>
+<p class="meta">20 slides · about 22 minutes, plus an optional 5-minute live demo and questions · deck: “AiMY Talent” on claude.ai · read the prep pack for the facts behind every line.</p>
+<div class="box"><b>How to use this.</b> The words in normal type are what you say. <span class="cue">Purple lines</span> are cues: when to click, when to pause, what to point at. Times are a guide; the research section (slides 1–6) should take about 7 minutes, the product (7–16) about 11, and the close (17–20) about 4. If you are short of time, skip slide 6 (the loop is also on slide 5) and shorten slides 11 and 13.</div>
+
+<div class="slide"><div class="head"><h2>1 · Closing the hiring loop</h2><span class="time">0:00 · 45 s</span></div><div class="say">
+<p>Good morning, and thank you for the time. Today I’ll cover three things. First, what our research found about how recruiting works today, here and in the market. Second, what we built in AiMY Talent because of it. And third, the few decisions we need from you to move forward.</p>
+<p>Everything you’ll see on screen is the working prototype. It runs on sample data, with invented people, so nothing here is a real candidate.</p>
+<p class="cue">Click.</p></div></div>
+
+<div class="slide"><div class="head"><h2>2 · Today’s funnel: 268 screened, 21 hired</h2><span class="time">0:45 · 1 min 15 s</span></div><div class="say">
+<p>Let’s start with our own numbers. This is our recruitment dashboard for August and September: 39 requests, 45 vacancies, and six recruiters.</p>
+<p class="cue">Point along the cards from left to right.</p>
+<p>268 people passed a phone screen. 190 went through HR, 102 through the technical interview, 81 were sent to a client, 24 met the client, and 21 were hired. Each percentage is the share of the stage before.</p>
+<p class="cue">Point at the three times.</p>
+<p>Now look at time. It takes 14 days before a client sees a first profile; that is the number clients actually feel. 32 days to hire. And 54 days until the person starts work. Joining, not accepting, is the real finish line.</p>
+<p class="cue">Click.</p></div></div>
+
+<div class="slide"><div class="head"><h2>3 · The client isn’t the main leak</h2><span class="time">2:00 · 1 min</span></div><div class="say">
+<p>Our first instinct was that clients reject too much: only 30% of the profiles we send get an interview. But staffing firms usually send three to five profiles for every client interview. We send 3.4, which is normal. And clients then hired 21 of the 24 people they met.</p>
+<p>So the real losses are somewhere else. Upstream: of 268 people we screen, only 81 ever reach a client. And in time: 14 days before the client sees anyone.</p>
+<p>One honest caveat: that 3-to-5 benchmark comes from vendor blogs and an old survey. Treat it as a direction, not proof. That is why the first test I’ll propose is to code the real client feedback.</p>
+<p class="cue">Click.</p></div></div>
+
+<div class="slide"><div class="head"><h2>4 · Single steps are solved. The loop isn’t.</h2><span class="time">3:00 · 1 min 15 s</span></div><div class="say">
+<p>We researched eight areas and about 45 products: applicant tracking systems, staffing tools, AI sourcing, assessments and AI interviewers, interview notetakers, analytics, the market, and the law.</p>
+<p>Every single step is crowded and well funded. Search is solved. AI interviews are solved. Notetakers are solved. What nobody does is join the steps into one loop that learns.</p>
+<p class="cue">Point at each card.</p>
+<p>Four gaps stand out. One: when a client says no, nobody records why in a way matching can learn from. Two: nobody keeps a skills record that interviews confirm over time; it’s always what the CV says. Three: nobody checks which test questions actually predict who clients accept. And four: almost nobody measures who is still employed at day 90 and feeds that back. Only one in five US companies even measured it last year.</p>
+<p class="cue">Click.</p></div></div>
+
+<div class="slide"><div class="head"><h2>5 · Our opening</h2><span class="time">4:15 · 1 min 15 s</span></div><div class="say">
+<p class="cue">Pause and let the sentence land before you speak.</p>
+<p>So here is our opening. An agent-run recruiting team for outsourcing firms, paid per qualified candidate, and measured on who is still there at day 90.</p>
+<p>We can do this when others can’t, for three reasons. We own the whole funnel, from sourcing to the client’s decision to day 90; a tool that owns one step can’t close the loop. We hire in Arabic and European languages, and no vendor scores spoken German or Arabic. And AiMY does the coordination, the scheduling, the chasing, the updates, while people make every decision about people.</p>
+<p>One note on price: we should compare ourselves to recruiting services, about three to ten thousand dollars per hire, not to software seats.</p>
+<p class="cue">Click.</p></div></div>
+
+<div class="slide"><div class="head"><h2>6 · The loop we close</h2><span class="time">5:30 · 1 min 15 s</span></div><div class="say">
+<p>This is the loop, in six steps: the request, finding people, judging them, the client, the offer and joining, and day 90.</p>
+<p class="cue">Point at the three loops at the bottom.</p>
+<p>And three things feed back. First, every client decision carries a reason, so matching learns what “fit” means for that client. Second, every interview confirms or contradicts what the CV says, so the next requisition starts from what we already know; 82% of our requests replace someone, so that matters. Third, day-90 check-ins feed changes to the success profile, which an HR Manager approves, and only once there are at least 20 of them, because a pattern needs data.</p>
+<p>That’s the research. Now let me show you what we built.</p>
+<p class="cue">Click.</p></div></div>
+
+<div class="slide"><div class="head"><h2>7 · One product on AiMY Sales, five desks</h2><span class="time">6:45 · 1 min</span></div><div class="say">
+<p>AiMY Talent is built on the AiMY Sales shell and components, so it looks and behaves like the rest of the AiMY family.</p>
+<p>It has five desks. The recruiter, Omar, does the daily work across eight tabs. The hiring manager, Rania, gives debriefs and approves offers. Dina, the HR Manager, sees every requisition and approves what AiMY proposes to learn. Hesham, the BU Director, answers for budget and headcount. And Jana, at the client, sees only the profiles we send her.</p>
+<p class="cue">Point at the rules line at the bottom.</p>
+<p>Everywhere, the same rules: one press with Undo, never an “are you sure” box; evidence as counts; unknown said as unknown; and a person makes every decision.</p>
+<p class="cue">Click.</p></div></div>
+
+<div class="slide"><div class="head"><h2>8 · Today: a briefing, not a list</h2><span class="time">7:45 · 1 min 15 s</span></div><div class="say">
+<p>This is where a recruiter starts the day. Not a list of records, a briefing. Four decisions wait on you, the oldest three days. Two interviews today. One requisition likely to miss its date, and why.</p>
+<p>Each decision is one press, and each can be undone. Below, every block shows three items and what waiting costs, in days past the usual time. Our research found 46 of 105 lost days were spent waiting for feedback, so we make that visible.</p>
+<p>Before an interview, Prepare me writes the brief: what to probe, what’s already confirmed. And when someone isn’t progressing, the answer they’ll get is shown before it goes, under the HR template.</p>
+<p class="cue">Click.</p></div></div>
+
+<div class="slide"><div class="head"><h2>9 · Candidates: evidence you can check</h2><span class="time">9:00 · 1 min 15 s</span></div><div class="say">
+<p>Every candidate is scored as a count: three of four must-haves. Never a percentage. Opaque scores are a legal target, and research shows people follow an AI pick about nine times in ten, even when it’s wrong. So the evidence is built to be checked.</p>
+<p class="cue">Point at a “Not known” row.</p>
+<p>A must-have the CV doesn’t mention reads as “not known,” not as missing, and it comes with a way to find out: ask the candidate, or check it in the next interview.</p>
+<p class="cue">Point at Confirmed and Differs.</p>
+<p>And here is the record nobody else keeps: for each must-have, what the CV says and what the interview found, with one status, confirmed or differs.</p>
+<p class="cue">Click.</p></div></div>
+
+<div class="slide"><div class="head"><h2>10 · Requisitions: a forecast on every card</h2><span class="time">10:15 · 1 min 15 s</span></div><div class="say">
+<p>Each requisition says when it’s likely to fill at this pace, against the date we promised, and how long the first profile took against a seven-day target.</p>
+<p>Because 82% of our requests replace someone, a new requisition starts there: pick the person who left, and the role, the must-haves and the account come with them. Or paste the notes from the kickoff call, and AiMY drafts it and tells you what the notes didn’t say.</p>
+<p>And approval only happens by exception: a new seat, a budget above its band, three or more seats, or an unbilled client role. Everything else opens straight away, and the right person is asked only when it matters.</p>
+<p class="cue">Click.</p></div></div>
+
+<div class="slide"><div class="head"><h2>11 · Calls: a call, logged in a sentence</h2><span class="time">11:30 · 1 min</span></div><div class="say">
+<p>The phone screen is where most people are lost, so Calls is built for speed. Each row tells you what to get from that call: the notice, the expected salary, and whatever the CV is silent on.</p>
+<p>When you press Call, AiMY opens a brief. When you hang up, it reads back what it heard, “I read that as passed the screen, is that right?”, and logging is one press, or one sentence to correct it.</p>
+<p>The recruiter places every call; nothing dials by itself. Callbacks have the window the person asked for. After no answer, one short message names the role. And in a run of calls, AiMY coaches one habit at a time.</p>
+<p class="cue">Click.</p></div></div>
+
+<div class="slide"><div class="head"><h2>12 · Diary: the week, and the results not in</h2><span class="time">12:30 · 45 s</span></div><div class="say">
+<p>Today is what needs you now. The Diary is the week and the month: interviews with Prepare me, callbacks, start dates, and the day-30 and day-90 check-ins.</p>
+<p class="cue">Point at Results not in.</p>
+<p>And underneath, the list that matters most: every interview that happened with no result yet, oldest first, each with one nudge. Waiting for feedback is where we lose the most days, so this is where to look first.</p>
+<p class="cue">Click.</p></div></div>
+
+<div class="slide"><div class="head"><h2>13 · Find: pool first, criteria you can change</h2><span class="time">13:15 · 1 min</span></div><div class="say">
+<p>Finding people starts from what’s most common for us: someone like the person who left. Their role’s must-haves become the criteria, and you see them before you search. Change any line, and mark it required or preferred.</p>
+<p>We search our own pool first, people who applied before, then public web pages. Never LinkedIn scraping. Every web fact shows its page and the date, and anyone can report wrong data. A person found on the web is a prospect until they reply, and first contact needs a person’s approval.</p>
+<p>Saved searches run again each time, and tell you when new people in the pool match.</p>
+<p class="cue">Click.</p></div></div>
+
+<div class="slide"><div class="head"><h2>14 · Assessments: short, fair and checked</h2><span class="time">14:15 · 1 min</span></div><div class="say">
+<p>Each test carries a checklist from the research: about ten to fifteen minutes, works on a phone, a practice question first, and a short note to everyone after.</p>
+<p>Integrity, for example an answer pasted in, is said on its own line and never changes the score. A person looks.</p>
+<p>The German check gives a level from A1 to C2, because our requisitions ask for German at C1, and no vendor scores spoken German. And before anything is scored, the candidate is told AiMY scores and a person decides, and can choose a person instead.</p>
+<p class="cue">Click.</p></div></div>
+
+<div class="slide"><div class="head"><h2>15 · The client desk: a reason on every “no”</h2><span class="time">15:15 · 1 min</span></div><div class="say">
+<p>This is the first loop in action. The client has a desk and sees only the profiles we send, each with a write-up the recruiter approved.</p>
+<p>They meet someone, or pass with one reason from a short list: spoken language, experience, salary, notice, or skills. None of the eight staffing tools we studied records this.</p>
+<p>Once reasons add up, AiMY can say, for example, “most of this client’s declines mention spoken German,” and propose checking spoken German on the phone screen before a profile goes to them. The HR Manager approves it; nothing changes on its own. And the client never sees salary, margin or our notes.</p>
+<p class="cue">Click.</p></div></div>
+
+<div class="slide"><div class="head"><h2>16 · Reports: one definition per number</h2><span class="time">16:15 · 1 min</span></div><div class="say">
+<p>Today’s dashboard says 21 hired in one place and 13 in another: two different units under one label. So every number here carries one definition, its unit, where it starts and stops, behind “How it is counted.”</p>
+<p>Each measure has a target and a month-by-month trend. We added the staffing measures the dashboard lacks, profiles per hire, declined offers, and billed hires next to who stayed to day 90, and “where time goes” shows days lost by step.</p>
+<p>And it shows team views only. Research found ranking people cut productivity by 14%, so coaching one person at a time lives in AiMY QA.</p>
+<p class="cue">Click. You are now about 17 minutes in.</p></div></div>
+
+<div class="slide"><div class="head"><h2>17 · Trust and the law</h2><span class="time">17:15 · 1 min</span></div><div class="say">
+<p>One thing is urgent, and it isn’t a design decision. Egypt’s data protection law has a one-year grace period that ends around the first of November. FlairsTech needs a licence, a registered data protection officer, and a permit to move client data across borders. Please take it to legal this week.</p>
+<p>Everything else is built in. Scores are evidence a person checks, and nobody is rejected without a person. We ask consent before contact, recording and AI scoring. WhatsApp only after opt-in. No LinkedIn scraping. We never read emotion from a face or a voice. And a candidate can have their details deleted.</p>
+<p class="cue">Click.</p></div></div>
+
+<div class="slide"><div class="head"><h2>18 · Decisions we need</h2><span class="time">18:15 · 1 min 15 s</span></div><div class="say">
+<p>These are the decisions we need, and what the research recommends for each.</p>
+<p class="cue">Read the left column, then the right, one row at a time.</p>
+<p>Evidence counts instead of a match percentage. The client as a real user, with a desk that shows nothing internal. No ranking of individual recruiters in Talent. LinkedIn and SignalHire stay parked. One definition for every number before any number ships. The BU Director approves budget and headcount, at the requisition, by exception. And we price per qualified candidate.</p>
+<p>I’d like a yes or a no on each today, or an owner for each.</p>
+<p class="cue">Click.</p></div></div>
+
+<div class="slide"><div class="head"><h2>19 · Five tests before we build further</h2><span class="time">19:30 · 1 min</span></div><div class="say">
+<p>Before we build further, five small tests, each one deciding something.</p>
+<p>Code the client feedback on the last 50 profiles we sent, so we know the real reasons. Shadow five recruiters for a day, to see how much of their day starts from exceptions. Run a test before the call on one support role for two weeks. A think-aloud with five hiring managers, starting with the one who holds twenty requests. And ask two account managers how clients send feedback today.</p>
+<p class="cue">Click.</p></div></div>
+
+<div class="slide"><div class="head"><h2>20 · Four things this week</h2><span class="time">20:30 · 1 min</span></div><div class="say">
+<p>To close, four things for this week. Take Egypt’s data protection law to legal. Settle the open decisions, or give each one an owner. Start the tests, beginning with the client feedback on the last fifty profiles. And let’s walk the prototype with two recruiters and a hiring manager, on requisitions they know, so we hear where it fits their day and where it doesn’t.</p>
+<p>Thank you. I’m happy to take questions, or to open the prototype and show any part of it live.</p></div></div>
+
+<div class="slide"><div class="head"><h2>Optional · 5-minute live demo</h2><span class="time">after slide 16, or after questions</span></div><div class="say">
+<p class="cue">Open the prototype on Omar’s desk. Follow one person from start to finish.</p>
+<ul>
+<li><b>Today.</b> “Here’s the briefing.” Press <i>Passed</i> on the first decision, then <i>Undo</i> on the confirmation: “one press, and it can be undone.”</li>
+<li><b>Candidates.</b> Open a card. “Three of four, each quoted, and this one is not known, with Ask.”</li>
+<li><b>Calls.</b> Press Call on the first row, then end it. “AiMY reads it back; I confirm with one press.”</li>
+<li><b>Requisitions → New requisition.</b> Pick a person who left. “The role and must-haves come with them, and it says it opens without approval.”</li>
+<li><b>Switch to Jana, the client.</b> Pass on a profile with a reason. “That reason is what teaches matching.”</li>
+<li><b>Diary.</b> “The week, and the results we’re still waiting for.”</li>
+</ul></div></div>
+
+<div class="slide"><div class="head"><h2>If you get asked…</h2><span class="time">short answers</span></div><div class="say">
+<ul>
+<li><b>“Is this live?”</b> No, it’s a working prototype on sample data; the integrations are placeholders. It lets us test with recruiters before engineering builds it.</li>
+<li><b>“Why no match percentage?”</b> Legal risk, and people over-trust AI picks. A count with evidence invites a check.</li>
+<li><b>“What does AiMY decide alone?”</b> Nothing about a person. It drafts, reads back, nudges and proposes; a person presses every move.</li>
+<li><b>“How is this different from Bullhorn?”</b> They track steps; we close the loop: client reasons, verified skills, outcome-linked questions, day 90, in Arabic and German.</li>
+<li><b>“Why not rank recruiters?”</b> Rank incentives cut productivity 14% in a field experiment; individual coaching lives in AiMY QA.</li>
+<li><b>“LinkedIn? WhatsApp?”</b> No scraping; WhatsApp only after opt-in.</li>
+<li><b>“Price?”</b> Per qualified candidate, compared with recruiting services, not software.</li>
+</ul>
+<p>The prep pack has fuller answers to these and a few more.</p></div></div>
+</body>
+</html>

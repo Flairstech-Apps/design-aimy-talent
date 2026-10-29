@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AiMY Talent · Research and what we built</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+  @page { size: A4; margin: 18mm 16mm 18mm 16mm; background: #15181b; }
+  :root { --bg: #15181b; --ink: #eef2f6; --soft: #b9c2cc; --mute: #8b95a1; --line: #333a40; --tint: #241f36; --tintline: #4a3d70; --purple: #b28cff; --blue: #7c9dff; --warn: #f0b45a; --warnbg: #33270f; --warnline: #6b5222; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); }
+  body { font-family: 'Poppins', Arial, sans-serif; color: var(--ink); font-size: 9.3pt; line-height: 1.45; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  h1 { font-size: 28pt; line-height: 1.1; margin: 0 0 8pt; letter-spacing: -0.5pt; }
+  h2 { font-size: 15pt; line-height: 1.2; margin: 0 0 8pt; color: var(--ink); }
+  h3 { font-size: 10.5pt; margin: 10pt 0 3pt; }
+  p { margin: 0 0 5pt; }
+  ul, ol { margin: 0 0 8pt; padding-left: 16pt; }
+  li { margin-bottom: 2pt; }
+  .eyebrow { font-size: 8.5pt; font-weight: 600; letter-spacing: 1.6pt; text-transform: uppercase; color: var(--purple); margin-bottom: 4pt; }
+  .page { page-break-after: always; break-after: page; }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+  .lead { font-size: 11pt; line-height: 1.5; color: var(--soft); }
+  .note { font-size: 8.5pt; color: var(--mute); }
+  .cover { display: flex; flex-direction: column; justify-content: space-between; min-height: 240mm; }
+  .cover-band { background: linear-gradient(135deg, #3b1f8a, #2a3fb3); color: #f5f2ff; border-radius: 10pt; padding: 26pt 24pt; }
+  .cover-band h1 { color: #fff; font-size: 34pt; }
+  .cover-band .lead { color: #e3dcff; }
+  .stats { display: flex; gap: 8pt; margin: 14pt 0; }
+  .stat { flex: 1; background: #1c2024; border: 1px solid var(--line); border-radius: 8pt; padding: 10pt; }
+  .stat b { display: block; font-size: 18pt; line-height: 1.1; color: var(--purple); }
+  .stat span { font-size: 8.5pt; color: var(--soft); }
+  .box { background: #1c2024; border: 1px solid var(--line); border-radius: 7pt; padding: 7pt 9pt; margin: 0 0 7pt; }
+  .box.tint { background: var(--tint); border-color: var(--tintline); }
+  .box.warn { background: var(--warnbg); border-color: var(--warnline); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 7pt; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7pt; }
+  table { width: 100%; border-collapse: collapse; margin: 3pt 0 8pt; font-size: 8.3pt; }
+  th { text-align: left; font-size: 8pt; font-weight: 600; letter-spacing: .8pt; text-transform: uppercase; color: var(--purple); border-bottom: 1.5px solid var(--purple); padding: 4pt 5pt; }
+  td { border-bottom: 1px solid var(--line); padding: 3.5pt 5pt; vertical-align: top; }
+  tr { page-break-inside: avoid; break-inside: avoid; }
+  .funnel { display: flex; gap: 6pt; margin: 6pt 0 10pt; }
+  .funnel div { flex: 1; background: #1c2024; border: 1px solid var(--line); border-radius: 6pt; padding: 7pt; }
+  .funnel b { display: block; font-size: 16pt; }
+  .funnel span { font-size: 8pt; color: var(--soft); }
+  .funnel .end { background: var(--tint); border-color: var(--tintline); }
+  .shot { width: 100%; border: 1px solid var(--line); border-radius: 6pt; display: block; margin: 4pt 0 4pt; }
+  .shot.crop { height: 88mm; object-fit: cover; object-position: 50% 55%; }
+  .cap { font-size: 8pt; color: var(--mute); margin: 0 0 6pt; }
+  .grid2 .shot { height: 50mm; object-fit: cover; object-position: 50% 0; }
+  .shot.wide { height: 82mm; object-fit: cover; object-position: 50% 0; }
+  .feature { page-break-inside: avoid; break-inside: avoid; margin-bottom: 10pt; }
+  .qa p { margin-bottom: 4pt; }
+  .qa .q { font-weight: 600; margin-top: 8pt; }
+  .tag { display: inline-block; font-size: 7.5pt; font-weight: 600; padding: 1pt 6pt; border-radius: 99pt; background: var(--tint); color: var(--purple); margin-left: 4pt; vertical-align: 1pt; }
+  .toc li { margin-bottom: 2pt; }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<section class="page cover">
+  <div>
+    <div class="cover-band">
+      <div class="eyebrow" style="color:#d9ccff">AiMY Talent · prep pack</div>
+      <h1>Research, and what we built</h1>
+      <p class="lead">Closing the hiring loop, from a client’s request to a person still employed at day 90: what the market does, where nobody does it yet, and how the AiMY Talent prototype answers it.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>8</b><span>research workstreams (R1–R8)</span></div>
+      <div class="stat"><b>~45</b><span>products and platforms reviewed</span></div>
+      <div class="stat"><b>39</b><span>real requests read from today’s dashboard</span></div>
+      <div class="stat"><b>5</b><span>pieces of open ground nobody covers</span></div>
+    </div>
+    <div class="box tint">
+      <div class="eyebrow">The one-paragraph answer</div>
+      <p>The market has solved most single steps: search, AI screening, AI interviews, notetakers and client portals. Nobody joins them into one loop that learns. No vendor we found links an assessment question, an interview finding or a client’s rejection to later outcomes, keeps a verified skills profile across interviews, or measures quality of hire as standard. FlairsTech owns the whole funnel, from sourcing to the client’s decision to day 90, so AiMY Talent can close those loops where tools that own one step cannot.</p>
+    </div>
+    <h3>In this pack</h3>
+    <ol class="toc">
+      <li>Today’s recruitment data</li>
+      <li>Seven findings that shape the product</li>
+      <li>The market, and where AiMY Talent sits</li>
+      <li>Closing the loop, step by step</li>
+      <li>What each research stream found (R1–R8)</li>
+      <li>Trust and the law</li>
+      <li>What we built: the product, desk by desk and tab by tab</li>
+      <li>How it works: one hire, end to end</li>
+      <li>Decisions we need, and what we test first</li>
+      <li>Prep: questions you may get, and answers</li>
+    </ol>
+  </div>
+  <p class="note">Prepared 27 October 2026 for the AiMY Talent team, FlairsTech. Built from the AiMY Talent knowledge vault (research hubs R1–R8, Closing the loop, the decision notes), the recruitment dashboard (Power BI, Aug–Sep 2026), the AiMY Talent research summary and the working prototype (repository design-aimy-talent, branch engy/aimy-talent, pull request #2). Vendor figures are marked as such. This is product research, not legal advice. Every person and figure inside the prototype is invented.</p>
+</section>
+
+<!-- 1. DATA -->
+<section class="page">
+  <div class="eyebrow">1 · Today’s recruitment data</div>
+  <h2>The real funnel, August–September 2026</h2>
+  <p>From the stakeholder’s Power BI dashboard: 39 requests, 45 vacancies, 6 recruiters. Each percentage is the share of the stage before.</p>
+  <div class="funnel">
+    <div><b>268</b><span>passed the phone screen</span></div>
+    <div><b>190</b><span>accepted at HR · 71%</span></div>
+    <div><b>102</b><span>accepted at technical · 54%</span></div>
+    <div><b>81</b><span>profile sent to client · 79%</span></div>
+    <div><b>24</b><span>accepted at client interview · 30%</span></div>
+    <div class="end"><b>21</b><span>hired · 88%</span></div>
+  </div>
+  <div class="grid2">
+    <div class="box">
+      <h3 style="margin-top:0">Time</h3>
+      <ul>
+        <li><b>14 days</b> on average to send profiles: the number clients feel.</li>
+        <li><b>32 days</b> to hire. SHRM’s 2025 median time to fill is 44 days (the stop events may differ).</li>
+        <li><b>54 days</b> to join: joining, not acceptance, is the finish line.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3 style="margin-top:0">Shape of the work</h3>
+      <ul>
+        <li>Every request is a client need; one account holds 24 of 39.</li>
+        <li><b>82% are replacements</b>: “someone like the person who left”.</li>
+        <li>About 8 vacancies per recruiter; one hiring manager holds 20 requests.</li>
+        <li>Status lives in a free-text Remarks column; 7 offers were dropped.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="box tint">
+    <b>One definition per number.</b> The dashboard says 21 hired in the funnel and 13 hired vacancies in a tile: two units under one label. Every metric needs a fixed unit, start event and stop event before it is shown. The prototype’s Reports apply this to every figure.
+  </div>
+
+  <div class="eyebrow" style="margin-top:16pt">2 · Seven findings</div>
+  <h2>What shapes the product</h2>
+  <ol>
+    <li><b>The loop is the white space.</b> Single steps are crowded and well funded; joining them, and learning from outcomes, is not done by anyone researched.</li>
+    <li><b>The client is the most important missing party.</b> Every staffing tool treats the client as a first-class object with a sendout record and a portal. None records why a client says no as a reason code.</li>
+    <li><b>The 30% client acceptance is not the main leak.</b> 3.4 profiles per client interview is inside the usual agency range (3 to 5), and clients hired 21 of the 24 they met. The bigger losses are upstream (268 screened, 81 sent) and in time (14 days to send). <span class="note">Weak benchmark: vendor blogs and a 2018 Bullhorn survey.</span></li>
+    <li><b>Explainable matching means a verdict per criterion, with the evidence.</b> Opaque scores are a legal target, and people follow AI picks about 90% of the time even when they are wrong, so evidence must be designed to be checked.</li>
+    <li><b>A verified skills profile across interviews does not exist in the market.</b> “CV says” beside “interview found” is open ground.</li>
+    <li><b>Quality of hire is rarely measured.</b> Only 20% of US organisations measured it in 2025. Day-90 outcomes feeding back into matching is rare (only Workday follows the person after hire).</li>
+    <li><b>Compliance shapes the design now.</b> Egypt’s data protection grace period ends around 1 November 2026; the EU AI Act treats recruitment AI as high-risk; WhatsApp cold outreach and LinkedIn scraping are off the table.</li>
+  </ol>
+</section>
+
+<!-- 3. MARKET + 4. LOOP -->
+<section class="page">
+  <div class="eyebrow">3 · The market</div>
+  <h2>Where AiMY Talent sits</h2>
+  <table>
+    <tr><th style="width:26%">Segment</th><th style="width:20%">Size (2025)</th><th>Note</th></tr>
+    <tr><td>Recruitment software and ATS</td><td>about $2.5–3.1B</td><td>Definitions vary 5–10× between sources</td></tr>
+    <tr><td>Narrow “AI recruiting software”</td><td>about $0.6–0.7B</td><td>Fast growing, small base</td></tr>
+    <tr><td>RPO (recruitment process outsourcing)</td><td>about $8–11B</td><td>The right price reference: about $3–10k per hire; agencies charge 15–25% of salary</td></tr>
+  </table>
+  <table>
+    <tr><th style="width:26%">Segment</th><th style="width:38%">Products researched</th><th>What it means for AiMY Talent</th></tr>
+    <tr><td>Corporate and AI-native ATS</td><td>Ashby, Greenhouse, Lever, Workable, SmartRecruiters, Teamtailor, Workday</td><td>Patterns for stages and structured interviews; no client party</td></tr>
+    <tr><td>Staffing and agency ATS</td><td>Bullhorn, Recruit CRM, Loxo, Vincere, JobAdder, Manatal, Zoho Recruit, Crelate</td><td>Closest model to FlairsTech: client, job order, sendout, placement</td></tr>
+    <tr><td>AI sourcing and matching</td><td>LinkedIn Recruiter, hireEZ, SeekOut, Juicebox, Gem, Findem, Eightfold, Beamery</td><td>Crowded and well funded: do not compete on sourcing</td></tr>
+    <tr><td>Contact data</td><td>Apollo, SignalHire</td><td>Enrichment only; consent and accuracy risk</td></tr>
+    <tr><td>Assessments and AI interviewers</td><td>HackerRank, Codility, TestGorilla, Vervoe, HireVue, Sapia.ai, Paradox, micro1, Mercor</td><td>Language gap; no outcome-linked item insights</td></tr>
+    <tr><td>Interview intelligence</td><td>Metaview, BrightHire, Pillar, Screenloop, Spark Hire, Interviewer.AI</td><td>No cumulative skills profile</td></tr>
+    <tr><td>People analytics · MENA job boards</td><td>LinkedIn Talent Insights, Visier · Wuzzuf, Bayt, Forasna</td><td>Number plus narrative · credibility channels; no public APIs</td></tr>
+  </table>
+  <div class="grid2">
+    <div class="box"><h3 style="margin-top:0">The 2025–2026 shift</h3><p>Incumbents bought agents: Workday bought Paradox and HiredScore, SAP bought SmartRecruiters, LinkedIn shipped Hiring Assistant, Bullhorn launched Amplify, Zoom bought BrightHire. AI interviewers are bought, not built. Pricing is still per seat; outcome pricing is rare (closest: Humanly, “pay per qualified candidate”).</p></div>
+    <div class="box"><h3 style="margin-top:0">Egypt and MENA</h3><p>Candidates find jobs on boards, but hiring happens on WhatsApp, Facebook groups and referrals. Boards sell time-based access through account managers, with no public APIs. No vendor publishes Egypt coverage for sourcing data; no MENA recruiting benchmarks were found.</p></div>
+  </div>
+  <div class="box tint"><b>White space.</b> An agent-run recruiting team for outsourcing firms that hire against a client’s acceptance, in Arabic plus European languages, paid per qualified candidate and measured on retention. Nobody researched does all of: (1) the client in the pipeline with reason-coded feedback that teaches matching; (2) a verified skills profile across interviews and assessments; (3) outcome-linked assessment and interview insights; (4) quality of hire at day 90 fed back into the success profile; (5) coordination done by the agent with approval by exception.</div>
+</section>
+
+<section class="page">
+  <div class="eyebrow">4 · Closing the loop</div>
+  <h2>Step by step: what the market does, and our move</h2>
+  <table>
+    <tr><th style="width:13%">Step</th><th style="width:31%">What the market does</th><th style="width:25%">Nobody does</th><th>Move for AiMY Talent · <i>built in the prototype</i></th></tr>
+    <tr><td>Request</td><td>Per-job stages mapped to fixed stage groups so reports roll up (Ashby, Workable, Teamtailor, Lever)</td><td>Requests owned by a client account with its own stage template</td><td>Client account on top; a stage template per account, mapped to one funnel · <i>built</i></td></tr>
+    <tr><td>Source</td><td>Plain words or a JD in, AI-drafted criteria the recruiter edits; pool rediscovery (Gem)</td><td>Egypt/MENA coverage is unpublished; contact data is weak</td><td>Pool first, web second, one list; web results are prospects · <i>built</i></td></tr>
+    <tr><td>Match</td><td>Per-criterion verdicts with links to evidence (Juicebox, SeekOut, Ashby, LinkedIn)</td><td>Designs that make the recruiter actually check the evidence</td><td>Meets / partly / not known per criterion; “3 of 4 met”; unknowns become questions · <i>built</i></td></tr>
+    <tr><td>Assess</td><td>AI interviewers with per-answer scores and overrides; item stats (HackerRank)</td><td>Linking a question to later outcomes; AI-scored speaking tests in German or Arabic</td><td>Item insights tied to the funnel; a spoken German check with a CEFR level · <i>built</i></td></tr>
+    <tr><td>Interview</td><td>Notetakers fill facts and leave verdicts blank; feedback hidden until submitted</td><td>Live coverage against the template; phone and upload capture is rare</td><td>Prepare me before; gap questions; phone and upload capture · <i>built</i></td></tr>
+    <tr><td>Verify</td><td>Evidence per skill inside one interview (Screenloop, Metaview)</td><td>A cumulative verified skills profile</td><td>“CV says” beside “interview found” at the core of the record · <i>built</i></td></tr>
+    <tr><td>Send to client</td><td>Sendout records, client portals, scorecards hidden until each reviewer submits, AI write-ups</td><td>Fixed client rejection reason codes feeding matching</td><td>Sendout as a record; a client desk; reason codes; the recruiter approves every write-up · <i>built</i></td></tr>
+    <tr><td>Offer and join</td><td>Offer flows in corporate ATSs</td><td>Tracking acceptance to joining as its own stage (54 days here)</td><td>Parallel approval; accepted → joined as stages; declined offers with reasons · <i>built</i></td></tr>
+    <tr><td>Day 90</td><td>Only 20% of US organisations measured quality of hire in 2025</td><td>Outcomes fed back into sourcing and matching</td><td>30/90-day check-ins; learning proposals with a minimum sample of 20 · <i>built</i></td></tr>
+    <tr><td>See it all</td><td>Numbers with a narrative (Visier); reporting is the top complaint for most ATSs</td><td>Anomaly alerts with a suggested action</td><td>A metric dictionary; one sentence plus one action · <i>built</i></td></tr>
+  </table>
+  <div class="grid3">
+    <div class="box tint"><b>1 · Client feedback → matching.</b> Reason codes such as “spoken German below need” let AiMY say “most declines mention spoken German” and propose a change to that client’s success profile.</div>
+    <div class="box tint"><b>2 · Evidence → the candidate record.</b> Every interview and assessment verifies or contradicts the CV, so the next requisition (82% are replacements) starts from what we know.</div>
+    <div class="box tint"><b>3 · Day-90 outcome → success profile.</b> At about 21 hires in two months a pattern needs months of data, so learning waits for 20 day-90 check-ins.</div>
+  </div>
+</section>
+
+<!-- 5. WORKSTREAMS + 6. TRUST -->
+<section class="page">
+  <div class="eyebrow">5 · The eight research streams</div>
+  <h2>What each one found</h2>
+  <div class="grid2">
+    <div class="box"><h3 style="margin-top:0">R1 · Corporate and AI-native ATS</h3><p>Everyone maps per-job stages to fixed stage groups so reports roll up. AI screening is either a verdict per criterion with evidence (Ashby, Teamtailor) or a rank with a rationale (Workable, Lever). Humans decide; Greenhouse never auto-rejects. Reporting is the most common complaint.</p></div>
+    <div class="box"><h3 style="margin-top:0">R2 · Staffing and agency</h3><p>The client is a first-class object; the sendout is its own record. Client portals converged on a share link, limited stages, field hiding and rating. None of 8 products records client rejection reason codes. Benchmarks are weak.</p></div>
+    <div class="box"><h3 style="margin-top:0">R3 · Sourcing, search and matching</h3><p>Leaders start from plain words or a JD and let the recruiter edit AI-drafted criteria. The best explainable pattern is per-criterion verdicts with evidence; opaque scores are a legal target (Kistler v. Eightfold, Jan 2026). People follow AI rankings even when wrong. Pool rediscovery is standard; contact data is the weak spot.</p></div>
+    <div class="box"><h3 style="margin-top:0">R4 · Assessments and AI interviewers</h3><p>Every serious vendor ships an AI interviewer; the good ones score per answer with a reason and allow override. No vendor links a question to later outcomes. No AI-scored speaking test for German or Arabic. Structured interviews rank first for validity (Sackett et al., 2022).</p></div>
+    <div class="box"><h3 style="margin-top:0">R5 · Interview intelligence</h3><p>Notetakers are standard; the best split facts from judgement and leave the verdict blank (Metaview, Greenhouse). Coverage checks exist only after the fact; phone and upload capture is rare. No product keeps a cumulative verified skills profile.</p></div>
+    <div class="box"><h3 style="margin-top:0">R6 · Insights and closing the loop</h3><p>Metrics agree only with a fixed unit, start and stop event: a metric dictionary comes first. Quality of hire is rarely measured. Number plus narrative leads. Rank incentives cut productivity 14% in a field experiment: do not rank recruiters.</p></div>
+    <div class="box"><h3 style="margin-top:0">R7 · Market and business model</h3><p>Software is $2.5–3.1B; RPO at $8–11B is the better price reference. Incumbents bought agents in 2025. Outcome pricing is rare; “pay per qualified candidate” is the closest precedent. In Egypt, hiring happens on WhatsApp and referrals.</p></div>
+    <div class="box"><h3 style="margin-top:0">R8 · Compliance and trust</h3><p>Egypt’s Law 151/2020 grace period ends around 1 Nov 2026: licence, DPO, cross-border permit. EU AI Act: recruitment AI is high-risk (Annex III deadline 2 Dec 2027); emotion inference banned since Feb 2025. Cold outreach is the highest-risk feature: no WhatsApp without opt-in, no LinkedIn scraping (CNIL fined Kaspr €240k).</p></div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="eyebrow">6 · Trust and the law</div>
+  <h2>What the design must do</h2>
+  <div class="box warn"><b>Urgent, and not a design decision.</b> Egypt’s data protection law (151/2020): the executive regulations were issued as Ministerial Decree 816 of 2025, and the one-year grace period ends around 31 October to 1 November 2026. FlairsTech needs a licence from the data protection centre, a registered DPO and a cross-border transfer permit for client data flows. Exact decree dates are unverified; take it to legal now.</div>
+  <table>
+    <tr><th style="width:24%">Feature</th><th style="width:9%">Risk</th><th style="width:40%">What the design must do</th><th>In the prototype</th></tr>
+    <tr><td>Web and data-provider sourcing</td><td>High</td><td>Store as a prospect with source and date; minimal fields; notice at first contact; honour objection; no LinkedIn scraping</td><td>Prospects with page and date; first contact needs approval; Wrong data?; delete on request</td></tr>
+    <tr><td>WhatsApp outreach</td><td>High</td><td>Only after an opt-in to the named business; approved template; opt-out in every message</td><td>WhatsApp only where opted in, else email; HR templates</td></tr>
+    <tr><td>Match score and explanation</td><td>High</td><td>Plain explanation with the data used; no protected traits or proxies</td><td>Evidence counts, each quoted; no percentage</td></tr>
+    <tr><td>AI screening into lanes</td><td>High</td><td>Lanes are suggestions; a recruiter confirms each move</td><td>Every move is one press by a person, with Undo</td></tr>
+    <tr><td>Automated or batch rejection</td><td>Med-high</td><td>No solely automated rejection; a person reviews each batch item</td><td>A reason picked by a person; answers sent by a person under an approved template</td></tr>
+    <tr><td>AI interview agent and scoring</td><td>Med-high</td><td>Tell candidates they talk to AI; no emotion, tone or facial inference; score content only</td><td>Consent screen before scoring; a person scores on request; integrity said apart</td></tr>
+    <tr><td>Recording and transcription</td><td>Medium</td><td>Notice before, announcement at start, consent capture, a no-recording option</td><td>Consent shown per candidate; recording can be stopped on the call</td></tr>
+    <tr><td>Candidate self-service profile</td><td>Medium</td><td>One-time code login; delete or export on request</td><td>One-time code; delete at their request, and it stays deleted</td></tr>
+  </table>
+  <h3>Design rules the research adds</h3>
+  <ul>
+    <li>Design evidence to be checked, not trusted. Unknowns shown as unknown.</li>
+    <li>AI fills facts, people give the verdict. AiMY never pre-fills a rating or a proceed decision.</li>
+    <li>No ranking of individual recruiters in Talent; team and request views only.</li>
+    <li>Consent before contact and before recording. A web-found person is a prospect until they reply.</li>
+  </ul>
+</section>
+
+<!-- 7. WHAT WE BUILT -->
+<section class="page">
+  <div class="eyebrow">7 · What we built</div>
+  <h2>AiMY Talent, on AiMY Sales</h2>
+  <p>The prototype is one product on the AiMY Sales shell and components, so it looks and behaves like the rest of the AiMY family. It runs in the browser on sample data (invented people); integrations such as telephony, email and the HR system are fixtures. Repository <b>design-aimy-talent</b>, branch <b>engy/aimy-talent</b>, pull request <b>#2</b>.</p>
+  <table>
+    <tr><th style="width:24%">Desk</th><th>What they do</th></tr>
+    <tr><td>Recruiter · Omar</td><td>Today, Candidates, Requisitions, Calls, Diary, Find candidates, Assessments, Reports</td></tr>
+    <tr><td>Hiring manager · Rania</td><td>Debriefs, offer approval (fit and salary), client requests as drafts, the Diary of their interviews</td></tr>
+    <tr><td>HR Manager · Dina</td><td>Every requisition, reassigning with AiMY’s pick, stage and interview templates, learning proposals, requisition approvals for unbilled roles</td></tr>
+    <tr><td>BU Director · Hesham</td><td>Budget and headcount: offers, and requisitions that are exceptions</td></tr>
+    <tr><td>Client · Jana (Northwind)</td><td>Profiles sent to them: meet them or pass with a reason; interview feedback; never salary or internal notes</td></tr>
+    <tr><td>Outside links</td><td>Careers page and apply, a candidate’s own profile (one-time code), an assessment, an interviewer’s debrief, an offer approval</td></tr>
+  </table>
+  <h3>Rules it keeps everywhere</h3>
+  <div class="grid2">
+    <ul>
+      <li><b>One press, with Undo.</b> No “are you sure” dialogs.</li>
+      <li><b>Evidence as counts.</b> “3 of 4 must-haves”, never a match %.</li>
+      <li><b>Unknown said as unknown,</b> with one way to find out.</li>
+    </ul>
+    <ul>
+      <li><b>A person decides</b> about a person; AiMY drafts, reads back, nudges and proposes.</li>
+      <li><b>One definition per number.</b></li>
+      <li><b>Sales’s components and titles,</b> so the family reads as one product.</li>
+      <li><b>A breadcrumb</b> that names the page you are on; confirmations with room to read, and Undo.</li>
+    </ul>
+  </div>
+  <img class="shot wide" src="shots/today.png" alt="Today">
+  <p class="cap">Today, the recruiter’s front page: a briefing (decisions, interviews, at-risk requisitions, callbacks), four ways to start, and the decisions waiting, oldest first.</p>
+</section>
+
+<section class="page">
+  <div class="eyebrow">7 · What we built, tab by tab</div>
+  <h2>Each feature, and the research behind it</h2>
+  <table>
+    <tr><th style="width:15%">Where</th><th style="width:52%">What it does</th><th>Why (research)</th></tr>
+    <tr><td><b>Today</b></td><td>A briefing, not a list: decisions waiting (one press, Undo); three per block with the rest one press away; what waiting on others costs in days past the usual time; one move on an at-risk requisition (find more people, or ask to move the date); Prepare me before each interview; the decline message shown before it is sent, with its own Send.</td><td>R6 number plus narrative; R5: feedback delay is where days are lost (46 of 105); R4/R5 structured interviews</td></tr>
+    <tr><td><b>Candidates</b></td><td>Score as a count with one dot per must-have (full purple met, dashed not); unknown not missing; CV says beside interview found on one card; a reason on Not progressing; Returning badge with what stopped them last time; search and one-requisition filter; cards or a list; the card opens the profile.</td><td>R3 explainable matching, automation bias; R5 verified skills profile; R2 reason codes; R3 rediscovery</td></tr>
+    <tr><td><b>Requisitions</b></td><td>A forecast on each card (likely fill date vs target; first profile vs a 7-day target); start from Replace someone who left or from a briefing; approval only by exception (new seat, over the band, 3+ seats, unbilled); each client’s own stage template.</td><td>82% replacements; R1 job-kickoff agents; R1 conditional approvals (Ashby, Lever); D7</td></tr>
+    <tr><td><b>Calls</b></td><td>What to get on each row; a brief before and a read-back after, in the conversation; the recruiter places every call (no auto-dial); callback windows; a message after No answer (WhatsApp only with opt-in); the run’s size; AiMY coaches one habit per run.</td><td>R5 AI fills facts, people decide; R8 opt-in; parity with AiMY Sales</td></tr>
+    <tr><td><b>Diary</b></td><td>A month grid with the day’s agenda: interviews with Prepare me, callbacks in their windows, start dates, day-30/90 check-ins. Results not in: every interview with no result, oldest first, with a nudge.</td><td>AiMY Sales B11; R5 feedback speed</td></tr>
+    <tr><td><b>Find candidates</b></td><td>Start from Like the person who left; criteria shown first and editable, each Required or Preferred; pool first, then public web pages; each web fact with page and date and Wrong data?; prospects need approval; saved searches count new pool matches.</td><td>R3 editable criteria, pool rediscovery; R8 source and date, no scraping</td></tr>
+    <tr><td><b>Assessments</b></td><td>A checklist (10–15 minutes, works on a phone, practice question, a note to everyone); integrity flags said apart from the score; spoken German as a CEFR level; consent before AiMY scores, a person on request; item insights tied to later outcomes, gated below a sample.</td><td>R4 length, fairness, language gap, item insights; R8 EU AI Act</td></tr>
+    <tr><td><b>Client desk</b></td><td>Profiles sent with a recruiter-approved write-up; meet or pass with one reason code; reasons counted per client; AiMY proposes a success-profile change; the HR Manager approves.</td><td>R2: no tool records reason codes; R6 learning with a minimum sample</td></tr>
+    <tr><td><b>Offers, day 90</b></td><td>One packet approved in parallel by the hiring manager (fit, salary) and the BU Director (budget, headcount); accepted → joined; day-30 and day-90 check-ins.</td><td>Joining is the finish line (54 days); R6 quality of hire</td></tr>
+    <tr><td><b>Reports</b></td><td>Period and account filters; every measure a card with its definition (hover, pin), a target and a month-by-month trend; staffing measures (profiles per hire, declined offers, hired not started, billed hires with day-90 retention); where time goes; team views only.</td><td>R6 metric dictionary; no ranking (−14% in a field experiment)</td></tr>
+  </table>
+</section>
+
+<section class="page">
+  <div class="eyebrow">7 · The screens</div>
+  <h2>What it looks like</h2>
+  <img class="shot crop" src="shots/profile.png" alt="Candidate profile, scoring and matching">
+  <p class="cap">A candidate’s profile: each must-have with what the CV says, what the interview found, and one status (Confirmed, Differs, Not known). The count and the dots say “3 of 4” at a glance.</p>
+  <div class="grid2">
+    <div><img class="shot" src="shots/requisitions.png" alt="Requisitions"><p class="cap">Requisitions: each card’s forecast against its target, and days to the first profile.</p></div>
+    <div><img class="shot" src="shots/calls.png" alt="Calls"><p class="cap">Calls: who to call in order, and what to get from each call.</p></div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="eyebrow">7 · The screens</div>
+  <div class="grid2">
+    <div><img class="shot" src="shots/diary.png" alt="Diary"><p class="cap">Diary: the month, today’s agenda with Prepare me and Call, and Results not in below.</p></div>
+    <div><img class="shot" src="shots/find.png" alt="Find"><p class="cap">Find candidates: where to start, where to look, and the criteria, each Required or Preferred.</p></div>
+    <div><img class="shot" src="shots/assessment.png" alt="Assessment"><p class="cap">An assessment: the German check with its CEFR pass mark and the checklist.</p></div>
+    <div><img class="shot" src="shots/client.png" alt="Client desk"><p class="cap">The client desk: profiles sent to Northwind, meet or pass with a reason.</p></div>
+    <div><img class="shot" src="shots/reports.png" alt="Reports"><p class="cap">Reports: every measure a card of one size, with its target and trend.</p></div>
+    <div><img class="shot" src="shots/approval.png" alt="Approval"><p class="cap">Approval by exception: the BU Director sees why this requisition needs him, and approves or sends it back.</p></div>
+  </div>
+</section>
+
+<!-- 8. HOW IT WORKS -->
+<section class="page">
+  <div class="eyebrow">8 · How it works</div>
+  <h2>One hire, end to end</h2>
+  <p>Follow one role through the product: a bilingual German support agent for Northwind Software, a client.</p>
+  <ol>
+    <li><b>The request.</b> Rania, the hiring manager, gets Northwind’s ask as a draft. Omar starts a requisition from <i>Replace someone who left</i>: the role, must-haves (German at C1, fluent English, a year of software support) and account come from the person who left. It is a replacement inside the budget band, so it opens without approval; the confirmation says so. A new seat would have gone to Hesham.</li>
+    <li><b>Finding people.</b> Find candidates starts from the person who left. The criteria are shown first; Omar marks one as Preferred. The pool comes back first, people who applied before; web prospects second, each with its page and date. Saved, the search keeps counting new people in the pool.</li>
+    <li><b>The test and the call.</b> Northwind’s template runs the German check first. The candidate sees a consent screen, then speaks to AiMY and gets a CEFR level. On Calls, the row says what to get; Omar presses Call, reads the brief, and after hanging up confirms AiMY’s read-back in one press. Passed the screen moves them to the HR interview.</li>
+    <li><b>Interviews.</b> Prepare me lists what to probe: the must-haves the CV is silent on. After each interview the interviewer’s debrief confirms or contradicts the CV, and the profile shows both. If a result is late, the Diary lists it under Results not in with one nudge.</li>
+    <li><b>The client.</b> Omar approves AiMY’s write-up and sends the profile. Jana at Northwind meets the person, or passes with one reason. Reasons add up; when most declines mention spoken German, AiMY proposes checking it on the phone screen, and Dina approves.</li>
+    <li><b>Offer and joining.</b> One offer packet goes to Rania (fit, salary) and Hesham (budget, headcount) at the same time. Accepted, then joined, each a stage.</li>
+    <li><b>Day 90.</b> Check-ins at day 30 and day 90 are asked of the hiring manager and the person, separately. Once there are 20, AiMY compares who stayed against the success profile and proposes changes, which a person approves.</li>
+  </ol>
+  <div class="box tint">Throughout, every step is one press with Undo, AiMY says where each of its lines came from, and nothing about a person is decided by AiMY alone.</div>
+</section>
+
+<!-- 9. DECISIONS + TESTS -->
+<section class="page">
+  <div class="eyebrow">9 · Decisions and tests</div>
+  <h2>Decisions the research informs</h2>
+  <table>
+    <tr><th style="width:6%">#</th><th style="width:38%">Decision</th><th>Research leaning</th></tr>
+    <tr><td>D1</td><td>Is the client account the top record?</td><td>Yes: every staffing ATS treats the client as first-class</td></tr>
+    <tr><td>D2</td><td>Match score or evidence counts?</td><td>Evidence counts (“4 of 5 must-haves met”); opaque scores are a legal target</td></tr>
+    <tr><td>D3</td><td>“No forms” or “no form as the only way”?</td><td>Change it: every agent ships with editing alongside</td></tr>
+    <tr><td>D4</td><td>Is the client a Talent user?</td><td>Yes, with a desk that shows nothing internal</td></tr>
+    <tr><td>D5</td><td>Rank individual recruiters?</td><td>No: team views in Talent; individual views in AiMY QA</td></tr>
+    <tr><td>D6</td><td>When do assessments and recordings come?</td><td>Test first; layered consent for recordings is the vendor norm</td></tr>
+    <tr><td>D7</td><td>What does the BU Director approve?</td><td>Headcount and budget, possibly at the requisition stage</td></tr>
+    <tr><td>D8</td><td>Batch decline under a policy?</td><td>Only after legal review; a person reviews each one until then</td></tr>
+    <tr><td>D10</td><td>LinkedIn and SignalHire in search?</td><td>Keep both parked; Apollo for enrichment only after a contract check</td></tr>
+    <tr><td>D11</td><td>Which “hired” (21 or 13)?</td><td>Fix unit, start and stop per metric before showing any number</td></tr>
+    <tr><td>D12</td><td>Pricing unit</td><td>Per qualified candidate; the billable event is a person’s act</td></tr>
+  </table>
+  <h2 style="margin-top:14pt">What we test first</h2>
+  <table>
+    <tr><th style="width:30%">We believe</th><th style="width:40%">How we test it</th><th>It decides</th></tr>
+    <tr><td>We know why clients decline</td><td>Code the client feedback on the last 50 profiles sent</td><td>The reason list, and what matching must learn</td></tr>
+    <tr><td>Recruiters start the day from exceptions</td><td>Shadow 5 recruiters for a day; count actions by type</td><td>How much of Today is briefing versus records</td></tr>
+    <tr><td>A test before the call saves time</td><td>One support role for 2 weeks; compare recruiter hours and drop-off</td><td>Whether assessments are Now or Later</td></tr>
+    <tr><td>Hiring managers will answer in Talent</td><td>Think-aloud with 5, starting with the one who holds 20 requests</td><td>Where asks reach them</td></tr>
+    <tr><td>Clients will give feedback in AiMY</td><td>Ask 2 account managers how clients send feedback today</td><td>The client desk’s channel</td></tr>
+  </table>
+</section>
+
+<!-- 10. PREP Q&A -->
+<section class="page qa">
+  <div class="eyebrow">10 · Prep</div>
+  <h2>Questions you may get, and answers</h2>
+  <p class="q">Is this live? Can recruiters use it tomorrow?</p>
+  <p>No. It is a working prototype in the browser on sample data with invented people. Telephony, email, WhatsApp and the HR system are fixtures; telephony for Talent is on hold with AiMY Phone. It shows how the product works and lets us test with real recruiters before engineering builds it.</p>
+  <p class="q">Why not a match percentage, like other tools?</p>
+  <p>Opaque scores are a legal target (Kistler v. Eightfold, January 2026), and people follow an AI pick about nine times in ten even when it is wrong. A count with the evidence quoted (“3 of 4 must-haves”) is its own explanation and invites a check.</p>
+  <p class="q">What does AiMY decide on its own?</p>
+  <p>Nothing about a person. It drafts (a requisition, a write-up, a message), reads back calls, nudges, and proposes changes. A person presses every move, with Undo, and an HR Manager approves anything AiMY wants to learn.</p>
+  <p class="q">How is this different from Bullhorn or other staffing tools?</p>
+  <p>They track the steps. We close the loop: a reason on every client decision that teaches matching, a skills record that interviews verify over time, test questions tied to who clients accept, and day-90 retention fed back. And we hire in Arabic and German, where no vendor scores spoken language.</p>
+  <p class="q">Why don’t we rank recruiters?</p>
+  <p>A field experiment found rank incentives cut productivity by 14%. Talent shows team and request views; coaching one person at a time lives in AiMY QA.</p>
+  <p class="q">The client acceptance is only 30%. Isn’t that the problem?</p>
+  <p>No. 3.4 profiles per client interview is inside the usual 3 to 5, and clients hired 21 of the 24 they met. The losses are upstream (268 screened, 81 sent) and in time (14 days to the first profile). The benchmark is weak, so we test it by coding the last 50 profiles’ feedback.</p>
+  <p class="q">Will we use LinkedIn or WhatsApp?</p>
+  <p>No LinkedIn scraping, and SignalHire stays parked. Apollo only adds a work email, after a contract check. WhatsApp only after a candidate opts in to FlairsTech; otherwise email.</p>
+  <p class="q">What about the law?</p>
+  <p>Egypt’s data protection grace period ends around 1 November 2026: a licence, a DPO and a transfer permit are needed now, which is for legal. The EU AI Act treats recruitment AI as high-risk from December 2027; the design already keeps a person in every decision, asks consent before AI scoring and recording, and never reads emotion from a face or a voice.</p>
+  <p class="q">How will we price it?</p>
+  <p>Compare it to recruiting services, not software: RPO is about $3–10k per hire and agencies take 15–25% of salary. The research leans to pricing per qualified candidate, where the billable event is a person’s act.</p>
+  <p class="q">Why are 21 and 13 both “hired”?</p>
+  <p>Two units under one label: 21 people with an accepted offer, 13 vacancies filled. Every number in Talent carries one definition, its unit, start and stop, before it is shown.</p>
+  <p class="q">What do you need from us?</p>
+  <p>Take Egypt’s law to legal this week; a yes, a no or an owner for each open decision; and agreement to run the five tests, starting with the last 50 profiles’ client feedback.</p>
+</section>
+
+</body>
+</html>
