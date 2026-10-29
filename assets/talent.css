@@ -1196,68 +1196,39 @@ body.is-portal .aimy-overlay { display: none !important; }
 .aimy-toast-undo:active { transform: scale(0.97); }
 .aimy-toast-undo:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 
-/* ══ THE QUICK VIEW ═══════════════════════════════════════════════════════
-   A candidate opened from a list, over the list. Sales's drawer mechanism
-   (the rail's on a narrow screen): the same scrim, ground, edge and shadow,
-   starting below the top bar, from the right because the list it came
-   from stays readable on the left. Two columns: who they are and the verb
-   their stage asks for, then everything that happened to them. Each
-   scrolls on its own so the verb never leaves while the history is read. */
-.t-qv-scrim {
-  position: fixed; z-index: 690;
-  top: var(--topbar-height); right: 0; bottom: 0; left: 0;
-  background: rgba(10, 14, 18, 0.5);
+/* ══ THE CV ON HOVER ══════════════════════════════════════════════════════
+   A candidate's CV, small, under their name while it is hovered. The same
+   raised surface as "How it is counted" (.t-def-pop), fixed to the window
+   so a card's overflow cannot clip it. Read in this order: who they are
+   now, skills, then the must-haves with a dot each, full for
+   shown and dashed for not, as on the cards. */
+.t-cv {
+  position: fixed; z-index: 800; left: 0; top: 0;
+  width: 340px; max-width: calc(var(--vp-w) - 16px);
+  display: flex; flex-direction: column; gap: 10px; padding: 14px 16px;
+  border: 1px solid var(--card-border-hover); border-radius: var(--r-lg); background: var(--card-bg-raised);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.38);
+  font-size: var(--fs-xs); line-height: var(--lh-snug); color: var(--d100);
 }
-:root[data-theme="light"] .t-qv-scrim { background: rgba(16, 24, 40, 0.28); }
-.t-qv {
-  position: fixed; z-index: 700;
-  top: var(--topbar-height); right: 0; bottom: 0;
-  width: min(1040px, calc(var(--vp-w) - 56px));
-  display: flex; flex-direction: column;
-  background: var(--panel-bg);
-  border-left: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-xl);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  outline: none;
-}
-.t-qv-head {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 10px 20px; border-bottom: 1px solid var(--glass-border);
-}
-.t-qv-steps { display: inline-flex; align-items: center; gap: 6px; }
-.t-qv-step { width: 34px; padding: 0; justify-content: center; }
-.t-qv-step:disabled { opacity: 0.4; cursor: default; }
-.t-qv-at { margin-left: 6px; font-size: 13px; color: var(--d100); font-variant-numeric: tabular-nums; }
-.t-qv-body {
-  flex: 1; min-height: 0;
-  display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
-}
-.t-qv-who, .t-qv-hist { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 20px; }
-.t-qv-who { display: flex; flex-direction: column; gap: 14px; border-right: 1px solid var(--glass-border); }
-.t-qv-hist > .rc { margin-top: 0; }
-/* The card keeps its height on a short screen; the column scrolls instead. */
-.t-qv-who > * { flex-shrink: 0; }
-.t-qv-facts { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 0 4px; font-size: 13px; color: var(--d100); }
-.t-qv-facts .b-ghost { margin-top: 4px; }
-/* The page behind does not scroll under the panel. */
-.is-qv .page-scroll { overflow: hidden; }
-
-/* Narrower: one column, who they are above the history, one scroll. */
-@media (max-width: 860px) {
-  .t-qv-body { display: block; overflow-y: auto; overscroll-behavior: contain; }
-  .t-qv-who, .t-qv-hist { overflow: visible; }
-  .t-qv-who { border-right: 0; border-bottom: 1px solid var(--glass-border); }
-}
-@media (max-width: 640px) {
-  .t-qv { width: var(--vp-w); border-left: 0; }
-  .t-qv-head { padding: 8px 16px; }
-  .t-qv-who, .t-qv-hist { padding: 16px; }
-}
+.t-cv[hidden] { display: none; }
+.t-cv p { margin: 0; }
+.t-cv-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.t-cv-name { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--d50); }
+.t-cv-role { color: var(--d50); margin-top: -6px; }
+.t-cv-facts { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.t-cv-sec { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid var(--card-border); }
+.t-cv-cap { font-size: var(--fs-2xs); font-weight: var(--fw-medium); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); }
+.t-cv-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.t-cv-chip { padding: 2px 8px; border: 1px solid var(--card-border); border-radius: 999px; color: var(--d50); }
+.t-cv-musts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.t-cv-must { display: grid; grid-template-columns: 10px minmax(0, 1fr); gap: 8px; align-items: start; }
+.t-cv-must .t-pip { margin-top: 3px; }
+.t-cv-must > span { display: flex; flex-direction: column; }
+.t-cv-must b { font-weight: var(--fw-medium); color: var(--d50); }
+.t-cv-foot { padding-top: 10px; border-top: 1px solid var(--card-border); color: var(--ink-muted); }
+:root[data-theme="light"] .t-cv { box-shadow: 0 14px 32px rgba(16, 24, 40, 0.14); }
 
 @media (prefers-reduced-motion: no-preference) {
-  .t-qv.is-in { animation: t-qv-in 220ms var(--ease-out); }
-  .t-qv-scrim.is-in { animation: t-qv-fade 220ms var(--ease-out); }
+  .t-cv:not([hidden]) { animation: t-cv-in 140ms var(--ease-out); }
 }
-@keyframes t-qv-in { from { transform: translateX(32px); opacity: 0; } }
-@keyframes t-qv-fade { from { opacity: 0; } }
+@keyframes t-cv-in { from { opacity: 0; transform: translateY(-4px); } }
