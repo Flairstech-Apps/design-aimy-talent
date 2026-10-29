@@ -862,6 +862,28 @@
     seedLoop();
     seedApproval();
     seedAsmtTrust();
+    seedStageDays();
+  }
+  /* Days spent at each stage a person has finished (`took`), drawn from
+     their id and their requisition's own pace rather than the random
+     stream, so nothing else moves. Most requisitions run a stage at about
+     its usual pace; about one stage in four runs slow (a busy interviewer,
+     a quiet client), which is what stage health reads. Someone still at a
+     stage has `since` instead: their days there so far. */
+  function seedStageDays() {
+    const h = (t) => { let x = 7; for (let i = 0; i < t.length; i++) x = (x * 31 + t.charCodeAt(i)) >>> 0; return x; };
+    const u = (t) => (h(t) % 1000) / 1000;
+    DB.cands.forEach((c) => {
+      const q = DB.reqById[c.req], t = TEMPLATE[q.tpl];
+      const end = t.indexOf(c.maxAt) + (c.exit ? 1 : 0);
+      c.took = {};
+      for (let i = 0; i < end; i++) {
+        const k = t[i], exp = STAGE[k].exp;
+        if (!exp) continue;
+        const p = u(q.id + k), pace = p < 0.74 ? 0.7 + p * 0.65 : 1.3 + (p - 0.74) * 2.4;
+        c.took[k] = Math.max(0, Math.round(exp * pace * (0.6 + u(c.id + k) * 0.8)));
+      }
+    });
   }
   /* Consent and integrity on the seeded results, drawn from each result's
      id rather than the random stream, so nothing else moves. Most agreed
@@ -1380,6 +1402,59 @@
     return at < 0 ? null : { from: f[at].k, to: f[at + 1].k, rate: worst, n: f[at].n, m: f[at + 1].n };
   }
 
+  /* ── Stage health, per stage, over one requisition or many ──
+     For each stage: how many reached it, how many are there now, how many
+     moved on of those decided there (people still there are left out, so a
+     busy stage is not read as a leaky one), and the days spent in it,
+     counting those still there at their days so far. Each is set against
+     the usual: STAGE.exp for days, PASS for moving on (FlairsTech's own
+     funnel, Aug–Sep 2026). Rule-based, nothing predictive, and judged only
+     on three people or more; fewer is said as too few, never guessed. */
+  const HEALTH = { ok: 'On pace', warn: 'Watch', err: 'Behind', few: 'Too few to judge' };
+  const HEALTH_CLS = { ok: 'is-ok', warn: 'is-warn', err: 'is-err', few: 'is-few' };
+  function stageStats(reqs, ks) {
+    return ks.map((k) => {
+      let on = 0, n = 0, passed = 0, left = 0, here = 0;
+      const d = [];
+      reqs.forEach((q) => {
+        const rk = rank(q, k);
+        if (rk < 0) return;
+        on++;
+        DB.byReq[q.id].forEach((c) => {
+          const r = rank(q, c.maxAt);
+          if (r < rk) return;
+          n++;
+          const took = c.took && c.took[k] != null ? c.took[k] : null;
+          if (r > rk) { passed++; if (took != null) d.push(took); }
+          else if (c.exit) { left++; if (took != null) d.push(took); }
+          else if (c.stage === k) { here++; d.push(c.since); }
+        });
+      });
+      const decided = passed + left, exp = STAGE[k].exp, norm = PASS[k];
+      const rate = decided ? passed / decided : null;
+      const avg = d.length ? d.reduce((s, x) => s + x, 0) / d.length : null;
+      const tR = d.length >= 3 && exp ? avg / exp : null;
+      const pR = decided >= 3 && norm ? rate / norm : null;
+      const toneOf = (x, slow) => (x == null ? null : slow ? (x > 1.5 ? 'err' : x > 1.15 ? 'warn' : 'ok') : (x < 0.7 ? 'err' : x < 0.9 ? 'warn' : 'ok'));
+      const tT = toneOf(tR, true), pT = toneOf(pR, false);
+      const tone = !tT && !pT ? 'few' : tT === 'err' || pT === 'err' ? 'err' : tT === 'warn' || pT === 'warn' ? 'warn' : 'ok';
+      return { k: k, on: on, n: n, here: here, passed: passed, decided: decided, rate: rate, avg: avg, days: d.length, exp: exp, norm: norm, tT: tT, pT: pT, tone: tone };
+    });
+  }
+  /* The stages a set of requisitions runs, in order: a stage one template
+     has and another does not (a managerial round on FlairsTech's own roles)
+     is kept, and says how many of the requisitions it is on. */
+  const stagesOf = (reqs) => STAGE_ORDER.filter((k) => k !== 'joined' && reqs.some((q) => rank(q, k) >= 0));
+  /* Why a stage has the colour it has, in one sentence. */
+  function healthSay(s) {
+    if (s.tone === 'few') return 'Fewer than three people have been through it, so it is not judged yet.';
+    const dd = (x) => days(Math.round(x * 10) / 10);
+    const bits = [];
+    if (s.tT && s.tT !== 'ok') bits.push('slow, ' + dd(s.avg) + ' against a usual ' + days(s.exp));
+    if (s.pT && s.pT !== 'ok') bits.push('fewer move on, ' + Math.round(s.rate * 100) + '% against a usual ' + Math.round(s.norm * 100) + '%');
+    return bits.length ? bits.join('; ').replace(/^./, (x) => x.toUpperCase()) + '.' : 'Near the usual on ' + (s.tT && s.pT ? 'both time and moving on' : s.tT ? 'time' : 'moving on') + '.';
+  }
+
   /* Days to send the first profile, per requisition with one sent. Sample
      arithmetic off the opening date; the real figure needs the event. */
   function sentDays(q) {
@@ -1603,7 +1678,7 @@
      `approve` are the screens people outside the recruiting team reach from a
      link: the careers page, a candidate's own profile, an assessment, an
      interviewer's debrief and an approver's offer packet. */
-  const KEYS = ['as', 'on', 'req', 'cand', 'asmt', 'acc', 'q', 'p', 'list', 'find', 'edit', 'apply', 'me', 'take', 'debrief', 'approve', 'by', 'src', 'period', 'account', 'rq', 'day'];
+  const KEYS = ['as', 'on', 'req', 'cand', 'asmt', 'acc', 'q', 'p', 'list', 'find', 'edit', 'apply', 'me', 'take', 'debrief', 'approve', 'by', 'src', 'period', 'account', 'rq', 'day', 'st'];
   const OUTSIDE = ['apply', 'me', 'take', 'debrief', 'approve'];
   const outside = () => OUTSIDE.some((k) => !!S[k]);
   function parse() {
@@ -2055,7 +2130,9 @@
   }
   function candsPage() {
     const rqQ = S.rq && DB.reqById[S.rq] ? DB.reqById[S.rq] : null;
-    const hit = (c) => (!rqQ || c.req === rqQ.id) && candHit(c, S.find);
+    /* A stage, when a report's funnel sent you here (?st=). */
+    const stK = S.st && STAGE[S.st] ? S.st : null;
+    const hit = (c) => (!rqQ || c.req === rqQ.id) && (!stK || c.stage === stK) && candHit(c, S.find);
     const everyone = queue(), owedAll = untold();
     const all = everyone.filter(hit), owed = owedAll.filter(hit);
     const cut = S.q === 'untold' || QCUTS.some((x) => x.k === S.q) ? S.q : 'all';
@@ -2068,8 +2145,8 @@
     const from = page * per, to = Math.min(list.length, from + per);
     const left = list.length - to;
     /* The search and the requisition ride on every link on this page. */
-    const keep = (o) => goAttr(Object.assign({ on: 'cands', rq: S.rq, find: S.find }, o));
-    const narrowed = !!(rqQ || S.find);
+    const keep = (o) => goAttr(Object.assign({ on: 'cands', rq: S.rq, find: S.find, st: stK || undefined }, o));
+    const narrowed = !!(rqQ || S.find || stK);
     const reqsIn = mine().map((q) => ({ q: q, n: everyone.concat(owedAll).filter((c) => c.req === q.id).length })).filter((x) => x.n);
     const clear = '<button class="t-inline-link" type="button" data-cfclear>Show everyone</button>';
     return '<div class="s-home">' +
@@ -2094,7 +2171,8 @@
           esc(x.label) + '<span class="b-cut-n">' + n(x.k) + '</span></button>').join('') +
           '<button class="filter-chip t-cut-apart' + (cut === 'untold' ? ' active' : '') + '" type="button"' + keep({ q: 'untold' }) + '>Not told yet<span class="b-cut-n">' + owed.length + '</span></button>' +
         '</div>' +
-        (narrowed ? '<p class="b-vfoot t-cf-on">Showing ' + (rqQ ? 'the people on ' + esc(rqQ.title) + ', ' + esc(accOf(rqQ).name) : 'everyone') + (S.find ? ' matching “' + esc(S.find) + '”' : '') + '. ' + clear + '</p>' : '') +
+        (narrowed ? '<p class="b-vfoot t-cf-on">Showing ' + (rqQ ? 'the people on ' + esc(rqQ.title) + ', ' + esc(accOf(rqQ).name) : stK ? 'everyone on your open requisitions' : 'everyone') +
+          (stK ? ' at the ' + esc(lower(STAGE[stK].label)) + ' now' : '') + (S.find ? ' matching “' + esc(S.find) + '”' : '') + '. ' + clear + '</p>' : '') +
         /* Where the volume is, select many and act once (Batch bar, M7); the
            answer owed is shown as it will read (Message preview, M4). */
         (cut === 'untold' && owed.length ? msgPreview(DB.byId[Object.keys(SEL.tell)[0]] || owed[0], true) +
@@ -2217,7 +2295,7 @@
       : rank(q, 'sent') >= 0 && sentN ? { n: metN, of: sentN, say: (sentN === 1 ? 'profile sent got' : 'profiles sent got') + ' a client interview' + (h ? ', with ' + days(Math.max(0, h.left)) + ' to the target.' : '.') }
       : { n: act.length, of: all.length, say: (all.length === 1 ? 'candidate is' : 'candidates are') + ' still in progress' + (h ? ', with ' + days(Math.max(0, h.left)) + ' to the target.' : '.') };
     const deck = h && h.risk ? riskSay(q, h).replace(/<\/?b>/g, '') + ' Moving the date changes the forecast, not the work.'
-      : ws ? 'The biggest drop is after the ' + lower(STAGE[ws.from].label) + ': ' + ws.m + ' of ' + ws.n + ' moved on.' +
+      : ws ? 'The biggest drop is after the ' + lower(STAGE[ws.from].label) + ': ' + ws.m + ' of ' + ws.n + ' reached the ' + lower(STAGE[ws.to].label) + '.' +
         (ws.from === 'sent' ? ' That one is the client’s choice: about ' + (ws.n / Math.max(1, ws.m)).toFixed(1) + ' profiles per client interview. ' + versusNorm(ws.m ? ws.n / ws.m : null) + ' Their reasons say what to change.' : '')
       : 'Nothing stands out yet.';
 
@@ -2255,7 +2333,7 @@
         '<div class="s-lead-line"><span class="s-lead-n">' + lead.n + '</span><span class="s-lead-say">of the <span class="s-lead-of">' + lead.of + '</span> ' + esc(lead.say) + '</span></div>' +
         '<p class="s-lead-deck">' + esc(deck) + '</p>' +
       '</section>' +
-      (isClient() ? '' : funnelBlock(q, f, ws)) +
+      (isClient() ? '' : funnelBlock(q)) +
       (isClient() ? '' : reasonsBlock(declines([q]), 'the client', q.acc)) +
       '<section class="s-block s-block-wide" aria-label="Candidates">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">' + (isClient() ? 'Profiles sent to you' : 'The candidates on it') + '</h2>' +
@@ -2275,24 +2353,61 @@
     '</div>';
   }
 
-  /* The funnel: how many ever reached each stage, to scale against the
-     first, with the biggest drop marked. One chart, and it is the
-     requisition's own. */
-  function funnelBlock(q, f, ws) {
-    const top = Math.max(1, f[0].n);
+  /* THE FUNNEL WITH STAGE HEALTH (position funnel ticket). One component
+     for one requisition and for many: per stage, how many reached it (the
+     bar, to scale against the most), how many moved on, and the days spent
+     in it, each with its usual beneath it, and a health dot that the
+     legend names. The colour is never alone: the off value is coloured
+     too, the row says why on hover, and the legend's How it is counted
+     says how it is judged. A row someone is at now is a door to them. */
+  const HEALTH_DEF = [['Unit', 'Stage'], ['Starts', 'A person reaches the stage'], ['Stops', 'They move on or leave. For anyone still there, today'],
+    ['Counts', 'Moved on: of the people decided at the stage, those who went to the next one. People still there are left out, so a busy stage does not read as a leaky one.'],
+    ['Norm', 'Usual days: the stage’s expected time. Usual moved on: FlairsTech’s own funnel, Aug–Sep 2026, a sample until the team sets its own.'],
+    ['Read with', 'On pace: both near the usual. Watch: 15% slower, or moving on 10% below. Behind: 50% slower, or moving on 30% below. Too few to judge: under three people.']];
+  function stageFunnel(rows, o) {
+    const top = Math.max(1, ...rows.map((s) => s.n));
+    const dd = (x) => String(Math.round(x * 10) / 10);
+    const val = (cap, tone, big, usual) => '<span class="t-sf-val' + (tone && tone !== 'ok' ? ' ' + HEALTH_CLS[tone] : '') + '"><span class="t-sf-cap">' + cap + '</span><b>' + big + '</b><span>' + usual + '</span></span>';
+    const legend = '<div class="t-sf-legend">' +
+      ['ok', 'warn', 'err', 'few'].map((t) => '<span class="t-sf-key"><span class="t-sf-dot ' + HEALTH_CLS[t] + '" aria-hidden="true"></span>' + HEALTH[t] + '</span>').join('') +
+      defPop('Stage health', HEALTH_DEF) + '</div>';
+    return '<div class="t-sf">' + legend +
+      '<div class="t-sf-row t-sf-cols" aria-hidden="true"><span>Stage</span><span></span><span>Reached</span><span>Moved on</span><span>Days in stage</span></div>' +
+      '<div role="list">' + rows.map((s) => {
+        const door = o.drill ? o.drill(s) : '';
+        const tag = door ? 'button' : 'div';
+        const sub = [s.here ? s.here + ' here now' : '', o.of && s.on < o.of ? 'on ' + s.on + ' of ' + o.of : ''].filter(Boolean).join(' · ');
+        const why = STAGE[s.k].label + ': ' + HEALTH[s.tone].toLowerCase() + '. ' + healthSay(s) + (door ? o.doorSay || ' Press to see who is here.' : '');
+        return '<' + tag + ' class="t-sf-row' + (door ? ' t-sf-door' : '') + '"' + (door ? ' type="button"' + door : '') + ' role="listitem" title="' + esc(why) + '" aria-label="' + esc(why) + '">' +
+          '<span class="t-sf-stage"><span class="t-sf-dot ' + HEALTH_CLS[s.tone] + '" aria-hidden="true"></span><span class="t-sf-name"><span class="t-sf-label">' + esc(STAGE[s.k].label) + '</span>' +
+            (sub ? '<span class="t-sf-sub">' + esc(sub) + '</span>' : '') + '</span></span>' +
+          '<span class="t-fn-track"><span class="t-fn-fill" style="width:' + (s.n / top * 100).toFixed(1) + '%"></span></span>' +
+          '<span class="t-sf-num"><b>' + s.n + '</b></span>' +
+          (s.decided ? val('Moved on', s.pT, Math.round(s.rate * 100) + '%', (s.decided < 3 ? s.decided + ' decided · ' : '') + 'usual ' + Math.round(s.norm * 100) + '%')
+            : val('Moved on', null, 'None yet', 'usual ' + Math.round(s.norm * 100) + '%')) +
+          (s.days ? val('Days in stage', s.tT, dd(s.avg) + (Math.round(s.avg * 10) === 10 ? ' day' : ' days'), (s.days < 3 ? plural(s.days, 'person', 'people') + ' · ' : '') + 'usual ' + s.exp)
+            : val('Days in stage', null, 'None yet', 'usual ' + s.exp)) +
+        '</' + tag + '>';
+      }).join('') + '</div>' +
+      (o.say ? aimyBlock(o.say) : '') +
+    '</div>';
+  }
+  /* What AiMY reads off the funnel: the stage furthest off its usual, said
+     with why; otherwise the lowest moving on among the stages it can judge. */
+  function stageRead(rows, from) {
+    const bad = rows.filter((s) => s.tone === 'err')[0] || rows.filter((s) => s.tone === 'warn')[0];
+    if (bad) return { text: '<b>' + esc(STAGE[bad.k].label) + '</b> ' + (bad.tone === 'err' ? 'is behind' : 'is worth watching') + ': ' + esc(lower(healthSay(bad).charAt(0)) + healthSay(bad).slice(1)), from: from };
+    const low = rows.filter((s) => s.decided >= 3).sort((a, b) => a.rate - b.rate)[0];
+    return low ? { text: 'Every stage is near its usual. The fewest move on from the ' + esc(lower(STAGE[low.k].label)) + ': <b>' + Math.round(low.rate * 100) + '%</b>.', from: from } : null;
+  }
+  /* The requisition's own funnel. A stage with someone at it now opens the
+     candidates below at that stage. */
+  function funnelBlock(q) {
+    const rows = stageStats([q], tplOf(q).filter((k) => k !== 'joined'));
     return '<section class="s-block s-block-wide" aria-label="Funnel">' +
       '<div class="s-camp-list-head"><h2 class="s-block-h">How far people got</h2>' +
-        '<span class="s-block-say">everyone who reached each stage · share of the stage before</span></div>' +
-      '<div class="t-funnel" role="list">' + f.map((s, i) => {
-        const prev = i ? f[i - 1].n : 0;
-        const leak = ws && ws.to === s.k;
-        return '<div class="t-fn-row' + (leak ? ' is-leak' : '') + '" role="listitem">' +
-          '<span class="t-fn-label">' + esc(STAGE[s.k].label) + '</span>' +
-          '<span class="t-fn-track"><span class="t-fn-fill" style="width:' + (s.n / top * 100).toFixed(1) + '%"></span></span>' +
-          '<span class="t-fn-n"><b>' + s.n + '</b>' + (i && prev ? ' · ' + Math.round(s.n / prev * 100) + '%' : '') + '</span>' +
-        '</div>';
-      }).join('') + '</div>' +
-      (ws ? aimyBlock({ text: '<b>' + Math.round(ws.rate * 100) + '%</b> got past the ' + esc(lower(STAGE[ws.from].label)) + ', the lowest of any stage on this requisition.', from: 'every candidate on it' }) : '') +
+        '<span class="s-block-say">everyone who reached each stage · who moved on · days in it</span></div>' +
+      stageFunnel(rows, { drill: (s) => (s.here ? ' data-fdrill="' + s.k + '"' : ''), say: stageRead(rows, 'every candidate on it') }) +
     '</section>';
   }
 
@@ -4502,6 +4617,81 @@
   const readNote = (t) => /\b(not|didn'?t|did not|no)\b.{0,20}\b(pass|proceed|fit|good)|\bsaid no\b|\brejected\b|\bnot a fit\b/i.test(t) ? 'no'
     : /\b(passed|proceed|said yes|liked (him|her|them)|good fit|move (him|her|them) on|approved)\b/i.test(t) ? 'yes' : null;
 
+  /* ══ THE CV ON HOVER ═════════════════════════════════════════════════════
+     Resting on a candidate's name shows their CV, small, beside it: who they
+     are now, their skills, and the requisition's must-haves as the CV
+     answers them, one dot each. It is for reading; a click on the name is
+     still the profile. A mouse rests, and keyboard focus shows it too; a
+     touch screen has no hover, so there the name is the profile as before. */
+  const CV_NAMES = '.tc-title[data-cand], .t-crow-name, .t-row-open, h4 > [data-cand]';
+  let CV_T = null, CV_ON = null;
+  function cvCard(c) {
+    const q = reqOf(c), must = q.must || [];
+    const row = (m, i) => {
+      const e = c.ev[i];
+      return '<li class="t-cv-must"><i class="' + (e === 'm' ? 't-pip is-on' : 't-pip is-off') + '"></i><span><b>' + esc(m) + '</b>' +
+        '<span>' + esc(e === 'm' ? cvSays(c, m) : e === 'p' ? 'Partly: ' + cvSays(c, m) : 'Not known yet, not missing') + '</span></span></li>';
+    };
+    return '<div class="t-cv-head"><span class="t-cv-name">' + esc(c.name) + '</span>' + stageTag(c) + '</div>' +
+      '<p class="t-cv-role">' + esc(c.at) + '</p>' +
+      '<p class="t-cv-facts">' + fact('job', plural(c.years, 'year')) + fact('pin', c.place) + fact('lang', c.langs.join(', ')) + '</p>' +
+      ((c.skills || []).length ? '<div class="t-cv-sec"><span class="t-cv-cap">Skills</span><span class="t-cv-chips">' +
+        c.skills.map((s) => '<span class="t-cv-chip">' + esc(s) + '</span>').join('') + '</span></div>' : '') +
+      (must.length ? '<div class="t-cv-sec"><span class="t-cv-cap">Must-haves · ' + evMet(c) + ' of ' + must.length + ' shown</span>' +
+        '<ul class="t-cv-musts">' + must.map(row).join('') + '</ul></div>' : '') +
+      '<p class="t-cv-foot">' + esc(c.source) + ' · for ' + esc(q.title) + '</p>';
+  }
+  /* Under the name, or over it when the window has no room below. The page
+     sits inside the shell's zoom, so the name's box is read back into it. */
+  function cvShow(el) {
+    const c = DB.byId[el.getAttribute('data-cand')];
+    if (!c || !sees(c) || !el.isConnected) return;
+    const pop = byId('cvPop');
+    if (CV_ON !== el) { if (CV_ON) CV_ON.removeAttribute('aria-describedby'); pop.innerHTML = cvCard(c); CV_ON = el; }
+    pop.hidden = false;
+    el.setAttribute('aria-describedby', 'cvPop');
+    const z = parseFloat(getComputedStyle(document.body).zoom) || 1;
+    const r = el.getBoundingClientRect(), w = pop.offsetWidth * z, h = pop.offsetHeight * z;
+    const below = r.bottom + 8 + h <= innerHeight - 8, above = r.top - 8 - h >= 8;
+    /* Neither: beside the name, on the side with room, never over it. */
+    const side = !below && !above ? (r.right + 12 + w <= innerWidth - 8 ? r.right + 12 : Math.max(8, r.left - 12 - w)) : null;
+    const x = side != null ? side : Math.min(Math.max(8, r.left), innerWidth - w - 8);
+    const y = below ? r.bottom + 8 : above ? r.top - 8 - h : Math.min(Math.max(8, r.top - 24), innerHeight - h - 8);
+    pop.style.left = (x / z) + 'px';
+    pop.style.top = (y / z) + 'px';
+  }
+  function cvHide() {
+    clearTimeout(CV_T);
+    if (!CV_ON) return;
+    CV_ON.removeAttribute('aria-describedby');
+    CV_ON = null;
+    byId('cvPop').hidden = true;
+  }
+  /* A short rest before it shows, so passing over a list does not flash a
+     card per name; once one is up, the next name answers at once. */
+  document.addEventListener('pointerover', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    if (e.target.closest('#cvPop')) { clearTimeout(CV_T); return; }
+    const el = e.target.closest(CV_NAMES);
+    if (!el) return;
+    clearTimeout(CV_T);
+    CV_T = setTimeout(() => cvShow(el), CV_ON ? 0 : 350);
+  });
+  document.addEventListener('pointerout', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    const from = e.target.closest(CV_NAMES + ', #cvPop');
+    if (!from || (e.relatedTarget && from.contains(e.relatedTarget))) return;
+    clearTimeout(CV_T);
+    CV_T = setTimeout(cvHide, 150);
+  });
+  document.addEventListener('focusin', (e) => {
+    const el = e.target.closest && e.target.closest(CV_NAMES);
+    if (el && el.matches(':focus-visible')) cvShow(el); else cvHide();
+  });
+  document.addEventListener('focusout', (e) => { if (e.target === CV_ON) cvHide(); });
+  document.addEventListener('click', cvHide, true);
+  byId('pageScroll').addEventListener('scroll', cvHide, { passive: true });
+
   /* ── Editing a candidate's details ── */
   function candEditPage(c) {
     const f = editBuf('cand', c, () => ({ name: c.name, phone: c.phone || '', email: c.email || '', at: c.at, years: c.years, place: c.place,
@@ -6028,7 +6218,6 @@
     const titles = {};
     reqs.forEach((q) => { titles[q.title] = (titles[q.title] || 0) + 1; });
     const byTitle = Object.keys(titles).map((t) => ({ t: t, n: titles[t] })).sort((x, y) => y.n - x.n).slice(0, 8);
-    const f = ['phone', 'hr', 'tech', 'sent', 'client', 'offer', 'accepted'].map((k) => ({ k: k, n: k === 'phone' ? phones : reached(k) }));
     const dropped = offers.filter((o) => o.status === 'declined').length;
     const repl = reqs.filter((q) => q.kind === 'replacement').length;
     const bill = reqs.filter((q) => q.billable).length;
@@ -6037,8 +6226,6 @@
        about three to five profiles per client interview is the agency norm,
        so the loss worth naming is the one in people, upstream, and the
        days it takes to send. The benchmark is weak and the line says so. */
-    let lossAt = 1;
-    for (let i = 1; i < f.length; i++) if (f[i - 1].n - f[i].n > f[lossAt - 1].n - f[lossAt].n) lossAt = i;
     const sentN = reached('sent'), metN = reached('client');
     const slow = reqs.filter(noSend);
     /* WHERE TIME GOES (R5: in FlairsTech's own data, 46 of 105 lost
@@ -6097,12 +6284,32 @@
             from: 'the open requisitions in view, and the recruitment data' })
           : '<p class="t-rpt-none">Nothing is past its usual time on the open requisitions in view.</p>') +
       '</section>' +
-      '<section class="s-block s-block-wide" aria-label="Funnel"><div class="s-camp-list-head"><h2 class="s-block-h">The funnel</h2><span class="s-block-say">everyone who reached each stage · share of the stage before</span></div>' +
-        '<div class="t-funnel">' + f.map((s, i) => '<div class="t-fn-row' + (i === lossAt ? ' is-leak' : '') + '"><span class="t-fn-label">' + esc(STAGE[s.k].label) + '</span>' +
-          bar(s.n, Math.max(1, f[0].n)) + '<span class="t-fn-n"><b>' + s.n + '</b>' + (i && f[i - 1].n ? ' · ' + Math.round(s.n / f[i - 1].n * 100) + '%' : '') + '</span></div>').join('') + '</div>' +
-        aimyBlock({ text: 'The most people leave between the ' + esc(lower(STAGE[f[lossAt - 1].k].label)) + ' and the ' + esc(lower(STAGE[f[lossAt].k].label)) + ': <b>' + (f[lossAt - 1].n - f[lossAt].n) + '</b> of ' + f[lossAt - 1].n + '. ' +
-          dropped + ' offers were declined. ' + repl + ' of ' + reqs.length + ' requests were replacements, and ' + bill + ' are billable.', from: 'every requisition in view' }) +
-      '</section>' +
+      (function () {
+        /* THE FUNNEL, ACROSS POSITIONS OR FOR ONE (position funnel
+           ticket). The same period and account as the rest of the page; the
+           menu on the head narrows it to one position without a second
+           filter row. A stage someone is at now opens them: on that
+           requisition when narrowed, in the Candidates queue when not. */
+        const one = reqs.filter((q) => q.id === S.rq)[0] || null;
+        const set = one ? [one] : reqs;
+        const rows = stageStats(set, one ? tplOf(one).filter((k) => k !== 'joined') : stagesOf(reqs));
+        const canQueue = isRec() || isHR();
+        const read = stageRead(rows, one ? 'every candidate on ' + one.title : 'every requisition in view');
+        const facts = one ? '' : ' ' + dropped + ' offers were declined. ' + repl + ' of ' + reqs.length + ' requests were replacements, and ' + bill + ' are billable.';
+        const menu = '<span class="b-menu-wrap"><button class="b-ghost t-rq-btn" type="button" data-pickopen="fnMenu" aria-haspopup="menu" aria-expanded="false">' +
+            '<span class="t-rq-label">' + esc(one ? one.title + ', ' + accOf(one).name : 'All positions in view') + '</span>' + svg('down', 14) + '</button>' +
+          '<div class="b-menu t-fn-menu" id="fnMenu" role="menu" hidden><span class="b-menu-cap">Position</span>' +
+            '<button class="b-menu-item" type="button" role="menuitem" data-rq=""' + (one ? '' : ' aria-current="true"') + '><span class="b-menu-name">All positions in view</span><span class="tel-menu-cc">' + reqs.length + '</span></button>' +
+            reqs.slice().sort((a, b) => isOpen(b) - isOpen(a) || a.title.localeCompare(b.title)).map((q) => '<button class="b-menu-item" type="button" role="menuitem" data-rq="' + q.id + '"' + (one === q ? ' aria-current="true"' : '') + '>' +
+              '<span class="t-rq-item"><span class="b-menu-name">' + esc(q.title) + '</span><span class="t-crow-sub">' + esc(accOf(q).name + (isOpen(q) ? '' : ' · ' + lower(REQ_STATE[stateOf(q)].label))) + '</span></span>' +
+              '<span class="tel-menu-cc">' + activeOf(q).length + '</span></button>').join('') +
+          '</div></span>';
+        return '<section class="s-block s-block-wide" aria-label="Funnel"><div class="s-camp-list-head t-fn-head"><h2 class="s-block-h">The funnel</h2>' + menu +
+            '<span class="s-block-say">' + esc(one ? 'one position · who moved on · days in each stage' : 'everyone who reached each stage, across ' + plural(reqs.length, 'position') + ' · who moved on · days in it') + '</span></div>' +
+          stageFunnel(rows, { of: set.length, doorSay: one ? '' : ' Press to see who is at it now, on all your open requisitions.', drill: (s) => (!s.here ? '' : one ? ' data-fdrill="' + s.k + '|' + one.id + '"' : canQueue ? ' data-fdrill="' + s.k + '"' : ''),
+            say: read ? { text: read.text + facts, from: read.from } : null }) +
+        '</section>';
+      })() +
       reasonsBlock(declines(reqs), 'clients') +
       (accIn ? '' : '<section class="s-block s-block-wide" aria-label="By account"><div class="s-camp-list-head"><h2 class="s-block-h">By account</h2><span class="s-block-say">requests · open · filled</span></div>' +
         '<div class="t-funnel">' + byAcc.map((x) => '<button class="t-fn-row t-fn-btn" type="button" data-acc="' + x.a.id + '"><span class="t-fn-label">' + esc(x.a.name) + '</span>' + bar(x.n, maxAcc) +
@@ -7483,6 +7690,8 @@
       '<li><span class="t-crumb-now" aria-current="page">' + esc(t.now) + '</span></li></ol></nav>';
   });
   function paint() {
+    /* The name a CV card hangs from is about to be redrawn. */
+    cvHide();
     /* Somebody outside the team gets the page alone, with none of the
        product's chrome (the careers page, a profile, a test, a debrief). */
     document.body.classList.toggle('is-portal', outside());
@@ -7611,9 +7820,12 @@
      back exactly the fields it changed. */
   function move(c, to, extra) {
     const was = { stage: c.stage, since: c.since, meet: c.meet, fb: c.fb, maxAt: c.maxAt, exit: c.exit, nudged: c.nudged,
-      sentDay: c.sentDay, openDay: c.openDay, decideDay: c.decideDay, writeup: c.writeup || null };
+      sentDay: c.sentDay, openDay: c.openDay, decideDay: c.decideDay, writeup: c.writeup || null, took: c.took || {} };
     const q = reqOf(c);
-    const fields = { stage: to, since: 0, fb: false, nudged: null,
+    /* The days at the stage being left are kept, for stage health. */
+    const took = Object.assign({}, c.took);
+    took[c.stage] = c.since;
+    const fields = { stage: to, since: 0, fb: false, nudged: null, took: took,
       meet: MEETS[to] ? 2 : null, slot: c.slot || '11:00',
       maxAt: rank(q, to) > rank(q, c.maxAt) ? to : c.maxAt };
     /* The sendout starts when the profile goes, and is decided when the
@@ -7644,8 +7856,10 @@
         : to === 'offer' ? 'Prepare the offer from their card.' : to === 'assess' ? 'Send the assessment from their card.' : null);
   }
   function out(c, k, why, line) {
-    const was = { exit: c.exit, since: c.since, told: c.told, outWhy: c.outWhy || null };
-    write(c, { exit: k, since: 0, told: NEEDS_TELLING[k] ? false : null, outWhy: why ? { why: why, note: line || '', day: 0, by: DESK } : null });
+    const was = { exit: c.exit, since: c.since, told: c.told, outWhy: c.outWhy || null, took: c.took || {} };
+    const took = Object.assign({}, c.took);
+    took[c.stage] = c.since;
+    write(c, { exit: k, since: 0, took: took, told: NEEDS_TELLING[k] ? false : null, outWhy: why ? { why: why, note: line || '', day: 0, by: DESK } : null });
     const e = note(c, 'out', EXIT[k].label + (why ? ': ' + lower(OUT_K[why].label) + (line ? ', “' + line + '”' : '') : '') + ', marked by ' + me().name + '.');
     OUTING = null;
     paint();
@@ -7802,7 +8016,13 @@
       out(DB.byId[val('data-out-other')], 'out', 'other', line.trim()); return;
     }
     /* ── Candidates: one requisition, and cards or a list ── */
-    if ((el = at('[data-rq]'))) { go(Object.assign({}, S, { rq: val('data-rq') || null, p: null }), true); return; }
+    if ((el = at('[data-rq]'))) {
+      /* On Reports the position menu sits low on the page; choosing one keeps your place. */
+      const y = S.on === 'reports' ? byId('pageScroll').scrollTop : 0;
+      go(Object.assign({}, S, { rq: val('data-rq') || null, p: null }), true);
+      if (y) byId('pageScroll').scrollTop = y;
+      return;
+    }
     if ((el = at('[data-cview]'))) { UI.cview = val('data-cview'); saveUI(); paint(); return; }
     if ((el = at('[data-cfclear]'))) { go({ on: 'cands', q: S.q }, true); return; }
     /* ── A pass with its reason ── */
@@ -8137,6 +8357,17 @@
       return;
     }
     if ((el = at('[data-quick]'))) { go({ on: 'reqs', q: el.getAttribute('data-quick') }); return; }
+    /* A stage on a funnel opens who is at it now: below it on a
+       requisition, on the one requisition a report is narrowed to, or in
+       the Candidates queue from a report across many. */
+    if ((el = at('[data-fdrill]'))) {
+      const p = el.getAttribute('data-fdrill').split('|'), k = p[0], rq = p[1];
+      if (!rq && !S.req) { go({ on: 'cands', st: k }); return; }
+      if (rq) go({ req: rq, q: k }); else go(Object.assign({}, S, { q: k }), true);
+      const cs = document.querySelector('section[aria-label="Candidates"]');
+      if (cs) cs.scrollIntoView({ block: 'start' });
+      return;
+    }
     if ((el = at('[data-q]'))) { go(Object.assign({}, S, { q: el.getAttribute('data-q') }), true); return; }
     /* The report's view: 90 days and every account are the plain link. */
     if ((el = at('[data-period]'))) { const p = val('data-period'); go(Object.assign({}, S, { period: p === '90' ? null : p }), true); return; }
@@ -8293,6 +8524,7 @@
       passWith(DB.byId[PASSING.id], 'other', e.target.value.trim()); return;
     }
     if (e.key === 'Escape' && PASSING) { PASSING = null; paint(); return; }
+    if (e.key === 'Escape' && CV_ON) { cvHide(); return; }
     /* A call waiting to be logged: 1 to 8 pick the outcome and Enter logs
        it, while nothing is typed; a typed sentence is a correction. */
     if (PENDING && canvasShown()) {
