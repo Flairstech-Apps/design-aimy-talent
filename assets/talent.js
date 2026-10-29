@@ -1883,7 +1883,7 @@
         '<span class="slv-time">' + esc(seenSay()) + '</span></div>' +
       /* The one line that says the night (standalone's recruiter home). */
       '<p class="slv-lead">I kept your ' + plural(myOpen().length, 'open requisition') + ' moving overnight. ' +
-        (d.length ? '<b>' + plural(d.length, 'decision') + '</b> ' + (d.length === 1 ? 'needs' : 'need') + ' your call.' : 'Nothing needs your call.') + '</p>' +
+        (d.length ? '<button class="slv-go" type="button"' + goAttr({ on: 'diary' }) + '>' + plural(d.length, 'decision') + ' ' + (d.length === 1 ? 'needs' : 'need') + ' your call.</button>' : 'Nothing needs your call.') + '</p>' +
       '<div class="slv-body">' + lines.map((l) => '<p class="slv-line">' + l + '</p>').join('') + '</div>' +
       '<div class="s-starts-wrap"><span class="s-starts-cap">Start</span><div class="s-starts">' +
         starts.map((s) => '<button class="s-start" type="button" data-start="' + s.k + '">' +
@@ -1917,36 +1917,6 @@
       goAttr(t.k ? { on: t.k } : {}) + (t.k === here ? ' aria-current="page"' : '') + '>' + esc(t.label) +
       (t.n != null ? '<span class="b-switch-n">' + t.n + '</span>' : '') + '</button>').join('') +
       '<span class="b-switch-bar" aria-hidden="true"></span></h2>';
-  }
-
-  /* ── One row of work: who, for what, why, and the one move. ── */
-  function workRow(c, i, verb) {
-    const q = reqOf(c);
-    const nx = nextOf(c);
-    return '<div class="b-owed-row t-row" style="--i:' + Math.min(i, 8) + '">' +
-      '<span class="b-owed-sev" aria-hidden="true"></span>' +
-      '<button class="b-owed-main t-row-open" type="button"' + goAttr({ req: q.id }) + '>' +
-        '<span class="b-owed-head">' +
-          '<span class="b-owed-type">' + esc(c.name) + '</span>' +
-          '<span class="b-owed-by">' + esc(q.title) + ' · ' + esc(accOf(q).name) + '</span>' +
-          stageTag(c) +
-        '</span>' +
-        '<span class="b-owed-body">' + rowSay(c) + (verb === 'nudge' ? ' <b>' + days(lostDays(c)) + '</b> past the usual time' +
-          (c.nudged != null ? ', nudged ' + esc(sayWhen(c.nudged)) + '.' : ', not nudged yet.') : '') + '</span>' +
-      '</button>' +
-      (verb === 'nudge'
-        ? '<button class="b-owed-go t-row-go" type="button" data-nudge="' + c.id + '">' + (c.nudged != null ? 'Nudged' : esc(nudgeSay(c))) + '</button>'
-        : nx ? '<button class="b-owed-go t-row-go" type="button" data-move="' + c.id + '|' + nx + '">' + esc(goSay(c)) + '</button>' : '') +
-    '</div>';
-  }
-  function rowSay(c) {
-    const w = waitsOn(c);
-    if (MEETS[c.stage] && c.fb) return 'Interview ' + sayWhen(c.meet) + '. The result is in: proceed. ' + evSay(c) + '.';
-    if (w === 'client' && c.stage === 'sent') return 'Profile sent <b>' + days(c.since) + '</b> ago, ' + (c.openDay != null ? 'opened ' + esc(sayWhen(c.openDay)) : '<b>not opened yet</b>') + '. ' +
-      esc(waitWho(c)) + ' has not said whether they want to meet.';
-    if (MEETS[c.stage] && c.meet < 0) return 'Interview ' + sayWhen(c.meet) + '. ' + esc(waitWho(c)) + ' has not sent the result.';
-    if (c.stage === 'offer') return 'Offer out <b>' + days(c.since) + '</b>. No answer yet.';
-    return esc(STAGE[c.stage].say) + ', ' + days(c.since) + '.';
   }
 
   /* ── TODAY, A BRIEFING NOT A LIST (Sales: open on a briefing, not a
@@ -2037,15 +2007,17 @@
     if (!lists.length) return '';
     return '<section class="s-block s-block-wide" aria-label="Approval queue"><div class="s-camp-list-head"><h2 class="s-block-h">Approval queue</h2>' +
       '<span class="s-block-say">only what still needs your yes · first contact is approved once per list</span></div>' +
-      '<div class="b-owed">' + lists.map((x, i) => {
+      insGrid(lists.map((x) => {
         const pool = x.l.filter((c) => !/^Found on/.test(c.source)).length, wa = x.l.filter((c) => c.wa).length;
-        const say = (pool ? plural(pool, 'person', 'people') + ' from the talent pool' + (x.l.length > pool ? ' and ' : '') : '') + (x.l.length > pool ? (x.l.length - pool) + ' found on the web' : '') + '. ' +
-          'Consent read: ' + wa + ' of ' + x.l.length + ' have a WhatsApp opt-in; the rest get an email. One short message each, naming the role, sent once you approve the list.';
-        return '<div class="b-owed-row t-row" style="--i:' + Math.min(i, 8) + '"><span class="b-owed-sev" aria-hidden="true"></span>' +
-          '<button class="b-owed-main t-row-open" type="button"' + goAttr({ on: 'cands', rq: x.q.id, q: 'new' }) + '><span class="b-owed-head"><span class="b-owed-type">First contact: ' + plural(x.l.length, 'person', 'people') + '</span>' +
-            '<span class="b-owed-by">' + esc(x.q.title) + ' · ' + esc(accOf(x.q).name) + '</span></span><span class="b-owed-body">' + esc(say) + '</span></button>' +
-          '<button class="b-owed-go t-row-go" type="button" data-contact-list="' + x.q.id + '">Approve the list</button></div>';
-      }).join('') + '</div></section>';
+        const from = (pool ? plural(pool, 'person', 'people') + ' from the talent pool' + (x.l.length > pool ? ' and ' : '') : '') + (x.l.length > pool ? (x.l.length - pool) + ' found on the web' : '');
+        return insightCard({ key: 'fc-' + x.q.id, title: 'First contact for ' + x.q.title, label: 'First contact: ' + plural(x.l.length, 'person', 'people') + ' <span class="b-kind">' + esc(x.q.title) + '</span>', ws: 'staged',
+          sub: esc(x.q.title) + '. <strong>' + esc(from) + '</strong>. One short message each, naming the role, sent once you approve the list.',
+          unblocks: 'their first conversation',
+          ev: [['WhatsApp opt-in', wa + ' of ' + x.l.length], ['Account', accOf(x.q).name]],
+          foot: askChip('Should I approve this first-contact list?', '<p>' + esc(from.charAt(0).toUpperCase() + from.slice(1)) + ' for ' + esc(x.q.title) + '. Consent read: <b>' + wa + ' of ' + x.l.length + '</b> opted in to WhatsApp; the rest get an email. ' +
+            'Each gets one short message naming the role and nothing about pay, and only once you approve. ' + x.l.map((c) => esc(c.name)).join(', ') + '.</p>',
+            [{ label: 'Approve the list', data: 'contact-list="' + x.q.id + '"', primary: true }, { label: 'See them', go: { on: 'cands', rq: x.q.id, q: 'new' } }], 'review') });
+      })) + '</section>';
   }
   /* SCREENING LANES (standalone): where the applications under review sit
      on the requisition with the most of them. Lanes, not a ranking: all
@@ -6466,6 +6438,21 @@
         '<span class="b-cal-ename"><b>' + esc(c.name) + '</b><span class="b-cal-ewhat">' + esc(m.what) + ' · ' + esc(reqOf(c).title) + '</span></span>' +
       '</button>' + act + '</div>';
   }
+  /* A RESULT THAT IS IN, AS AN INSIGHT (standalone): the result and what it
+     unblocks, how long it has waited, then the one press with its question
+     beside it. */
+  function decisionCard(c) {
+    const q = reqOf(c), nx = nextOf(c);
+    const v = ivsOf(c).filter((x) => x.status === 'done' && x.stage === c.stage).slice(-1)[0];
+    const toNext = nx === 'sent' ? 'Should I send ' + first(c.name) + '’s profile to ' + accOf(q).name + '?' : nx ? 'Should ' + first(c.name) + ' go on to the ' + lower(STAGE[nx].label) + '?' : '';
+    return insightCard({ key: 'dec-' + c.id, title: c.name, label: esc(c.name) + ' <span class="b-kind">' + esc(STAGE[c.stage].label) + '</span>', ws: 'recommended',
+      sub: esc(q.title) + ', ' + esc(accOf(q).name) + '. Interview ' + esc(sayWhen(c.meet)) + '; <strong>the result is in: proceed</strong>.',
+      unblocks: nx === 'sent' ? 'the profile going to ' + accOf(q).name : nx ? 'the ' + lower(STAGE[nx].label) : '',
+      ev: [['Waiting', c.since ? days(c.since) : 'today'], ['Interviewed by', v ? v.by.split(',')[0] : waitWho(c)]],
+      foot: (nx ? '<button class="s-insight-lnk primary" type="button" data-move="' + c.id + '|' + nx + '">' + esc(goSay(c)) + '</button>' : '') +
+        (nx ? askChip(toNext, '<p>The ' + esc(lower(STAGE[c.stage].label)) + ' result is in: proceed. ' + whyLine(c) + '</p>',
+          [{ label: goSay(c), data: 'move="' + c.id + '|' + nx + '"', primary: true }]) : '') });
+  }
   function diaryPage() {
     const sel = Number(S.day) || 0;
     const d = dayOf(sel), y = d.getFullYear(), mo = d.getMonth();
@@ -6517,7 +6504,7 @@
         '<p class="b-tocall">' + (dec.length ? '<b>' + plural(dec.length, 'decision') + '</b> waiting on you, oldest first. Each is one press, and each can be undone.'
           : 'Nothing is waiting on your call.') + '</p>' +
         srcNote([['Debrief results', true], ['Assessment results', true]]) +
-        (dec.length ? '<div class="b-owed">' + topN('decide', dec).map((c, i) => workRow(c, i)).join('') + '</div>' + moreLinks('decide', dec.length) : '') +
+        (dec.length ? insGrid(topN('decide', dec).map(decisionCard)) + moreLinks('decide', dec.length) : '') +
       '</section>' : '') +
       '<section class="s-block s-block-wide" aria-label="Results not in"><div class="s-camp-list-head"><h2 class="s-block-h">Results not in</h2>' +
         '<span class="s-block-say">interviews that happened with no result yet · oldest first</span></div>' +
@@ -6540,14 +6527,14 @@
     if (isHM()) {
       DB.offers.filter((o) => o.status === 'approving' && o.hm !== 'ok' && DB.byId[o.cand] && reqOf(DB.byId[o.cand]).hm === DESK).forEach((o) => {
         const c = DB.byId[o.cand];
-        out.push({ k: 'offer', c: c, age: c.since, head: 'Approve ' + first(c.name) + '’s offer', body: money(o.salary) + ' for ' + reqOf(c).title + '. ' + BU_DIRECTOR + ' approves the same packet at the same time.', go: { approve: o.id, by: 'hm' }, verb: 'Open the packet',
+        out.push({ k: 'offer', c: c, age: c.since, head: 'Approve ' + first(c.name) + '’s offer', body: money(o.salary) + ' for ' + reqOf(c).title + '. ' + BU_DIRECTOR + ' approves the same packet at the same time.', go: { approve: o.id, by: 'hm' }, verb: 'Open the packet', ev: [['Salary', money(o.salary)]],
           unblocks: recName(c) + ' sends the offer', ask: 'Should I approve ' + first(c.name) + '’s offer?',
           said: '<p>' + money(o.salary) + ' for ' + esc(reqOf(c).title) + (reqOf(c).budget ? ', ' + (o.salary >= reqOf(c).budget.min && o.salary <= reqOf(c).budget.max ? 'inside' : 'outside') + ' the ' + money(reqOf(c).budget.min) + ' to ' + money(reqOf(c).budget.max).replace('EGP ', '') + ' budget' : '') + '. ' +
             whyLine(c) + ' Your call is fit, salary and margin; ' + esc(BU_DIRECTOR) + ' answers for the seat and the money, on the same packet.</p>' });
       });
       DB.ivs.filter((v) => v.status === 'owed' && v.by.indexOf(me().name) === 0).forEach((v) => {
         const c = DB.byId[v.cand];
-        out.push({ k: 'debrief', c: c, age: -v.day, head: 'Your debrief on ' + c.name, body: STAGE[v.stage].label + ' ' + sayWhen(v.day) + '. About two minutes. You don’t see the other interviewers’ feedback first.', go: { debrief: v.id }, verb: 'Write it',
+        out.push({ k: 'debrief', c: c, age: -v.day, head: 'Your debrief on ' + c.name, body: STAGE[v.stage].label + ' ' + sayWhen(v.day) + '. About two minutes. You don’t see the other interviewers’ feedback first.', go: { debrief: v.id }, verb: 'Write it', ev: [['Takes', 'about 2 min']],
           unblocks: recName(c) + '’s proceed-or-pass call', ask: 'How did ' + first(c.name) + '’s interview go?',
           said: '<p>You met ' + esc(first(c.name)) + ' ' + esc(sayWhen(v.day)) + ' for ' + esc(reqOf(c).title) + '. The debrief asks one thing per must-have, then proceed or not; about two minutes. ' + whyLine(c) + '</p>' });
       });
@@ -6555,12 +6542,12 @@
          profile is theirs to chase (M11 groups these by account). */
       deskReqs().filter(isOpen).forEach((q) => activeOf(q).filter((c) => c.stage === 'sent' && c.since >= STAGE.sent.exp).forEach((c) => {
         out.push({ k: 'client', c: c, age: c.since, head: accOf(q).name + ' owes an answer on ' + c.name, body: 'Profile sent ' + days(c.since) + ' ago for ' + q.title + ', ' +
-          (c.openDay != null ? 'opened ' + sayWhen(c.openDay) : 'not opened yet') + '. You manage the account.', go: { cand: c.id }, verb: 'See them',
+          (c.openDay != null ? 'opened ' + sayWhen(c.openDay) : 'not opened yet') + '. You manage the account.', go: { cand: c.id }, verb: 'See them', ev: [['Opened', c.openDay != null ? sayWhen(c.openDay) : 'not yet']],
           unblocks: 'the next round with ' + accOf(q).name, ask: 'What do I tell ' + accOf(q).name + ' about ' + first(c.name) + '?',
           said: '<p>' + esc(accOf(q).name) + ' has had ' + esc(first(c.name)) + '’s profile for <b>' + days(c.since) + '</b>, past the usual ' + days(STAGE.sent.exp) + (c.openDay != null ? ', and opened it ' + esc(sayWhen(c.openDay)) : ', and has not opened it') + '. ' + whyLine(c) + ' A line from you as the account manager is the usual next step.</p>' });
       }));
       deskReqs().filter(isOpen).forEach((q) => activeOf(q).filter((c) => c.stage === 'tech' && c.since <= 2).forEach((c) => {
-        out.push({ k: 'new', c: c, age: c.since, head: c.name + ' is on your shortlist', body: 'Advanced to the technical round for ' + q.title + '.', go: { cand: c.id }, verb: 'See them',
+        out.push({ k: 'new', c: c, age: c.since, head: c.name + ' is on your shortlist', body: 'Advanced to the technical round for ' + q.title + '.', go: { cand: c.id }, verb: 'See them', ev: [['Stage', STAGE[c.stage].label]],
           unblocks: 'nothing yet: it is for you to know', ask: 'Why is ' + first(c.name) + ' on my shortlist?', said: '<p>' + whyLine(c) + '</p>' });
       }));
       /* A client's request lands here as a draft, to be talked through. */
@@ -6589,7 +6576,7 @@
       DB.offers.filter((o) => o.status === 'approving').forEach((o) => {
         const c = DB.byId[o.cand];
         out.push({ k: 'offer', c: c, head: first(c.name) + '’s offer is waiting on ' + (o.hm !== 'ok' && o.bu !== 'ok' ? 'both approvers' : o.hm !== 'ok' ? hmOf(reqOf(c)).name : BU_DIRECTOR),
-          body: reqOf(c).title + ', ' + money(o.salary) + '.', go: { cand: c.id }, verb: 'See the offer' });
+          body: reqOf(c).title + ', ' + money(o.salary) + '.', go: { cand: c.id }, verb: 'See the offer', age: c.since, ev: [['Salary', money(o.salary)]] });
       });
     }
     return out;
@@ -6606,11 +6593,62 @@
      as if typed, with the one or two moves the answer allows. The answers
      are written at paint, from the record on the page. */
   let SAID = {}, SAID_N = 0;
-  function askChip(q, html, acts) {
+  /* The chip is the composer in small (standalone, 29 Oct): at rest the
+     question and an arrow; on hover or focus AiMY's mark slides in on the
+     left and the arrow becomes the send button; pressed, the question lifts
+     out and lands in the bar it is about to fill. A question that proposes
+     a change (review) is cyan, one that only asks (prompt) is the accent. */
+  function askChip(q, html, acts, mode) {
     const k = 's' + (++SAID_N);
     SAID[k] = { q: q, html: html, acts: acts || [] };
-    return '<button class="t-ask" type="button" data-said="' + k + '">' + mark(12) + '<span>' + esc(q) + '</span></button>';
+    return '<button class="t-ask' + (mode === 'review' ? ' is-review' : '') + '" type="button" data-said="' + k + '">' +
+      '<span class="t-ask-mark" aria-hidden="true">' + mark(12) + '</span><span class="t-ask-text">' + esc(q) + '</span>' +
+      '<span class="t-ask-go" aria-hidden="true">' + svg('send', 11) + '</span></button>';
   }
+  /* The press, as one motion with the answer arriving above the bar. */
+  function flyToBar(btn) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const bar = byId('aimyFloatBar');
+    if (!bar) return;
+    btn.classList.add('is-armed'); void btn.offsetWidth;
+    const a = btn.getBoundingClientRect(), b = bar.getBoundingClientRect();
+    if (!a.width || !b.width) { btn.classList.remove('is-armed'); return; }
+    const z = parseFloat(getComputedStyle(document.body).zoom) || 1;
+    const fl = document.createElement('div');
+    fl.className = 't-ask-flier' + (btn.classList.contains('is-review') ? ' is-review' : '');
+    fl.innerHTML = btn.innerHTML;
+    fl.style.left = (a.left / z) + 'px'; fl.style.top = (a.top / z) + 'px';
+    document.body.appendChild(fl);
+    btn.style.visibility = 'hidden';
+    requestAnimationFrame(() => {
+      const r = fl.getBoundingClientRect();
+      fl.style.transform = 'translate(' + ((b.left + 52 - r.left) / z) + 'px, ' + ((b.top + b.height / 2 - (r.top + r.height / 2)) / z) + 'px) scale(0.97)';
+      fl.style.opacity = '0.04';
+    });
+    setTimeout(() => { fl.remove(); btn.style.visibility = ''; btn.classList.remove('is-armed'); }, 500);
+  }
+
+  /* ══ AN INSIGHT, AS A CARD (the standalone homes' "What needs you") ══════
+     A title and its work state (the design system's six: AiMY noticed it,
+     recommends it, drafted it, it is your turn, handled, blocked); a
+     sentence or two with the facts in bold and what it unblocks; the
+     evidence as small pills; then the one move, and a cross that puts the
+     card away until the page is reloaded. Equal cards in a grid. */
+  const WS_SAY = { detected: 'Detected', recommended: 'Recommended', drafted: 'Drafted', staged: 'Staged', completed: 'Handled', failed: 'Blocked' };
+  const INS_X = {};
+  function insightCard(o) {
+    if (INS_X[o.key]) return '';
+    return '<article class="t-ins" aria-label="' + esc(o.title || '') + '">' +
+      '<div class="t-ins-top"><span class="t-ins-label">' + o.label + '</span>' +
+        (o.ws ? '<span class="work-state ws-' + o.ws + '"><span class="ws-dot"></span>' + WS_SAY[o.ws] + '</span>' : '') + '</div>' +
+      '<p class="t-ins-sub">' + o.sub + (o.unblocks ? ' Unblocks: ' + esc(o.unblocks) + '.' : '') + '</p>' +
+      (o.ev && o.ev.length ? '<div class="t-ins-ev">' + o.ev.map((e) => '<span class="t-ev">' + esc(e[0]) + ' <b>' + esc(e[1]) + '</b></span>').join('') + '</div>' : '') +
+      (o.more || '') +
+      '<div class="t-ins-foot"><span class="t-ins-acts">' + (o.foot || '') + '</span>' +
+        '<button class="t-ins-x" type="button" data-ins-x="' + esc(o.key) + '" aria-label="Put this away for now" title="Put away for now">' + svg('x', 12) + '</button></div>' +
+    '</article>';
+  }
+  const insGrid = (cards) => { const h = cards.join(''); return h ? '<div class="t-ins-grid">' + h + '</div>' : ''; };
   /* Tiles under the opener: one number each and the sentence that reads it. */
   function tiles(list) {
     return '<div class="t-tiles">' + list.map((t) => (t.go ? '<button class="t-tile" type="button"' + goAttr(t.go) + '>' : '<div class="t-tile">') +
@@ -6642,16 +6680,17 @@
         '<span class="s-start-why">' + esc(s.why) + '</span></button>').join('') + '</div></div>' : '') +
     '</section>';
   }
+  /* Each ask, as an insight card. Its question to AiMY is the move where it
+     has one; the client's yes or no stays two buttons on the card. */
+  const ASK_WS = { offer: 'staged', debrief: 'drafted', client: 'detected', new: 'detected', request: 'drafted', sent: 'staged' };
   function askRows(list) {
-    return '<div class="b-owed">' + list.map((x, i) => '<div class="b-owed-row t-row" style="--i:' + Math.min(i, 8) + '">' +
-      '<span class="b-owed-sev" aria-hidden="true"></span>' +
-      '<button class="b-owed-main t-row-open" type="button"' + goAttr(x.c ? { cand: x.c.id } : x.go) + '><span class="b-owed-head"><span class="b-owed-type">' + esc(x.head) + '</span></span>' +
-        '<span class="b-owed-body">' + esc(x.body) + (x.unblocks ? ' <b>Unblocks:</b> ' + esc(x.unblocks) + '.' : '') + (x.age != null && x.ask ? ' <span class="b-kind">Waiting ' + (x.age ? days(x.age) : 'since today') + '</span>' : '') + '</span></button>' +
-      (x.yes ? '<span class="t-acts">' + exitBtn(x.c, 'clientno') +
-        '<button class="b-owed-go t-row-go" type="button" data-move="' + x.c.id + '|client">Meet them</button></span>'
-        : '<button class="b-owed-go t-row-go" type="button"' + goAttr(x.go) + '>' + esc(x.verb) + '</button>') +
-    '</div>' + (x.yes && passOpen(x.c) ? '<div class="t-row-more">' + passPicker(x.c) + '</div>' : '') +
-    (x.ask ? '<div class="t-row-more">' + askChip(x.ask, x.said, [{ label: x.verb, go: x.go, primary: true }]) + '</div>' : '')).join('') + '</div>';
+    return insGrid(list.map((x) => insightCard({ key: 'ask-' + x.k + '-' + (x.c ? x.c.id : (x.go && (x.go.req || x.go.approve || x.go.debrief)) || ''),
+      title: x.head, label: esc(x.head), ws: ASK_WS[x.k] || 'recommended', sub: esc(x.body), unblocks: x.unblocks,
+      ev: (x.age != null ? [['Waiting', x.age ? days(x.age) : 'today']] : []).concat(x.ev || []),
+      more: x.yes && passOpen(x.c) ? passPicker(x.c) : '',
+      foot: x.ask ? askChip(x.ask, x.said, [{ label: x.verb, go: x.go, primary: true }], 'review')
+        : x.yes ? exitBtn(x.c, 'clientno') + '<button class="s-insight-lnk primary" type="button" data-move="' + x.c.id + '|client">Meet them</button>'
+        : '<button class="s-insight-lnk primary" type="button"' + goAttr(x.go) + '>' + esc(x.verb) + '</button>' })));
   }
   /* The hiring manager holds many requests at once (M11), so their asks
      come grouped by account, the account with the oldest ask first, and
@@ -6728,8 +6767,8 @@
         { label: 'Ask for a hire', why: 'or clone one you had before', data: 'new-req' },
         { label: 'Reports', why: 'your requisitions, in numbers', go: { on: 'reports' } },
       ], (risky.length ? plural(risky.length, 'requisition') + ' of yours may miss the date. ' : open.length === 1 ? 'Your requisition is moving. ' : 'Your ' + plural(open.length, 'requisition') + ' are moving. ') +
-        (a.length ? '<b>' + plural(a.length, 'ask') + '</b> ' + (a.length === 1 ? 'is' : 'are') + ' waiting on you.' : 'Nothing is waiting on you.')) +
-      '<section class="s-block s-block-wide"><div class="s-camp-list-head">' + switcher('') + '<span class="s-block-say">what needs you · by account · oldest first</span></div>' +
+        (a.length ? '<button class="slv-go" type="button" data-jump="needs">' + plural(a.length, 'ask') + ' ' + (a.length === 1 ? 'is' : 'are') + ' waiting on you.</button>' : 'Nothing is waiting on you.')) +
+      '<section class="s-block s-block-wide" id="hmNeeds"><div class="s-camp-list-head">' + switcher('') + '<span class="s-block-say">what needs you · by account · oldest first</span></div>' +
         hmTiles(open) +
         (a.length ? askGroups(a) : '<p class="s-none">Nothing is waiting on you.</p>') + '</section>' +
       shortlists(open) +
@@ -6802,7 +6841,7 @@
         { label: 'Templates', why: 'stages, agendas and what AiMY may do', go: { on: 'templates' } },
         { label: 'Assessments', n: qProposals().length || null, why: qProposals().length ? 'questions most people fail' : 'all reading well', go: { on: 'asmts' } },
         { label: 'Reports', why: 'every number from the dashboard', go: { on: 'reports' } },
-      ], (risky.length * 2 < open.length ? 'Most open requisitions are on course. ' : '') + '<b>' + risky.length + ' of ' + open.length + '</b> ' + (risky.length === 1 ? 'is' : 'are') + ' forecast to miss.') +
+      ], (risky.length * 2 < open.length ? 'Most open requisitions are on course. ' : '') + '<button class="slv-go" type="button"' + goAttr({ on: 'reqs', q: 'risk' }) + '>' + risky.length + ' of ' + open.length + ' ' + (risky.length === 1 ? 'is' : 'are') + ' forecast to miss.</button>') +
       hrTiles(open, load, owed) +
       approvalsBlock() +
       '<section class="s-block s-block-wide"><div class="s-camp-list-head">' + switcher('') + '<span class="s-block-say">likely to miss their date · the reason is on each row</span></div>' +
@@ -8108,8 +8147,11 @@
     if (at('#ovChatsToggle')) { chatsDrawer(!byId('overlayChats').classList.contains('is-open')); return; }
     if (at('#ovChatsScrim')) { chatsDrawer(false); return; }
     if (at('#overlaySend')) { canvasAsk(byId('overlayInput').value); return; }
+    /* Put an insight away until the page is reloaded, with Undo. */
+    if ((el = at('[data-jump]'))) { const t = byId('hmNeeds'); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if ((el = at('[data-ins-x]'))) { const k = el.getAttribute('data-ins-x'); INS_X[k] = true; paint(); toast('Put away until you reload', () => { delete INS_X[k]; paint(); }); return; }
     /* A card's question, answered from the record, lands in the thread. */
-    if ((el = at('[data-said]'))) { const a = SAID[el.getAttribute('data-said')]; if (!a) return; ASKING = a.q; peek(a.html, a.acts); return; }
+    if ((el = at('[data-said]'))) { flyToBar(el); const a = SAID[el.getAttribute('data-said')]; if (!a) return; ASKING = a.q; peek(a.html, a.acts); return; }
     if ((el = at('[data-ask]'))) { if (!canvasShown()) openCanvas(); canvasAsk(el.getAttribute('data-ask')); return; }
     if ((el = at('[data-newchat]'))) { CHAT_AT = null; THREAD_SEEN = 0; paintThread(); chatsDrawer(false); byId('overlayInput').focus(); return; }
     if ((el = at('[data-chat-del]'))) {
