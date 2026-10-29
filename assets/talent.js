@@ -1818,12 +1818,12 @@
         '</div>' +
       '</div></div>' +
       '<div class="rail-doors">' +
-        (nxt ? '<button class="b-door" type="button"' + goAttr({ req: nxt.req }) + '>' +
+        (nxt ? '<button class="b-door" type="button"' + goAttr({ on: 'diary' }) + '>' +
           '<span class="b-door-cap">Today</span>' +
           '<span class="b-door-fig"><span class="b-door-clock">' + svg('clock') + '</span>' + esc(nxt.slot) + '</span>' +
           '<span class="b-door-who">' + esc(nxt.name) + '<span class="b-kind">' + esc(STAGE[nxt.stage].label) + '</span></span>' +
           '<span class="b-door-say">for ' + esc(reqOf(nxt).title) + ', ' + esc(accOf(reqOf(nxt)).name) + '</span>' +
-          '<span class="b-door-go">Open the requisition' + svg('go') + '</span>' +
+          '<span class="b-door-go">Open the diary' + svg('go') + '</span>' +
         '</button>' : '') +
         (function () {
           const miss = missed(), tc = toCall();
@@ -1850,19 +1850,15 @@
      Requisitions and Calls as well until 28 Oct. ── */
   function topBrief() {
     const d = decisions(), w = waits(), t = today();
-    const risky = myOpen().filter((q) => health(q).risk);
     const client = w.filter((c) => waitsOn(c) === 'client');
     const oldest = d[0];
     const lines = [];
+    /* Today's interviews open in the Diary. A requisition likely to miss
+       its date is the hiring manager's to say (Engy, 29 Oct). */
+    const ivs = t.length ? '<button class="slv-n" type="button"' + goAttr({ on: 'diary' }) + '>' + plural(t.length, 'interview') + '</button> today, the first at <b>' + esc(t[0].slot) + '</b> with ' + esc(t[0].name) + '.' : '';
     lines.push(d.length
-      ? '<b>' + plural(d.length, 'decision') + '</b> ' + (d.length === 1 ? 'waits' : 'wait') + ' on you, the oldest <b>' + days(oldest.since) + '</b>. ' +
-        (t.length ? '<b>' + plural(t.length, 'interview') + '</b> today, the first at <b>' + esc(t[0].slot) + '</b> with ' + esc(t[0].name) + '.' : 'No interviews today.')
-      : 'Nothing waits on your call. ' + (t.length ? '<b>' + plural(t.length, 'interview') + '</b> today.' : ''));
-    if (risky.length) {
-      const q = risky[0], h = health(q);
-      lines.push('<button class="slv-n" type="button"' + goAttr({ req: q.id }) + '>' + esc(q.title) + '</button> for ' + esc(accOf(q).name) +
-        ' is likely to miss its date: <b>' + days(h.left) + '</b> left, and the furthest candidate is ' + esc(atStage(h.furthest)) + '.');
-    }
+      ? '<b>' + plural(d.length, 'decision') + '</b> ' + (d.length === 1 ? 'waits' : 'wait') + ' on you, the oldest <b>' + days(oldest.since) + '</b>. ' + (ivs || 'No interviews today.')
+      : 'Nothing waits on your call. ' + ivs);
     if (client.length) {
       lines.push('Clients owe an answer on <button class="slv-n" type="button"' + goAttr({ on: 'reqs', q: 'client' }) + '>' + plural(client.length, 'candidate') + '</button>' +
         ', the oldest waiting <b>' + days(client[0].since) + '</b>.');
@@ -2019,8 +2015,6 @@
 
   /* ── TODAY ── */
   function homePage() {
-    const w = waits(), t = today();
-    const risky = myOpen().map((q) => ({ q: q, h: health(q) })).filter((x) => x.h.risk);
     const owed = untold();
     const late = owed.filter((c) => c.since >= TELL_DAYS);
     return '<div class="s-home">' +
@@ -2044,27 +2038,16 @@
         (selN('tell') ? batchBar('tell', '<button class="s-insight-lnk primary" type="button" data-tell-sel>Send the answer to ' + plural(selN('tell'), 'person', 'people') + '</button>')
           : '<p class="t-acts"><button class="b-ghost" type="button" data-sel-all="tell">Select all ' + owed.length + '</button></p>') +
       '</section>' : '') +
-      (t.length ? '<section class="s-block s-block-wide" aria-label="Interviews today">' +
-        '<div class="s-camp-list-head"><h2 class="s-block-h">Interviews today</h2>' +
-          '<span class="s-block-say">' + plural(t.length, 'interview') + ' · earliest first</span></div>' +
-        srcNote([['Bookings calendar', false]]) +
-        '<div class="b-cal-agenda">' + topN('iv', t).map((c) => '<div class="b-cal-ev is-plain t-cal-ev">' +
-          '<button class="t-cal-open" type="button"' + goAttr({ cand: c.id }) + '>' +
-            '<span class="b-cal-evtop"><span class="b-cal-dot k-meeting"></span><span class="b-cal-etime">' + esc(c.slot) + '</span>' +
-              '<span class="b-kind">' + esc(STAGE[c.stage].label) + '</span></span>' +
-            '<span class="b-cal-ename"><b>' + esc(c.name) + '</b><span class="b-cal-ewhat">' + esc(reqOf(c).title) + ' · ' + esc(accOf(reqOf(c)).name) + '</span></span>' +
-          '</button>' +
-          '<button class="s-inline-btn t-prep-btn" type="button" data-prep="' + c.id + '">' + mark(12) + 'Prepare me</button>' +
-        '</div>').join('') + '</div>' + moreLinks('iv', t.length) +
-      '</section>' : '') +
-      (w.length ? '<section class="s-block s-block-wide" aria-label="Waiting on others">' +
-        '<div class="s-camp-list-head"><h2 class="s-block-h">Waiting on others</h2>' +
-          '<span class="s-block-say">' + plural(w.length, 'candidate') + ' · <b>' + plural(w.reduce((n, c) => n + lostDays(c), 0), 'day') + '</b> past the usual time · longest first</span></div>' +
-        srcNote([['Stage and date', false], ['Sendout record', true]]) +
-        aimyBlock({ text: 'Waiting is where requisitions lose the most time: in FlairsTech’s own data, 46 of 105 lost days were spent waiting for feedback. Nudging is done for you and logged; nothing is sent to a candidate.', from: 'the recruitment data, and how nudges work here' }) +
-        '<div class="b-owed">' + topN('wait', w).map((c, i) => workRow(c, i, 'nudge')).join('') + '</div>' + moreLinks('wait', w.length) +
-      '</section>' : '') +
-      (risky.length ? '<section class="s-block s-block-wide" aria-label="At risk">' +
+      /* Today's interviews open in the Diary; waiting on others is gone (Engy,
+         29 Oct); requisitions likely to miss their date are the hiring
+         manager's, on their home. */
+    '</div>';
+  }
+  /* REQUISITIONS LIKELY TO MISS THEIR DATE, rule-based, each with its reason
+     and the one move. The hiring manager's (Engy, 29 Oct). */
+  function riskBlock(risky, act) {
+    if (!risky.length) return '';
+    return '<section class="s-block s-block-wide" aria-label="At risk">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">Likely to miss their date</h2>' +
           '<span class="s-block-say">rule-based · the reason is on each row</span></div>' +
         srcNote([['Target date', false], ['Stage and date', false]]) +
@@ -2073,10 +2056,9 @@
           '<button class="b-owed-main t-row-open" type="button"' + goAttr({ req: x.q.id }) + '><span class="b-owed-head"><span class="b-owed-type">' + esc(x.q.title) + '</span>' +
             '<span class="b-owed-by">' + esc(accOf(x.q).name) + '</span>' + tag('At risk', 'warn') + '</span>' +
             '<span class="b-owed-body">' + riskSay(x.q, x.h) + '</span></button>' +
-          riskAct(x.q, x.h) + '</div>').join('') + '</div>' +
+          act(x.q, x.h) + '</div>').join('') + '</div>' +
         moreLinks('risk', risky.length, { label: 'Open all ' + risky.length + ' in Requisitions', go: { on: 'reqs', q: 'risk' } }) +
-      '</section>' : '') +
-    '</div>';
+      '</section>';
   }
   function riskSay(q, h) {
     return 'The target is ' + sayDay(q.target) + ', <b>' + days(h.left) + '</b> away. The furthest candidate is at the ' +
@@ -2115,29 +2097,6 @@
     return [c.name, c.at, c.place, c.email || '', c.phone || '', (c.skills || []).join(' '), q.title, accOf(q).name]
       .join(' ').toLowerCase().indexOf(f.toLowerCase()) >= 0;
   };
-  /* CARDS OR A LIST: the card for working one person, the list for reading
-     many at a glance. The choice is kept for this person, on this device. */
-  const LIST_N = 40;
-  function candRow(c) {
-    const q = reqOf(c), was = before(c);
-    const works = isRec() || isHR();
-    const pick1 = works && !c.exit && c.stage === 'sourced' && !c.contactOk;
-    const owedTell = works && c.exit && c.told === false;
-    /* One verb per row, the card's first one; anything with a choice in it
-       (an exit and its reason, an offer) is on the card. */
-    const act = owedTell ? '<button class="s-inline-btn" type="button" data-tell="' + c.id + '">Send the answer</button>'
-      : pick1 ? '<button class="s-inline-btn" type="button" data-contact-ok="' + c.id + '">Approve first contact</button>'
-      : !c.exit && isRec() && (c.stage === 'applied' || c.stage === 'phone') && canCall(c) ? '<button class="s-inline-btn" type="button" data-call="' + c.id + '">' + svg('phone', 13) + 'Call</button>'
-      : '<button class="s-inline-btn" type="button" data-cand="' + c.id + '">Open</button>';
-    return '<li class="t-crow">' +
-      (pick1 ? selBox('sourced', c.id, c.name) : owedTell ? selBox('tell', c.id, c.name) : '<span class="t-crow-sel" aria-hidden="true"></span>') +
-      '<span class="t-crow-who"><button class="t-crow-name" type="button" data-cand="' + c.id + '">' + esc(c.name) + '</button><span class="t-crow-sub">' + esc(c.at) + '</span></span>' +
-      '<span class="t-crow-req"><span class="t-crow-title">' + esc(q.title) + '</span><span class="t-crow-sub">' + esc(accOf(q).name) + '</span></span>' +
-      '<span class="t-crow-tags">' + stageTag(c) + (was ? tag('Returning', 'info') : '') + '</span>' +
-      '<span class="t-crow-say">' + esc(candSay(c)) + '</span>' +
-      '<span class="t-crow-act">' + act + '</span>' +
-    '</li>';
-  }
   function candsPage() {
     const rqQ = S.rq && DB.reqById[S.rq] ? DB.reqById[S.rq] : null;
     /* A stage, when a report's funnel sent you here (?st=). */
@@ -2148,8 +2107,8 @@
     const cut = S.q === 'untold' || QCUTS.some((x) => x.k === S.q) ? S.q : 'all';
     const list = cut === 'untold' ? owed : cut === 'all' ? all : all.filter((c) => queueCut(c) === cut);
     const n = (k) => k === 'all' ? all.length : all.filter((c) => queueCut(c) === k).length;
-    const asList = UI.cview === 'list';
-    const per = asList ? LIST_N : PAGE_N;
+    /* Cards only: the list view came out (Engy, 29 Oct). */
+    const per = PAGE_N;
     const pages = Math.max(1, Math.ceil(list.length / per));
     const page = Math.min(pages - 1, Math.max(0, Number(S.p) || 0));
     const from = page * per, to = Math.min(list.length, from + per);
@@ -2173,9 +2132,6 @@
               reqsIn.map((x) => '<button class="b-menu-item" type="button" role="menuitem" data-rq="' + x.q.id + '"' + (rqQ === x.q ? ' aria-current="true"' : '') + '>' +
                 '<span class="t-rq-item"><span class="b-menu-name">' + esc(x.q.title) + '</span><span class="t-crow-sub">' + esc(accOf(x.q).name) + '</span></span><span class="tel-menu-cc">' + x.n + '</span></button>').join('') +
             '</div></span>' +
-          '<span class="t-cview" role="group" aria-label="Show as">' + [['cards', 'Cards'], ['list', 'List']].map((x) => {
-            const on = (x[0] === 'list') === asList;
-            return '<button class="s-view' + (on ? ' is-on' : '') + '" type="button" data-cview="' + x[0] + '" aria-pressed="' + on + '">' + x[1] + '</button>'; }).join('') + '</span>' +
         '</div>' +
         '<div class="b-cuts b-cuts-row">' + QCUTS.map((x) => '<button class="filter-chip' + (x.k === cut ? ' active' : '') + '" type="button"' + keep({ q: x.k === 'all' ? undefined : x.k }) + '>' +
           esc(x.label) + '<span class="b-cut-n">' + n(x.k) + '</span></button>').join('') +
@@ -2191,8 +2147,7 @@
         (cut === 'new' && list.length ? trustCard(list.filter((c) => /^Found on/.test(c.source) && !c.contactOk)) : '') +
         (cut === 'new' && list.length ? (selN('sourced') ? batchBar('sourced', '<button class="s-insight-lnk primary" type="button" data-contact-sel>Approve first contact for ' + plural(selN('sourced'), 'person', 'people') + '</button>')
             : '<p class="t-acts"><button class="b-ghost" type="button" data-sel-all="sourced">Select all ' + list.length + '</button></p>') : '') +
-        (list.length ? (asList ? '<ul class="t-clist" aria-label="Candidates">' + list.slice(from, to).map(candRow).join('') + '</ul>'
-            : '<div class="b-grid">' + list.slice(from, to).map((c, i) => '<div class="b-slot" style="--i:' + i + '">' + candCard(c, i) + '</div>').join('') + '</div>') +
+        (list.length ? '<div class="b-grid">' + list.slice(from, to).map((c, i) => '<div class="b-slot" style="--i:' + i + '">' + candCard(c, i) + '</div>').join('') + '</div>' +
           '<div class="b-pager"><span class="b-vfoot">' + (from + 1) + '–' + to + ' of ' + plural(list.length, 'candidate') + ' · page ' + (page + 1) + ' of ' + pages + '</span>' +
             '<span class="b-pager-go">' + (page > 0 ? '<button class="s-inline-btn" type="button"' + keep({ q: S.q, p: page > 1 ? String(page - 1) : undefined }) + '>Previous ' + per + '</button>' : '') +
             (left > 0 ? '<button class="s-inline-btn" type="button"' + keep({ q: S.q, p: String(page + 1) }) + '>Next ' + Math.min(per, left) + '</button>' : '') + '</span></div>'
@@ -2479,13 +2434,8 @@
       '<p class="b-qcard-where">' + fact('job', plural(c.years, 'year') + ' of experience') + fact('pin', c.place) + '</p>' +
       '<p class="b-qcard-where">' + fact('lang', c.langs.join(', ')) + '</p>' +
       (was ? '<p class="b-qcard-where t-before">' + fact('hist', beforeSay(was)) + '</p>' : '') +
-      /* The score, as the scoring component draws it, said once: what the
-         AiMY line used to repeat is the number, a dot per must-have and
-         the chip. */
-      (function () { const unk = c.ev.filter((e) => e === 'n').length, part = c.ev.filter((e) => e === 'p').length;
-        return '<div class="rc t-cscore"><div class="t-score-line"><span class="big">' + evMet(c) + ' of ' + c.ev.length + '</span>' + fitPips(c) + '</div>' +
-          '<div class="row between" style="margin-top:4px;flex-wrap:wrap;gap:6px"><span class="sub">must-haves the CV shows</span>' +
-          (unk ? rcChip(unk + ' not known yet', 'acc', 'qc') : part ? rcChip(part + ' partly', 'acc') : rcChip(fitLane(c)[0], 'acc')) + '</div></div>'; })() +
+      /* Why they fit, as labels, in place of the score (Engy, 29 Oct). */
+      whyTags(c) +
       '<p class="b-qcard-where t-cnow">' + fact('clock', say + (s && s.status === 'done' ? ' Assessment ' + scoreShort(asmtOf(s.asmt), s) + '.' : '')) + '</p>' +
       (c.stage === 'sent' || (isClient() && c.exit === 'clientno') ? sendout(c) : '') +
       /* AT THE SCREEN, THE CALL IS THE MOVE. Someone who applied or is due a
@@ -2687,31 +2637,35 @@
      found under it, and one status. The score on top counts what the CV
      shows and says how many an interview has confirmed. */
   const FIT_ST = { verified: ['Confirmed', 'ok', 'okc'], differs: ['Differs', 'err', 'warnc'], partly: ['Partly shown', 'warn', 'warnc'], notshown: ['Not shown', '', 'warnc'] };
-  const fitLane = (c) => { const met = evMet(c), unk = c.ev.filter((e) => e === 'n').length, all = c.ev.length;
-    return met === all ? ['Strong fit', 'ok'] : met + unk === all ? ['Fit, to check', 'warn'] : met * 2 >= all ? ['Partial fit', 'warn'] : ['Weak fit', '']; };
-  /* ONE DOT A MUST-HAVE, ONE IDEA EVERYWHERE (Engy, 29 Oct). The dots
-     say the number beside them and nothing else: a full purple dot for
-     each must-have the CV shows, a dashed purple circle for each it does
-     not, full ones first. The same on the card and on the profile; what an
-     interview confirmed or found different is said in the rows below. */
-  function fitPips(c) {
-    const met = evMet(c), all = c.ev.length, said = met + ' of ' + all + ' must-haves shown on the CV';
-    return '<span class="t-pips" role="img" aria-label="' + esc(said) + '" title="' + esc(said) + '">' +
-      c.ev.map((e, i) => '<i class="' + (i < met ? 't-pip is-on' : 't-pip is-off') + '"></i>').join('') + '</span>';
+  /* WHY THEY FIT, AS LABELS, NOT A SCORE (Engy, 29 Oct). One label per
+     must-have the CV shows, full ones first, partly ones said; what the CV
+     is silent on is counted under them, never a no. Hover a label for the
+     line of the CV it rests on. The same on the card, the profile and the
+     CV on hover. Mobbin: Braintrust and Upwork put match reasons on the card
+     as tags; Workable and Pin list them on the profile with the evidence. */
+  function whyTags(c, bare) {
+    const must = reqOf(c).must || [];
+    const tags = must.map((m, i) => ({ m: m, e: c.ev[i] })).filter((x) => x.e === 'm' || x.e === 'p')
+      .sort((x, y) => (x.e === 'm' ? 0 : 1) - (y.e === 'm' ? 0 : 1));
+    const unk = must.filter((m, i) => c.ev[i] === 'n').length;
+    return '<div class="t-why">' + (bare ? '' : '<span class="t-why-cap">Why they fit</span>') +
+      (tags.length ? '<span class="t-why-tags">' + tags.map((x) => '<span class="' + (x.e === 'm' ? 't-why-tag' : 't-why-tag is-part') + '" title="' + esc('On the CV: ' + cvSays(c, x.m)) + '">' +
+          svg(x.e === 'm' ? 'check' : 'dot', 12) + '<span>' + esc(x.m) + (x.e === 'p' ? ', partly' : '') + '</span></span>').join('') + '</span>'
+        : '<span class="t-why-none">Nothing on the CV shows a must-have yet.</span>') +
+      (unk ? '<span class="t-why-unk">' + svg('qc', 12) + plural(unk, 'must-have') + ' not known yet, not missing</span>' : '') +
+    '</div>';
   }
   function fitCard(c, v) {
     const q = reqOf(c), works = isRec() || isHR(), asks = c.asks || [];
-    const met = evMet(c), all = c.ev.length;
     const conf = v.filter((x) => x.state === 'verified').length, diff = v.filter((x) => x.state === 'differs').length;
-    /* Silent on the CV but answered in an interview is known. */
-    const open = c.ev.filter((e, i) => e === 'n' && !v[i].seen.length).length;
     const last = v.reduce((d, x) => (x.seen[0] && (d == null || x.seen[0].day > d) ? x.seen[0].day : d), null);
-    const lane = fitLane(c);
-    return rcard({ cap: 'Scoring and matching', ico: 'listc', label: 'Against the success profile',
-      body: rcHead(esc(c.name), esc(q.title) + ' · ' + esc(accOf(q).name), rcChip('Lane · ' + lane[0], lane[1])) +
-        '<div class="row between" style="margin-top:14px;align-items:flex-end;flex-wrap:wrap"><div><div class="t-score-line"><span class="big">' + met + ' of ' + all + '</span>' + fitPips(c) + '</div>' +
-          '<div class="sub" style="margin-top:4px">must-haves the CV shows, each quoted · ' + (conf ? conf + ' confirmed in interview' : 'none confirmed in interview yet') + '</div></div>' +
-          '<span class="row" style="gap:6px">' + (diff ? rcChip(diff + (diff === 1 ? ' differs' : ' differ') + ' in interview', 'err') : '') + (open ? rcChip(open + ' not known yet', 'acc', 'qc') : '') + '</span></div>' +
+    /* Why they fit, as the card says it, then each must-have with the line
+       of the CV it rests on (Workable, Pin). No score, no lane. */
+    return rcard({ cap: 'Why they fit', ico: 'listc', label: 'Why they fit',
+      body: rcHead('Why ' + esc(first(c.name)) + ' fits', esc(q.title) + ' · ' + esc(accOf(q).name)) +
+        '<div style="margin-top:12px">' + whyTags(c, true) + '</div>' +
+        '<div class="row between" style="margin-top:8px;flex-wrap:wrap;gap:6px"><span class="sub">each quoted from the CV · ' + (conf ? conf + ' confirmed in interview' : 'none confirmed in interview yet') + '</span>' +
+          (diff ? rcChip(diff + (diff === 1 ? ' differs' : ' differ') + ' in interview', 'err') : '') + '</div>' +
         '<div style="margin-top:12px">' + q.must.map((m, i) => {
           const e = c.ev[i], x = v[i], best = x.seen[0], st = best ? FIT_ST[x.state] : null;
           const cv = e === 'n' ? rcSay('The CV is silent here. Not the same as Not met.') : rcQuote('“' + esc(cvSays(c, m)) + '”');
@@ -4407,6 +4361,7 @@
           exitBtn(c, outK) +
         '</div>') +
       '</section>' +
+      ivTodayBlock(c) +
       (works && /^Found on/.test(c.source) && c.stage === 'sourced' ? trustCard([c], first(c.name) + ', a web prospect', c) : '') +
       sendoutCard(c) +
       fitCard(c, v) +
@@ -4421,6 +4376,23 @@
     '</div>';
   }
 
+  /* INTERVIEW TODAY, on the profile and for the hiring manager (Engy, 29
+     Oct): it stood on the recruiter's Today as a list. The interviewer gets
+     the time, who is in the room, and the brief to read before it. */
+  function ivTodayBlock(c) {
+    if (!isHM() || c.exit || !MEETS[c.stage] || c.meet !== 0) return '';
+    const q = reqOf(c), v = ivsOf(c).filter((x) => x.status === 'booked' && x.day === 0)[0];
+    return '<section class="s-block s-block-wide" aria-label="Interview today">' +
+      '<div class="s-camp-list-head"><h2 class="s-block-h">Interview today</h2></div>' +
+      srcNote([['Bookings calendar', false]]) +
+      '<div class="b-cal-agenda"><div class="b-cal-ev is-plain t-cal-ev">' +
+        '<span class="t-cal-open"><span class="b-cal-evtop"><span class="b-cal-dot k-meeting"></span><span class="b-cal-etime">' + esc(c.slot) + '</span>' +
+          '<span class="b-kind">' + esc(STAGE[c.stage].label) + '</span></span>' +
+          '<span class="b-cal-ename"><b>' + esc(c.name) + '</b><span class="b-cal-ewhat">' + esc(q.title) + ' · ' + esc(accOf(q).name) +
+            (v ? ' · with ' + esc(v.by) + (v.mode === 'video' ? ', on Teams' : ', in person') : '') + '</span></span></span>' +
+        '<button class="s-inline-btn t-prep-btn" type="button" data-prep="' + c.id + '">' + mark(12) + 'Prepare me</button>' +
+      '</div></div></section>';
+  }
   /* Every other application this person has made, or been put on. */
   function appsBlock(c, others) {
     return '<section class="s-block s-block-wide" aria-label="Other applications">' +
@@ -4631,26 +4603,20 @@
 
   /* ══ THE CV ON HOVER ═════════════════════════════════════════════════════
      Resting on a candidate's name shows their CV, small, beside it: who they
-     are now, their skills, and the requisition's must-haves as the CV
-     answers them, one dot each. It is for reading; a click on the name is
+     are now, their skills, and why they fit the requisition, as the same
+     labels the card shows. It is for reading; a click on the name is
      still the profile. A mouse rests, and keyboard focus shows it too; a
      touch screen has no hover, so there the name is the profile as before. */
-  const CV_NAMES = '.tc-title[data-cand], .t-crow-name, .t-row-open, h4 > [data-cand]';
+  const CV_NAMES = '.tc-title[data-cand], .t-row-open, h4 > [data-cand]';
   let CV_T = null, CV_ON = null;
   function cvCard(c) {
-    const q = reqOf(c), must = q.must || [];
-    const row = (m, i) => {
-      const e = c.ev[i];
-      return '<li class="t-cv-must"><i class="' + (e === 'm' ? 't-pip is-on' : 't-pip is-off') + '"></i><span><b>' + esc(m) + '</b>' +
-        '<span>' + esc(e === 'm' ? cvSays(c, m) : e === 'p' ? 'Partly: ' + cvSays(c, m) : 'Not known yet, not missing') + '</span></span></li>';
-    };
+    const q = reqOf(c);
     return '<div class="t-cv-head"><span class="t-cv-name">' + esc(c.name) + '</span>' + stageTag(c) + '</div>' +
       '<p class="t-cv-role">' + esc(c.at) + '</p>' +
       '<p class="t-cv-facts">' + fact('job', plural(c.years, 'year')) + fact('pin', c.place) + fact('lang', c.langs.join(', ')) + '</p>' +
       ((c.skills || []).length ? '<div class="t-cv-sec"><span class="t-cv-cap">Skills</span><span class="t-cv-chips">' +
         c.skills.map((s) => '<span class="t-cv-chip">' + esc(s) + '</span>').join('') + '</span></div>' : '') +
-      (must.length ? '<div class="t-cv-sec"><span class="t-cv-cap">Must-haves · ' + evMet(c) + ' of ' + must.length + ' shown</span>' +
-        '<ul class="t-cv-musts">' + must.map(row).join('') + '</ul></div>' : '') +
+      ((q.must || []).length ? '<div class="t-cv-sec">' + whyTags(c) + '</div>' : '') +
       '<p class="t-cv-foot">' + esc(c.source) + ' · for ' + esc(q.title) + '</p>';
   }
   /* Under the name, or over it when the window has no room below. The page
@@ -6589,6 +6555,10 @@
       ]) +
       '<section class="s-block s-block-wide"><div class="s-camp-list-head">' + switcher('') + '<span class="s-block-say">by account · oldest first</span></div>' +
         (a.length ? askGroups(a) : '<p class="s-none">Nothing is waiting on you.</p>') + '</section>' +
+      /* The target date is theirs, so the requisitions likely to miss it are
+         too: the move is changing the date, or the requisition. */
+      riskBlock(risky.map((q) => ({ q: q, h: health(q) })), (q, h) => '<button class="b-owed-go t-row-go" type="button" data-edit-req="' + q.id + '">' +
+        (q.askedMove != null ? esc(first(DESKS[q.rec] ? DESKS[q.rec].name : 'The recruiter')) + ' asks to move it' : 'Change the date') + '</button>') +
       accs.map((x) => '<section class="s-block s-block-wide" aria-label="' + esc(x.name) + '"><div class="s-camp-list-head"><h2 class="s-block-h">' + esc(x.name) + '</h2>' +
         '<span class="s-block-say">' + plural(open.filter((q) => q.acc === x.id).length, 'open requisition') + '</span></div>' +
         '<div class="b-grid">' + open.filter((q) => q.acc === x.id).map((q, i) => '<div class="b-slot">' + reqCard(q, i) + '</div>').join('') + '</div></section>').join('') +
@@ -8043,7 +8013,6 @@
       if (y) byId('pageScroll').scrollTop = y;
       return;
     }
-    if ((el = at('[data-cview]'))) { UI.cview = val('data-cview'); saveUI(); paint(); return; }
     if ((el = at('[data-cfclear]'))) { go({ on: 'cands', q: S.q }, true); return; }
     /* ── A pass with its reason ── */
     if ((el = at('[data-pass-open]'))) { PASSING = { id: val('data-pass-open'), other: false, line: '' }; paint(); return; }
