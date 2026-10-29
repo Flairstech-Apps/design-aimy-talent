@@ -5090,6 +5090,18 @@
     { k: 'apollo', label: 'Apollo', say: 'Adds a work email to people found', tag: 'Apollo', enrich: true },
     { k: 'signal', label: 'SignalHire', say: 'Parked, decision D10', parked: true },
   ];
+  /* How a search can start, each with what it turns into. */
+  const FIND_MODES = [
+    { k: 'like', ico: 'loop', label: 'Like the person who left', say: 'A replacement: their role becomes what to look for' },
+    { k: 'req', ico: 'req', label: 'An open requisition', say: 'Its must-haves become the criteria' },
+    { k: 'text', ico: 'pen', label: 'Describe or paste', say: 'A job description, a CV or a few skills' },
+  ];
+  const SRC_ICO = { pool: 'users', web: 'globe', apollo: 'mail', signal: 'ban' };
+  const findStep = (n, label) => '<p class="t-find-step"><span class="t-find-n">' + n + '</span>' + esc(label) + '</p>';
+  /* One record from a list: a radio, the name, and what it is. */
+  const radioList = (label, items) => '<div class="t-radio-list" role="radiogroup" aria-label="' + esc(label) + '">' + items.map((x) =>
+    '<button class="t-radio-row' + (x.on ? ' is-on' : '') + '" type="button" role="radio" aria-checked="' + x.on + '" ' + x.attr + '>' +
+      '<span class="t-radio" aria-hidden="true"></span><span class="t-radio-main"><b>' + esc(x.title) + '</b><span>' + esc(x.sub) + '</span></span></button>').join('') + '</div>';
   const WEB_PAGES = [['Public GitHub profile', 'github.com/'], ['Portfolio', 'behance.net/'], ['Company team page', 'team page, '], ['Conference speaker page', 'speaker, ']];
   const KEYS_TO_MUST = [
     [/german/i, 'German at C1 or above'], [/english/i, 'Fluent English'], [/\bsql\b/i, 'SQL to read logs and data'],
@@ -5399,22 +5411,36 @@
       (isRec() ? '' : '<div class="b-topbar s-block-wide"><button class="s-back" type="button" data-trail>' + svg('back', 14) + 'Back</button></div>') +
       '<section class="s-block s-block-wide" aria-label="Find candidates">' +
         '<div class="s-camp-list-head">' + switcher('find') + '</div>' +
-        '<p class="b-tocall">Start from:</p>' +
-        '<div class="b-cuts t-find-mode" role="group" aria-label="Start from">' + [['like', 'Like the person who left'], ['req', 'An open requisition'], ['text', 'Describe or paste']].map((m) =>
-          '<button class="filter-chip' + (FIND.mode === m[0] ? ' active' : '') + '" type="button" data-find-mode="' + m[0] + '" aria-pressed="' + (FIND.mode === m[0]) + '">' + m[1] + '</button>').join('') + '</div>' +
-        (FIND.mode === 'like' ? (left.length ? '<div class="b-cuts">' + left.map((p) => '<button class="filter-chip' + (FIND.like === p.id ? ' active' : '') + '" type="button" data-find-like="' + p.id + '">' +
-            esc(p.name) + '<span class="b-cut-n">' + esc(p.title) + ' · ' + esc(accOf(p).name) + '</span></button>').join('') + '</div>' +
+        /* THREE GROUPS, THREE CONTROLS (Engy, 29 Oct: one chip style for three
+           kinds of choice read as one jumble). How to start is one choice, so
+           option cards (Mobbin: Lindy, Notion Mail); the person or requisition
+           is one record from a list, so a radio list (Wellfound, Graphite);
+           where to look is several switches, so checkbox cards with what each
+           one does (Google Ads, incident.io). Numbered: it is an order. */
+        findStep(1, 'Start from') +
+        '<div class="t-pick-cards" role="radiogroup" aria-label="Start from">' + FIND_MODES.map((m) => {
+          const on = FIND.mode === m.k;
+          return '<button class="t-pick-card' + (on ? ' is-on' : '') + '" type="button" role="radio" aria-checked="' + on + '" data-find-mode="' + m.k + '">' +
+            '<span class="t-pick-ico">' + svg(m.ico, 16) + '</span><span class="t-pick-title">' + esc(m.label) + '</span><span class="t-pick-say">' + esc(m.say) + '</span></button>';
+        }).join('') + '</div>' +
+        findStep(2, FIND.mode === 'like' ? 'Who left' : FIND.mode === 'req' ? 'Which requisition' : 'What to look for') +
+        (FIND.mode === 'like' ? (left.length ? radioList('Who left', left.map((p) => ({ on: FIND.like === p.id, attr: 'data-find-like="' + p.id + '"', title: p.name, sub: p.title + ' · ' + accOf(p).name }))) +
             (pastOf(FIND.like) ? '<p class="b-vfoot">' + esc(first(pastOf(FIND.like).name)) + ' left: ' + esc(lower(pastOf(FIND.like).why)) + '.' +
               (FIND.req ? ' Whoever you add goes on ' + esc(DB.reqById[FIND.req].title) + ', the open requisition for this role.' : ' No open requisition for this role yet; you pick one when you add someone.') + '</p>' : '')
           : '<p class="b-vfoot">Nobody has left on your accounts. Start from a requisition instead.</p>')
-        : FIND.mode === 'req' ? '<div class="b-cuts">' + open.map((q) => '<button class="filter-chip' + (FIND.req === q.id ? ' active' : '') + '" type="button" data-find-req="' + q.id + '">' + esc(q.title) + ' · ' + esc(accOf(q).name) + '</button>').join('') + '</div>'
+        : FIND.mode === 'req' ? radioList('Which requisition', open.map((q) => ({ on: FIND.req === q.id, attr: 'data-find-req="' + q.id + '"', title: q.title,
+            sub: accOf(q).name + ' · ' + plural(activeOf(q).length, 'person', 'people') + ' in progress' })))
         : '<div class="t-input-wrap" id="wrapFind"><textarea class="dial-input t-area t-input t-findq" rows="3" data-find-q aria-label="What to look for" ' +
           'placeholder="Paste a job description or a CV, or list skills: German, Zendesk, SQL, 3 years">' + esc(FIND.q) + '</textarea>' +
           '<p class="t-error-msg">Tell me what to look for.</p></div>') +
-        '<p class="b-tocall">Where to look:</p>' +
-        '<div class="b-cuts">' + FIND_SOURCES.map((s) => s.parked
-          ? '<button class="filter-chip t-parked" type="button" disabled title="Consent and accuracy complaints. Kept off until decision D10.">' + esc(s.label) + '<span class="b-cut-n">' + esc(s.say) + '</span></button>'
-          : '<button class="filter-chip' + (FIND.src[s.k] ? ' active' : '') + '" type="button" data-find-src="' + s.k + '" aria-pressed="' + !!FIND.src[s.k] + '">' + esc(s.label) + '<span class="b-cut-n">' + esc(s.say) + '</span></button>').join('') + '</div>' +
+        findStep(3, 'Where to look') +
+        '<div class="t-src-cards">' + FIND_SOURCES.map((x) => x.parked
+          ? '<div class="t-src-card is-parked" aria-disabled="true"><span class="t-pick-ico">' + svg(SRC_ICO[x.k], 16) + '</span>' +
+            '<span class="t-src-main"><b>' + esc(x.label) + '</b><span>Parked after consent and accuracy complaints. Off until decision D10.</span></span>' +
+            '<span class="t-src-check" aria-hidden="true">' + svg('lock', 12) + '</span></div>'
+          : '<button class="t-src-card' + (FIND.src[x.k] ? ' is-on' : '') + '" type="button" role="checkbox" aria-checked="' + !!FIND.src[x.k] + '" data-find-src="' + x.k + '">' +
+            '<span class="t-pick-ico">' + svg(SRC_ICO[x.k], 16) + '</span><span class="t-src-main"><b>' + esc(x.label) + '</b><span>' + esc(x.say) + '</span></span>' +
+            '<span class="t-src-check" aria-hidden="true">' + (FIND.src[x.k] ? svg('check', 12) : '') + '</span></button>').join('') + '</div>' +
         critBlock() +
         '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-find-go>' + (FIND.step === 'results' ? 'Search again' : 'Find candidates') + '</button>' +
           (FIND.step === 'results' ? '<button class="b-ghost" type="button" data-find-save>Save this search</button>' : '') +
