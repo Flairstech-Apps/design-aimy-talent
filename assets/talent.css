@@ -1215,46 +1215,86 @@ body.is-portal .aimy-overlay { display: none !important; }
 /* Half a row is too narrow to share with the state pill: the sentence
    takes its own line under the mark and the state. */
 .t-insight .s-insight-txt { font-size: var(--fs-sm); flex-basis: 100%; }
-.t-insight .s-insight-acts { margin-top: auto; }
+/* The question's fixed place: the foot of every insight, level across a row.
+   Mark and state on the first line, the sentence takes the slack, the
+   question last. Only the layout; the insight's look is Sales's. */
+.t-insights > .t-insight { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto 1fr auto; column-gap: 8px; row-gap: 8px; align-items: start; }
+.t-insight > .s-insight-mark { grid-column: 1; grid-row: 1; }
+.t-insight > .work-state { grid-column: 2; grid-row: 1; justify-self: start; }
+.t-insight > .s-insight-txt { grid-column: 1 / -1; grid-row: 2; }
+.t-insight > .s-insight-acts { grid-column: 1 / -1; grid-row: 3; align-self: end; }
 
 /* ══ THE QUESTION, AS THE BUTTON (standalone's composer morph, 29 Oct) ════
-   The insight's own question in Talent's accent pill. At rest: the question
-   and an arrow. On hover or focus: AiMY's mark slides in from the left and
-   the arrow resolves into the round send button. Pressed: it flies to the
-   bar (talent.js flyToBar) and the chat opens on it. */
+   The insight's own question as a chip: a whisper of the accent, not a
+   fill, at the size of a tag, so it reads as an offer next to the insight
+   rather than its loudest part. At rest: the question and an arrow. On
+   hover (a real pointer) or keyboard focus: AiMY's mark slides in from the
+   left and the arrow resolves into the send button. Pressed: it gives under
+   the finger, then flies to the bar (talent.js flyToBar) and the chat opens.
+   Motion: a strong ease-out at 200ms for the morph, colour at 150ms, the
+   press at 160ms, the flight on an ease-in-out because it crosses the
+   screen. Reduced motion keeps the colour and drops the movement. */
 .t-ask {
-  display: inline-flex; align-items: center; gap: 0; max-width: 100%;
-  padding: 7px 14px; border-radius: 999px; cursor: pointer; font-family: inherit; text-align: left;
-  font-size: var(--fs-xs); font-weight: var(--fw-semibold); line-height: 1.3;
-  color: var(--accent-label, var(--accent)); background: var(--accent-dim);
-  border: 1px solid rgba(var(--accent-rgb), 0.28);
-  transition: background-color var(--t-fast) var(--ease-out), border-color var(--t-fast) var(--ease-out);
+  --ask-ease: cubic-bezier(0.23, 1, 0.32, 1);
+  display: inline-flex; align-items: center; gap: 0; max-width: 100%; min-height: 26px;
+  padding: 5px 12px; border-radius: 13px; cursor: pointer; font-family: inherit; text-align: left;
+  font-size: var(--fs-xs); font-weight: var(--fw-medium); line-height: 1.3; letter-spacing: 0.005em;
+  color: var(--d100);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease, transform 160ms var(--ask-ease);
 }
-.t-ask:hover { background: rgba(var(--accent-rgb), 0.2); }
 .t-ask:active { transform: scale(0.97); }
 .t-ask:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.t-ask-text { min-width: 0; }
+/* The arrow says "this asks AiMY" at rest, in the accent, quietly. */
+.t-ask-text::after { content: " →"; color: var(--accent-label, var(--accent)); opacity: 0.8; transition: opacity 150ms ease; }
 .t-ask-mark, .t-ask-go {
-  width: 0; height: 22px; flex-shrink: 0; overflow: hidden; opacity: 0; border-radius: 50%;
+  width: 0; height: 18px; flex-shrink: 0; overflow: hidden; opacity: 0; border-radius: 50%;
   display: grid; place-items: center;
-  transition: width var(--t-base) var(--ease-out), margin var(--t-base) var(--ease-out), opacity var(--t-base) var(--ease-out), transform var(--t-base) var(--ease-out);
+  transition: width 200ms var(--ask-ease), margin 200ms var(--ask-ease), opacity 150ms ease, transform 200ms var(--ask-ease);
 }
-.t-ask-mark { margin-left: -6px; transform: translateX(-8px); background: linear-gradient(135deg, #3d1f6b, #1a3a6e); }
-.t-ask-mark svg { width: 12px; height: 12px; }
-.t-ask-go { transform: scale(0.6); background: var(--accent); color: #fff; }
-.t-ask-go svg { width: 11px; height: 11px; }
-.t-ask-text::after { content: " →"; opacity: 0.7; transition: opacity var(--t-fast) var(--ease-out); }
-.t-ask:hover .t-ask-mark, .t-ask:focus-visible .t-ask-mark, .t-ask.is-armed .t-ask-mark { width: 22px; margin-right: 8px; opacity: 1; transform: none; }
-.t-ask:hover .t-ask-go, .t-ask:focus-visible .t-ask-go, .t-ask.is-armed .t-ask-go { width: 22px; margin-left: 8px; opacity: 1; transform: none; }
-.t-ask:hover .t-ask-text::after, .t-ask:focus-visible .t-ask-text::after, .t-ask.is-armed .t-ask-text::after { opacity: 0; }
-/* The question in flight to the bar. */
+.t-ask-mark { transform: translateX(-6px); background: linear-gradient(135deg, #3d1f6b, #1a3a6e); }
+.t-ask-mark svg { width: 10px; height: 10px; }
+.t-ask-go { transform: scale(0.8); background: var(--accent); color: #fff; }
+.t-ask-go svg { width: 9px; height: 9px; }
+/* The morph: hover only where there is a real pointer, focus and the press
+   everywhere. */
+.t-ask:focus-visible, .t-ask.is-armed {
+  color: var(--d50); background: color-mix(in srgb, var(--accent) 11%, transparent); border-color: color-mix(in srgb, var(--accent) 42%, transparent);
+}
+.t-ask:focus-visible .t-ask-mark, .t-ask.is-armed .t-ask-mark { width: 18px; margin-right: 6px; opacity: 1; transform: none; }
+.t-ask:focus-visible .t-ask-go, .t-ask.is-armed .t-ask-go { width: 18px; margin-left: 6px; opacity: 1; transform: none; }
+.t-ask:focus-visible .t-ask-text::after, .t-ask.is-armed .t-ask-text::after { opacity: 0; }
+@media (hover: hover) and (pointer: fine) {
+  .t-ask:hover {
+    color: var(--d50); background: color-mix(in srgb, var(--accent) 11%, transparent); border-color: color-mix(in srgb, var(--accent) 42%, transparent);
+  }
+  .t-ask:hover .t-ask-mark { width: 18px; margin-right: 6px; opacity: 1; transform: none; }
+  .t-ask:hover .t-ask-go { width: 18px; margin-left: 6px; opacity: 1; transform: none; }
+  .t-ask:hover .t-ask-text::after { opacity: 0; }
+}
+/* The question in flight to the bar: the chip as it looks hovered. */
 .t-ask-flier {
-  position: fixed; z-index: 960; display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 40px;
-  background: var(--card-bg-raised); border: 1px solid rgba(var(--accent-rgb), 0.35); color: var(--d50);
-  font-size: var(--fs-xs); font-weight: var(--fw-semibold); pointer-events: none;
-  transition: transform 460ms var(--ease-out), opacity 460ms var(--ease-out);
+  position: fixed; z-index: 960; display: flex; align-items: center; gap: 6px; min-height: 26px; padding: 5px 12px; border-radius: 13px;
+  background: var(--card-bg-raised); border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent); color: var(--d50);
+  font-size: var(--fs-xs); font-weight: var(--fw-medium); pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  transition: transform 420ms cubic-bezier(0.77, 0, 0.175, 1), opacity 420ms ease;
 }
-.t-ask-flier .t-ask-mark, .t-ask-flier .t-ask-go { width: 22px; opacity: 1; transform: none; margin: 0; }
+.t-ask-flier .t-ask-mark, .t-ask-flier .t-ask-go { width: 18px; opacity: 1; transform: none; margin: 0; }
 .t-ask-flier .t-ask-text::after { content: none; }
 @media (prefers-reduced-motion: reduce) {
-  .t-ask-mark, .t-ask-go, .t-ask-text::after { transition: none; }
+  .t-ask, .t-ask-mark, .t-ask-go { transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease, opacity 150ms ease; }
+  .t-ask:active { transform: none; }
 }
+
+/* ══ LOOKING AS (the desk menu, top right) ═══════════════════════════════
+   It opened from the left edge of a button that sits at the window's right
+   edge, so it ran off screen and squeezed each name and role onto two lines.
+   It opens inward now (bdr.css .b-menu.is-right, in index.html), wide enough
+   for a name and a role on one line each, and never wider than the window. */
+#asPanel { min-width: 300px; max-width: calc(var(--vp-w) - 24px); }
+#asPanel .b-menu-item { gap: 16px; }
+#asPanel .b-menu-name, #asPanel .tel-menu-cc { white-space: nowrap; }
+#asPanel .tel-menu-cc { font-weight: var(--fw-medium); color: var(--ink-muted); }

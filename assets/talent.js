@@ -2052,7 +2052,7 @@
       fl.style.transform = 'translate(' + ((b.left + 52 - r.left) / z) + 'px, ' + ((b.top + b.height / 2 - (r.top + r.height / 2)) / z) + 'px) scale(0.97)';
       fl.style.opacity = '0.04';
     });
-    setTimeout(() => { fl.remove(); btn.style.visibility = ''; btn.classList.remove('is-armed'); then(); }, 460);
+    setTimeout(() => { fl.remove(); btn.style.visibility = ''; btn.classList.remove('is-armed'); then(); }, 420);
   }
   const listSay = (l) => l.length > 1 ? l.slice(0, -1).join(', ') + ' and ' + l[l.length - 1] : l[0] || '';
   function todayInsights() {
@@ -8405,7 +8405,9 @@
     if ((el = at('[data-sess-stop]'))) { stopRun(); return; }
     if ((el = at('[data-more]'))) { const k = val('data-more'); TODAY_MORE[k] = !TODAY_MORE[k]; paint(); return; }
     if ((el = at('[data-ask-date]'))) { askMove(DB.reqById[val('data-ask-date')]); return; }
-    if ((el = at('[data-prep]'))) { prepMe(DB.byId[val('data-prep')]); return; }
+    /* Prepare me travels to the bar like an insight's question, then the
+       brief opens in the chat (find-animation-opportunities, 29 Oct). */
+    if ((el = at('[data-prep]'))) { const c = DB.byId[val('data-prep')]; flyToBar(el, () => prepMe(c)); return; }
     if ((el = at('[data-def]'))) {
       const box = el.closest('.t-def'), on = !box.classList.contains('is-pinned');
       unpinDefs();
