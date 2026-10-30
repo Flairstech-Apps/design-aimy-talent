@@ -24,6 +24,9 @@
        The cost is that Poppins sets no tabular figures; recorded in full at
        `--font-sans` in aimy-ds.css. Argued in sales.css §THE TYPE SYSTEM. -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <!-- Poppins has no Arabic. The pages candidates see can switch to Arabic
+       (UI/UX plan, M9), and set it in IBM Plex Sans Arabic. -->
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
   <!-- The AiMY mark as the tab icon, pointing at the asset that was already
        here. `Aimy-full.svg` is the MARK — one path, the radial gradient, a
@@ -61,8 +64,8 @@
   <!-- bdr.css is Sales's component layer (b-switch, b-qcard, b-owed, b-door…),
        copied unedited like sales.css. talent.css is this product's appendix:
        only what neither of them already says. -->
-  <link rel="stylesheet" href="assets/bdr.css?v=1" />
-  <link rel="stylesheet" href="assets/talent.css?v=12" />
+  <link rel="stylesheet" href="assets/bdr.css?v=2" />
+  <link rel="stylesheet" href="assets/talent.css?v=85" />
   <link rel="stylesheet" href="assets/aimy-responsive.css?v=1" />
   <link rel="stylesheet" href="assets/voice.css?v=1" />
   <script src="assets/aimy-viewport.js?v=1"></script>
@@ -158,9 +161,10 @@
         <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>
       </svg>
     </button>
-    <div class="topnav-logo-mark">
-      <svg width="140" height="43" viewBox="0 0 418.18 147.66" aria-label="AiMY"><use href="#aimy-logo-full"/></svg>
-    </div>
+    <!-- The mark goes home, as a product's mark does everywhere: Today. -->
+    <button class="topnav-logo-mark t-logo-home" type="button" data-home title="Today" aria-label="AiMY Talent, back to Today">
+      <svg width="140" height="43" viewBox="0 0 418.18 147.66" aria-hidden="true"><use href="#aimy-logo-full"/></svg>
+    </button>
 
     <!-- ══ THE PRODUCTS, WHERE THE STRIP CANNOT STAND ════════════════════
          Below 720 layout px the tab strip has no line to be on: the flanks
@@ -201,21 +205,22 @@
          this block exists to prevent. The tabs are reachable and labelled by
          their own text. -->
     <div class="topnav-tabs-inner">
-      <a class="topnav-tab" href="https://aimy-knowledge.nour-ali.workers.dev/" title="Switch to AiMY">AiMY</a>
+      <a class="topnav-tab" href="https://design-aimy-knolwedge.aimy.flairstech.com/" title="Switch to AiMY">AiMY</a>
       <button class="topnav-tab" type="button">Connect</button>
-      <a class="topnav-tab" href="https://aimy-sales.nour-ali.workers.dev/" title="Switch to AiMY Sales">Sales</a>
-      <a class="topnav-tab" href="https://aimyqa.nour-ali.workers.dev/" title="Switch to AiMY QA">QA</a>
       <!-- THE WAY HOME, AND IT IS THE PRODUCT YOU ARE IN. Every other surface
            here has one way back; the briefing had none, so a filtered list
            five chips deep could only be escaped by clearing them one at a
            time. Pressing the product you are already on returns you to its
            front page, which is what a product strip does everywhere else.
-           Marked, not restyled — the look of this row is deliberate. -->
+           Marked, not restyled — the look of this row is deliberate.
+           Third in the row, where Sales stood (Engy, 29 Oct). -->
       <button class="topnav-tab active" type="button" aria-current="page" data-home
-              title="Back to the briefing">
+              title="Back to Today">
         <svg width="18" height="20" viewBox="0 0 18 20"><use href="#aimy-logo-small"/></svg>
         Talent
       </button>
+      <a class="topnav-tab" href="https://design-aimy-qa.aimy.flairstech.com/" title="Switch to AiMY QA">QA</a>
+      <a class="topnav-tab" href="https://design-aimy-sales.aimy.flairstech.com/" title="Switch to AiMY Sales">Sales</a>
     </div>
   </div>
 
@@ -281,7 +286,7 @@
         </span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
-      <div class="b-menu" id="asPanel" role="menu" hidden></div>
+      <div class="b-menu is-right" id="asPanel" role="menu" hidden></div>
     </div>
   </div>
 </div>
@@ -506,8 +511,11 @@
   </button>
 </div>
 
+<!-- A candidate's CV, small, under their name while it is hovered. -->
+<div class="t-cv" id="cvPop" role="tooltip" hidden></div>
+
 <script src="assets/aimy-ds.js"></script>
-<script src="assets/talent.js?v=31"></script>
+<script src="assets/talent.js?v=106"></script>
 <!-- Voice (Sales, unedited): dictation and a spoken conversation on both bars.
      It drives the composer and the product does not know it exists. -->
 <script src="assets/voice.js?v=1"></script>
