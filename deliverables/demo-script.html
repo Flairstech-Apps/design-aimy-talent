@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AiMY Talent · Demo script</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+  @page { size: A4; margin: 16mm 18mm; }
+  :root { --ink: #1c2026; --soft: #4a5560; --mute: #6b7682; --line: #dfe3e8; --tint: #f5f3fd; --purple: #6a3fd6; }
+  body { font-family: 'Poppins', Arial, sans-serif; color: var(--ink); background: #fff; font-size: 10.5pt; line-height: 1.6; margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 20px 48px; }
+  @media print { main { max-width: none; padding: 0; } }
+  h1 { font-size: 24pt; margin: 0 0 4pt; }
+  h2 { font-size: 13pt; margin: 0 0 4pt; }
+  p { margin: 0 0 6pt; }
+  .eyebrow { font-size: 8.5pt; font-weight: 600; letter-spacing: 1.6pt; text-transform: uppercase; color: var(--purple); }
+  .meta { font-size: 9pt; color: var(--mute); margin-bottom: 12pt; }
+  .slide { border-top: 1px solid var(--line); padding-top: 10pt; margin-top: 12pt; break-inside: avoid; page-break-inside: avoid; }
+  .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12pt; }
+  .time { font-size: 8.5pt; font-weight: 600; color: var(--purple); white-space: nowrap; }
+  .cue { font-size: 9pt; color: var(--purple); font-weight: 500; }
+  .cue code { font: 8.5pt ui-monospace, Consolas, monospace; background: var(--tint); border-radius: 4px; padding: 0 4px; }
+  .box { background: var(--tint); border: 1px solid #d9d0f6; border-radius: 7pt; padding: 8pt 10pt; margin: 8pt 0; font-size: 9.5pt; }
+</style>
+</head>
+<body>
+<main>
+<p class="eyebrow">AiMY Talent · what to say</p>
+<h1>Demo script</h1>
+<p class="meta">8 parts · about 6 minutes · shown live in the prototype at localhost:5174, on the recruiter's desk unless a cue says otherwise.</p>
+
+<div class="box">The words in normal type are what you say. Purple lines are what to do on screen. If you're short of time, skip part 7.</div>
+
+<div class="slide"><div class="head"><h2>1 · Opening</h2><span class="time">0:00 · 20 s</span></div>
+<p>This is AiMY Talent as it runs today. It's the working prototype, on sample data, so nobody on screen is a real person.</p>
+<p>Since our last review we made ten changes. I'll show you the ones that matter most, in the order a recruiter meets them.</p>
+<p class="cue">Open the prototype on Today.</p></div>
+
+<div class="slide"><div class="head"><h2>2 · Today: what AiMY noticed</h2><span class="time">0:20 · 1 min 15 s</span></div>
+<p>A recruiter's day starts here. At the top is a short briefing: the decisions waiting on you, today's interviews, and the calls to make. Under it are four buttons to start the work.</p>
+<p class="cue">Scroll to "AiMY noticed".</p>
+<p>This part is new. AiMY looks at the requisitions and tells you what it noticed: results waiting on your call, tomorrow's interviews, people waiting on your yes for first contact. Each one ends with a question.</p>
+<p class="cue">Press "Which results are waiting on me?"</p>
+<p>When I press it, the question goes into the AiMY bar and the answer comes back from the record, with a link to the page it's about. No searching, no reports.</p>
+<p class="cue">Close the chat. Scroll to "Not told yet".</p>
+<p>And here are the people still owed an answer. Nobody waits more than five days. The message shows exactly as it will arrive, and a person presses Send. AiMY only suggests it.</p></div>
+
+<div class="slide"><div class="head"><h2>3 · Candidates: why they fit</h2><span class="time">1:35 · 1 min</span></div>
+<p class="cue">Open the Candidates tab.</p>
+<p>We took the score off the cards. In its place, AiMY says why each person fits in one sentence: what the CV shows, what it partly shows, and what we don't know yet.</p>
+<p>That last part matters. If the CV says nothing about a must-have, we say it's not known yet, never that it's missing.</p>
+<p class="cue">Rest the mouse on a candidate's name.</p>
+<p>And if I rest on a name, the CV opens right beside it, so I can check someone without leaving the list.</p></div>
+
+<div class="slide"><div class="head"><h2>4 · One candidate: checked in interview</h2><span class="time">2:35 · 45 s</span></div>
+<p class="cue">Open Mohamed Ibrahim's profile and scroll to "Why they fit".</p>
+<p>On the profile, every must-have shows what the CV says, word for word, and what the interview found. Then one status: confirmed, or differs.</p>
+<p>Here, two things differ from the CV. That's the record nobody else keeps: what the CV claimed, against what we actually saw.</p></div>
+
+<div class="slide"><div class="head"><h2>5 · Requisitions: where people drop</h2><span class="time">3:20 · 1 min</span></div>
+<p class="cue">Open Requisitions, then L3 Support Engineer. Scroll to "How far people got".</p>
+<p>Every requisition says when it will fill at this pace, against the date we promised.</p>
+<p>The funnel is new. For each stage, it shows how many people got there, how many moved on, and how many days they spent in it, each against the usual. A coloured dot says on pace, watch, or behind.</p>
+<p>Here, the technical interview is behind: about six days against a usual four. And if I press a stage, I see the people stuck in it.</p></div>
+
+<div class="slide"><div class="head"><h2>6 · Diary: results and Prepare me</h2><span class="time">4:20 · 45 s</span></div>
+<p class="cue">Open the Diary tab.</p>
+<p>The Diary is the month and the day: interviews, callbacks, start dates and check-ins.</p>
+<p>Results that are in now live here, each one a single press with undo. Below them are the interviews with no result yet, each with one nudge to the interviewer.</p>
+<p class="cue">Press "Prepare me" on today's interview.</p>
+<p>Before an interview, Prepare me opens a brief in the chat: who is in the room, the agenda, and what to ask about. The verdict stays the interviewer's; AiMY never fills it.</p></div>
+
+<div class="slide"><div class="head"><h2>7 · The other desks</h2><span class="time">5:05 · 35 s</span></div>
+<p class="cue">Top right, "Looking as": switch to Rania Samir, hiring manager.</p>
+<p>Everyone sees the same data, for the question they own. Rania, the hiring manager, now sees which of her requisitions will likely miss their date, with the reason, and she can change the date from here.</p>
+<p>The HR Manager, the BU Director and the client each get their own desk the same way. The client never sees salary or our notes.</p></div>
+
+<div class="slide"><div class="head"><h2>8 · Close</h2><span class="time">5:40 · 20 s</span></div>
+<p class="cue">Switch back to Omar.</p>
+<p>Across all of it, three rules hold. Every action is one press, with undo. Evidence is shown as what we know and what we don't. And a person makes every decision about a person.</p>
+<p>That's Talent today. I'm happy to take questions.</p></div>
+</main>
+</body>
+</html>
