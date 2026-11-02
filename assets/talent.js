@@ -185,13 +185,13 @@
      takes before it counts as waiting too long (a team setting later; these
      are samples). `go` is the recruiter's verb for moving past it. */
   const STAGE = {
-    sourced:  { label: 'Sourced',             who: 'me',        exp: 3, go: 'They want to talk', say: 'found, not yet in touch' },
+    sourced:  { label: 'Sourced',             who: 'me',        exp: 3, go: 'Agreed to talk',    say: 'found, not yet in touch' },
     applied:  { label: 'Applied',             who: 'me',        exp: 2, go: 'Book the call',     say: 'applied or agreed to talk' },
     assess:   { label: 'Assessment',          who: 'candidate', exp: 3, go: 'Passed the assessment', say: 'taking the assessment' },
     phone:    { label: 'Phone screen',        who: 'me',        exp: 2, go: 'Passed the call',   say: 'a screening call is due' },
-    hr:       { label: 'HR interview',        who: 'me',        exp: 3, go: 'Passed HR',         say: 'with HR' },
+    hr:       { label: 'HR interview',        who: 'me',        exp: 3, go: 'Passed the HR interview', say: 'with HR' },
     tech:     { label: 'Technical interview', who: 'interviewer', exp: 4, go: 'Send the profile', say: 'with the technical interviewer' },
-    mgr:      { label: 'Managerial interview', who: 'hm',       exp: 3, go: 'Passed',            say: 'with the hiring manager' },
+    mgr:      { label: 'Managerial interview', who: 'hm',       exp: 3, go: 'Passed the managerial interview', say: 'with the hiring manager' },
     sent:     { label: 'Profile sent',        who: 'client',    exp: 3, go: 'Client wants to meet', say: 'with the client to choose' },
     client:   { label: 'Client interview',    who: 'client',    exp: 5, go: 'Client said yes',   say: 'met the client' },
     ctech:    { label: 'Client technical interview', who: 'client', exp: 5, go: 'Client said yes', say: 'with the client’s technical team' },
@@ -2062,7 +2062,7 @@
     if (d.length) out.push(insightRow({ ws: 'staged', wsSay: 'Your call',
       say: '<b>' + plural(d.length, 'result') + '</b> ' + (d.length === 1 ? 'is' : 'are') + ' in and waiting on your call, the oldest <b>' + days(d[0].since) + '</b>: ' + esc(d[0].name) + ', ' + esc(lower(STAGE[d[0].stage].label)) + '.',
       q: 'Which results are waiting on me?',
-      a: '<p>' + d.map((c) => '<b>' + esc(c.name) + '</b>, ' + esc(lower(STAGE[c.stage].label)) + ' for ' + esc(reqOf(c).title) + ': proceed. Next is ' + esc(goSay(c).toLowerCase()) + '.').join('<br>') + '</p>',
+      a: '<p>' + d.map((c) => '<b>' + esc(c.name) + '</b>, ' + esc(lower(STAGE[c.stage].label)) + ' for ' + esc(reqOf(c).title) + ': proceed.' + (nextOf(c) ? ' Next: ' + esc(STAGE[nextOf(c)].label) + '.' : '')).join('<br>') + '</p>',
       acts: [{ label: 'Open the diary', go: { on: 'diary' }, primary: true }] }));
     /* The next working day (standalone: interviews booked, kits sent). */
     const tm = DB.ivs.filter((v) => v.status === 'booked' && v.day === 1 && on(DB.byId[v.cand]));

@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AiMY Talent · Walkthrough script</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+  @page { size: A4; margin: 16mm 18mm; }
+  :root { --ink: #1c2026; --soft: #4a5560; --mute: #6b7682; --line: #dfe3e8; --tint: #f5f3fd; --purple: #6a3fd6; --teal: #0f7a6c; --teal-tint: #ecf7f5; }
+  body { font-family: 'Poppins', Arial, sans-serif; color: var(--ink); background: #fff; font-size: 11pt; line-height: 1.65; margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 48px; }
+  @media print { main { max-width: none; padding: 0; } .copy, .bar { display: none !important; } }
+  h1 { font-size: 24pt; margin: 0 0 4pt; }
+  h2 { font-size: 13.5pt; margin: 0; }
+  p { margin: 0 0 7pt; }
+  ul { margin: 0 0 8pt; padding-left: 18pt; }
+  li { margin-bottom: 3pt; }
+  li b { font-weight: 600; }
+  .eyebrow { font-size: 8.5pt; font-weight: 600; letter-spacing: 1.6pt; text-transform: uppercase; color: var(--purple); }
+  .meta { font-size: 9pt; color: var(--mute); margin-bottom: 12pt; }
+  .part { border-top: 1px solid var(--line); padding-top: 12pt; margin-top: 14pt; }
+  .step { break-inside: avoid; page-break-inside: avoid; }
+  .step:not(.part) { margin-top: 14pt; }
+  .head { display: flex; align-items: center; gap: 10pt; margin-bottom: 6pt; }
+  .head h2 { flex: 1; }
+  .time { font-size: 8.5pt; font-weight: 600; color: var(--purple); white-space: nowrap; }
+  .cue { font-size: 9.5pt; color: var(--purple); font-weight: 500; }
+  .cue::before { content: "▸ "; }
+  .move { font-size: 9.5pt; color: var(--teal); background: var(--teal-tint); border-left: 3px solid var(--teal); border-radius: 0 6pt 6pt 0; padding: 4pt 8pt; margin: 0 0 8pt; }
+  .move b { font-weight: 600; }
+  .box { background: var(--tint); border: 1px solid #d9d0f6; border-radius: 7pt; padding: 8pt 10pt; margin: 8pt 0; font-size: 9.5pt; }
+  .box .move { margin: 4pt 0 0; display: inline-block; }
+
+  /* Copying: one button for the whole script, a small one on each part. */
+  .bar { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 10px; padding: 10px 0; background: #fff; border-bottom: 1px solid var(--line); margin-bottom: 4pt; }
+  .bar span { font-size: 9pt; color: var(--mute); }
+  .copy {
+    font: 500 9pt 'Poppins', Arial, sans-serif; color: var(--purple); background: var(--tint);
+    border: 1px solid #d9d0f6; border-radius: 999px; padding: 4px 12px; cursor: pointer; white-space: nowrap;
+    transition: background-color 150ms ease, color 150ms ease, transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .copy:hover { background: #ebe5fb; }
+  .copy:active { transform: scale(0.97); }
+  .copy:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+  .copy.is-done { color: #fff; background: var(--teal); border-color: var(--teal); }
+  .copy.is-main { font-size: 10pt; padding: 6px 16px; color: #fff; background: var(--purple); border-color: var(--purple); }
+  .copy.is-main.is-done { background: var(--teal); border-color: var(--teal); }
+  @media (prefers-reduced-motion: reduce) { .copy { transition: none; } .copy:active { transform: none; } }
+</style>
+</head>
+<body>
+<main>
+<p class="eyebrow">AiMY Talent · what to say</p>
+<h1>Walkthrough script</h1>
+<p class="meta">Talent and Sales, then every tab in order · about 12 minutes · shown live at localhost:5174 on Omar's desk (the recruiter).</p>
+
+<div class="bar">
+  <button class="copy is-main" type="button" data-copy="all">Copy the whole script</button>
+  <span>Or copy one part with its own Copy button.</span>
+</div>
+
+<div class="box">Normal type is what you say. <span class="cue">Purple lines are what to do on screen.</span><br>
+<span class="move"><b>Motion</b> · green lines are the animation to point out as it happens.</span><br>
+If you're short of time, skip part 12 (Assessments) and part 13 (Reports).</div>
+
+<!-- ═══ 1 ═══ -->
+<section class="part step"><div class="head"><h2>1 · Opening</h2><span class="time">0:00 · 20 s</span></div>
+<p>This is AiMY Talent, FlairsTech's recruiting product. It's a working prototype on sample data, so nobody on screen is a real person.</p>
+<p>First I'll show how Talent relates to AiMY Sales. Then I'll walk through it the way a recruiter meets it, starting with Today.</p>
+<p class="cue">Open the prototype. It lands on Today.</p></section>
+
+<!-- ═══ 2 ═══ -->
+<section class="part step"><div class="head"><h2>2 · Talent and Sales: one family</h2><span class="time">0:20 · 1 min</span></div>
+<p class="cue">Point at the product switcher at the top: Connect, Talent, QA, Sales.</p>
+<p>Talent isn't a new app built from scratch. It's built on AiMY Sales. It uses the same shell, the same components and the same design system. If you know Sales, you already know your way around Talent.</p>
+<p>A recruiter's day is a lot like a salesperson's day. You find people, call them, follow up, and move them forward. So most of Sales carries straight across:</p>
+<ul>
+  <li><b>The day starts the same way.</b> Today is Sales's briefing: a few sentences, then Start tiles.</li>
+  <li><b>AiMY noticed</b> uses the same insight cards as Sales.</li>
+  <li><b>Contacts become candidates.</b> It's the same queue, with cuts that add up to All.</li>
+  <li><b>Campaigns become requisitions.</b> A campaign record becomes a requisition record, with its funnel.</li>
+  <li><b>Calls are Sales's calls.</b> They use the same dialer, the call panel beside the page, logging in one sentence, the incoming ring and voicemail.</li>
+  <li><b>The Diary is Sales's Diary:</b> the month grid, the day's agenda, and what's still waiting.</li>
+  <li><b>The AiMY bar and chat are the same</b>, with the same voice: you can type, dictate or talk.</li>
+  <li><b>The desks are the same idea.</b> Sales has a desk for each role. Talent has the recruiter, the hiring manager, the HR Manager, the BU Director and the client.</li>
+  <li><b>The rules are the same.</b> Every action is one press with Undo, and there's never an "are you sure?" box.</li>
+</ul>
+<p>What's different is the process on top. Talent has hiring stages instead of a sales pipeline, CVs checked against must-haves, interviews, assessments and offers. That's what I'll show now.</p></section>
+
+<!-- ═══ 3 ═══ -->
+<section class="part step"><div class="head"><h2>3 · Today: the briefing</h2><span class="time">1:20 · 1 min</span></div>
+<p>This is where a recruiter's day starts. It's a short briefing in three sentences, not a list of records.</p>
+<p class="cue">Point at the three sentences one at a time.</p>
+<p>Four decisions are waiting on me, and the oldest is three days old. I have two interviews today, the first at eleven. Clients owe us an answer on two candidates. And one person called and got nobody.</p>
+<p>The numbers are links. Two interviews opens the Diary, and one person opens the missed calls.</p>
+<p class="cue">Point at the four Start tiles.</p>
+<p>Under the briefing are four ways to start: decide the oldest result, send the profiles that are ready, call the next person, or find people. One press and you're in the work.</p></section>
+
+<!-- ═══ 4 ═══ -->
+<section class="step"><div class="head"><h2>4 · Today: what AiMY noticed</h2><span class="time">2:20 · 1 min 30 s</span></div>
+<p class="cue">Scroll to the tab row. Point at "AiMY noticed 6 things".</p>
+<p>Below that is the tab row. Today is the first tab, and it shows what AiMY noticed on my requisitions. There are six things, each with a state: Your call, Tomorrow, Your yes, Screening, Careers page, and Done for you.</p>
+<p>For example, four people we found are waiting on my yes before anyone contacts them. And "Done for you" lists what AiMY did on its own, under rules a person approved. Each of those can be undone.</p>
+<p class="cue">Rest the mouse on a question, for example "Which results are waiting on me?"</p>
+<p>Each one ends with a question.</p>
+<p class="move"><b>Motion</b> · On hover the chip lights up, AiMY's mark slides in from the left, and the arrow turns into a send button.</p>
+<p class="cue">Press it.</p>
+<p class="move"><b>Motion</b> · The chip gives a little under the click, then the question flies down into the AiMY bar. The chat opens, shows "Reading the requisitions" with a shimmer, and the answer fades in.</p>
+<p>The question goes into the chat, and the answer comes back from the records, with a link to the page it's about. I don't have to search or open a report.</p>
+<p class="cue">Close the chat.</p></section>
+
+<!-- ═══ 5 ═══ -->
+<section class="step"><div class="head"><h2>5 · Today: Not told yet</h2><span class="time">3:50 · 45 s</span></div>
+<p class="cue">Scroll to "Not told yet".</p>
+<p>These are the people who are still owed an answer. Our rule is that nobody waits more than five days. Four of them are already past that.</p>
+<p>The message is shown exactly as the candidate will get it, written from the HR Manager's template. A person presses Send. AiMY only suggests it.</p>
+<p class="cue">Press "Select all 8".</p>
+<p class="move"><b>Motion</b> · Each tick draws itself in.</p>
+<p>I can also select several people and send to all of them with one press. Every send shows a toast with Undo, so nothing needs an "are you sure?" box.</p></section>
+
+<!-- ═══ 6 ═══ -->
+<section class="part step"><div class="head"><h2>6 · Rest on a name: the CV</h2><span class="time">4:35 · 1 min</span></div>
+<p class="cue">Rest the mouse on a candidate's name, for example Rana Fathy. Don't click.</p>
+<p>Wherever a candidate's name appears, I can rest on it and their CV opens beside it. I can check someone without leaving the list.</p>
+<p class="move"><b>Motion</b> · It waits a moment before it opens, so moving across a list doesn't flash a card for every name. Then it fades in and drops into place. It sits below the name, or above it or beside it when there's no room, and never covers it.</p>
+<p class="cue">Point down the card as you name each part.</p>
+<p>The card shows who they are: their current role, years of experience, area and languages.</p>
+<p>Then it shows the CV against the requisition's must-haves. A full mark means the CV shows it, and a dot means it partly does. Under each one is the CV's own words, in quotes. If the CV says nothing, it reads "not known yet", never "missing". After an interview, each line also says what the interview found.</p>
+<p>Below that are their skills, what we got on calls (their number, the last call, notice period and salary), the latest thing that happened, and where they came from.</p>
+<p class="cue">Move straight to the next name.</p>
+<p class="move"><b>Motion</b> · Once one card is open, the next name answers at once, with no wait.</p>
+<p>A click on the name opens their full profile. Keyboard users get the same card when they tab onto a name.</p></section>
+
+<!-- ═══ 7 ═══ -->
+<section class="part step"><div class="head"><h2>7 · Candidates</h2><span class="time">5:35 · 1 min</span></div>
+<p class="cue">Click the Candidates tab.</p>
+<p class="move"><b>Motion</b> · The line under the tabs slides to the tab you pick. Point it out once, here.</p>
+<p>Candidates holds everyone on my open requisitions, thirty-seven people. The cuts are Waiting on you, First contact, With the client and Waiting on others, and they add up to All. Not told yet sits apart.</p>
+<p class="cue">Point at the sentence on the first card.</p>
+<p>There's no match score on a card. Instead, AiMY says in one sentence why this person fits: what the CV shows, what it partly shows, and what we don't know yet. That last part matters. A must-have the CV is silent on is "not known yet", not "missing".</p>
+<p>Each card has one next move, like "Call Karim", and one way out. Both are one press with Undo.</p></section>
+
+<!-- ═══ 8 ═══ -->
+<section class="part step"><div class="head"><h2>8 · Requisitions</h2><span class="time">6:35 · 1 min</span></div>
+<p class="cue">Click the Requisitions tab.</p>
+<p>These are my five open requisitions. I can cut them by At risk, Waiting on the client, Waiting on you, and No profile after ten days.</p>
+<p class="cue">Point at the first card, L3 Support Engineer.</p>
+<p>Every card makes a forecast. At this pace, this one fills on the twenty-third, fifteen days after the date we promised. The first profile went out on day twelve, against a target of seven. And it names the biggest drop: half the people stopped after sourcing.</p>
+<p class="cue">Press "Open it". Scroll to "How far people got".</p>
+<p>Inside, the funnel shows each stage: how many got there, how many moved on, and how many days they spent there. A coloured dot says on pace, watch, or behind.</p>
+<p class="cue">Press a stage that's behind.</p>
+<p>When I press a stage, I see the people stuck in it.</p>
+<p class="cue">Go back to Requisitions.</p></section>
+
+<!-- ═══ 9 ═══ -->
+<section class="part step"><div class="head"><h2>9 · Calls</h2><span class="time">7:35 · 1 min</span></div>
+<p class="cue">Click the Calls tab.</p>
+<p>The phone screen is where we lose the most people, so Calls is built for speed. Telephony is on hold with AiMY Phone, so this shows where it's going.</p>
+<p>There are three tabs: To call, Missed, and Today. Callbacks come first. Each row says what to get from the call: their notice, the salary they expect, and any must-have the CV is silent on.</p>
+<p class="cue">Press Call on the first row.</p>
+<p>The call panel opens beside the page, not over it, so I can keep moving around. It goes from Ready, to Connecting, to Live, with a timer, mute, hold and record. Recording asks for consent first.</p>
+<p>When I hang up, logging is one sentence, not a form. AiMY has already picked the outcome it heard, and I just confirm it.</p>
+<p class="move"><b>Motion</b> · The transcript grows one line at a time during the call.</p>
+<p class="cue">Optional: from Prototype controls, press "A candidate calls in".</p>
+<p class="move"><b>Motion</b> · The incoming call rings with its own ringtone. Answer or decline is one press.</p></section>
+
+<!-- ═══ 10 ═══ -->
+<section class="part step"><div class="head"><h2>10 · Diary</h2><span class="time">8:35 · 1 min</span></div>
+<p class="cue">Click the Diary tab.</p>
+<p>Today is what needs me now. The Diary is the week and the month: interviews, client interviews, callbacks, start dates and check-ins, each with its own colour.</p>
+<p>Today has three things: an HR interview at eleven, a client interview at two, and a callback this evening.</p>
+<p class="cue">Press "Prepare me" on the 11:00 interview.</p>
+<p class="move"><b>Motion</b> · Just like the questions on Today, "Prepare me" flies down to the AiMY bar, then the brief opens in the chat.</p>
+<p>Before an interview, AiMY writes the brief: who's in the room, the agenda, and what to ask about. The verdict always stays the interviewer's.</p>
+<p class="cue">Close the chat. Scroll to "Results in" and "Results not in".</p>
+<p>Below are the results that are in, each one a single press with Undo. Under them are interviews with no result yet, oldest first, each with one Nudge. Waiting for feedback is where we lose the most days, so this is the list to watch.</p></section>
+
+<!-- ═══ 11 ═══ -->
+<section class="part step"><div class="head"><h2>11 · Find candidates</h2><span class="time">9:35 · 45 s</span></div>
+<p class="cue">Click the Find candidates tab.</p>
+<p>Most of our requests replace someone who left. So the first way to search is "Like the person who left". Their role's must-haves become what we look for. I can also start from an open requisition, or just describe who I need.</p>
+<p>We search our own talent pool first, then the public web. We never scrape LinkedIn.</p>
+<p class="cue">Pick a person and press Find candidates.</p>
+<p class="move"><b>Motion</b> · The step AiMY is working on shimmers, then the results fade in.</p>
+<p>Each result shows how many must-haves it meets, as counts, with "Why" behind it. Anyone found outside our pool waits for a person to approve first contact.</p></section>
+
+<!-- ═══ 12 ═══ -->
+<section class="part step"><div class="head"><h2>12 · Assessments</h2><span class="time">10:20 · 30 s</span></div>
+<p class="cue">Click the Assessments tab.</p>
+<p>These are short tests a candidate takes from a link before the phone screen. Some are written questionnaires, and the German check is spoken, live with the AiMY agent. AiMY scores them, and a person decides.</p>
+<p class="cue">Point at "Only 26% get Q5 right".</p>
+<p>AiMY also watches the questions. Here, only a quarter of people get question five right, so it suggests rewording it. A person approves that change.</p></section>
+
+<!-- ═══ 13 ═══ -->
+<section class="part step"><div class="head"><h2>13 · Reports</h2><span class="time">10:50 · 30 s</span></div>
+<p class="cue">Click the Reports tab.</p>
+<p>Reports covers my requisitions over the last thirty, sixty or ninety days, by account. Each number has its target and its trend, like days to send profiles, nineteen against a target of seven.</p>
+<p class="cue">Rest on "How it is counted".</p>
+<p>And every number says exactly how it's counted, so the same label never means two different things.</p></section>
+
+<!-- ═══ 14 ═══ -->
+<section class="part step"><div class="head"><h2>14 · Close</h2><span class="time">11:20 · 20 s</span></div>
+<p class="cue">Optional: open "Looking as" in the top right to show the other desks.</p>
+<p class="move"><b>Motion</b> · The desk menu opens inward from the top right.</p>
+<p>The hiring manager, the HR Manager, the BU Director and the client each get their own desk, on the same data.</p>
+<p>Across all of it, three rules hold, the same ones as in Sales. Every action is one press, with Undo. Evidence shows what we know and what we don't. And a person makes every decision about a person.</p>
+<p>That's AiMY Talent. I'm happy to take questions.</p></section>
+
+<div class="box">All motion stops when the viewer's computer is set to reduce motion. The chat still opens and the CV still shows, just without the movement.</div>
+</main>
+
+<script>
+  /* Each part gets its own Copy button beside its time. */
+  document.querySelectorAll('section.step .head').forEach((h) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'copy'; b.textContent = 'Copy'; b.dataset.copy = 'part';
+    b.setAttribute('aria-label', 'Copy ' + h.querySelector('h2').textContent);
+    h.appendChild(b);
+  });
+
+  /* Plain text, with cues and motion lines marked so they survive the paste. */
+  function partText(sec) {
+    const out = [sec.querySelector('h2').textContent + '  (' + sec.querySelector('.time').textContent + ')'];
+    sec.querySelectorAll(':scope > p, :scope > ul > li').forEach((el) => {
+      const t = el.textContent.replace(/\s+/g, ' ').trim();
+      if (el.matches('.cue')) out.push('[DO] ' + t);
+      else if (el.matches('.move')) out.push('[MOTION] ' + t.replace(/^Motion · /, ''));
+      else if (el.matches('li')) out.push('• ' + t);
+      else out.push(t);
+    });
+    return out.join('\n\n');
+  }
+  function allText() {
+    return 'AiMY Talent · Walkthrough script\n[DO] = what to do on screen · [MOTION] = the animation to point out\n\n' +
+      [...document.querySelectorAll('section.step')].map(partText).join('\n\n\n');
+  }
+
+  async function copy(text) {
+    try { await navigator.clipboard.writeText(text); return true; }
+    catch (e) {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      let ok = false; try { ok = document.execCommand('copy'); } catch (_) {}
+      ta.remove(); return ok;
+    }
+  }
+
+  document.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-copy]');
+    if (!b) return;
+    const text = b.dataset.copy === 'all' ? allText() : partText(b.closest('section'));
+    const was = b.dataset.label || (b.dataset.label = b.textContent);
+    b.textContent = (await copy(text)) ? 'Copied' : 'Select and copy by hand';
+    b.classList.add('is-done');
+    clearTimeout(b._t);
+    b._t = setTimeout(() => { b.textContent = was; b.classList.remove('is-done'); }, 1600);
+  });
+</script>
+</body>
+</html>

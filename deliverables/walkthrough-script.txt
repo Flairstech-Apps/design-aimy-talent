@@ -1,0 +1,241 @@
+AiMY Talent · Walkthrough script
+[DO] = what to do on screen · [MOTION] = the animation to point out
+
+1 · Opening  (0:00 · 20 s)
+
+This is AiMY Talent, FlairsTech's recruiting product. It's a working prototype on sample data, so nobody on screen is a real person.
+
+First I'll show how Talent relates to AiMY Sales. Then I'll walk through it the way a recruiter meets it, starting with Today.
+
+[DO] Open the prototype. It lands on Today.
+
+
+2 · Talent and Sales: one family  (0:20 · 1 min)
+
+[DO] Point at the product switcher at the top: Connect, Talent, QA, Sales.
+
+Talent isn't a new app built from scratch. It's built on AiMY Sales. It uses the same shell, the same components and the same design system. If you know Sales, you already know your way around Talent.
+
+A recruiter's day is a lot like a salesperson's day. You find people, call them, follow up, and move them forward. So most of Sales carries straight across:
+
+• The day starts the same way. Today is Sales's briefing: a few sentences, then Start tiles.
+
+• AiMY noticed uses the same insight cards as Sales.
+
+• Contacts become candidates. It's the same queue, with cuts that add up to All.
+
+• Campaigns become requisitions. A campaign record becomes a requisition record, with its funnel.
+
+• Calls are Sales's calls. They use the same dialer, the call panel beside the page, logging in one sentence, the incoming ring and voicemail.
+
+• The Diary is Sales's Diary: the month grid, the day's agenda, and what's still waiting.
+
+• The AiMY bar and chat are the same, with the same voice: you can type, dictate or talk.
+
+• The desks are the same idea. Sales has a desk for each role. Talent has the recruiter, the hiring manager, the HR Manager, the BU Director and the client.
+
+• The rules are the same. Every action is one press with Undo, and there's never an "are you sure?" box.
+
+What's different is the process on top. Talent has hiring stages instead of a sales pipeline, CVs checked against must-haves, interviews, assessments and offers. That's what I'll show now.
+
+
+3 · Today: the briefing  (1:20 · 1 min)
+
+This is where a recruiter's day starts. It's a short briefing in three sentences, not a list of records.
+
+[DO] Point at the three sentences one at a time.
+
+Four decisions are waiting on me, and the oldest is three days old. I have two interviews today, the first at eleven. Clients owe us an answer on two candidates. And one person called and got nobody.
+
+The numbers are links. Two interviews opens the Diary, and one person opens the missed calls.
+
+[DO] Point at the four Start tiles.
+
+Under the briefing are four ways to start: decide the oldest result, send the profiles that are ready, call the next person, or find people. One press and you're in the work.
+
+
+4 · Today: what AiMY noticed  (2:20 · 1 min 30 s)
+
+[DO] Scroll to the tab row. Point at "AiMY noticed 6 things".
+
+Below that is the tab row. Today is the first tab, and it shows what AiMY noticed on my requisitions. There are six things, each with a state: Your call, Tomorrow, Your yes, Screening, Careers page, and Done for you.
+
+For example, four people we found are waiting on my yes before anyone contacts them. And "Done for you" lists what AiMY did on its own, under rules a person approved. Each of those can be undone.
+
+[DO] Rest the mouse on a question, for example "Which results are waiting on me?"
+
+Each one ends with a question.
+
+[MOTION] On hover the chip lights up, AiMY's mark slides in from the left, and the arrow turns into a send button.
+
+[DO] Press it.
+
+[MOTION] The chip gives a little under the click, then the question flies down into the AiMY bar. The chat opens, shows "Reading the requisitions" with a shimmer, and the answer fades in.
+
+The question goes into the chat, and the answer comes back from the records, with a link to the page it's about. I don't have to search or open a report.
+
+[DO] Close the chat.
+
+
+5 · Today: Not told yet  (3:50 · 45 s)
+
+[DO] Scroll to "Not told yet".
+
+These are the people who are still owed an answer. Our rule is that nobody waits more than five days. Four of them are already past that.
+
+The message is shown exactly as the candidate will get it, written from the HR Manager's template. A person presses Send. AiMY only suggests it.
+
+[DO] Press "Select all 8".
+
+[MOTION] Each tick draws itself in.
+
+I can also select several people and send to all of them with one press. Every send shows a toast with Undo, so nothing needs an "are you sure?" box.
+
+
+6 · Rest on a name: the CV  (4:35 · 1 min)
+
+[DO] Rest the mouse on a candidate's name, for example Rana Fathy. Don't click.
+
+Wherever a candidate's name appears, I can rest on it and their CV opens beside it. I can check someone without leaving the list.
+
+[MOTION] It waits a moment before it opens, so moving across a list doesn't flash a card for every name. Then it fades in and drops into place. It sits below the name, or above it or beside it when there's no room, and never covers it.
+
+[DO] Point down the card as you name each part.
+
+The card shows who they are: their current role, years of experience, area and languages.
+
+Then it shows the CV against the requisition's must-haves. A full mark means the CV shows it, and a dot means it partly does. Under each one is the CV's own words, in quotes. If the CV says nothing, it reads "not known yet", never "missing". After an interview, each line also says what the interview found.
+
+Below that are their skills, what we got on calls (their number, the last call, notice period and salary), the latest thing that happened, and where they came from.
+
+[DO] Move straight to the next name.
+
+[MOTION] Once one card is open, the next name answers at once, with no wait.
+
+A click on the name opens their full profile. Keyboard users get the same card when they tab onto a name.
+
+
+7 · Candidates  (5:35 · 1 min)
+
+[DO] Click the Candidates tab.
+
+[MOTION] The line under the tabs slides to the tab you pick. Point it out once, here.
+
+Candidates holds everyone on my open requisitions, thirty-seven people. The cuts are Waiting on you, First contact, With the client and Waiting on others, and they add up to All. Not told yet sits apart.
+
+[DO] Point at the sentence on the first card.
+
+There's no match score on a card. Instead, AiMY says in one sentence why this person fits: what the CV shows, what it partly shows, and what we don't know yet. That last part matters. A must-have the CV is silent on is "not known yet", not "missing".
+
+Each card has one next move, like "Call Karim", and one way out. Both are one press with Undo.
+
+
+8 · Requisitions  (6:35 · 1 min)
+
+[DO] Click the Requisitions tab.
+
+These are my five open requisitions. I can cut them by At risk, Waiting on the client, Waiting on you, and No profile after ten days.
+
+[DO] Point at the first card, L3 Support Engineer.
+
+Every card makes a forecast. At this pace, this one fills on the twenty-third, fifteen days after the date we promised. The first profile went out on day twelve, against a target of seven. And it names the biggest drop: half the people stopped after sourcing.
+
+[DO] Press "Open it". Scroll to "How far people got".
+
+Inside, the funnel shows each stage: how many got there, how many moved on, and how many days they spent there. A coloured dot says on pace, watch, or behind.
+
+[DO] Press a stage that's behind.
+
+When I press a stage, I see the people stuck in it.
+
+[DO] Go back to Requisitions.
+
+
+9 · Calls  (7:35 · 1 min)
+
+[DO] Click the Calls tab.
+
+The phone screen is where we lose the most people, so Calls is built for speed. Telephony is on hold with AiMY Phone, so this shows where it's going.
+
+There are three tabs: To call, Missed, and Today. Callbacks come first. Each row says what to get from the call: their notice, the salary they expect, and any must-have the CV is silent on.
+
+[DO] Press Call on the first row.
+
+The call panel opens beside the page, not over it, so I can keep moving around. It goes from Ready, to Connecting, to Live, with a timer, mute, hold and record. Recording asks for consent first.
+
+When I hang up, logging is one sentence, not a form. AiMY has already picked the outcome it heard, and I just confirm it.
+
+[MOTION] The transcript grows one line at a time during the call.
+
+[DO] Optional: from Prototype controls, press "A candidate calls in".
+
+[MOTION] The incoming call rings with its own ringtone. Answer or decline is one press.
+
+
+10 · Diary  (8:35 · 1 min)
+
+[DO] Click the Diary tab.
+
+Today is what needs me now. The Diary is the week and the month: interviews, client interviews, callbacks, start dates and check-ins, each with its own colour.
+
+Today has three things: an HR interview at eleven, a client interview at two, and a callback this evening.
+
+[DO] Press "Prepare me" on the 11:00 interview.
+
+[MOTION] Just like the questions on Today, "Prepare me" flies down to the AiMY bar, then the brief opens in the chat.
+
+Before an interview, AiMY writes the brief: who's in the room, the agenda, and what to ask about. The verdict always stays the interviewer's.
+
+[DO] Close the chat. Scroll to "Results in" and "Results not in".
+
+Below are the results that are in, each one a single press with Undo. Under them are interviews with no result yet, oldest first, each with one Nudge. Waiting for feedback is where we lose the most days, so this is the list to watch.
+
+
+11 · Find candidates  (9:35 · 45 s)
+
+[DO] Click the Find candidates tab.
+
+Most of our requests replace someone who left. So the first way to search is "Like the person who left". Their role's must-haves become what we look for. I can also start from an open requisition, or just describe who I need.
+
+We search our own talent pool first, then the public web. We never scrape LinkedIn.
+
+[DO] Pick a person and press Find candidates.
+
+[MOTION] The step AiMY is working on shimmers, then the results fade in.
+
+Each result shows how many must-haves it meets, as counts, with "Why" behind it. Anyone found outside our pool waits for a person to approve first contact.
+
+
+12 · Assessments  (10:20 · 30 s)
+
+[DO] Click the Assessments tab.
+
+These are short tests a candidate takes from a link before the phone screen. Some are written questionnaires, and the German check is spoken, live with the AiMY agent. AiMY scores them, and a person decides.
+
+[DO] Point at "Only 26% get Q5 right".
+
+AiMY also watches the questions. Here, only a quarter of people get question five right, so it suggests rewording it. A person approves that change.
+
+
+13 · Reports  (10:50 · 30 s)
+
+[DO] Click the Reports tab.
+
+Reports covers my requisitions over the last thirty, sixty or ninety days, by account. Each number has its target and its trend, like days to send profiles, nineteen against a target of seven.
+
+[DO] Rest on "How it is counted".
+
+And every number says exactly how it's counted, so the same label never means two different things.
+
+
+14 · Close  (11:20 · 20 s)
+
+[DO] Optional: open "Looking as" in the top right to show the other desks.
+
+[MOTION] The desk menu opens inward from the top right.
+
+The hiring manager, the HR Manager, the BU Director and the client each get their own desk, on the same data.
+
+Across all of it, three rules hold, the same ones as in Sales. Every action is one press, with Undo. Evidence shows what we know and what we don't. And a person makes every decision about a person.
+
+That's AiMY Talent. I'm happy to take questions.
