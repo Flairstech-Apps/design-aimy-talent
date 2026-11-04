@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AiMY Talent · Assessment script</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+  @page { size: A4; margin: 16mm 18mm; }
+  :root { --ink: #1c2026; --soft: #4a5560; --mute: #6b7682; --line: #dfe3e8; --tint: #f5f3fd; --purple: #6a3fd6; --teal: #0f7a6c; --teal-tint: #ecf7f5; }
+  body { font-family: 'Poppins', Arial, sans-serif; color: var(--ink); background: #fff; font-size: 11pt; line-height: 1.65; margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 48px; }
+  @media print { main { max-width: none; padding: 0; } .copy, .bar { display: none !important; } }
+  h1 { font-size: 24pt; margin: 0 0 4pt; }
+  h2 { font-size: 13.5pt; margin: 0; }
+  p { margin: 0 0 7pt; }
+  ul { margin: 0 0 8pt; padding-left: 18pt; }
+  li { margin-bottom: 3pt; }
+  li b { font-weight: 600; }
+  .eyebrow { font-size: 8.5pt; font-weight: 600; letter-spacing: 1.6pt; text-transform: uppercase; color: var(--purple); }
+  .meta { font-size: 9pt; color: var(--mute); margin-bottom: 12pt; }
+  .part { border-top: 1px solid var(--line); padding-top: 12pt; margin-top: 14pt; }
+  .step { break-inside: avoid; page-break-inside: avoid; }
+  .head { display: flex; align-items: center; gap: 10pt; margin-bottom: 6pt; }
+  .head h2 { flex: 1; }
+  .time { font-size: 8.5pt; font-weight: 600; color: var(--purple); white-space: nowrap; }
+  .cue { font-size: 9.5pt; color: var(--purple); font-weight: 500; }
+  .cue::before { content: "▸ "; }
+  .move { font-size: 9.5pt; color: var(--teal); background: var(--teal-tint); border-left: 3px solid var(--teal); border-radius: 0 6pt 6pt 0; padding: 4pt 8pt; margin: 0 0 8pt; }
+  .move b { font-weight: 600; }
+  .box { background: var(--tint); border: 1px solid #d9d0f6; border-radius: 7pt; padding: 8pt 10pt; margin: 8pt 0; font-size: 9.5pt; }
+  .box .move { margin: 4pt 0 0; display: inline-block; }
+  .box ul { margin: 4pt 0 0; }
+
+  .bar { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 10px; padding: 10px 0; background: #fff; border-bottom: 1px solid var(--line); margin-bottom: 4pt; }
+  .bar span { font-size: 9pt; color: var(--mute); }
+  .copy {
+    font: 500 9pt 'Poppins', Arial, sans-serif; color: var(--purple); background: var(--tint);
+    border: 1px solid #d9d0f6; border-radius: 999px; padding: 4px 12px; cursor: pointer; white-space: nowrap;
+    transition: background-color 150ms ease, color 150ms ease, transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .copy:hover { background: #ebe5fb; }
+  .copy:active { transform: scale(0.97); }
+  .copy:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+  .copy.is-done { color: #fff; background: var(--teal); border-color: var(--teal); }
+  .copy.is-main { font-size: 10pt; padding: 6px 16px; color: #fff; background: var(--purple); border-color: var(--purple); }
+  .copy.is-main.is-done { background: var(--teal); border-color: var(--teal); }
+  @media (prefers-reduced-motion: reduce) { .copy { transition: none; } .copy:active { transform: none; } }
+</style>
+</head>
+<body>
+<main>
+<p class="eyebrow">AiMY Talent · what to say</p>
+<h1>Assessment script</h1>
+<p class="meta">One assessment, top to bottom: Support troubleshooting and written English · about 3 minutes · Assessments tab, then "Open it" on the first card.</p>
+
+<div class="bar">
+  <button class="copy is-main" type="button" data-copy="all">Copy the whole script</button>
+  <span>Or copy one part with its own Copy button.</span>
+</div>
+
+<div class="box">Normal type is what you say. <span class="cue">Purple lines are what to do on screen.</span><br>
+<span class="move"><b>Motion</b> · green lines are the animation to point out.</span>
+<ul>
+  <li>If you press "Turn it on" in part 2, press Undo on the toast afterwards, so the checklist goes back to 3 of 5.</li>
+  <li>The numbers are sample data. If someone asks why a wrong answer can still meet the client, the honest answer is: that's why AiMY waits for enough results before it says a question predicts anything.</li>
+</ul></div>
+
+<!-- ═══ 1 ═══ -->
+<section class="part step"><div class="head"><h2>1 · What it is</h2><span class="time">0:00 · 20 s</span></div>
+<p class="cue">Point at the top of the page.</p>
+<p>This is one assessment: support troubleshooting and written English. It's a short questionnaire a candidate takes from a link, before the phone screen. It takes about twenty minutes, and the pass mark is seventy percent.</p>
+<p>I copy the link and send it. AiMY scores it, and a person decides.</p></section>
+
+<!-- ═══ 2 ═══ -->
+<section class="part step"><div class="head"><h2>2 · Before anyone takes it</h2><span class="time">0:20 · 45 s</span></div>
+<p class="cue">Point at "What keeps people finishing, and keeps it fair". Point at "3 of 5".</p>
+<p>Our research found five things that keep people finishing a test, and keep it fair. This assessment does three of them.</p>
+<ul>
+  <li><b>Done:</b> it works on a phone, and it asks for consent before AiMY scores it. Anyone can ask a person to score it instead.</li>
+  <li><b>Done:</b> there's a practice question first that doesn't count.</li>
+  <li><b>Not yet:</b> it's twenty minutes, and past fifteen more people give up. And nobody hears how they did.</li>
+</ul>
+<p>Each fix is one press.</p>
+<p class="cue">Press "Turn it on" next to "Nobody hears how they did".</p>
+<p class="move"><b>Motion</b> · The count goes from 3 of 5 to 4 of 5, and a toast confirms it with Undo.</p>
+<p class="cue">Press Undo.</p></section>
+
+<!-- ═══ 3 ═══ -->
+<section class="part step"><div class="head"><h2>3 · Which questions work</h2><span class="time">1:05 · 1 min</span></div>
+<p class="cue">Scroll to "Item insights".</p>
+<p>Sixty-five people have taken it. For each question, we see how many got it right, and whether getting it right relates to what happened next, like the client saying yes.</p>
+<p class="cue">Point at Q2.</p>
+<p>Question two predicts the client's yes. People who get it right go further. That's a question worth keeping.</p>
+<p class="cue">Point at Q5 and the AiMY line under the table.</p>
+<p>Question five is the opposite. Seventy-four percent get it wrong, and it predicts nothing. When nearly everyone misses one question, the question is usually the problem.</p>
+<p>So AiMY proposes a clearer wording. The HR Manager approves it, or I keep the question as it is. Nothing changes on its own.</p></section>
+
+<!-- ═══ 4 ═══ -->
+<section class="part step"><div class="head"><h2>4 · The questions</h2><span class="time">2:05 · 30 s</span></div>
+<p class="cue">Scroll to Questions. On Q2, press "Earlier wording".</p>
+<p>Each question shows the right answer and how many got it right.</p>
+<p class="move"><b>Motion</b> · The earlier wording opens smoothly, like an accordion.</p>
+<p>And when a question changes, we keep its history. Question two used to be free text, and most people got it wrong. The HR Manager approved turning it into a choice, testing the same skill.</p></section>
+
+<!-- ═══ 5 ═══ -->
+<section class="part step"><div class="head"><h2>5 · Results</h2><span class="time">2:35 · 25 s</span></div>
+<p class="cue">Scroll to Results.</p>
+<p>At the bottom is everyone who took it, newest first: their score, pass or not, and the role.</p>
+<p>Some carry an integrity flag, for example an answer that was pasted in. It's shown on its own line, and it never changes the score. A person looks at it.</p>
+<p>You can also see who asked for a person to score it, or asked for a review. That's the rule everywhere in Talent: AiMY scores, and a person decides.</p></section>
+</main>
+
+<script>
+  document.querySelectorAll('section.step .head').forEach((h) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'copy'; b.textContent = 'Copy'; b.dataset.copy = 'part';
+    b.setAttribute('aria-label', 'Copy ' + h.querySelector('h2').textContent);
+    h.appendChild(b);
+  });
+  function partText(sec) {
+    const out = [sec.querySelector('h2').textContent + '  (' + sec.querySelector('.time').textContent + ')'];
+    sec.querySelectorAll(':scope > p, :scope > ul > li').forEach((el) => {
+      const t = el.textContent.replace(/\s+/g, ' ').trim();
+      if (el.matches('.cue')) out.push('[DO] ' + t);
+      else if (el.matches('.move')) out.push('[MOTION] ' + t.replace(/^Motion · /, ''));
+      else if (el.matches('li')) out.push('• ' + t);
+      else out.push(t);
+    });
+    return out.join('\n\n');
+  }
+  function allText() {
+    return 'AiMY Talent · Assessment script\n[DO] = what to do on screen · [MOTION] = the animation to point out\n\n' +
+      [...document.querySelectorAll('section.step')].map(partText).join('\n\n\n');
+  }
+  async function copy(text) {
+    try { await navigator.clipboard.writeText(text); return true; }
+    catch (e) {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      let ok = false; try { ok = document.execCommand('copy'); } catch (_) {}
+      ta.remove(); return ok;
+    }
+  }
+  document.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-copy]');
+    if (!b) return;
+    const text = b.dataset.copy === 'all' ? allText() : partText(b.closest('section'));
+    const was = b.dataset.label || (b.dataset.label = b.textContent);
+    b.textContent = (await copy(text)) ? 'Copied' : 'Select and copy by hand';
+    b.classList.add('is-done');
+    clearTimeout(b._t);
+    b._t = setTimeout(() => { b.textContent = was; b.classList.remove('is-done'); }, 1600);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+AiMY Talent · Assessment script
+[DO] = what to do on screen · [MOTION] = the animation to point out
+
+1 · What it is  (0:00 · 20 s)
+
+[DO] Point at the top of the page.
+
+This is one assessment: support troubleshooting and written English. It's a short questionnaire a candidate takes from a link, before the phone screen. It takes about twenty minutes, and the pass mark is seventy percent.
+
+I copy the link and send it. AiMY scores it, and a person decides.
+
+
+2 · Before anyone takes it  (0:20 · 45 s)
+
+[DO] Point at "What keeps people finishing, and keeps it fair". Point at "3 of 5".
+
+Our research found five things that keep people finishing a test, and keep it fair. This assessment does three of them.
+
+• Done: it works on a phone, and it asks for consent before AiMY scores it. Anyone can ask a person to score it instead.
+
+• Done: there's a practice question first that doesn't count.
+
+• Not yet: it's twenty minutes, and past fifteen more people give up. And nobody hears how they did.
+
+Each fix is one press.
+
+[DO] Press "Turn it on" next to "Nobody hears how they did".
+
+[MOTION] The count goes from 3 of 5 to 4 of 5, and a toast confirms it with Undo.
+
+[DO] Press Undo.
+
+
+3 · Which questions work  (1:05 · 1 min)
+
+[DO] Scroll to "Item insights".
+
+Sixty-five people have taken it. For each question, we see how many got it right, and whether getting it right relates to what happened next, like the client saying yes.
+
+[DO] Point at Q2.
+
+Question two predicts the client's yes. People who get it right go further. That's a question worth keeping.
+
+[DO] Point at Q5 and the AiMY line under the table.
+
+Question five is the opposite. Seventy-four percent get it wrong, and it predicts nothing. When nearly everyone misses one question, the question is usually the problem.
+
+So AiMY proposes a clearer wording. The HR Manager approves it, or I keep the question as it is. Nothing changes on its own.
+
+
+4 · The questions  (2:05 · 30 s)
+
+[DO] Scroll to Questions. On Q2, press "Earlier wording".
+
+Each question shows the right answer and how many got it right.
+
+[MOTION] The earlier wording opens smoothly, like an accordion.
+
+And when a question changes, we keep its history. Question two used to be free text, and most people got it wrong. The HR Manager approved turning it into a choice, testing the same skill.
+
+
+5 · Results  (2:35 · 25 s)
+
+[DO] Scroll to Results.
+
+At the bottom is everyone who took it, newest first: their score, pass or not, and the role.
+
+Some carry an integrity flag, for example an answer that was pasted in. It's shown on its own line, and it never changes the score. A person looks at it.
+
+You can also see who asked for a person to score it, or asked for a review. That's the rule everywhere in Talent: AiMY scores, and a person decides.

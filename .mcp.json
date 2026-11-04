@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "aimy-ui": {
+      "type": "http",
+      "url": "https://aimy-ui-lib.aimy.flairstech.com/mcp"
+    }
+  }
+}

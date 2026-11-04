@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AiMY Talent · Requisitions script</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+  @page { size: A4; margin: 16mm 18mm; }
+  :root { --ink: #1c2026; --soft: #4a5560; --mute: #6b7682; --line: #dfe3e8; --tint: #f5f3fd; --purple: #6a3fd6; --teal: #0f7a6c; --teal-tint: #ecf7f5; }
+  body { font-family: 'Poppins', Arial, sans-serif; color: var(--ink); background: #fff; font-size: 11pt; line-height: 1.65; margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 48px; }
+  @media print { main { max-width: none; padding: 0; } .copy, .bar { display: none !important; } }
+  h1 { font-size: 24pt; margin: 0 0 4pt; }
+  h2 { font-size: 13.5pt; margin: 0; }
+  p { margin: 0 0 7pt; }
+  ul { margin: 0 0 8pt; padding-left: 18pt; }
+  li { margin-bottom: 3pt; }
+  li b { font-weight: 600; }
+  .eyebrow { font-size: 8.5pt; font-weight: 600; letter-spacing: 1.6pt; text-transform: uppercase; color: var(--purple); }
+  .meta { font-size: 9pt; color: var(--mute); margin-bottom: 12pt; }
+  .part { border-top: 1px solid var(--line); padding-top: 12pt; margin-top: 14pt; }
+  .step { break-inside: avoid; page-break-inside: avoid; }
+  .step:not(.part) { margin-top: 14pt; }
+  .head { display: flex; align-items: center; gap: 10pt; margin-bottom: 6pt; }
+  .head h2 { flex: 1; }
+  .time { font-size: 8.5pt; font-weight: 600; color: var(--purple); white-space: nowrap; }
+  .cue { font-size: 9.5pt; color: var(--purple); font-weight: 500; }
+  .cue::before { content: "▸ "; }
+  .move { font-size: 9.5pt; color: var(--teal); background: var(--teal-tint); border-left: 3px solid var(--teal); border-radius: 0 6pt 6pt 0; padding: 4pt 8pt; margin: 0 0 8pt; }
+  .move b { font-weight: 600; }
+  .box { background: var(--tint); border: 1px solid #d9d0f6; border-radius: 7pt; padding: 8pt 10pt; margin: 8pt 0; font-size: 9.5pt; }
+  .box .move { margin: 4pt 0 0; display: inline-block; }
+  .box ul { margin: 4pt 0 0; }
+
+  /* Copying: one button for the whole script, a small one on each part. */
+  .bar { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 10px; padding: 10px 0; background: #fff; border-bottom: 1px solid var(--line); margin-bottom: 4pt; }
+  .bar span { font-size: 9pt; color: var(--mute); }
+  .copy {
+    font: 500 9pt 'Poppins', Arial, sans-serif; color: var(--purple); background: var(--tint);
+    border: 1px solid #d9d0f6; border-radius: 999px; padding: 4px 12px; cursor: pointer; white-space: nowrap;
+    transition: background-color 150ms ease, color 150ms ease, transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .copy:hover { background: #ebe5fb; }
+  .copy:active { transform: scale(0.97); }
+  .copy:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+  .copy.is-done { color: #fff; background: var(--teal); border-color: var(--teal); }
+  .copy.is-main { font-size: 10pt; padding: 6px 16px; color: #fff; background: var(--purple); border-color: var(--purple); }
+  .copy.is-main.is-done { background: var(--teal); border-color: var(--teal); }
+  @media (prefers-reduced-motion: reduce) { .copy { transition: none; } .copy:active { transform: none; } }
+</style>
+</head>
+<body>
+<main>
+<p class="eyebrow">AiMY Talent · what to say</p>
+<h1>Requisitions script</h1>
+<p class="meta">The list, one requisition from top to bottom, and a new one · about 7 minutes · shown live at localhost:5174 on Omar's desk (the recruiter).</p>
+
+<div class="bar">
+  <button class="copy is-main" type="button" data-copy="all">Copy the whole script</button>
+  <span>Or copy one part with its own Copy button.</span>
+</div>
+
+<div class="box">Normal type is what you say. <span class="cue">Purple lines are what to do on screen.</span><br>
+<span class="move"><b>Motion</b> · green lines are the animation to point out as it happens.</span>
+<ul>
+  <li>In part 9, paste the example briefing exactly as written. The prototype reads it well; looser wording, like "mid December" without the hyphen, can be missed.</li>
+  <li>Press "Discard the draft" after each new requisition you make, so the list stays at five.</li>
+  <li>If you're short of time, skip part 7 (Add a candidate).</li>
+</ul></div>
+
+<!-- ═══ 1 ═══ -->
+<section class="part step"><div class="head"><h2>1 · The list</h2><span class="time">0:00 · 45 s</span></div>
+<p class="cue">Click the Requisitions tab.</p>
+<p class="move"><b>Motion</b> · The cards rise in one after another, with a light blur that clears as they land.</p>
+<p>A requisition is a client's request to fill a role. This tab is all of mine, as cards. It's Sales's campaign list, turned into hiring.</p>
+<p class="cue">Point along the cuts.</p>
+<p>The cuts across the top are the questions I ask every day. Which ones are open? Which are at risk? Which are waiting on the client, and which are waiting on me?</p>
+<p>"No profile after ten days" catches a requisition where we still haven't sent the client anyone. That's the delay clients feel the most. Then there's On hold, Closed, and Drafts that haven't opened yet.</p></section>
+
+<!-- ═══ 2 ═══ -->
+<section class="part step"><div class="head"><h2>2 · A card makes a forecast</h2><span class="time">0:45 · 1 min</span></div>
+<p class="cue">Point at the first card, L3 Support Engineer.</p>
+<p>Every card answers one question: will we make it?</p>
+<p>At the top: it's at risk, with six days left, for Northwind Software. One seat, a replacement, senior. Nine people are in progress.</p>
+<p class="cue">Point at "At this pace" and "First profile".</p>
+<p>At this pace it fills on the twenty-third, fifteen days after the date we promised. The first profile went out on day twelve, against a target of seven. When we're late, the number turns amber, so you see it without reading it.</p>
+<p class="cue">Point at the AiMY sentence.</p>
+<p>And AiMY names the biggest drop. Here, only half the people we found moved on after sourcing.</p>
+<p>The hiring manager is at the bottom, and there's one button: Open it.</p>
+<p class="cue">Press "Open it".</p></section>
+
+<!-- ═══ 3 ═══ -->
+<section class="part step"><div class="head"><h2>3 · The record</h2><span class="time">1:45 · 1 min</span></div>
+<p>This is the requisition itself. It's Sales's campaign record, turned into a hiring request.</p>
+<p class="cue">Point down the record.</p>
+<ul>
+  <li><b>The need:</b> one seat, a replacement, senior, billable to the client.</li>
+  <li><b>The hiring manager:</b> Rania Samir.</li>
+  <li><b>The stages:</b> these come from the client's own template. Northwind tests people before the phone screen and runs its own technical round, so its stages are longer than other clients'.</li>
+  <li><b>The success profile:</b> the four must-haves every candidate is checked against.</li>
+  <li><b>About the role:</b> the description candidates read.</li>
+  <li><b>The careers page:</b> it's published, so anyone with the link can apply. Copy the link, and it can go on LinkedIn as it is. Off is the default; a person publishes it.</li>
+  <li><b>The state:</b> Put on hold and Close it are one press each, with Undo.</li>
+  <li><b>The assessment:</b> a short questionnaire before the phone screen, with a pass mark of seventy percent.</li>
+</ul></section>
+
+<!-- ═══ 4 ═══ -->
+<section class="step"><div class="head"><h2>4 · What AiMY reads off it</h2><span class="time">2:45 · 30 s</span></div>
+<p class="cue">Point at "Read off the record".</p>
+<p>AiMY reads the record and says what it means. Two of the three profiles we sent got a client interview. The target is six days away, but our furthest candidate is only at the technical interview, and from there an accepted offer usually takes twenty-one days.</p>
+<p>And then one honest line: moving the date changes the forecast, not the work.</p></section>
+
+<!-- ═══ 5 ═══ -->
+<section class="part step"><div class="head"><h2>5 · How far people got</h2><span class="time">3:15 · 1 min</span></div>
+<p class="cue">Scroll to "How far people got".</p>
+<p>This is the funnel. Each row is one stage. It shows how many people reached it, how many moved on, and how many days they spent there. Each number has the usual right under it, so you can compare at a glance.</p>
+<p class="cue">Point at the legend.</p>
+<p>The dot says how the stage is doing: on pace, watch, or behind. The colour is never on its own; the number that's off is coloured too.</p>
+<p class="cue">Point at the AiMY line under the funnel.</p>
+<p>AiMY says which stage is the problem. Here the technical interview is behind: six and a half days against a usual four. So that's where to chase.</p>
+<p class="cue">Rest on the Technical interview row, then press it.</p>
+<p class="move"><b>Motion</b> · On hover the row lights up and the stage name underlines. Hold still, and a tooltip says why it's behind.</p>
+<p>A stage with someone in it right now is a button. Press it, and you see who is stuck there.</p>
+<p class="cue">Rest on "How it is counted".</p>
+<p>And, as everywhere, "How it is counted" says exactly how each number is worked out.</p></section>
+
+<!-- ═══ 6 ═══ -->
+<section class="step"><div class="head"><h2>6 · Why the client passed</h2><span class="time">4:15 · 45 s</span></div>
+<p class="cue">Scroll to "Why the client passed".</p>
+<p>When a client says no, they give one reason from a short list: spoken language, experience, salary, notice period, or skills. We count them. On this requisition, both declines were about salary.</p>
+<p>Under it, AiMY's proposal comes from Northwind as a whole, across all its requisitions. There, most declines mention spoken language. So AiMY proposes checking spoken language on the phone screen, before a profile goes to Northwind.</p>
+<p>The HR Manager approves it. Nothing changes on its own.</p></section>
+
+<!-- ═══ 7 ═══ -->
+<section class="step"><div class="head"><h2>7 · The candidates on it</h2><span class="time">5:00 · 45 s</span></div>
+<p class="cue">Scroll to "The candidates on it".</p>
+<p>At the bottom are the people on this requisition: nine in progress and eleven who left. I can cut them by stage.</p>
+<p>Each card says why they fit, and has one next move, like "Call Karim" or "Agreed to talk", plus one way out. Both are one press with Undo. And I can rest on any name to see their CV.</p>
+<p class="cue">Scroll back up. Press "Add a candidate", then "Use a sample CV".</p>
+<p>I can also add someone straight from a CV.</p>
+<p class="move"><b>Motion</b> · Each step shimmers while AiMY works on it: reading the CV, finding their contact details, reading their experience against the success profile, and checking whether they're already in our pool.</p>
+<p>It asks only for what's missing. This CV has no phone number, so that's all it asks for. Then it checks them against the must-haves, and one press creates the profile.</p>
+<p class="cue">Go back to Requisitions.</p></section>
+
+<!-- ═══ 8 ═══ -->
+<section class="part step"><div class="head"><h2>8 · A new requisition: replace someone</h2><span class="time">5:45 · 45 s</span></div>
+<p class="cue">Press "New requisition".</p>
+<p>Seventy-seven percent of our requests replace someone who left, so that comes first.</p>
+<p class="cue">Press "Replace" on Nour Gamal.</p>
+<p>I pick the person who left, and the role, its must-haves and the account all come from theirs. AiMY says what it copied, and why that person left. I only change what's different.</p>
+<p>Nothing goes live until I open it, and it stays off the careers page until somebody publishes it.</p>
+<p class="cue">Point at the seats. Press + twice, to 3 seats.</p>
+<p>Approval only happens by exception. A replacement inside its budget opens straight away. But if I ask for three seats at once, AiMY says it goes to Hesham, the BU Director, first. Nothing else waits on anyone.</p>
+<p class="cue">Press "Discard the draft".</p></section>
+
+<!-- ═══ 9 ═══ -->
+<section class="step"><div class="head"><h2>9 · A new requisition: from a briefing</h2><span class="time">6:30 · 45 s</span></div>
+<p class="cue">Press "New requisition" again. Press "Draft it from this" with the box empty.</p>
+<p class="move"><b>Motion</b> · The empty box shakes and turns red, so you know what it needs.</p>
+<p class="cue">Paste: Northwind needs two German-speaking support agents, C1, at least a year of software support, by mid-December. Budget up to 30,000. Then press "Draft it from this".</p>
+<p>The other way is to paste the notes from the kickoff call or the hiring manager's email. AiMY drafts the requisition from them.</p>
+<p>It says what it read: the role, Northwind, two seats, the fifteenth of December, the budget, and German at C1. It also says what the notes didn't say. Here it didn't know if this replaces someone, so it set the usual and tells me to check it.</p>
+<p>It never guesses quietly. Whatever it filled in for me, it names.</p>
+<p class="cue">Press "Discard the draft".</p></section>
+
+<!-- ═══ 10 ═══ -->
+<section class="part step"><div class="head"><h2>10 · Close</h2><span class="time">7:15 · 15 s</span></div>
+<p>So a requisition tells you if you'll make it, where people are getting stuck, and why clients say no. And a new one starts from what we already know: the person who left, or the notes from the call.</p>
+<p>As everywhere in Talent, it's one press with Undo, and a person makes every decision.</p></section>
+</main>
+
+<script>
+  /* Each part gets its own Copy button beside its time. */
+  document.querySelectorAll('section.step .head').forEach((h) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'copy'; b.textContent = 'Copy'; b.dataset.copy = 'part';
+    b.setAttribute('aria-label', 'Copy ' + h.querySelector('h2').textContent);
+    h.appendChild(b);
+  });
+
+  /* Plain text, with cues and motion lines marked so they survive the paste. */
+  function partText(sec) {
+    const out = [sec.querySelector('h2').textContent + '  (' + sec.querySelector('.time').textContent + ')'];
+    sec.querySelectorAll(':scope > p, :scope > ul > li').forEach((el) => {
+      const t = el.textContent.replace(/\s+/g, ' ').trim();
+      if (el.matches('.cue')) out.push('[DO] ' + t);
+      else if (el.matches('.move')) out.push('[MOTION] ' + t.replace(/^Motion · /, ''));
+      else if (el.matches('li')) out.push('• ' + t);
+      else out.push(t);
+    });
+    return out.join('\n\n');
+  }
+  function allText() {
+    return 'AiMY Talent · Requisitions script\n[DO] = what to do on screen · [MOTION] = the animation to point out\n\n' +
+      [...document.querySelectorAll('section.step')].map(partText).join('\n\n\n');
+  }
+
+  async function copy(text) {
+    try { await navigator.clipboard.writeText(text); return true; }
+    catch (e) {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      let ok = false; try { ok = document.execCommand('copy'); } catch (_) {}
+      ta.remove(); return ok;
+    }
+  }
+
+  document.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-copy]');
+    if (!b) return;
+    const text = b.dataset.copy === 'all' ? allText() : partText(b.closest('section'));
+    const was = b.dataset.label || (b.dataset.label = b.textContent);
+    b.textContent = (await copy(text)) ? 'Copied' : 'Select and copy by hand';
+    b.classList.add('is-done');
+    clearTimeout(b._t);
+    b._t = setTimeout(() => { b.textContent = was; b.classList.remove('is-done'); }, 1600);
+  });
+</script>
+</body>
+</html>

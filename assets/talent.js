@@ -2758,13 +2758,38 @@
        name (German, NetSuite, SQL); otherwise it goes lower case. */
     const mid = (m) => /^(German|English|Arabic|French|Spanish|Italian)\b|^[A-Z][a-z]+[A-Z]|^[A-Z][A-Z0-9]/.test(m) ? m : m.charAt(0).toLowerCase() + m.slice(1);
     const of = (k) => must.filter((m, i) => c.ev[i] === k).map(mid);
-    /* A list whose items carry their own commas is joined with semicolons. */
+    /* A list whose items carry their own commas is joined with semicolons;
+       one whose items carry their own "and" takes a comma before its last. */
     const and = (l) => l.length < 2 ? l[0] : l.some((x) => x.indexOf(',') >= 0) ? l.slice(0, -1).join('; ') + '; and ' + l[l.length - 1]
-      : l.slice(0, -1).join(', ') + ' and ' + l[l.length - 1];
-    const met = of('m'), part = of('p'), unk = of('n');
-    const say = (met.length ? f + '’s CV shows <b>' + esc(and(met)) + '</b>.' + (part.length ? ' It partly shows ' + esc(and(part)) + '.' : '')
-        : part.length ? f + '’s CV partly shows ' + esc(and(part)) + '.' : 'Nothing on ' + f + '’s CV shows a must-have yet.') +
-      (unk.length ? ' It says nothing on ' + esc(and(unk)) + ', which is not known yet rather than missing.' : '');
+      : l.slice(0, -1).join(', ') + (l.length > 2 && l.some((x) => / and /.test(x)) ? ', and ' : ' and ') + l[l.length - 1];
+    /* A must-have written as a verb ("Reads stack traces") is said as a
+       noun inside AiMY's sentence ("reading stack traces"). */
+    const GERUND = { reads: 'reading', writes: 'writing', runs: 'running', reports: 'reporting', calm: 'staying calm', has: '' };
+    /* Short form (Engy, 4 Nov: "make them shorter"): the topic of a
+       must-have without its years, examples or qualifiers, so "2+ years in
+       accounts receivable" is said "accounts receivable" and "NetSuite or a
+       similar ERP" is said "NetSuite". */
+    const short = (m) => noun(m).replace(/^\d+\+ years? (of |in |as (an? )?)?/, '').replace(/\s*\(.*?\)/, '')
+      .replace(/,.*$| or a similar .*$| to read .*$| or above$| engineers build from$| and logs$/, '').replace(/^work with/, 'working with')
+      .replace(/^business analyst$/, 'business analysis').replace(/^collections with overseas clients$/, 'overseas collections').replace(/ and one scripting language$/, ' and scripting');
+    const noun = (m) => m.replace(/^(\w+)\s*/, (w, v) => GERUND[v] == null ? w : GERUND[v] ? GERUND[v] + ' ' : '').replace(/^worked with/, 'work with');
+    const fluent = (m) => (c.langs || []).filter((l) => m.indexOf(l) >= 0)[0];
+    /* A language the CV lists but only partly shows is a fluency to check. */
+    const met = of('m').map(short), part = of('p').filter((m) => !fluent(m)).map(short), q = reqOf(c);
+    const unk = of('n').concat(of('p').filter(fluent));
+    /* WHY THEY FIT, AS AiMY'S READ (Engy, 4 Nov: "insights or reasons why
+       this candidate fits", not an audit of the CV). The card already says
+       their role and years, so AiMY says only what the CV backs up, living
+       near the office when it is true, and what is left to check, never a
+       no. A language the CV lists is checked as fluency. Said as AiMY
+       talking to the recruiter about the person (Engy, 4 Nov): "Adham looks
+       strong on…", "I'd check…". */
+    const near = c.place && q.place && q.place.indexOf(c.place) >= 0;
+    const fit = met.length ? f + ' looks strong on <b>' + esc(and(met)) + '</b>' + (part.length ? ', and partly on ' + esc(and(part)) : '')
+      : part.length ? f + ' partly matches on ' + esc(and(part)) : f + '’s CV doesn’t show the must-haves yet';
+    const check = unk.map((m) => fluent(m) ? 'how fluent their ' + fluent(m) + ' is' : short(m));
+    const say = fit + (near ? (met.length || part.length ? ', and lives close to the office.' : ', but lives close to the office.') : '.') +
+      (check.length ? ' I’d check ' + esc(and(check)) + '.' : '');
     return aimyBlock({ text: say, from: 'the CV, against the must-haves' }).replace('class="b-aimy"', 'class="b-aimy t-why-say"');
   }
   function whyTags(c, bare) {
