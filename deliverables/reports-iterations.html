@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reports as a Story</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+  /* Talent's own dark tokens (aimy-ds.css), so the mocks read as the product. */
+  :root {
+    --bg: #0d1117; --card: #141b24; --raised: #1c2630; --line: rgba(255,255,255,0.07); --line2: rgba(255,255,255,0.12);
+    --d50: #eef2f6; --d100: #d8e0e8; --d200: #c8d2dc; --d300: #b0bcca; --d400: #8b9aaa; --d500: #637280; --d600: #4a5b6e;
+    --accent: #8b4ff4; --accent-rgb: 139,79,244; --accent-text: #b18cff; --ai: #61adf1;
+    --ok: #4ed6a1; --warn: #f7c95c; --err: #ff7282;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: 'Poppins', system-ui, sans-serif; color: var(--d100); font-size: 14px; line-height: 1.55; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 48px 24px 96px; }
+  h1 { font-size: 34px; line-height: 1.15; letter-spacing: -0.5px; color: var(--d50); margin: 6px 0 10px; }
+  h2 { font-size: 22px; line-height: 1.25; color: var(--d50); margin: 0 0 6px; letter-spacing: -0.2px; }
+  h3 { font-size: 15px; color: var(--d50); margin: 18px 0 6px; }
+  p { margin: 0 0 10px; }
+  a { color: var(--accent-text); }
+  .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 1.6px; text-transform: uppercase; color: var(--accent-text); }
+  .lead { font-size: 16px; color: var(--d300); max-width: 76ch; }
+  .mute { color: var(--d400); font-size: 12.5px; }
+  b, strong { color: var(--d50); font-weight: 600; }
+  .warn { color: var(--warn); } .ok { color: var(--ok); } .err { color: var(--err); }
+
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
+  .pill { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--raised); color: var(--d300); border: 1px solid var(--line); }
+
+  section.it { margin-top: 56px; padding-top: 32px; border-top: 1px solid var(--line); }
+  .it-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; }
+  .it-n { font-size: 12px; font-weight: 700; color: var(--bg); background: var(--accent-text); border-radius: 6px; padding: 2px 8px; }
+  .it-n.rec { background: var(--ok); }
+  .cols { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; margin-top: 18px; }
+  @media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
+  .stage { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 22px; overflow-x: auto; }
+  .stage svg { display: block; width: 100%; height: auto; min-width: 640px; }
+  .notes { display: grid; gap: 12px; align-content: start; }
+  .note { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; font-size: 13px; color: var(--d300); }
+  .note h4 { margin: 0 0 6px; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--d400); }
+  .note ul { margin: 0; padding-left: 18px; } .note li { margin: 3px 0; }
+  .refs a { display: block; margin: 3px 0; text-decoration: none; }
+  .refs a:hover { text-decoration: underline; }
+
+  /* The AiMY voice line, as the product draws it. */
+  .aimy { display: flex; gap: 10px; align-items: flex-start; background: rgba(var(--accent-rgb), 0.08); border: 1px solid rgba(var(--accent-rgb), 0.28);
+    border-radius: 12px; padding: 12px 14px; color: var(--d200); font-size: 13.5px; margin-top: 14px; }
+  .aimy .mk { flex: none; width: 18px; height: 18px; border-radius: 6px; background: linear-gradient(135deg, #3369ff, #8b4ff4); margin-top: 2px; }
+  .aimy small { display: block; color: var(--d400); font-size: 11.5px; margin-top: 4px; }
+  .act { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 13px; font-weight: 600; color: #fff; background: var(--accent);
+    border-radius: 8px; padding: 6px 12px; text-decoration: none; }
+  .act.ghost { background: transparent; color: var(--accent-text); padding-left: 0; }
+
+  /* V4 the brief */
+  .brief-h { font-size: 26px; line-height: 1.3; color: var(--d50); font-weight: 600; letter-spacing: -0.3px; margin: 4px 0 18px; max-width: 30ch; }
+  .chap { display: grid; grid-template-columns: 34px minmax(0,1fr); gap: 14px; padding: 16px 0; border-top: 1px solid var(--line); }
+  .chap-n { font-size: 12px; font-weight: 700; color: var(--accent-text); border: 1px solid rgba(var(--accent-rgb),0.4); border-radius: 8px; height: 28px; display: grid; place-items: center; }
+  .chap p { font-size: 15px; color: var(--d200); margin: 0; }
+  .chap .big { font-size: 15px; }
+  .mini { display: flex; gap: 3px; align-items: flex-end; height: 28px; margin-top: 10px; }
+
+  /* V5 recap deck */
+  .deck { display: grid; grid-template-columns: repeat(4, minmax(200px, 1fr)); gap: 14px; overflow-x: auto; }
+  .slide { aspect-ratio: 9 / 13; border-radius: 18px; padding: 22px 20px; display: flex; flex-direction: column; justify-content: space-between;
+    background: radial-gradient(120% 90% at 0% 0%, rgba(var(--accent-rgb),0.35), transparent 60%), linear-gradient(160deg, #1c1630, #10141c); border: 1px solid rgba(var(--accent-rgb),0.3); }
+  .slide:nth-child(2) { background: radial-gradient(120% 90% at 100% 0%, rgba(247,201,92,0.28), transparent 60%), linear-gradient(160deg, #241f12, #10141c); border-color: rgba(247,201,92,0.3); }
+  .slide:nth-child(3) { background: radial-gradient(120% 90% at 0% 100%, rgba(255,114,130,0.25), transparent 60%), linear-gradient(160deg, #241418, #10141c); border-color: rgba(255,114,130,0.28); }
+  .slide:nth-child(4) { background: radial-gradient(120% 90% at 100% 100%, rgba(78,214,161,0.25), transparent 60%), linear-gradient(160deg, #10241c, #10141c); border-color: rgba(78,214,161,0.28); }
+  .slide .k { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--d300); }
+  .slide .s { font-size: 21px; line-height: 1.3; font-weight: 600; color: var(--d50); }
+  .slide .s em { font-style: normal; font-size: 46px; line-height: 1; display: block; margin-bottom: 8px; }
+  .slide .f { font-size: 12px; color: var(--d300); }
+
+  /* V6 recommended page */
+  .page { background: #0b0f14; border: 1px solid var(--line2); border-radius: 18px; overflow: hidden; }
+  .page-bar { display: flex; gap: 8px; align-items: center; padding: 10px 14px; background: var(--card); border-bottom: 1px solid var(--line); font-size: 12px; color: var(--d400); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--d600); }
+  .page-body { padding: 26px 28px 30px; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 20px; }
+  .chip { font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line2); color: var(--d300); }
+  .chip.on { border-color: rgba(var(--accent-rgb),0.6); color: var(--d50); background: rgba(var(--accent-rgb),0.16); }
+  .storyhead { font-size: 24px; line-height: 1.32; font-weight: 600; color: var(--d50); letter-spacing: -0.3px; max-width: 34ch; margin: 0 0 6px; }
+  .storyhead mark { background: none; color: var(--warn); }
+  .storyhead mark.o { color: var(--ok); }
+  .block { margin-top: 26px; padding: 20px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); }
+  .block-k { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--d400); margin-bottom: 4px; }
+  .block-h { font-size: 17px; font-weight: 600; color: var(--d50); margin: 0 0 4px; }
+  .block-s { font-size: 13.5px; color: var(--d300); margin: 0 0 14px; max-width: 70ch; }
+  .appendix { margin-top: 18px; display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-radius: 12px; border: 1px dashed var(--line2); color: var(--d300); font-size: 13.5px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 900px) { .two { grid-template-columns: 1fr; } }
+  .rbar { display: grid; grid-template-columns: 110px 1fr 54px; gap: 10px; align-items: center; font-size: 13px; margin: 6px 0; color: var(--d200); }
+  .rbar i { display: block; height: 8px; border-radius: 4px; background: var(--d600); }
+  .rbar.top i { background: var(--warn); }
+  .rbar span:last-child { color: var(--d400); text-align: right; }
+
+  table.cmp { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 14px; }
+  table.cmp th, table.cmp td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.cmp th { color: var(--d400); font-weight: 600; font-size: 11.5px; letter-spacing: 0.8px; text-transform: uppercase; }
+  table.cmp td:first-child { color: var(--d50); font-weight: 600; white-space: nowrap; }
+  .refgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; margin-top: 14px; }
+  .ref { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font-size: 13px; color: var(--d300); }
+  .ref a { font-weight: 600; text-decoration: none; }
+  .ref .src { color: var(--d400); font-size: 11.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">AiMY Talent · Reports · design iterations</div>
+  <h1>From a grid of figures to a story</h1>
+  <p class="lead">Today the Reports page is thirteen equal cards, then a funnel, then lists. Every number is right and defined, and none of them says what is happening. Below are six ways to tell it as a story, each drawn with the page’s real figures, with what inspired it and where it falls short. Number 6 is the recommendation.</p>
+  <div class="meta">
+    <span class="pill">4 Nov 2026</span>
+    <span class="pill">Data: Omar Saeed’s requisitions, opened in the last 90 days (10 requisitions, 12 seats)</span>
+    <span class="pill">References: Mobbin + web research</span>
+  </div>
+
+  <!-- ═══ THE PLOT ═══ -->
+  <section class="it">
+    <div class="eyebrow">Before drawing: what is the story?</div>
+    <h2>The four things the figures say, once they are read together</h2>
+    <div class="cols">
+      <div class="stage" style="overflow:visible">
+        <h3 style="margin-top:0">1 · No step is slow. Six steps in a row are.</h3>
+        <p>The first profile takes <b>19 days</b> against a target of 7. But every step before it runs near its usual time: sourced 3.4 days (usual 3), applied 2.2 (2), assessment 3 (3), phone 2.2 (2), HR 3 (3), technical 4.3 (4). Added up that is 18 days. The delay is the <em>length of the path</em>, not one bottleneck. The card says “12 days over”; the story says why.</p>
+        <h3>2 · The funnel beats its norms until the offer.</h3>
+        <p>More people move on than usual at every step (HR 71% vs 54%, technical 86% vs 79%, client interviews 39% of profiles vs a 25% norm). Then the offer: <b class="warn">3 of 7 declined</b>, 57% moving on against a usual 86%.</p>
+        <h3>3 · The longest wait sits with the client.</h3>
+        <p><b>8 of 15</b> days past the usual time wait on someone else’s answer, <b>6 of them</b> on two profiles with the client. The other 7 are steps that are yours.</p>
+        <h3 style="margin-bottom:6px">4 · After the hire, most stay, not enough.</h3>
+        <p style="margin:0">18 of 23 earlier hires stayed to day 90: 78% against 85%. And clients who passed named <b>salary</b> most (4 of 12).</p>
+      </div>
+      <div class="notes">
+        <div class="note"><h4>Why this matters for the design</h4>A story needs a plot before it needs a chart. These four lines are the plot; each iteration below is a different way to tell the same four lines.</div>
+        <div class="note"><h4>What must not be lost</h4>Every one of today’s 13 figures, its definition (“How it is counted”), its target and its 3-span trend. The story leads; the figures stay one press away.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ V1 THE JOURNEY ═══ -->
+  <section class="it">
+    <div class="it-head"><span class="it-n">V1</span><h2>The journey: everyone, from sourced to accepted</h2></div>
+    <p class="lead">One diagram for the whole period: a band per stage that narrows as people leave, with AiMY’s notes pinned to the two places the story turns.</p>
+    <div class="cols">
+      <div class="stage">
+        <svg id="v1" viewBox="0 0 940 260" role="img" aria-label="Candidates through each stage: 125 sourced, 79 applied, 63 phone screen, 52 HR, 32 technical, 23 profiles sent, 9 client interviews, 7 offers, 4 accepted">
+          <defs>
+            <linearGradient id="band" x1="0" x2="1"><stop offset="0" stop-color="#8b4ff4" stop-opacity="0.38"/><stop offset="1" stop-color="#8b4ff4" stop-opacity="0.16"/></linearGradient>
+          </defs>
+          <g id="v1-bands"></g>
+          <g id="v1-bars"></g>
+          <!-- callouts -->
+          <g font-size="12" font-family="Poppins">
+            <line x1="665" y1="74" x2="640" y2="128" stroke="#4ed6a1" stroke-width="1"/>
+            <text x="560" y="146" fill="#4ed6a1" font-weight="600">9 of 23 profiles met</text>
+            <text x="560" y="162" fill="#b0bcca">above the 1 in 4 norm</text>
+            <line x1="769" y1="72" x2="790" y2="180" stroke="#f7c95c" stroke-width="1"/>
+            <text x="720" y="198" fill="#f7c95c" font-weight="600">3 of 7 offers declined</text>
+            <text x="720" y="214" fill="#b0bcca">usually 1 in 7</text>
+          </g>
+        </svg>
+        <div class="aimy"><span class="mk"></span><div>125 people found, 4 accepted. The funnel keeps more people than usual at every step, then loses <b>3 of 7</b> at the offer, the one step behind its norm.<small>every requisition in view · moved on is of the people decided at each step</small></div></div>
+      </div>
+      <div class="notes">
+        <div class="note refs"><h4>Inspired by</h4>
+          <a href="https://mobbin.com/screens/be6e685f-96c6-4f3e-a911-526bfc00522a" target="_blank">Pin · Pipeline Overview (Mobbin)</a>
+          <a href="https://mobbin.com/screens/3ba4f8e2-b296-454f-b5a8-c89c6f3c0ccf" target="_blank">Churnkey · Session outcome flow (Mobbin)</a>
+          <a href="https://mobbin.com/screens/ddfbd5d9-4aec-4614-afdc-94c82bde4fae" target="_blank">Mailchimp · funnel with drop-off arrows (Mobbin)</a>
+        </div>
+        <div class="note"><h4>Works</h4><ul><li>The whole period in one glance; the narrowing <em>is</em> the plot.</li><li>Notes sit on the diagram, where the eye already is.</li><li>Replaces the funnel table and two cards.</li></ul></div>
+        <div class="note"><h4>Falls short</h4><ul><li>Says nothing about time, which is the biggest problem (19 days).</li><li>The tail is thin: 9, 7 and 4 are hard to read at true scale.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ V2 THE 19 DAYS ═══ -->
+  <section class="it">
+    <div class="it-head"><span class="it-n">V2</span><h2>The 19 days: where the time to the first profile goes</h2></div>
+    <p class="lead">One number, unfolded. The “Days to send profiles” card becomes a ruler: each step laid end to end at its real length, the target marked where it runs out.</p>
+    <div class="cols">
+      <div class="stage">
+        <svg id="v2" viewBox="0 0 900 230" role="img" aria-label="Days before the first profile: sourced 3.4, applied 2.2, assessment 3, phone 2.2, HR 3, technical 4.3; target 7 days">
+          <defs>
+            <pattern id="half" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#2e2350"/><line x1="0" y1="0" x2="0" y2="6" stroke="#8b4ff4" stroke-width="3" stroke-opacity="0.55"/></pattern>
+          </defs>
+          <!-- past-target wash -->
+          <rect x="340" y="62" width="520" height="74" fill="#f7c95c" fill-opacity="0.05"/>
+          <g id="v2-segs"></g>
+          <!-- axis -->
+          <g id="v2-axis" font-size="11" fill="#8b9aaa" font-family="Poppins"></g>
+          <!-- target -->
+          <line x1="340" y1="40" x2="340" y2="150" stroke="#4ed6a1" stroke-width="2" stroke-dasharray="4 3"/>
+          <text x="346" y="48" font-size="12" fill="#4ed6a1" font-weight="600" font-family="Poppins">Target: 7 days</text>
+          <!-- actual -->
+          <line x1="820" y1="40" x2="820" y2="150" stroke="#f7c95c" stroke-width="2"/>
+          <text x="814" y="48" font-size="12" fill="#f7c95c" font-weight="600" text-anchor="end" font-family="Poppins">First profile sent: 19 days</text>
+          <text x="60" y="200" font-size="12" fill="#b0bcca" font-family="Poppins">Under each step, its usual time. Striped: the assessment, on 5 of the 10 requisitions.</text>
+        </svg>
+        <div class="aimy"><span class="mk"></span><div>Every step runs within half a day of its usual time; there are just six of them before a profile can go. The 7-day target runs out <b>during the assessment</b>. Sending a profile after HR, while the technical interview is booked, would bring it to about <b>14 days</b>, and about 11 where there is no assessment.<small>days in each stage, the requisitions in view · a suggestion to test, not a measured result</small></div></div>
+      </div>
+      <div class="notes">
+        <div class="note refs"><h4>Inspired by</h4>
+          <a href="https://mobbin.com/screens/ffa76985-7fe5-4ae3-8a08-2337cae94c02" target="_blank">Arcade · steps as bars with a headline sentence (Mobbin)</a>
+          <a href="https://mobbin.com/screens/c8df7ac5-3f52-41f5-bc0e-4f6b6c93ad53" target="_blank">Wrike · Gantt strip (Mobbin)</a>
+          <span class="mute">and the waterfall chart (finance’s “bridge”): target to actual, step by step.</span>
+        </div>
+        <div class="note"><h4>Works</h4><ul><li>Turns the worst figure into a reason, and the reason into a move.</li><li>Honest: it shows the steps are fine, so nobody is blamed for a slow step that is not slow.</li></ul></div>
+        <div class="note"><h4>Falls short</h4><ul><li>One figure only. A page of these is long.</li><li>Averages laid end to end are a model, not one person’s real path; the footnote has to say so.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ V3 WHO IT WAITS ON ═══ -->
+  <section class="it">
+    <div class="it-head"><span class="it-n">V3</span><h2>Who it waits on: the late days, by desk</h2></div>
+    <p class="lead">“Where time goes” as swimlanes. One lane per person the work waits on, the steps across, a circle wherever days have piled up past the usual time.</p>
+    <div class="cols">
+      <div class="stage">
+        <svg id="v3" viewBox="0 0 900 270" role="img" aria-label="Days past the usual time: the client 6 days at profile sent; you 3 at applied, 2 at managerial, 1 at technical, 1 at sourced; the interviewer 2 at technical">
+          <g id="v3-grid" font-family="Poppins"></g>
+          <g id="v3-dots" font-family="Poppins"></g>
+        </svg>
+        <div class="aimy"><span class="mk"></span><div><b>8 of 15</b> late days wait on someone else’s answer, and <b>6</b> of those are two profiles with Northwind’s hiring team. Your own 7 are spread thin: no single step of yours is more than 3 days behind.<small>the open requisitions in view, now</small><a class="act" href="#">Nudge Northwind on the 2 profiles</a></div></div>
+      </div>
+      <div class="notes">
+        <div class="note refs"><h4>Inspired by</h4>
+          <a href="https://mobbin.com/screens/063bf974-da08-434a-a045-3e2dfc6f4737" target="_blank">Trello · lanes by status over time (Mobbin)</a>
+          <a href="https://mobbin.com/screens/ba490a9b-ea0c-4f31-8358-669670f4647e" target="_blank">Productboard · swimlane timeline (Mobbin)</a>
+          <span class="mute">and service blueprints: one lane per actor.</span>
+        </div>
+        <div class="note"><h4>Works</h4><ul><li>Answers “whose desk is it on?” at a glance, the question the page exists for.</li><li>Ends in a move: the nudge.</li><li>Counts your own steps too, so it is not a chart of other people to blame.</li></ul></div>
+        <div class="note"><h4>Falls short</h4><ul><li>About now, not the period: it reads differently from the rest of the page.</li><li>Empty lanes (hiring manager, candidate) take room.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ V4 THE BRIEF ═══ -->
+  <section class="it">
+    <div class="it-head"><span class="it-n">V4</span><h2>The brief: a headline, then chapters</h2></div>
+    <p class="lead">Written first, drawn second. AiMY opens with one sentence of what happened; three short chapters follow, each one finding with its figure in the sentence, a small picture and what to do.</p>
+    <div class="cols">
+      <div class="stage">
+        <div class="eyebrow" style="color:var(--d400)">Your requisitions · last 90 days</div>
+        <div class="brief-h">Profiles take <span class="warn">19 days</span> because the path is long, not slow; offers are where people are lost.</div>
+        <div class="chap"><span class="chap-n">1</span><div><p><b>Speed.</b> The first profile goes out in 19 days, 12 over the target. Each of the six steps before it runs on its usual time.</p>
+          <div class="mini" aria-hidden="true"><i style="width:34px;height:100%;background:#8b4ff4;opacity:.9;border-radius:3px"></i><i style="width:22px;height:100%;background:#8b4ff4;opacity:.75;border-radius:3px"></i><i style="width:30px;height:100%;background:#8b4ff4;opacity:.5;border-radius:3px"></i><i style="width:22px;height:100%;background:#8b4ff4;opacity:.75;border-radius:3px"></i><i style="width:30px;height:100%;background:#8b4ff4;opacity:.9;border-radius:3px"></i><i style="width:43px;height:100%;background:#8b4ff4;opacity:.75;border-radius:3px"></i></div>
+          <a class="act ghost" href="#">See where the 19 days go →</a></div></div>
+        <div class="chap"><span class="chap-n">2</span><div><p><b>Loss.</b> More people than usual pass every interview; then <span class="warn">3 of 7 offers</span> are turned down. Clients who passed named salary most, 4 of 12.</p>
+          <a class="act ghost" href="#">Open the 3 declined offers →</a></div></div>
+        <div class="chap"><span class="chap-n">3</span><div><p><b>Waiting.</b> 6 of the 15 late days are two profiles with Northwind’s hiring team.</p>
+          <a class="act ghost" href="#">Nudge Northwind →</a></div></div>
+        <div class="chap"><span class="chap-n">4</span><div><p><b>After the hire.</b> 18 of 23 earlier hires stayed to day 90, <span class="warn">78%</span> against 85%.</p></div></div>
+      </div>
+      <div class="notes">
+        <div class="note refs"><h4>Inspired by</h4>
+          <a href="https://mobbin.com/screens/5f76714e-953a-4edc-a49c-72bfe343c4d9" target="_blank">Churnkey · figures inside a paragraph (Mobbin)</a>
+          <a href="https://mobbin.com/screens/10e9460a-1e44-4361-afe6-e0e9d857e6d9" target="_blank">Mercury · Insights: findings beside the chart (Mobbin)</a>
+          <a href="https://mobbin.com/screens/83f98982-2686-476a-81f0-b405056f8349" target="_blank">Fey · one-sentence outlook card (Mobbin)</a>
+          <a href="https://mobbin.com/screens/c9072ade-ef2a-4821-bb0a-c70096d7a254" target="_blank">Xero · AI summary under the graph (Mobbin)</a>
+        </div>
+        <div class="note"><h4>Works</h4><ul><li>Reads in 20 seconds; the order is the order of importance.</li><li>Each chapter ends in a move, as every Talent surface does.</li><li>Sounds like AiMY, the way the cards now do.</li></ul></div>
+        <div class="note"><h4>Falls short</h4><ul><li>Mostly words. Without a diagram it is a well-written list.</li><li>The sentence has to be generated and checked; it must cite its figures.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ V5 THE RECAP ═══ -->
+  <section class="it">
+    <div class="it-head"><span class="it-n">V5</span><h2>The recap: the period as slides</h2></div>
+    <p class="lead">One big sentence per slide, in the manner of a year in review. For the end of a month, or for sending to a BU director or a client.</p>
+    <div class="stage" style="margin-top:18px">
+      <div class="deck">
+        <div class="slide"><span class="k">90 days</span><span class="s"><em>4</em>people hired from 125 found, on 10 requisitions.</span><span class="f">12 seats · 6 still open</span></div>
+        <div class="slide"><span class="k">Speed</span><span class="s"><em>19 days</em>to the first profile. The target is 7.</span><span class="f">six steps, each on time</span></div>
+        <div class="slide"><span class="k">The offer</span><span class="s"><em>3 of 7</em>offers were turned down.</span><span class="f">clients named salary most, 4 of 12</span></div>
+        <div class="slide"><span class="k">After</span><span class="s"><em>18 of 23</em>earlier hires stayed to day 90.</span><span class="f">78% · target 85%</span></div>
+      </div>
+    </div>
+    <div class="cols" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="note refs"><h4>Inspired by</h4>
+        <a href="https://mobbin.com/screens/02228791-9019-41a0-92bc-8f00ce5ba1b5" target="_blank">Spotify · one sentence per slide (Mobbin, iOS)</a>
+        <a href="https://mobbin.com/screens/628a7e27-86f0-4a44-a205-129b5dd5d182" target="_blank">Oura · trophy case (Mobbin, iOS)</a>
+        <a href="https://mobbin.com/screens/ce758212-e54f-474a-9d4c-996159f76fe2" target="_blank">Homerun · shareable insights card (Mobbin)</a>
+      </div>
+      <div class="note"><h4>Works</h4><ul><li>Memorable and shareable; good for a monthly send-out.</li><li>Forces the four points to be said in under ten words each.</li></ul></div>
+      <div class="note"><h4>Falls short</h4><ul><li>Wrong register for daily work; it celebrates more than it explains.</li><li>Best as an export of V6, not the page itself.</li></ul></div>
+    </div>
+  </section>
+
+  <!-- ═══ V6 RECOMMENDED ═══ -->
+  <section class="it">
+    <div class="it-head"><span class="it-n rec">V6 · Recommended</span><h2>The story page: the brief’s order, the diagrams as its chapters</h2></div>
+    <p class="lead">V4 gives the page its order and its voice; V1, V2 and V3 become the pictures inside it. The thirteen figures move to the foot, whole, with their definitions. V5 becomes the page’s “Share the month” export.</p>
+    <div class="page" style="margin-top:18px">
+      <div class="page-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span style="margin-left:8px">Reports</span></div>
+      <div class="page-body">
+        <div class="eyebrow" style="color:var(--d400)">Reports · your requisitions, opened in the last 90 days</div>
+        <div class="chips"><span class="chip">Last 30 days</span><span class="chip">Last 60 days</span><span class="chip on">Last 90 days</span><span class="chip" style="margin-left:10px">All accounts</span><span class="chip">Northwind Software</span><span class="chip">+4</span></div>
+        <p class="storyhead">125 people found, <mark class="o">4 hired</mark>. Profiles take <mark>19 days</mark> because the path is long, not slow, and <mark>offers</mark> are where people are lost.</p>
+        <p class="mute" style="margin:0">AiMY · from the 10 requisitions in view · every figure below is one press from its definition</p>
+
+        <div class="block">
+          <div class="block-k">The journey</div>
+          <p class="block-h">Better than usual at every interview, until the offer</p>
+          <p class="block-s">Each band is the people who reached the stage. Press a stage to see who is at it now.</p>
+          <div data-clone="v1"></div>
+        </div>
+
+        <div class="block">
+          <div class="block-k">Chapter 1 · Speed</div>
+          <p class="block-h">19 days to the first profile: six steps, each on time</p>
+          <p class="block-s">The 7-day target runs out during the assessment. Sending after HR, with the technical interview booked, would bring it near 14, or 11 without an assessment.</p>
+          <div data-clone="v2"></div>
+        </div>
+
+        <div class="two">
+          <div class="block">
+            <div class="block-k">Chapter 2 · Loss</div>
+            <p class="block-h">3 of 7 offers turned down</p>
+            <p class="block-s">And when clients passed, why, one reason each (12):</p>
+            <div class="rbar top"><span>Salary</span><i style="width:100%"></i><span>4</span></div>
+            <div class="rbar"><span>Experience</span><i style="width:75%"></i><span>3</span></div>
+            <div class="rbar"><span>Notice period</span><i style="width:50%"></i><span>2</span></div>
+            <div class="rbar"><span>Language</span><i style="width:25%"></i><span>1</span></div>
+            <div class="rbar"><span>Skills gap</span><i style="width:25%"></i><span>1</span></div>
+            <a class="act ghost" href="#">Open the 3 declined offers →</a>
+          </div>
+          <div class="block">
+            <div class="block-k">Chapter 3 · Waiting</div>
+            <p class="block-h">6 of 15 late days are with the client</p>
+            <p class="block-s">Two profiles at Northwind, 6 days past the usual time. Your own 7 are spread thin.</p>
+            <div data-clone="v3" style="margin:0 -8px"></div>
+            <a class="act" href="#">Nudge Northwind on the 2 profiles</a>
+          </div>
+        </div>
+
+        <div class="appendix"><span><b>All 13 figures</b> · requisitions, seats, days to send, hire and join, the three pass rates, profiles per hire, offers declined, hired not started, cancelled, billed hires with day 90</span><span style="color:var(--accent-text);font-weight:600">Show ▾</span></div>
+        <div class="appendix" style="margin-top:8px"><span><b>Share the month</b> · the four chapters as slides (V5), for a BU director or a client</span><span style="color:var(--accent-text);font-weight:600">Make the recap</span></div>
+      </div>
+    </div>
+    <div class="cols" style="grid-template-columns:1fr 1fr">
+      <div class="note"><h4>Why this one</h4><ul>
+        <li>The story is said once, at the top, and every block below proves one line of it.</li>
+        <li>Three different diagrams for three different questions: how many (journey), how long (ruler), whose desk (lanes). No two blocks repeat a figure.</li>
+        <li>Nothing from today’s page is lost: the 13 figures and their definitions keep their place, one press down.</li>
+        <li>Each chapter ends in a move, so the report is also a to-do.</li>
+      </ul></div>
+      <div class="note"><h4>Rules it keeps</h4><ul>
+        <li>The headline is built from the figures and cites them; no figure appears in words that is not in a diagram below.</li>
+        <li>Colour carries meaning only: amber off target, green on, violet the flow. Every coloured figure is also said in words.</li>
+        <li>Changes with the period and account filters, as the page does today.</li>
+        <li>A desk sees its own story: the HR Manager’s headline is about the team, the hiring manager’s about their requests.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <!-- ═══ COMPARISON ═══ -->
+  <section class="it">
+    <h2>Side by side</h2>
+    <table class="cmp">
+      <thead><tr><th>Iteration</th><th>Answers</th><th>Story strength</th><th>Keeps every figure</th><th>Ends in a move</th><th>Build effort</th></tr></thead>
+      <tbody>
+        <tr><td>V1 Journey</td><td>How many, and where they leave</td><td>Strong on loss, silent on time</td><td>Funnel only</td><td>Press a stage</td><td>Medium</td></tr>
+        <tr><td>V2 The 19 days</td><td>Why the first profile is slow</td><td>Strongest single insight</td><td>One figure</td><td>Yes</td><td>Low</td></tr>
+        <tr><td>V3 Lanes</td><td>Whose desk the delay is on</td><td>Strong, about now</td><td>Where time goes</td><td>Nudge</td><td>Medium</td></tr>
+        <tr><td>V4 Brief</td><td>What happened, in order</td><td>Clear, but mostly words</td><td>In sentences</td><td>Yes</td><td>Low</td></tr>
+        <tr><td>V5 Recap</td><td>What to tell others</td><td>Memorable, thin</td><td>Four</td><td>No</td><td>Low</td></tr>
+        <tr><td style="color:var(--ok)">V6 Story page</td><td>All of the above, in that order</td><td>Strong and complete</td><td>Yes, in the appendix</td><td>Every chapter</td><td>Medium–high</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ═══ REFERENCES ═══ -->
+  <section class="it">
+    <h2>References</h2>
+    <p class="mute">Mobbin screens (web unless marked iOS). Web research on data storytelling and recruiting analytics follows.</p>
+    <div class="refgrid">
+      <div class="ref"><a href="https://mobbin.com/screens/10e9460a-1e44-4361-afe6-e0e9d857e6d9" target="_blank">Mercury · Insights</a><br>Three written findings, each with its figure, beside a flow of money in and out. The closest to V6’s pairing of words and diagram.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/5f76714e-953a-4edc-a49c-72bfe343c4d9" target="_blank">Churnkey · Lifetime performance</a><br>A paragraph with bold figures does the work of four KPI tiles.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/3ba4f8e2-b296-454f-b5a8-c89c6f3c0ccf" target="_blank">Churnkey · Session outcome</a><br>Flow that splits into what happened next, labelled on the bands.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/be6e685f-96c6-4f3e-a911-526bfc00522a" target="_blank">Pin · Pipeline insights</a><br>A recruiting pipeline as columns joined by bands, with the % carried between them.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/ab2d3072-1d2e-4852-8d92-2894a7fb40a0" target="_blank">Workable · Hiring funnel</a><br>Today’s norm in ATS reporting: bars and a table. What V1 moves away from.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/746fbf66-b3e1-40fc-af35-02789cac4000" target="_blank">Mixpanel · Flows</a><br>Drop-off shown as its own grey column at every step.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/ffa76985-7fe5-4ae3-8a08-2337cae94c02" target="_blank">Arcade · Insights</a><br>A sentence as the chart’s title (“90% of viewers played your Arcade”).</div>
+      <div class="ref"><a href="https://mobbin.com/screens/ddfbd5d9-4aec-4614-afdc-94c82bde4fae" target="_blank">Mailchimp · Conversion funnel</a><br>Drop-off between steps said as a figure on the arrow.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/83f98982-2686-476a-81f0-b405056f8349" target="_blank">Fey · Analysis</a><br>A one-sentence outlook card leads the page.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/c9072ade-ef2a-4821-bb0a-c70096d7a254" target="_blank">Xero · Analytics insights</a><br>AI summary under the graph, with its caveat line.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/d74b56f7-a4f0-43c9-b708-6615de691c5c" target="_blank">Origin · Spending flow</a><br>A calm, labelled Sankey in a product UI.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/02228791-9019-41a0-92bc-8f00ce5ba1b5" target="_blank">Spotify · Wrapped (iOS)</a><br>One sentence, one figure, per slide.</div>
+    </div>
+    <h3 style="margin-top:28px">From the web</h3>
+    <div class="refgrid">
+      <div class="ref"><a href="https://docs.ashbyhq.com/ai-report-interpretation" target="_blank">Ashby · AI report interpretation</a> <span class="src">recruiting · Feb 2026</span><br>Each report gets a written summary tied to its data points, and tiles an “Explain” button. Recruiting buyers already expect the report to explain itself (V4, V6).</div>
+      <div class="ref"><a href="https://help.gem.com/external/the-pipeline-analytics-dashboard" target="_blank">Gem · Pipeline analytics</a> <span class="src">recruiting</span><br>The funnel switches between bars and a Sankey to show where candidates leave. The closest precedent for V1.</div>
+      <div class="ref"><a href="https://resources.workable.com/hiring-with-workable/hiring-process-steps-velocity" target="_blank">Workable · Hiring velocity</a> <span class="src">recruiting</span><br>Stages as arrows with the average days printed on each: a journey strip (V2).</div>
+      <div class="ref"><a href="https://support.greenhouse.io/hc/en-us/articles/9964759087899-Time-in-stage-goal-attainment-report" target="_blank">Greenhouse · Time in stage vs goal</a> <span class="src">recruiting</span><br>Days per stage against a goal, as V2 sets each step against its usual time.</div>
+      <div class="ref"><a href="https://resources.rework.com/libraries/process-management/value-stream-mapping" target="_blank">Value stream map · timeline ladder</a> <span class="src">process design</span><br>Lead time split into working and waiting under the steps. A next step for V2 once waiting is tracked per step.</div>
+      <div class="ref"><a href="https://linearb.helpdocs.io/article/1s38stsugw-glossary-metrics" target="_blank">LinearB · Cycle-time breakdown</a> <span class="src">engineering</span><br>One total split into phases, one of them pure waiting (“pickup”), each against a benchmark band (V2, V3).</div>
+      <div class="ref"><a href="https://docs.celonis.com/en/process-overview.html" target="_blank">Celonis · Throughput and bottlenecks</a> <span class="src">process mining</span><br>Ranks the transitions that add the most time. The ranking under V3.</div>
+      <div class="ref"><a href="https://www.think-cell.com/en/resources/content-hub/how-to-tell-a-better-data-story-one-slide-at-a-time" target="_blank">Action titles · Storytelling with Data</a><br>The chart’s title states the finding, not the measure; one accent picks out the proof. Every block title in V6.</div>
+      <div class="ref"><a href="https://www.datawrapper.de/academy/annotate-tab" target="_blank">Datawrapper · Annotations</a><br>Notes pinned on the chart, turning into numbered notes on a phone. V1’s callouts.</div>
+      <div class="ref"><a href="https://learn.microsoft.com/power-bi/visuals/power-bi-visualization-smart-narrative" target="_blank">Power BI · Smart narrative</a><br>The written summary rewrites itself when filters change, as V6’s headline must with the period and account.</div>
+      <div class="ref"><a href="https://www.tableau.com/blog/tableau-metrics-and-natural-language-query-evolve-tableau-pulse" target="_blank">Tableau Pulse</a><br>A digest of followed metrics, each a plain sentence with a small chart. A per-desk version of V4.</div>
+      <div class="ref"><a href="https://www.perceptualedge.com/articles/misc/Bullet_Graph_Design_Spec.pdf" target="_blank">Bullet graph · Stephen Few</a><br>A bar against its target mark in a small space. How the 13 figures in V6’s appendix could show target at a glance.</div>
+      <div class="ref"><a href="https://www.datawrapper.de/academy/how-to-create-an-arrow-plot" target="_blank">Arrow plot · Datawrapper</a><br>Before → after per row (“20 → 10”). For the trend, by account or recruiter.</div>
+      <div class="ref"><a href="https://pudding.cool/process/introducing-scrollama/" target="_blank">Scrollytelling · The Pudding</a><br>A pinned chart that lights up step by step as the text scrolls. Too heavy for daily use; a possible form for V5.</div>
+    </div>
+    <p class="mute" style="margin-top:14px">Not found: public write-ups of Stripe, Ramp or Mercury weekly summaries, and any BrightHire or Metaview funnel diagrams. One caution from the research: Sankeys tire readers when they grow past a handful of nodes, which is why V1 is a narrowing strip, not a branching tree.</p>
+  </section>
+
+</div>
+<script>
+  /* The diagrams, drawn from the page's real figures. */
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; return e; };
+
+  /* V1: the journey */
+  (() => {
+    const names = ['Sourced', 'Applied', 'Phone screen', 'HR', 'Technical', 'Profile sent', 'Client interview', 'Offer', 'Accepted'];
+    const n = [125, 79, 63, 52, 32, 23, 9, 7, 4];
+    const top = 64, k = 1.2, w = 22, x = (i) => 30 + i * 104, h = (v) => Math.max(4, v * k);
+    const bands = document.getElementById('v1-bands'), bars = document.getElementById('v1-bars');
+    n.forEach((v, i) => {
+      if (i < n.length - 1) {
+        const x0 = x(i) + w, x1 = x(i + 1);
+        bands.appendChild(el('path', { d: `M${x0},${top} L${x1},${top} L${x1},${top + h(n[i + 1])} C${(x0 + x1) / 2},${top + h(n[i + 1])} ${(x0 + x1) / 2},${top + h(v)} ${x0},${top + h(v)} Z`, fill: 'url(#band)' }));
+        bands.appendChild(el('text', { x: (x0 + x1) / 2, y: top + h(v) + 16, 'text-anchor': 'middle', 'font-size': 11, fill: '#8b9aaa', 'font-family': 'Poppins' }, '−' + (v - n[i + 1])));
+      }
+      const off = i === 7;
+      bars.appendChild(el('rect', { x: x(i), y: top, width: w, height: h(v), rx: 4, fill: off ? '#f7c95c' : '#8b4ff4' }));
+      bars.appendChild(el('text', { x: x(i), y: top - 22, 'font-size': 20, 'font-weight': 700, fill: off ? '#f7c95c' : '#eef2f6', 'font-family': 'Poppins' }, v));
+      bars.appendChild(el('text', { x: x(i), y: top - 8, 'font-size': 11, fill: '#b0bcca', 'font-family': 'Poppins' }, names[i]));
+    });
+    bars.appendChild(el('text', { x: 30, y: 250, 'font-size': 11, fill: '#637280', 'font-family': 'Poppins' }, 'Under each gap: people who did not go on (or have not yet). Assessment, on half the requisitions, is left out of the line.'));
+  })();
+
+  /* V2: the 19 days */
+  (() => {
+    const steps = [['Sourced', 3.4, 3], ['Applied', 2.2, 2], ['Assessment', 3, 3, true], ['Phone', 2.2, 2], ['HR', 3, 3], ['Technical', 4.3, 4]];
+    const X = (d) => 60 + d * 40, y = 70, hh = 58;
+    const g = document.getElementById('v2-segs'), ax = document.getElementById('v2-axis');
+    let t = 0;
+    steps.forEach((s, i) => {
+      const x0 = X(t), wd = s[1] * 40 - 3;
+      g.appendChild(el('rect', { x: x0, y: y, width: wd, height: hh, rx: 6, fill: s[3] ? 'url(#half)' : (i % 2 ? '#6d3fd0' : '#8b4ff4'), 'fill-opacity': s[3] ? 1 : 0.85 }));
+      g.appendChild(el('text', { x: x0 + 9, y: y + 24, 'font-size': 12.5, 'font-weight': 600, fill: '#fff', 'font-family': 'Poppins' }, s[0]));
+      g.appendChild(el('text', { x: x0 + 9, y: y + 43, 'font-size': 12, fill: '#e6dcff', 'font-family': 'Poppins' }, s[1] + ' d'));
+      g.appendChild(el('text', { x: x0 + 9, y: y + hh + 18, 'font-size': 11, fill: '#8b9aaa', 'font-family': 'Poppins' }, 'usual ' + s[2]));
+      t += s[1];
+    });
+    g.appendChild(el('rect', { x: X(t), y: y, width: X(19) - X(t), height: hh, rx: 6, fill: 'none', stroke: '#4a5b6e', 'stroke-dasharray': '3 3' }));
+    for (let d = 0; d <= 20; d += 2) {
+      ax.appendChild(el('line', { x1: X(d), y1: 170, x2: X(d), y2: 175, stroke: '#4a5b6e' }));
+      ax.appendChild(el('text', { x: X(d), y: 188, 'text-anchor': 'middle' }, d));
+    }
+    ax.appendChild(el('line', { x1: X(0), y1: 170, x2: X(20), y2: 170, stroke: '#2e3d50' }));
+  })();
+
+  /* V3: who it waits on */
+  (() => {
+    const stages = ['Sourced', 'Applied', 'Phone', 'HR', 'Technical', 'Managerial', 'Profile sent', 'Client int.'];
+    const lanes = [['You', 7], ['Interviewer', 2], ['Hiring manager', 0], ['Client', 6]];
+    const dots = [[0, 0, 1, 1], [0, 1, 3, 3], [0, 4, 1, 1], [0, 5, 2, 1], [1, 4, 2, 1], [3, 6, 6, 2]];
+    const X = (i) => 170 + i * 88, Y = (j) => 50 + j * 54;
+    const g = document.getElementById('v3-grid'), d = document.getElementById('v3-dots');
+    stages.forEach((s, i) => g.appendChild(el('text', { x: X(i), y: 24, 'text-anchor': 'middle', 'font-size': 11, fill: '#8b9aaa' }, s)));
+    lanes.forEach((l, j) => {
+      g.appendChild(el('rect', { x: 10, y: Y(j) - 22, width: 880, height: 44, rx: 10, fill: j % 2 ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.035)' }));
+      g.appendChild(el('text', { x: 24, y: Y(j) + 4, 'font-size': 12.5, 'font-weight': 600, fill: l[1] ? '#eef2f6' : '#637280' }, l[0]));
+      g.appendChild(el('text', { x: 876, y: Y(j) + 4, 'text-anchor': 'end', 'font-size': 12, fill: l[1] ? (j ? '#f7c95c' : '#c8d2dc') : '#637280', 'font-weight': 600 }, l[1] + (l[1] === 1 ? ' day' : ' days')));
+    });
+    dots.forEach((p) => {
+      const r = 7 + p[2] * 2.6, cl = p[0] === 0 ? '#8b4ff4' : '#f7c95c';
+      d.appendChild(el('circle', { cx: X(p[1]), cy: Y(p[0]), r: r, fill: cl, 'fill-opacity': 0.28, stroke: cl, 'stroke-width': 1.5 }));
+      d.appendChild(el('text', { x: X(p[1]), y: Y(p[0]) + 4, 'text-anchor': 'middle', 'font-size': 11.5, 'font-weight': 700, fill: '#eef2f6' }, p[2] + 'd'));
+    });
+    d.appendChild(el('text', { x: 24, y: 262, 'font-size': 11, fill: '#637280' }, 'Days past the usual time for the step, on the open requisitions in view. Violet: yours. Amber: waiting on someone else.'));
+  })();
+
+  /* V6 reuses the three diagrams. */
+  document.querySelectorAll('[data-clone]').forEach((slot) => slot.appendChild(document.getElementById(slot.dataset.clone).cloneNode(true)));
+</script>
+</body>
+</html>

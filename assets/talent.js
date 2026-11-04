@@ -1692,7 +1692,7 @@
      `approve` are the screens people outside the recruiting team reach from a
      link: the careers page, a candidate's own profile, an assessment, an
      interviewer's debrief and an approver's offer packet. */
-  const KEYS = ['as', 'on', 'req', 'cand', 'asmt', 'acc', 'q', 'p', 'list', 'find', 'edit', 'apply', 'me', 'take', 'debrief', 'approve', 'by', 'src', 'period', 'account', 'rq', 'day', 'st'];
+  const KEYS = ['as', 'on', 'req', 'cand', 'asmt', 'acc', 'q', 'p', 'list', 'find', 'edit', 'apply', 'me', 'take', 'debrief', 'approve', 'by', 'src', 'period', 'account', 'rq', 'day', 'st', 'ch'];
   const OUTSIDE = ['apply', 'me', 'take', 'debrief', 'approve'];
   const outside = () => OUTSIDE.some((k) => !!S[k]);
   function parse() {
@@ -1738,6 +1738,18 @@
     byId('ntfBell').setAttribute('aria-expanded', 'false');
     paint();
     byId('pageScroll').scrollTop = 0;
+    /* A link to one chapter of the reports lands on it, once; the filters
+       after it do not carry it on. */
+    if (S.ch) { const k = S.ch; delete S.ch; history.replaceState(null, '', urlOf(S)); toChapter(k, true); }
+  }
+  function toChapter(k, now) {
+    const t = byId('rpt-' + k);
+    if (!t) return;
+    const still = now || matchMedia('(prefers-reduced-motion: reduce)').matches;
+    t.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' });
+    const h = t.querySelector('.t-ch-h');
+    if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
+    t.classList.remove('is-lit'); void t.offsetWidth; t.classList.add('is-lit');
   }
 
 
@@ -1772,30 +1784,64 @@
     }).join('');
   }
 
-  /* ── The rail: what is reachable, with one reading on top. ── */
-  /* The other desks' rail: their one reading, and doors to their work. */
+  /* ── THE RAIL, IN AiMY QA's FORM (Engy, 4 Nov: "do it the style of AiMY
+     QA"). QA's open side nav (AiMY UI side-nav; QA's aimy-rail.css): an
+     AiMY head saying how much there is, then one section per page, the
+     page's icon and name with its figures under it in a right-set column.
+     The page you are on leads, in an accent card that says You're here.
+     The reading card that stood above it is gone: its figures are Today's
+     findings now, as QA keeps every reading under the page it belongs to.
+     Findings take their own link where one goes somewhere narrower than
+     the page (Calls, missed). ── */
+  const TAB_ICO = { '': 'home', cands: 'users', reqs: 'req', calls: 'phone', diary: 'cal', asmts: 'goal', templates: 'doc', reports: 'bars' };
+  const pl = (n, one, many) => n === 1 ? one : many;
+  /* PICKING A PAGE, THE RAIL REORDERS (QA's aimy-rail.js, travel). The page
+     you are on leads the rail, so picking another moves it: the section you
+     picked rises to the top slot and the one you left drops back into its
+     place. A FLIP on transform only, 240ms on the strong ease-in-out, no
+     bounce. QA plays it before the next page loads; here the page changes
+     in place, so it plays as the rail is painted again. Only for a pointer
+     press on a section: a keyed one, reduced motion, or any other way of
+     changing page repaints without it. */
+  let RAIL_MOVE = false;
+  const railRects = () => {
+    const m = {};
+    byId('appRail').querySelectorAll('.snav-section').forEach((s) => { m[s.querySelector('.snav-section-name').textContent] = s.getBoundingClientRect().top; });
+    return m;
+  };
+  function putRail(html) {
+    const before = RAIL_MOVE ? railRects() : null;
+    RAIL_MOVE = false;
+    byId('appRail').innerHTML = html;
+    if (!before) return;
+    byId('appRail').querySelectorAll('.snav-section').forEach((s) => {
+      const was = before[s.querySelector('.snav-section-name').textContent];
+      const dy = was == null ? 0 : was - s.getBoundingClientRect().top;
+      if (Math.abs(dy) >= 1) s.animate([{ transform: 'translateY(' + dy + 'px)' }, { transform: 'translateY(0)' }], { duration: 240, easing: 'cubic-bezier(0.77, 0, 0.175, 1)' });
+    });
+  }
+  /* Reports, in the rail: the story's two findings, each opening its chapter. */
+  function railStory() {
+    const sto = deskStory();
+    if (!sto) return [];
+    const out = [];
+    if (sto.actual != null) out.push({ fig: sto.actual, text: 'days to the first profile; the target is ' + SEND_TARGET, go: { on: 'reports', ch: 'speed' } });
+    if (sto.off) out.push({ fig: (sto.off.decided - sto.off.passed) + '/' + sto.off.decided, text: sto.off.k === 'offer' ? 'offers turned down' : 'lost at ' + STEP_SAY[sto.off.k], go: { on: 'reports', ch: 'journey' } });
+    return out;
+  }
   function paintDeskRail() {
     const a = asks();
     const reqs = deskReqs().filter((q) => q.state !== 'draft');
     const open = reqs.filter(isOpen);
     const risky = open.filter((q) => health(q).risk);
-    const say = isHR() ? '<b>' + risky.length + ' of ' + open.length + '</b> open requisitions are likely to miss their date.'
-      : a.length ? '<b>' + plural(a.length, 'thing') + '</b> ' + (a.length === 1 ? 'waits' : 'wait') + ' on you.' : 'Nothing waits on you.';
-    byId('appRail').innerHTML =
-      '<div class="rail-read"><div class="bcard rail-card">' +
-        '<div class="bcard-meta"><span class="type-label rail-state p2">' + esc(isHR() ? 'At risk' : 'Waiting on you') + '</span></div>' +
-        '<p class="bcard-conclusion rail-conclusion">' + say + '</p>' +
-        '<div class="bcard-evidence rail-evidence"><span class="evidence-pill"><span class="val">' + open.length + '</span>open requisitions</span>' +
-          (isClient() ? '' : '<span class="evidence-pill"><span class="val">' + reqs.filter((q) => q.state === 'filled' || q.state === 'started').length + '</span>filled</span>') + '</div>' +
-      '</div></div>' +
-      '<div class="rail-doors">' +
-        (a[0] ? '<button class="b-door" type="button"' + goAttr(a[0].go) + '><span class="b-door-cap">Next</span>' +
-          '<span class="b-door-who">' + esc(a[0].head) + '</span><span class="b-door-say">' + esc(a[0].body) + '</span>' +
-          '<span class="b-door-go">' + esc(a[0].verb) + svg('go') + '</span></button>' : '') +
-        (isClient() ? '' : '<button class="b-door" type="button"' + goAttr({ on: 'reports' }) + '><span class="b-door-cap">Reports</span>' +
-          '<span class="b-door-fig">' + (avgSent(reqs) != null ? avgSent(reqs) : '·') + '<span class="b-door-of">days</span></span>' +
-          '<span class="b-door-say">to send the first profile, on average</span><span class="b-door-go">Open the reports' + svg('go') + '</span></button>') +
-      '</div>';
+    const filled = reqs.filter((q) => q.state === 'filled' || q.state === 'started').length;
+    putRail(sideNav(isHR() ? risky.length + ' at risk' : a.length + ' waiting', {
+      '': [isHR() ? { fig: risky.length + '/' + open.length, text: 'open requisitions likely to miss their date' }
+          : { fig: a.length, text: pl(a.length, 'thing waits on you', 'things wait on you') }]
+        .concat(a[0] ? [{ fig: 'Next', text: a[0].head, go: a[0].go }] : []),
+      reqs: [{ fig: open.length, text: 'open' }].concat(isClient() ? [] : [{ fig: filled, text: 'filled' }]),
+      reports: isClient() ? [] : railStory(),
+    }));
   }
   function paintRail() {
     if (!isRec()) { paintDeskRail(); return; }
@@ -1806,42 +1852,18 @@
     const nxt = t[0];
     const avg = avgSent(mine());
     const team = avgSent(DB.reqs);
-    byId('appRail').innerHTML =
-      '<div class="rail-read"><div class="bcard rail-card">' +
-        '<div class="bcard-meta"><span class="type-label rail-state p2">Waiting on you</span></div>' +
-        '<p class="bcard-conclusion rail-conclusion">' + (d.length
-          ? '<b>' + plural(d.length, 'decision') + '</b> ' + (d.length === 1 ? 'waits' : 'wait') + ' on you, out of the <b>' + people + '</b> people on your open requisitions.'
-          : 'Nothing waits on your call. <b>' + people + '</b> people are on your open requisitions.') + '</p>' +
-        '<div class="bcard-evidence rail-evidence">' +
-          '<span class="evidence-pill"><span class="val">' + open.length + '</span>open requisitions</span>' +
-          '<span class="evidence-pill"><span class="val">' + t.length + '</span>' + (t.length === 1 ? 'interview' : 'interviews') + ' today</span>' +
-        '</div>' +
-      '</div></div>' +
-      '<div class="rail-doors">' +
-        (nxt ? '<button class="b-door" type="button"' + goAttr({ on: 'diary' }) + '>' +
-          '<span class="b-door-cap">Today</span>' +
-          '<span class="b-door-fig"><span class="b-door-clock">' + svg('clock') + '</span>' + esc(nxt.slot) + '</span>' +
-          '<span class="b-door-who">' + esc(nxt.name) + '<span class="b-kind">' + esc(STAGE[nxt.stage].label) + '</span></span>' +
-          '<span class="b-door-say">for ' + esc(reqOf(nxt).title) + ', ' + esc(accOf(reqOf(nxt)).name) + '</span>' +
-          '<span class="b-door-go">Open the diary' + svg('go') + '</span>' +
-        '</button>' : '') +
-        (function () {
-          const miss = missed(), tc = toCall();
-          if (!miss.length && !tc.length) return '';
-          return '<button class="b-door" type="button"' + goAttr({ on: 'calls', q: miss.length ? 'missed' : 'tocall' }) + '>' +
-            '<span class="b-door-cap">Calls</span>' +
-            '<span class="b-door-fig">' + tc.length + '<span class="b-door-of">to call</span></span>' +
-            '<span class="b-door-say">' + (miss.length ? '<b class="b-door-miss">' + plural(miss.length, 'missed call') + '</b> · ' : '') +
-              plural(tc.filter((x) => x.why === 'callback').length, 'callback') + ' due today</span>' +
-            '<span class="b-door-go">Open your calls' + svg('go') + '</span></button>';
-        })() +
-        (avg != null ? '<button class="b-door" type="button"' + goAttr({ on: 'reqs' }) + '>' +
-          '<span class="b-door-cap">Profiles to clients</span>' +
-          '<span class="b-door-fig">' + avg + '<span class="b-door-of">days</span></span>' +
-          '<span class="b-door-say">from opening to the first profile sent, on average. The team’s is ' + team + '.</span>' +
-          '<span class="b-door-go">Open your requisitions' + svg('go') + '</span>' +
-        '</button>' : '') +
-      '</div>';
+    const tc = toCall(), miss = missed().length, cb = tc.filter((x) => x.why === 'callback').length;
+    putRail(sideNav(plural(d.length, 'decision'), {
+      '': [{ fig: d.length, text: pl(d.length, 'decision waits on you', 'decisions wait on you') },
+        { fig: t.length, text: pl(t.length, 'interview today', 'interviews today') }],
+      cands: [{ fig: people, text: 'people on your open requisitions' }],
+      reqs: [{ fig: open.length, text: 'open' }].concat(avg != null ? [{ fig: avg, text: 'days to the first profile sent; the team’s is ' + team }] : []),
+      calls: [{ fig: tc.length, text: 'to call' }]
+        .concat(miss ? [{ fig: miss, text: pl(miss, 'missed call', 'missed calls'), go: { on: 'calls', q: 'missed' } }] : [])
+        .concat(cb ? [{ fig: cb, text: pl(cb, 'callback due today', 'callbacks due today') }] : []),
+      diary: nxt ? [{ fig: nxt.slot, text: nxt.name + ', ' + lower(STAGE[nxt.stage].label) }] : [],
+      reports: railStory(),
+    }));
   }
 
   /* ── The briefing, on Today only. Sales opens a desk on it; every other
@@ -1892,8 +1914,13 @@
     '</section>';
   }
 
-  /* ── The switcher: the heading is the navigation, as in Sales. ── */
-  function switcher(here) {
+  /* ── THE TABS LIVE IN THE RAIL (Engy, 4 Nov: "it's the same"). The row
+     of tabs over each page and the rail's cards beside it pointed at the
+     same places, the Diary, Calls and Requisitions twice. Now the rail is
+     the one way round: every tab is a rail entry with its count, and what a
+     rail card used to say (the next interview, a missed call) is the line
+     under its entry. The page keeps its name as a plain heading. ── */
+  function tabsFor() {
     const open = myOpen().length;
     /* Each desk's row is the work that desk does (Sales: a surface belongs
        to whoever does the verb on it). */
@@ -1902,19 +1929,42 @@
       cands: { label: 'Candidates', n: isRec() || isHR() ? queue().length : null },
       reqs: { label: 'Requisitions', n: open },
       calls: { label: 'Calls', n: isRec() ? toCall().length : null },
-      find: { label: 'Find candidates', n: isRec() ? newMatches() || null : null },
       diary: { label: 'Diary', n: isRec() || isHM() ? diaryItems(0, 0).filter((m) => !m.done).length || null : null },
       asmts: { label: 'Assessments' },
       templates: { label: 'Templates' },
       reports: { label: 'Reports' },
     };
-    const row = isRec() ? ['', 'cands', 'reqs', 'calls', 'diary', 'find', 'asmts', 'reports'] : isHM() ? ['', 'reqs', 'diary', 'reports'] : isBU() ? ['', 'reqs', 'reports']
+    const row = isRec() ? ['', 'cands', 'reqs', 'calls', 'diary', 'asmts', 'reports'] : isHM() ? ['', 'reqs', 'diary', 'reports'] : isBU() ? ['', 'reqs', 'reports']
       : isHR() ? ['', 'cands', 'reqs', 'asmts', 'templates', 'reports'] : ['', 'reqs'];
-    const tabs = row.map((k) => Object.assign({ k: k }, all[k]));
-    return '<h2 class="b-switch">' + tabs.map((t) => '<button class="b-switch-btn' + (t.k === here ? ' is-on' : '') + '" type="button"' +
-      goAttr(t.k ? { on: t.k } : {}) + (t.k === here ? ' aria-current="page"' : '') + '>' + esc(t.label) +
-      (t.n != null ? '<span class="b-switch-n">' + t.n + '</span>' : '') + '</button>').join('') +
-      '<span class="b-switch-bar" aria-hidden="true"></span></h2>';
+    return row.map((k) => Object.assign({ k: k }, all[k]));
+  }
+  function switcher(here) {
+    return '<h2 class="s-block-h">' + esc((tabsFor().filter((t) => t.k === here)[0] || { label: 'Today' }).label) + '</h2>';
+  }
+  /* The rail's sections, as AiMY UI's side-nav draws them. `found` holds
+     each tab's findings: { fig, text, go? }. Away from a tab's own page (a
+     requisition, a candidate), the tab it belongs under is the one you are
+     in. The whole section is the link (its head's ::after covers it); a
+     finding with its own link sits above that. */
+  function sideNav(summary, found) {
+    const tabs = tabsFor(), on = S.on || '';
+    const here = on && tabs.some((t) => t.k === on) ? on : S.cand ? 'cands' : S.req || S.acc ? 'reqs' : S.asmt ? 'asmts' : on ? null : '';
+    const ordered = tabs.filter((t) => t.k === here).concat(tabs.filter((t) => t.k !== here));
+    const finding = (f) => {
+      const body = '<span class="snav-fig">' + esc(String(f.fig)) + '</span><span>' + esc(f.text) + '</span>';
+      return '<li>' + (f.go ? '<button class="snav-finding is-link" type="button"' + goAttr(f.go) + '>' + body + '</button>' : '<div class="snav-finding">' + body + '</div>') + '</li>';
+    };
+    return '<div class="snav-head"><span class="snav-head-mark">' + mark(16) + '</span><span class="snav-head-label">AiMY</span>' +
+        '<span class="snav-head-count">' + esc(summary) + '</span></div>' +
+      '<ul class="snav-groups">' + ordered.map((t) => {
+        const cur = t.k === here, f = found[t.k] || [];
+        const inner = '<span class="snav-section-icon">' + svg(TAB_ICO[t.k], 16) + '</span><span class="snav-section-name">' + esc(t.label) + '</span>';
+        return '<li class="' + (cur ? 'snav-section is-current' : 'snav-section') + '">' +
+          (cur ? '<div class="snav-section-head" aria-current="page">' + inner + '<span class="snav-here">You’re here</span></div>'
+            : '<button class="snav-section-head" type="button"' + goAttr(t.k ? { on: t.k } : {}) + '>' + inner + '<span class="snav-chevron">' + svg('go', 16) + '</span></button>') +
+          (f.length ? '<ul class="snav-findings" aria-label="' + esc(t.label) + '">' + f.map(finding).join('') + '</ul>' : '') +
+        '</li>';
+      }).join('') + '</ul>';
   }
 
   /* ── One row of work: who, for what, why, and the one move. ── */
@@ -2021,7 +2071,7 @@
      answered from the record. Small, two to a row. */
   let CHAT_Q = {}, CHAT_N = 0;
   function insightRow(o) {
-    const k = 'q' + (++CHAT_N);
+    const k = o.k || 'q' + (++CHAT_N);
     CHAT_Q[k] = { q: o.q, html: o.a, acts: o.acts || [] };
     return '<div class="s-insight t-insight">' +
       '<svg class="s-insight-mark" viewBox="0 0 18 20" aria-hidden="true"><use href="#aimy-logo-small"/></svg>' +
@@ -2106,6 +2156,13 @@
       q: 'Which requisitions are off the careers page?',
       a: '<p>' + (off.length ? off.map((q) => '<b>' + esc(q.title) + '</b>, ' + esc(accOf(q).name)).join('<br>') + '<br>Off is the default; a client-linked replacement usually stays off.' : 'Every open requisition is on the careers page.') + '</p>',
       acts: [{ label: 'Open requisitions', go: { on: 'reqs' }, primary: true }] }));
+    /* The reports' story, in one line, its chapters behind the question. */
+    const sto = deskStory();
+    if (sto && sto.chapters.length) out.push(insightRow({ ws: 'detected', wsSay: 'Reports',
+      say: sto.head,
+      q: 'What do my reports say?',
+      a: '<p>' + sto.chapters.map((c) => '<b>' + esc(c.cap) + '.</b> ' + esc(c.title) + '.').join('<br>') + '</p>',
+      acts: [{ label: 'Open the reports', go: { on: 'reports' }, primary: true }] }));
     /* What AiMY did without asking (standalone: the closing line). */
     const booked = DB.ivs.filter((v) => v.status === 'booked' && on(DB.byId[v.cand])).length;
     const tests = DB.sends.filter((x) => x.status === 'sent' && on(DB.byId[x.cand])).length;
@@ -2123,7 +2180,7 @@
     return '<div class="s-home">' +
       topBrief() +
       '<section class="s-block s-block-wide" aria-label="What AiMY noticed">' +
-        '<div class="s-camp-list-head">' + switcher('') + '</div>' +
+        '<div class="s-camp-list-head"><h2 class="s-block-h">What AiMY noticed</h2></div>' +
         (ins.length ? '<p class="b-tocall">AiMY noticed <b>' + plural(ins.length, 'thing') + '</b> on your requisitions. Each opens in the chat, with the record behind it.</p>' +
           '<div class="t-insights">' + ins.join('') + '</div>' : '') +
       '</section>' +
@@ -2403,7 +2460,7 @@
         '<div class="s-lead-line"><span class="s-lead-n">' + lead.n + '</span><span class="s-lead-say">of the <span class="s-lead-of">' + lead.of + '</span> ' + esc(lead.say) + '</span></div>' +
         '<p class="s-lead-deck">' + esc(deck) + '</p>' +
       '</section>' +
-      (isClient() ? '' : funnelBlock(q)) +
+      (isClient() ? '' : rulerBlock(q) + funnelBlock(q)) +
       (isClient() ? '' : reasonsBlock(declines([q]), 'the client', q.acc)) +
       '<section class="s-block s-block-wide" aria-label="Candidates">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">' + (isClient() ? 'Profiles sent to you' : 'The candidates on it') + '</h2>' +
@@ -2428,19 +2485,14 @@
      bar, to scale against the most), how many moved on, and the days spent
      in it, each with its usual beneath it, and a health dot that the
      legend names. The colour is never alone: the off value is coloured
-     too, the row says why on hover, and the legend's How it is counted
-     says how it is judged. A row someone is at now is a door to them. */
-  const HEALTH_DEF = [['Unit', 'Stage'], ['Starts', 'A person reaches the stage'], ['Stops', 'They move on or leave. For anyone still there, today'],
-    ['Counts', 'Moved on: of the people decided at the stage, those who went to the next one. People still there are left out, so a busy stage does not read as a leaky one.'],
-    ['Norm', 'Usual days: the stage’s expected time. Usual moved on: FlairsTech’s own funnel, Aug–Sep 2026, a sample until the team sets its own.'],
-    ['Read with', 'On pace: both near the usual. Watch: 15% slower, or moving on 10% below. Behind: 50% slower, or moving on 30% below. Too few to judge: under three people.']];
+     too, and the row says why on hover. A row someone is at now is a
+     door to them. */
   function stageFunnel(rows, o) {
     const top = Math.max(1, ...rows.map((s) => s.n));
     const dd = (x) => String(Math.round(x * 10) / 10);
     const val = (cap, tone, big, usual) => '<span class="t-sf-val' + (tone && tone !== 'ok' ? ' ' + HEALTH_CLS[tone] : '') + '"><span class="t-sf-cap">' + cap + '</span><b>' + big + '</b><span>' + usual + '</span></span>';
     const legend = '<div class="t-sf-legend">' +
-      ['ok', 'warn', 'err', 'few'].map((t) => '<span class="t-sf-key"><span class="t-sf-dot ' + HEALTH_CLS[t] + '" aria-hidden="true"></span>' + HEALTH[t] + '</span>').join('') +
-      defPop('Stage health', HEALTH_DEF) + '</div>';
+      ['ok', 'warn', 'err', 'few'].map((t) => '<span class="t-sf-key"><span class="t-sf-dot ' + HEALTH_CLS[t] + '" aria-hidden="true"></span>' + HEALTH[t] + '</span>').join('') + '</div>';
     return '<div class="t-sf">' + legend +
       '<div class="t-sf-row t-sf-cols" aria-hidden="true"><span>Stage</span><span></span><span>Reached</span><span>Moved on</span><span>Days in stage</span></div>' +
       '<div role="list">' + rows.map((s) => {
@@ -3167,7 +3219,8 @@
     ];
     return '<section class="s-block s-block-wide" aria-label="' + (you ? 'Your hiring with us' : 'Their hiring with us') + '">' +
       '<div class="s-camp-list-head"><h2 class="s-block-h">' + (you ? 'Your hiring with us' : 'Their hiring with us') + '</h2><span class="s-block-say">billed hires, always beside what came of them</span></div>' +
-      '<div class="t-kpis">' + tiles.map((t) => '<div class="t-kpi"><span class="t-kpi-cap">' + esc(t[0]) + '</span><b class="t-kpi-n">' + esc(t[1]) + '</b><span class="t-kpi-say">' + esc(t[2]) + '</span></div>').join('') + '</div>' +
+      /* Data lines, not cards (Engy, 4 Nov). */
+      '<ul class="t-figs">' + tiles.map((t) => '<li class="t-fig"><span class="t-fig-head"><span class="t-fig-k">' + esc(t[0]) + '</span><b class="t-fig-v">' + esc(t[1]) + '</b></span><span class="t-fig-say">' + esc(t[2]) + '</span></li>').join('') + '</ul>' +
     '</section>';
   }
 
@@ -5555,7 +5608,7 @@
     return '<div class="s-home">' +
       (isRec() ? '' : '<div class="b-topbar s-block-wide"><button class="s-back" type="button" data-trail>' + svg('back', 14) + 'Back</button></div>') +
       '<section class="s-block s-block-wide" aria-label="Find candidates">' +
-        '<div class="s-camp-list-head">' + switcher('find') + '</div>' +
+        '<div class="s-camp-list-head"><h2 class="s-block-h">Find candidates</h2></div>' +
         '<p class="b-tocall">Start from:</p>' +
         '<div class="b-cuts t-find-mode" role="group" aria-label="Start from">' + [['like', 'Like the person who left'], ['req', 'An open requisition'], ['text', 'Describe or paste']].map((m) =>
           '<button class="filter-chip' + (FIND.mode === m[0] ? ' active' : '') + '" type="button" data-find-mode="' + m[0] + '" aria-pressed="' + (FIND.mode === m[0]) + '">' + m[1] + '</button>').join('') + '</div>' +
@@ -5607,7 +5660,6 @@
   }
   /* New in the pool: they left a requisition after the search last ran. */
   const searchNew = (x) => searchRes(x).filter((r) => r.src === 'pool' && r.pid && DB.cands.some((c) => c.pid === r.pid && c.exit && -c.since > lastRun(x)));
-  const newMatches = () => searches().reduce((n, x) => n + searchNew(x).length, 0);
   function searchesBlock() {
     const list = searches();
     if (!list.length) return '';
@@ -6193,42 +6245,6 @@
     };
   }
 
-  /* A trend is three spans of 30 days, oldest first, drawn as a line and
-     said as numbers, so the line is never the only way to read it. */
-  function spark(vals) {
-    const pts = vals.map((v, i) => (v == null ? null : [6 + i * 26, v]));
-    const ok = pts.filter(Boolean);
-    if (ok.length < 2) return '';
-    const lo = Math.min.apply(null, ok.map((p) => p[1])), hi = Math.max.apply(null, ok.map((p) => p[1]));
-    const y = (v) => (hi === lo ? 10 : 16 - (v - lo) / (hi - lo) * 12).toFixed(1);
-    let d = '';
-    pts.forEach((p, i) => { if (p) d += (i && pts[i - 1] ? 'L' : 'M') + p[0] + ' ' + y(p[1]); });
-    const end = ok[ok.length - 1];
-    return '<svg class="t-spark" viewBox="0 0 64 20" width="64" height="20" aria-hidden="true"><path d="' + d + '"/><circle cx="' + end[0] + '" cy="' + y(end[1]) + '" r="2.5"/></svg>';
-  }
-  /* HOW IT IS COUNTED, AS A PANEL (Engy, 29 Oct): it opens while the
-     pointer is on it and closes when it leaves; a press pins it open until
-     a press anywhere else. Not one long list of labels but the definition's
-     own shape: what the measure is and its unit, where it starts and stops,
-     what it counts out of what, and under a rule the target, what it is not
-     to be mixed with, and how the trend is read. */
-  const DEF_MAIN = ['Of', 'Counts', 'Counts at', 'Hired at', 'Beside it', 'Norm', 'Read with', 'Why 6', 'Why 60'];
-  const DEF_FOOT = ['Target', 'Not to mix', 'Trend'];
-  const DEF_SAY = { 'Of': 'Out of', 'Not to mix': 'Not the same as', 'Counts at': 'Counts when', 'Hired at': 'Hired when', 'Why 6': 'Why 6', 'Why 60': 'Why 60' };
-  function defPop(cap, def) {
-    const get = (k) => def.filter((d) => d[0] === k).map((d) => d[1]);
-    const row = (d) => '<div class="t-def-row"><span class="t-def-k">' + esc(DEF_SAY[d[0]] || d[0]) + '</span><span class="t-def-v">' + esc(d[1]) + '</span></div>';
-    const starts = get('Starts')[0], stops = get('Stops')[0];
-    const main = def.filter((d) => DEF_MAIN.indexOf(d[0]) >= 0), foot = def.filter((d) => DEF_FOOT.indexOf(d[0]) >= 0);
-    return '<span class="t-def"><button class="t-def-btn" type="button" data-def aria-expanded="false">How it is counted</button>' +
-      '<span class="t-def-pop" role="tooltip">' +
-        '<span class="t-def-head"><b>' + esc(cap) + '</b>' + (get('Unit')[0] ? '<span class="t-def-unit">per ' + esc(lower(get('Unit')[0])) + '</span>' : '') + '</span>' +
-        (starts || stops ? '<span class="t-def-span"><span class="t-def-pt"><span class="t-def-k">Starts</span>' + esc(starts || '') + '</span>' +
-          '<span class="t-def-arrow" aria-hidden="true">' + svg('arrow', 14) + '</span><span class="t-def-pt"><span class="t-def-k">Stops</span>' + esc(stops || '') + '</span></span>' : '') +
-        (main.length ? '<span class="t-def-sec">' + main.map(row).join('') + '</span>' : '') +
-        (foot.length ? '<span class="t-def-sec t-def-foot">' + foot.map(row).join('') + '</span>' : '') +
-      '</span></span>';
-  }
   /* A target said with how far off it is, in the tile's own unit. */
   function tgtSay(t, v, lead) {
     const pc = t.unit === '%';
@@ -6239,6 +6255,386 @@
     const gap = Math.round(Math.abs(v - t.v) * 10) / 10;
     const off = (pc ? plural(gap, 'point') : t.unit === 'days' ? days(gap) : String(gap)) + (t.dir === 'le' ? ' over' : ' short');
     return '<span class="t-kpi-tgt ' + (met ? 'is-ok' : 'is-warn') + '">' + esc((lead || '') + head + ' · ' + (met ? 'met' : off)) + '</span>';
+  }
+
+  /* ══ THE STORY (V6; Engy, 4 Nov: "a diagram or something that makes it
+     storytelling, not just data") ════════════════════════════════════════
+     Read together, the figures say a few things; the page says them first,
+     in AiMY's voice, a chapter each, every chapter with its own picture and
+     its own move: the journey (how many), the ruler (how long), the lanes
+     (whose desk), the offer and the client's reasons (what is lost), and
+     day 90 (what lasts). Built from the same records as the 13 figures,
+     which keep their place at the foot, whole. Nothing is predicted; the
+     one estimate, sending sooner, is said as one. The iterations and their
+     references: deliverables/reports-iterations.html. */
+  const SEND_TARGET = 7, DECLINE_TARGET = 15, DAY90_TARGET = 85;
+  const dd = (x) => Math.round(x * 10) / 10;
+  const dSay = (x) => (x === 1 ? '1 day' : x + ' days');
+  const capFirst = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+  /* A stage as a step in a sentence: "lost at sourcing", not "at the sourced". */
+  const STEP_SAY = { sourced: 'sourcing', applied: 'applications', assess: 'the assessment', phone: 'the phone screen', hr: 'the HR interview', tech: 'the technical interview',
+    mgr: 'the managerial interview', sent: 'the client’s choice', client: 'the client interview', ctech: 'the client’s technical interview', offer: 'the offer', accepted: 'the wait to start' };
+  /* Why an earlier hire left, as the rest of a sentence. */
+  const LEFT_SAY = { 'Left for a higher salary elsewhere': 'left for a higher salary elsewhere', 'Did not pass probation': 'did not pass probation', 'Moved abroad': 'moved abroad', 'The client ended the project': 'left when the client ended the project' };
+  /* Who the work waits on, in the reader's words: the recruiter is "you" on
+     their own desk, the hiring manager on theirs. */
+  const LANES = ['me', 'interviewer', 'hm', 'client', 'candidate'];
+  const laneSay = (w) => w === 'me' ? (isRec() ? 'You' : isHR() ? 'The recruiters' : 'The recruiter')
+    : w === 'hm' ? (isHM() ? 'You' : 'The hiring manager') : w === 'interviewer' ? 'The interviewer' : w === 'client' ? 'The client' : 'The candidate';
+  const ownSay = () => (isRec() ? 'your own steps' : isHR() ? 'the recruiters’ own steps' : 'the recruiter’s own steps');
+  /* A question for the chat, set from a chapter, as Today's insights set theirs. */
+  function askBtn(q, html, acts) {
+    const k = 'q' + (++CHAT_N);
+    CHAT_Q[k] = { q: q, html: html, acts: acts || [] };
+    return '<button class="t-ask" type="button" data-chat="' + k + '"><span class="t-ask-mark" aria-hidden="true">' + mark(12) + '</span><span class="t-ask-text">' + esc(q) + '</span>' +
+      '<span class="t-ask-go" aria-hidden="true">' + svg('send', 11) + '</span></button>';
+  }
+
+  /* HOW LONG: the steps before a profile can go, laid end to end at the
+     days each took, against the target and the day it really went. Shared
+     by the reports and one requisition's page. */
+  function speedOf(reqs) {
+    const sreqs = reqs.filter((q) => rank(q, 'sent') >= 0);
+    if (!sreqs.length) return null;
+    const ks = stagesOf(sreqs).filter((k) => STAGE_ORDER.indexOf(k) < STAGE_ORDER.indexOf('sent'));
+    const segs = stageStats(sreqs, ks).map((s) => ({ k: s.k, d: s.avg != null ? dd(s.avg) : s.exp, usual: s.exp, guess: s.avg == null,
+      part: s.on < sreqs.length, on: s.on,
+      /* Slow is a day or more over its usual, or half again as long: half a day is noise. */
+      slow: s.avg != null && (s.tT === 'err' || s.tT === 'warn' && s.avg - s.exp >= 1) }));
+    const total = dd(segs.reduce((t, s) => t + s.d, 0));
+    let t = 0, runs = null;
+    segs.forEach((s) => { if (!runs && t + s.d > SEND_TARGET) runs = s; t += s.d; });
+    const slow = segs.filter((s) => s.slow).sort((a, b) => b.d / b.usual - a.d / a.usual)[0] || null;
+    const tech = segs.filter((s) => s.k === 'tech')[0], hr = segs.filter((s) => s.k === 'hr')[0], as = segs.filter((s) => s.k === 'assess')[0];
+    return { reqs: sreqs, segs: segs, total: total, runs: runs, slow: slow, as: as,
+      /* Sending after HR, while the technical interview is booked: the
+         technical days come off the path. A model from the averages. */
+      est: tech && hr ? Math.round(total - tech.d) : null, est2: tech && hr && as && as.part ? Math.round(total - tech.d - as.d) : null };
+  }
+  /* `end` is where the line falls (the first profile, or today), said by `lab`. */
+  function rulerPic(sp, end, lab, one) {
+    const max = Math.ceil(Math.max(sp.total, end || 0, SEND_TARGET) / 2) * 2 + 2;
+    const at = (d) => (d / max * 100).toFixed(2) + '%';
+    const segs = sp.segs.map((s) => '<span class="t-ru-seg' + (s.part ? ' is-part' : '') + (s.slow ? ' is-slow' : '') + '" style="width:' + at(s.d) + '" title="' +
+        esc(STAGE[s.k].label + ': ' + (s.guess ? 'nobody through it yet; its usual ' + dSay(s.usual) : dSay(s.d) + (one ? '' : ' on average') + ', usual ' + dSay(s.usual)) + (s.part ? '. On ' + s.on + ' of ' + sp.reqs.length + ' requisitions.' : '.')) + '">' +
+      '<span class="t-ru-bar"><b>' + esc(s.k === 'tech' ? 'Technical' : s.k === 'phone' ? 'Phone' : s.k === 'hr' ? 'HR' : STAGE[s.k].label) + '</b><span>' + (s.guess ? 'usual ' + s.usual : s.d) + ' d</span></span>' +
+      '<span class="t-ru-usual">usual ' + s.usual + '</span></span>').join('');
+    const ticks = [];
+    for (let d = 0; d <= max; d += 2) ticks.push('<span style="left:' + at(d) + '">' + d + '</span>');
+    return '<div class="t-ru-wrap"><div class="t-ru" role="img" aria-label="' + esc('Days before the first profile: ' + sp.segs.map((s) => STAGE[s.k].label + ' ' + s.d).join(', ') + '. Target ' + SEND_TARGET + ' days. ' + lab + '.') + '">' +
+      '<span class="t-ru-late" style="left:' + at(SEND_TARGET) + '" aria-hidden="true"></span>' +
+      '<div class="t-ru-track" aria-hidden="true">' + segs + (end > sp.total ? '<span class="t-ru-gap" style="width:' + at(end - sp.total) + '"></span>' : '') + '</div>' +
+      '<span class="t-ru-line is-target" style="left:' + at(SEND_TARGET) + '" aria-hidden="true"><span>Target ' + SEND_TARGET + ' days</span></span>' +
+      '<span class="t-ru-line is-end ' + (end > SEND_TARGET ? 'is-late' : 'is-met') + '" style="left:' + at(end) + '" aria-hidden="true"><span>' + esc(lab) + '</span></span>' +
+      '<div class="t-ru-axis" aria-hidden="true">' + ticks.join('') + '</div>' +
+    '</div></div>' +
+    '<p class="t-pic-key">Under each step, its usual time.' + (sp.segs.some((s) => s.part) ? ' Striped: on some of the requisitions only.' : '') + (sp.segs.some((s) => s.slow) ? ' Amber: slower than usual.' : '') + '</p>';
+  }
+  /* HOW MANY: a band per stage that narrows as people leave (the sheet's
+     V1, Engy, 4 Nov: "like the html file"). The counts and names are text
+     in a grid over the drawing; the bars and the fading bands under them
+     carry the shape, the people who did not go on are said under each gap,
+     and the two places the story turns are called out on the drawing, the
+     one beating its norm in green and the one behind it in amber. */
+  const JY_SHORT = { hr: 'HR', tech: 'Technical', mgr: 'Managerial', ctech: 'Client technical' };
+  function journeyPic(rows, off, canDrill, leftOut) {
+    const n = rows.length, W = 100, B = 22, H = 200;
+    const top = Math.max(1, ...rows.map((x) => x.n));
+    const h = (v) => Math.max(4, v / top * (H - 12));
+    const pct = (u) => (u / (n * W) * 100).toFixed(2) + '%';
+    /* The one that beats its norm most, past the first two steps. */
+    const good = rows.filter((x, i) => i > 1 && x !== off && x.pT === 'ok' && x.decided >= 3 && x.rate / x.norm >= 1.15)
+      .sort((x, y) => y.rate / y.norm - x.rate / x.norm)[0] || null;
+    const notes = [];
+    if (good) notes.push({ s: good, cls: 'is-ok', y: 104,
+      head: good.k === 'sent' ? good.passed + ' of ' + good.decided + ' profiles met' : good.passed + ' of ' + good.decided + ' moved on',
+      sub: good.k === 'sent' ? 'above the 1 in ' + Math.round(1 / good.norm) + ' norm' : 'above the usual ' + Math.round(good.norm * 100) + '%' });
+    if (off) notes.push({ s: off, cls: 'is-off', y: good ? 150 : 120,
+      head: off.k === 'offer' ? (off.decided - off.passed) + ' of ' + off.decided + ' offers declined' : off.passed + ' of ' + off.decided + ' moved on',
+      sub: off.k === 'offer' ? 'usually 1 in ' + Math.round(1 / (1 - off.norm)) : 'usually ' + Math.round(off.norm * 100) + '%' });
+    /* A note goes on the drawing only where its bar leaves room above it. */
+    const placed = notes.filter((x) => h(x.s.n) + 26 < x.y);
+    let shapes = '', drops = '';
+    rows.forEach((x, i) => {
+      const nx = rows[i + 1];
+      if (nx) {
+        const x0 = i * W + B, x1 = (i + 1) * W, m = (x0 + x1) / 2;
+        shapes += '<path class="t-jy-band" style="--i:' + i + '" d="M' + x0 + ' 0L' + x1 + ' 0L' + x1 + ' ' + h(nx.n).toFixed(1) + 'C' + m + ' ' + h(nx.n).toFixed(1) + ' ' + m + ' ' + h(x.n).toFixed(1) + ' ' + x0 + ' ' + h(x.n).toFixed(1) + 'Z"/>';
+        if (x.n > nx.n) drops += '<span class="t-jy-drop" style="left:' + pct(m) + ';top:' + ((h(x.n) + h(nx.n)) / 2 + 8).toFixed(0) + 'px">−' + (x.n - nx.n) + '</span>';
+      }
+      shapes += '<rect class="t-jy-bar' + (x === off ? ' is-off' : '') + '" style="--i:' + i + '" x="' + i * W + '" y="0" width="' + B + '" height="' + h(x.n).toFixed(1) + '" rx="4"/>';
+    });
+    placed.forEach((x) => {
+      const i = rows.indexOf(x.s), bx = i * W + B / 2, tx = Math.max(0, i * W - 70);
+      shapes += '<line class="t-jy-lead ' + x.cls + '" x1="' + bx + '" y1="' + h(x.s.n).toFixed(1) + '" x2="' + (tx + 14) + '" y2="' + (x.y - 4) + '" vector-effect="non-scaling-stroke"/>';
+      drops += '<span class="t-jy-note ' + x.cls + '" style="left:' + pct(tx) + ';top:' + x.y + 'px"><b>' + esc(x.head) + '</b>' + esc(x.sub) + '</span>';
+    });
+    const stage = (x) => {
+      const door = canDrill && x.here ? ' data-fdrill="' + x.k + '"' : '';
+      const tag = door ? 'button' : 'div';
+      const noted = placed.some((y) => y.s === x);
+      const sub = x === off && !noted ? (x.k === 'offer' ? (x.decided - x.passed) + ' of ' + x.decided + ' declined · usually 1 in ' + Math.round(1 / (1 - x.norm)) : x.passed + ' of ' + x.decided + ' moved on · usual ' + Math.round(x.norm * 100) + '%')
+        : x.on < rows[0].on ? 'on ' + x.on + ' of ' + rows[0].on : '';
+      const why = STAGE[x.k].label + ': ' + x.n + ' reached it. ' + healthSay(x) + (door ? ' Press to see who is at it now.' : '');
+      return '<' + tag + ' class="t-jy-stage' + (x === off ? ' is-off' : '') + (door ? ' is-door' : '') + '"' + (door ? ' type="button"' + door : '') + ' title="' + esc(why) + '" aria-label="' + esc(why) + '">' +
+        '<b>' + x.n + '</b><span class="t-jy-name">' + esc(JY_SHORT[x.k] || STAGE[x.k].label) + '</span>' + (sub ? '<span class="t-jy-sub">' + esc(sub) + '</span>' : '') + '</' + tag + '>';
+    };
+    return '<div class="t-jy-wrap"><div class="t-jy" style="--n:' + n + '">' +
+      '<div class="t-jy-row">' + rows.map(stage).join('') + '</div>' +
+      '<div class="t-jy-draw" aria-hidden="true">' +
+        '<svg class="t-jy-svg" viewBox="0 0 ' + n * W + ' ' + H + '" preserveAspectRatio="none">' +
+          '<defs><linearGradient id="jyBand" x1="0" x2="1"><stop offset="0" class="t-jy-stop-a"/><stop offset="1" class="t-jy-stop-b"/></linearGradient></defs>' + shapes + '</svg>' +
+        drops +
+      '</div>' +
+    '</div></div>' +
+    '<p class="t-pic-key">Under each gap: the people who did not go on, or have not yet.' +
+      (leftOut && leftOut.length ? ' Left out of the line, as most requisitions do not run ' + (leftOut.length === 1 ? 'it' : 'them') + ': ' + esc(listSay(leftOut.map((x) => lower(STAGE[x.k].label) + ' (on ' + x.on + ' of ' + rows[0].on + ')'))) + '.' : '') +
+      (canDrill ? ' Press a stage to see who is at it now.' : '') + '</p>';
+  }
+  /* WHOSE DESK: one lane per person the work waits on, the steps across, a
+     circle where days have piled up past the usual time. The reader's own
+     lane is violet, everyone else's amber. */
+  function lanesPic(w) {
+    const cols = STAGE_ORDER.filter((k) => w.lanes.some((l) => l.cells[k]));
+    const r = (d) => Math.min(44, 16 + d * 4);
+    return '<div class="t-ln-wrap"><div class="t-ln" role="table" aria-label="Days past the usual time, by who it waits on" style="--c:' + cols.length + '">' +
+      '<div class="t-ln-row t-ln-head" role="row"><span role="columnheader">Waiting on</span>' + cols.map((k) => '<span role="columnheader" title="' + esc(STAGE[k].label) + '">' + esc(JY_SHORT[k] || STAGE[k].label) + '</span>').join('') + '<span role="columnheader">Days</span></div>' +
+      w.lanes.map((l) => '<div class="t-ln-row' + (l.w === 'me' ? ' is-mine' : '') + '" role="row"><span class="t-ln-who" role="rowheader">' + esc(laneSay(l.w)) + '</span>' +
+        cols.map((k) => { const c = l.cells[k];
+          return '<span class="t-ln-cell" role="cell">' + (c ? '<span class="t-ln-dot" style="--r:' + r(c.d) + 'px" title="' + esc(plural(c.n, 'person', 'people') + ' at the ' + lower(STAGE[k].label) + ', ' + dSay(c.d) + ' past the usual time') + '">' + c.d + 'd</span>' : '') + '</span>'; }).join('') +
+        '<span class="t-ln-sum" role="cell"><b>' + l.d + '</b></span></div>').join('') +
+    '</div></div>' +
+    '<p class="t-pic-key">Days past the usual time for the step, on the open requisitions in view, now. Violet: ' + esc(lower(ownSay())) + '. Amber: waiting on someone else.</p>';
+  }
+
+  /* The story of a set of requisitions: its headline, its chapters in
+     order, and the slides it shares as. `past` is the earlier hires whose
+     day 90 has passed, on the same accounts. */
+  function story(reqs, past) {
+    const st = rstats(reqs);
+    const canQueue = isRec() || isHR();
+    const ch = [];
+    /* 1. The journey, on the stages most of the requisitions run, so the line only narrows. */
+    const jrAll = stageStats(reqs, stagesOf(reqs));
+    const jr = jrAll.filter((s) => s.on * 2 > reqs.length);
+    const judged = jr.filter((s) => s.pT);
+    const off = judged.filter((s) => s.pT !== 'ok').sort((a, b) => a.rate / a.norm - b.rate / b.norm)[0] || null;
+    const found = jr.length ? jr[0].n : 0;
+    const acc = jr.filter((s) => s.k === 'accepted')[0];
+    const hired = acc ? acc.n : st.hiredO.length;
+    if (found) {
+      const rest = judged.filter((s) => s !== off);
+      const restOk = rest.length && rest.every((s) => s.pT === 'ok');
+      const offL = off ? STEP_SAY[off.k] : '';
+      ch.push({ k: 'journey', cap: 'The journey', ask: 'How far do people get?',
+        title: off ? (restOk ? (jr.indexOf(off) >= jr.length - 3 ? 'Near or above the usual at every step, until ' : 'Near or above the usual at every step but ') + offL : 'Fewer move on than usual at ' + offL) : 'Every step keeps its usual share of people',
+        say: '<b>' + found + '</b> ' + (found === 1 ? 'person' : 'people') + ' found, ' + (hired ? '<b>' + hired + '</b> accepted. ' : 'none accepted yet. ') +
+          (off ? (off.k === 'offer' ? '<b>' + (off.decided - off.passed) + ' of ' + off.decided + '</b> turned the offer down, where usually about 1 in ' + Math.round(1 / (1 - off.norm)) + ' does'
+              : capFirst(esc(offL)) + ' kept <b>' + off.passed + ' of ' + off.decided + '</b>, where it usually keeps ' + Math.round(off.norm * 100) + '%') +
+            (restOk ? '; every other step keeps its usual share or more.' : '.')
+            : 'No step loses more people than it usually does.'),
+        from: 'every requisition in view · moved on is of the people decided at each step',
+        pic: journeyPic(jr, off, canQueue, jrAll.filter((s) => s.on && s.on * 2 <= reqs.length && s.k !== 'joined')) });
+    }
+    /* 2. Speed, where profiles go to a client. */
+    const sp = speedOf(reqs), actual = sp ? avgSent(sp.reqs) : null;
+    if (sp && actual != null) {
+      const late = actual > SEND_TARGET;
+      const slowL = sp.slow ? STEP_SAY[sp.slow.k] : '';
+      const noSendN = reqs.filter(noSend);
+      ch.push({ k: 'speed', cap: 'Speed', ask: 'Where do the ' + dSay(actual) + ' go?',
+        title: !late ? dSay(actual) + ' to the first profile, inside the target of ' + SEND_TARGET
+          : sp.slow ? dSay(actual) + ' to the first profile; ' + slowL + ' runs slow'
+          : dSay(actual) + ' to the first profile: ' + sp.segs.length + ' steps, each near its usual time',
+        say: !late ? 'The first profile goes out within the target, on average, across ' + plural(sp.reqs.length, 'requisition') + '.'
+          : 'The ' + SEND_TARGET + '-day target runs out during <b>' + esc(sp.runs ? STEP_SAY[sp.runs.k] : 'the last step') + '</b>' +
+            (sp.slow ? ', and ' + esc(slowL) + ' takes <b>' + dSay(sp.slow.d) + '</b> against a usual ' + dSay(sp.slow.usual) + '.' : '; no step is slow, there are just ' + sp.segs.length + ' of them before a profile can go.') +
+            (sp.est != null && sp.est < actual ? ' Sending the profile after HR, while the technical interview is booked, would bring it near <b>' + dSay(sp.est) + '</b>' +
+              (sp.est2 != null ? ', and near ' + dSay(sp.est2) + ' where there is no assessment' : '') + '.' : ''),
+        from: 'days in each stage, on the ' + plural(sp.reqs.length, 'requisition') + ' in view that send profiles' + (late && sp.est != null ? ' · the estimate is a model from the step averages, not a measured result' : ''),
+        pic: rulerPic(sp, actual, 'First profile sent: ' + dSay(actual)),
+        act: canQueue && noSendN.length ? '<button class="s-insight-lnk" type="button"' + goAttr({ on: 'reqs', q: 'nosend' }) + '>Open the ' + plural(noSendN.length, 'requisition') + ' with no profile after ' + NOSEND_DAYS + ' days</button>' : '' });
+    }
+    /* 3. What is lost: offers turned down, and why clients passed. */
+    const decl = declines(reqs), counts = declineCounts(decl);
+    const offs = st.offers.filter((o) => o.status === 'declined');
+    const offRate = rate(st.declined, st.made);
+    if (st.made || decl.length) {
+      /* Judged against its target on three offers or more, as a rate is everywhere here. */
+      const offBad = st.made >= TREND_MIN && offRate > DECLINE_TARGET;
+      const counter = offs.filter((o) => /counter/i.test(o.note || '')).length;
+      const under = offs.filter((o) => o.expects && o.salary < o.expects).length;
+      const top = counts[0];
+      const dp = canQueue ? dProposals().filter((x) => reqs.some((q) => q.acc === x.acc))[0] : null;
+      const bars = counts.length ? '<p class="t-pic-cap">When clients passed, why · one reason each · ' + plural(decl.length, 'decline') + '</p><div class="t-funnel">' +
+        counts.map((x) => '<div class="t-fn-row' + (x === top && top.n >= 2 ? ' is-top' : '') + '"><span class="t-fn-label">' + esc(x.d.label) + '</span>' +
+          '<span class="t-fn-track"><span class="t-fn-fill" style="width:' + (x.n / top.n * 100).toFixed(1) + '%"></span></span><span class="t-fn-n"><b>' + x.n + '</b></span></div>').join('') + '</div>' : '';
+      const offPic = st.made ? '<div class="t-of" role="img" aria-label="' + esc(st.declined + ' of ' + st.made + ' offers turned down') + '">' +
+        st.offers.filter((o) => o.sentDay != null).sort((a, b) => (a.status === 'declined') - (b.status === 'declined')).map((o) => '<span class="t-of-dot' + (o.status === 'declined' ? ' is-lost' : '') + '"></span>').join('') +
+        '<span class="t-of-say">' + st.declined + ' of ' + st.made + ' offers turned down · target ' + DECLINE_TARGET + '% or fewer</span></div>' : '';
+      ch.push({ k: 'loss', cap: 'What is lost', ask: 'Why do we lose people?',
+        title: offBad ? st.declined + ' of ' + st.made + ' offers turned down' : top ? 'Clients passed on ' + plural(decl.length, 'profile') + ', ' + lower(top.d.label) + ' the reason ' + (top.n === decl.length ? 'each time' : 'most')
+          : plural(st.made, 'offer') + ' made, ' + (st.declined ? st.declined + ' turned down' : 'none turned down'),
+        say: (st.made ? (st.made === 1 ? 'The one offer made was ' + (st.declined ? '<b>turned down</b>' : 'not turned down') : '<b>' + st.declined + ' of ' + st.made + '</b> offers were turned down') +
+            (st.made < TREND_MIN ? ', too few to set against the target' : ', ' + (offBad ? 'against' : 'inside') + ' a target of ' + DECLINE_TARGET + '% or fewer') +
+            (counter ? '; ' + (counter === offs.length ? (counter === 1 ? 'they' : 'each') : counter) + ' took a counter-offer from their current employer' : '') +
+            (under ? ', and ' + (under === offs.length ? (under === 1 ? 'they' : 'all ' + under) : under) + ' had been offered less than they asked' : '') + '. ' : '') +
+          (top ? (top.n === decl.length && decl.length > 1 ? (decl.length === 2 ? 'Both' : 'All ' + decl.length) + ' clients who passed named ' + esc(lower(top.d.label)) + '.'
+            : 'When clients passed, <b>' + top.n + ' of ' + decl.length + '</b> named ' + esc(lower(top.d.label)) + '.') : '') +
+          (dp ? ' ' + dp.evidence + ' ' + esc(dp.rule) : ''),
+        from: 'offers sent, and every client decline with a reason',
+        pic: offPic + bars,
+        act: (offs.length ? askBtn('Why were the offers turned down?', '<p>' + offs.map((o) => { const c = DB.byId[o.cand];
+            return '<b>' + esc(c.name) + '</b>, ' + esc(reqOf(c).title) + ': offered ' + o.salary.toLocaleString('en') + (o.expects ? ' against ' + o.expects.toLocaleString('en') + ' asked' : '') + '. ' + esc(o.note || 'No reason given.'); }).join('<br>') + '</p>',
+            [{ label: 'Open ' + first(DB.byId[offs[0].cand].name), go: { cand: offs[0].cand } }]) : '') +
+          (dp ? (isHR() ? '<button class="s-insight-lnk primary" type="button" data-prop="' + esc(dp.key) + '|approve">Approve the rule</button>'
+            : dp.rec && dp.rec.state === 'waiting' ? '<span class="t-of-say">The rule waits on ' + esc(DESKS.dina.name) + '</span>'
+            : '<button class="s-insight-lnk" type="button" data-prop="' + esc(dp.key) + '|send">Send the rule to ' + esc(DESKS.dina.name) + '</button>') : '') });
+    }
+    /* 4. Whose desk it is on, now. */
+    const lanes = {};
+    let all = 0;
+    reqs.filter(isOpen).forEach((q) => activeOf(q).forEach((c) => {
+      const w = waitsOn(c), d = lostDays(c);
+      if (LANES.indexOf(w) < 0 || !d) return;
+      const l = lanes[w] || (lanes[w] = { w: w, d: 0, cells: {}, cs: [] });
+      const cell = l.cells[c.stage] || (l.cells[c.stage] = { d: 0, n: 0, cs: [] });
+      l.d += d; cell.d += d; cell.n++; cell.cs.push(c); l.cs.push(c); all += d;
+    }));
+    const ll = LANES.filter((w) => lanes[w]).map((w) => lanes[w]);
+    if (all) {
+      const them = ll.filter((l) => l.w !== 'me').reduce((s, l) => s + l.d, 0);
+      const mineL = lanes.me;
+      const topL = ll.filter((l) => l.w !== 'me').sort((a, b) => b.d - a.d)[0] || null;
+      const topC = topL ? Object.keys(topL.cells).map((k) => Object.assign({ k: k }, topL.cells[k])).sort((a, b) => b.d - a.d)[0] : null;
+      const accs = topC ? topC.cs.map((c) => accOf(reqOf(c)).name).filter((x, i, a) => a.indexOf(x) === i) : [];
+      const maxMine = mineL ? Math.max(...Object.keys(mineL.cells).map((k) => mineL.cells[k].d)) : 0;
+      const toNudge = topL && canQueue && topL.w !== 'me' ? topL.cs.filter((c) => c.nudged == null) : [];
+      const nudgeN = toNudge.every((c) => c.stage === 'sent') ? plural(toNudge.length, 'profile') : plural(toNudge.length, 'person', 'people');
+      const whoN = topL ? (topL.w === 'client' ? listSay(accs) : topL.w === 'interviewer' ? 'the interviewers' : topL.w === 'hm' ? 'the hiring manager' : 'the candidates') : '';
+      ch.push({ k: 'wait', cap: 'Waiting', ask: 'Who is the work waiting on?',
+        title: !topL ? 'All ' + all + ' late days are on ' + ownSay()
+          : mineL && mineL.d > them ? mineL.d + ' of ' + all + ' late days are on ' + ownSay() + '; the rest wait mostly on ' + lower(laneSay(topL.w))
+          : topL.d + ' of ' + all + ' late days are with ' + lower(laneSay(topL.w)),
+        say: (topL ? '<b>' + them + ' of ' + all + '</b> days past the usual time wait on someone else’s answer, and <b>' + topC.d + '</b> of those are ' +
+            (topC.k === 'sent' ? plural(topC.n, 'profile') + ' waiting on ' + esc(listSay(accs)) : plural(topC.n, 'person', 'people') + ' at ' + esc(STEP_SAY[topC.k]) + (topL.w === 'client' ? ', with ' + esc(listSay(accs)) : '')) + '.' :'Nothing waits on anyone else past its usual time.') +
+          (mineL ? ' The other <b>' + mineL.d + '</b> are on ' + ownSay() + ', no more than ' + dSay(maxMine) + ' at any one step.' : ''),
+        from: 'the open requisitions in view, now · in FlairsTech’s own data, 46 of 105 lost days were spent waiting',
+        pic: lanesPic({ lanes: ll }),
+        act: toNudge.length ? '<button class="s-insight-lnk primary" type="button" data-nudge-all="' + toNudge.map((c) => c.id).join(',') + '">Nudge ' + esc(whoN) + ' on ' + nudgeN + '</button>'
+          : topL && canQueue ? '<span class="t-of-say">Nudged today</span>' : '' });
+    }
+    /* 5. What lasts: day 90 for the earlier hires, and who starts next. */
+    const stayed = past.filter((p) => p.stayed).length, d90 = rate(stayed, past.length);
+    if (past.length) {
+      const left = past.filter((p) => !p.stayed);
+      const whys = {};
+      left.forEach((p) => { whys[p.why] = (whys[p.why] || 0) + 1; });
+      const topWhy = Object.keys(whys).sort((a, b) => whys[b] - whys[a])[0];
+      const ns = st.notStarted.length;
+      ch.push({ k: 'after', cap: 'After the hire', ask: 'Do our hires stay?',
+        title: stayed + ' of ' + past.length + ' earlier hires stayed to day 90',
+        say: '<b>' + d90 + '%</b>, ' + (d90 >= DAY90_TARGET ? 'meeting' : 'against') + ' a target of ' + DAY90_TARGET + '% or more.' +
+          (topWhy ? ' Of the ' + left.length + ' who left, ' + (whys[topWhy] === left.length ? (left.length === 1 ? 'they' : 'all') : whys[topWhy]) + ' ' + esc(LEFT_SAY[topWhy] || lower(topWhy)) + (whys[topWhy] < left.length && whys[topWhy] > 1 ? ', the reason given most' : '') + '.' : '') +
+          (ns ? ' ' + plural(ns, 'person', 'people') + ' hired in this period ' + (ns === 1 ? 'has' : 'have') + ' day one still ahead.' : ''),
+        from: 'billed hires whose day 90 has passed, on these accounts · older than any period here',
+        pic: '<div class="t-d90" role="img" aria-label="' + esc(stayed + ' of ' + past.length + ' stayed to day 90') + '">' +
+          past.slice().sort((a, b) => b.stayed - a.stayed).map((p) => '<span class="t-d90-dot' + (p.stayed ? '' : ' is-left') + '" title="' + esc(p.name + ', ' + p.title + (p.stayed ? ': stayed' : ': ' + lower(p.why))) + '"></span>').join('') +
+          '<span class="t-of-say">Filled: stayed. Hollow: left before day 90.</span></div>',
+        act: left.length ? askBtn('Who left before day 90?', '<p>' + left.map((p) => '<b>' + esc(p.name) + '</b>, ' + esc(p.title) + ' at ' + esc((ACCOUNTS.filter((a) => a.id === p.acc)[0] || {}).name || '') + ': ' + esc(p.why) + '.').join('<br>') + '</p>') : '' });
+    }
+    /* The headline: what happened, then the one or two things that matter
+       most, each a figure some chapter below draws. */
+    const bits = [];
+    if (sp && actual != null && actual > SEND_TARGET) bits.push('the first profile takes <mark class="t-mk">' + dSay(actual) + '</mark>' + (sp.slow ? ', most of it lost at ' + esc(STEP_SAY[sp.slow.k]) : ' because the path is long, not slow'));
+    if (off) bits.push(off.k === 'offer' ? '<mark class="t-mk">offers</mark> are where people are lost' : '<mark class="t-mk">' + esc(STEP_SAY[off.k]) + '</mark> is where people are lost');
+    const wt = ch.filter((c) => c.k === 'wait')[0];
+    if (bits.length < 2 && wt && lanes.client && lanes.client.d * 3 >= all) bits.push('the longest wait is with <mark class="t-mk">the client</mark>');
+    const head = (found ? plural(found, 'person', 'people') + ' found, ' + (hired ? '<mark class="t-mk is-ok">' + hired + ' hired</mark>. ' : 'none hired yet. ') : '') +
+      (bits.length ? capFirst(bits.join(', and ')) + '.' : 'Every step is near its usual time and share.');
+    /* The same chapters as slides, one sentence each (V5), to share. */
+    const slides = [{ k: 'The period', big: plural(hired, 'person', 'people'), say: 'hired from ' + found + ' found, on ' + plural(reqs.length, 'requisition') + '.', foot: st.seats + ' seats · ' + st.openSeats + ' still open' }];
+    if (sp && actual != null) slides.push({ k: 'Speed', big: dSay(actual), say: 'to the first profile. The target is ' + SEND_TARGET + '.', foot: sp.slow ? STEP_SAY[sp.slow.k] + ' runs slow' : sp.segs.length + ' steps, each near its usual time' });
+    if (st.made) slides.push({ k: 'The offer', big: st.declined + ' of ' + st.made, say: 'offers were turned down.', foot: counts[0] ? 'clients named ' + lower(counts[0].d.label) + ' most, ' + counts[0].n + ' of ' + decl.length : 'target ' + DECLINE_TARGET + '% or fewer' });
+    if (past.length) slides.push({ k: 'After', big: stayed + ' of ' + past.length, say: 'earlier hires stayed to day 90.', foot: d90 + '% · target ' + DAY90_TARGET + '%' });
+    return { head: head, chapters: ch, slides: slides, st: st, sp: sp, actual: actual, off: off, found: found, hired: hired };
+  }
+  /* A chapter as a block: what it says first, then its picture, then AiMY's
+     reading with its source, then the move. */
+  const chapterBlock = (c, n) => '<section class="s-block s-block-wide t-ch" id="rpt-' + c.k + '" aria-labelledby="rpt-' + c.k + '-h">' +
+    '<span class="t-ch-cap">' + (n ? 'Chapter ' + n + ' · ' : '') + esc(c.cap) + '</span>' +
+    '<h3 class="t-ch-h" id="rpt-' + c.k + '-h">' + esc(c.title) + '</h3>' +
+    c.pic + aimyBlock({ text: c.say, from: c.from }) +
+    (c.act ? '<p class="t-acts">' + c.act + '</p>' : '') +
+  '</section>';
+  /* The recap as text, for Copy the recap. */
+  let RECAP = '';
+  /* The story the Reports page last drew, and for whom: what its questions answer. */
+  let STORY_NOW = null;
+  /* A CHAPTER, ASKED, AS QA ANSWERS IN ITS CANVAS: a type label, the
+     chart, AiMY's reading under it, the source, then what to do and what
+     to ask next as prompts that open the next answer in the same thread. */
+  function storyAnswer(k) {
+    const sto = STORY_NOW ? STORY_NOW.sto : deskStory();
+    const scope = STORY_NOW ? STORY_NOW.scope : 'the last 90 days';
+    const c = sto && sto.chapters.filter((x) => x.k === k)[0];
+    if (!c) return null;
+    const next = sto.chapters.filter((x) => x !== c).map((x) => '<button class="entry-action em-investigate" type="button" data-story="' + x.k + '">' + mark(11) + esc(x.ask) + '</button>').join('');
+    return { q: c.ask, html: '<div class="canvas-render t-cr">' +
+      '<div class="canvas-type-label">Chart · ' + esc(c.cap) + ' · ' + esc(scope) + '</div>' +
+      '<p class="t-cr-h">' + esc(c.title) + '</p>' +
+      '<div class="canvas-chart">' + c.pic + '</div>' +
+      '<div class="t-cr-say">' + c.say + '</div>' +
+      '<p class="t-cr-from">' + esc(c.from) + '</p>' +
+      (c.act ? '<div class="canvas-action-row">' + c.act + '</div>' : '') +
+      '<div class="canvas-action-row t-cr-next">' + next + '<button class="entry-action em-investigate" type="button"' + goAttr({ on: 'reports', ch: k }) + '>Show it on the page</button></div>' +
+    '</div>' };
+  }
+  function storyAsk(btn, k) {
+    const a = storyAnswer(k);
+    if (!a) return;
+    flyToBar(btn, () => { if (!canvasShown()) openCanvas(); ASKING = a.q; peek(a.html, []); });
+  }
+
+  /* ONE REQUISITION'S RULER, on its own page: not averages but one real
+     path, the person whose profile went first, step by step from their
+     record; or, before any has gone, the person furthest along so far. */
+  function rulerBlock(q) {
+    if (rank(q, 'sent') < 0) return '';
+    const pre = tplOf(q).filter((k) => STAGE_ORDER.indexOf(k) < STAGE_ORDER.indexOf('sent'));
+    const sent = DB.byReq[q.id].filter((c) => rank(q, c.maxAt) >= rank(q, 'sent') && c.sentDay != null).sort((x, y) => x.sentDay - y.sentDay)[0] || null;
+    const lead = sent || (isOpen(q) ? activeOf(q).filter((c) => rank(q, c.stage) < rank(q, 'sent')).sort((x, y) => rank(q, y.stage) - rank(q, x.stage) || y.since - x.since)[0] : null);
+    if (!lead) return '';
+    const segs = [];
+    pre.forEach((k) => {
+      const d = lead.took && lead.took[k] != null ? lead.took[k] : !sent && lead.stage === k ? lead.since : null;
+      if (d == null) return;
+      segs.push({ k: k, d: d, usual: STAGE[k].exp, on: 1, slow: d - STAGE[k].exp >= 1 && d / STAGE[k].exp > 1.15 });
+    });
+    if (!segs.length) return '';
+    const total = segs.reduce((t, x) => t + x.d, 0);
+    let t = 0, runs = null;
+    segs.forEach((x) => { if (!runs && t + x.d > SEND_TARGET) runs = x; t += x.d; });
+    const slow = segs.filter((x) => x.slow).sort((x, y) => y.d / y.usual - x.d / x.usual)[0];
+    const over = total > SEND_TARGET;
+    return '<section class="s-block s-block-wide" aria-label="Time to the first profile"><div class="s-camp-list-head"><h2 class="s-block-h">Time to the first profile</h2>' +
+      '<span class="s-block-say">' + (sent ? 'the path of the profile that went first' : 'the furthest path so far') + ', step by step · target ' + SEND_TARGET + ' days</span></div>' +
+      rulerPic({ reqs: [q], segs: segs, total: total }, total, (sent ? 'Sent after ' : 'So far: ') + dSay(total), true) +
+      aimyBlock({ text: (sent ? '<b>' + esc(lead.name) + '</b>’s profile went first, after <b>' + dSay(total) + '</b> of steps from being found'
+          : 'No profile has gone yet. The furthest along, <b>' + esc(lead.name) + '</b>, is at ' + esc(STEP_SAY[lead.stage]) + ' after <b>' + dSay(total) + '</b> of steps') +
+        (over ? ', ' + dSay(total - SEND_TARGET) + ' past the target, which ran out during ' + esc(STEP_SAY[runs.k]) + '.' : ', inside the target.') +
+        (slow ? ' ' + capFirst(esc(STEP_SAY[slow.k])) + ' took ' + dSay(slow.d) + ' against a usual ' + dSay(slow.usual) + '.' : over ? ' No step was slow; there are ' + segs.length + ' of them.' : ''),
+        from: 'the days each step took for ' + first(lead.name) + ', from their record' }) +
+      '<p class="t-acts"><button class="s-insight-lnk" type="button" data-cand="' + lead.id + '">Open ' + esc(first(lead.name)) + '</button></p>' +
+    '</section>';
+  }
+  /* The story, for a desk's last 90 days on every account: what Today, the
+     rail and the chat say of it. */
+  function deskStory() {
+    const reqs = deskReqs().filter((q) => q.state !== 'draft' && openedIn(q, 0, 90));
+    if (!reqs.length) return null;
+    const accs = ACCOUNTS.filter((a) => reqs.some((q) => q.acc === a.id));
+    return story(reqs, DB.past.filter((p) => p.billable && accs.some((a) => a.id === p.acc)));
   }
 
   function reportsPage() {
@@ -6254,12 +6650,10 @@
     /* The widest view this desk has, for a card the period leaves empty. */
     const stWide = rstats(inAcc);
     const reached = st.reached;
-    const offers = st.offers, hiredO = st.hiredO, hiredSeats = st.hiredSeats;
-    const sendAvg = st.sendAvg, phones = st.phones;
+    const offers = st.offers;
     const num = (x) => (x == null ? '·' : String(x));
     const pcS = (x) => (x == null ? '·' : x + '%');
     const TARGET_BY = 'Set by ' + DESKS.dina.name + ', the HR Manager. A sample until the team sets its own.';
-    const TREND_DEF = ['Trend', 'Three spans of 30 days, oldest first, by opening day. Fewer than ' + TREND_MIN + ' to count from shows ·; the latest span is still running.'];
     /* Day 90 is read for the hires whose day 90 has passed, which are older
        than any period here, so the period cannot apply to them; the account
        does. */
@@ -6322,46 +6716,47 @@
         say: (s) => 'hired on billable requisitions · ' + stayed + ' of ' + past.length + ' earlier ones stayed to day 90',
         def: () => [['Unit', 'Person'], ['Counts', 'People with an accepted offer on a billable requisition'], ['Beside it', plural(past.length, 'billed hire') + ' whose day 90 has passed, on ' + (accIn ? accIn.name : 'these accounts') + '. Older than any period here, so the period does not apply to them.'], ['Target', 'For day 90: 85% or more. ' + TARGET_BY]] },
     ];
-    /* EVERY CARD SAYS SOMETHING (Engy, 29 Oct). A measure the period has
-       nothing to count from shows the same measure over all 90 days, and
-       says so; one with nothing to count from at all shows what there is
-       ("9 sent", "No hire yet") in place of a bare dot. */
-    const tile = (t) => {
+    /* THE FIGURES AS DATA, NOT CARDS (Engy, 4 Nov: "I don't want to see
+       this kind of cards ever; make it normal data text in the chat"). One
+       line each: the measure and its number, its target and how far off,
+       then what it counts and its three months (Engy, 4 Nov: no How it is
+       counted). Every figure still says something (29 Oct):
+       a period with nothing to count from reads over all 90 days, and says
+       so; nothing at all says what there is ("No hire yet"). */
+    const figLine = (t) => {
       let v = t.v(st), lead = '';
       if (v == null && stWide.reqs.length > st.reqs.length && t.v(stWide) != null) { v = t.v(stWide); lead = 'Over all 90 days; none in the last ' + per + ' yet. '; }
       const none = v == null && t.none ? t.none(st) : null;
-      const sayOf = () => (lead ? lead + t.say(stWide).replace(/^./, (x) => x.toUpperCase()) : t.say(st));
-      const tv = WS.map((s) => (t.base && t.base(s) < TREND_MIN ? null : t.v(s, TREND_MIN)));
-      const def = t.def(lead ? stWide : st).concat(t.tgt && !t.tgtV ? [['Target', TARGET_BY]] : [], [TREND_DEF]);
-      /* ONE SHAPE A CARD (Engy, 29 Oct: thirteen tiles of different heights
-         read as untidy). Every card has the same slots in the same order:
-         the measure, the number, its target, one line of what it counts,
-         and the trend pinned to the foot. The grid gives every card the same
-         height, and How it is counted opens over the card, not inside it. */
-      return '<div class="t-kpi t-kpi-eq">' +
-        '<span class="t-kpi-cap">' + esc(t.cap) + '</span>' +
-        (none ? '<b class="t-kpi-n is-none">' + esc(none) + '</b>' : '<b class="t-kpi-n">' + esc(t.show(v)) + '</b>') +
-        (t.tgt ? tgtSay(t.tgt, t.tgtV ? t.tgtV(st) : v, t.tgtLead) : '<span class="t-kpi-tgt">No target</span>') +
-        '<span class="t-kpi-say" title="' + esc(sayOf(t)) + '">' + esc(sayOf(t)) + '</span>' +
-        '<span class="t-kpi-trend">' + (spark(tv) || '<span class="t-spark-none" aria-hidden="true"></span>') + '<span>' + tv.map((x) => esc(t.show(x))).join(' → ') + '</span></span>' +
-        defPop(t.cap, def) +
-      '</div>';
+      const say = lead ? lead + t.say(stWide).replace(/^./, (x) => x.toUpperCase()) : t.say(st);
+      const tv = WS.map((x) => (t.base && t.base(x) < TREND_MIN ? null : t.v(x, TREND_MIN)));
+      const tg = t.tgt ? tgtSay(t.tgt, t.tgtV ? t.tgtV(st) : v, t.tgtLead) : '';
+      const tone = /is-warn/.test(tg) ? ' is-warn' : /is-ok/.test(tg) ? ' is-ok' : '';
+      return '<li class="t-fig"><span class="t-fig-head"><span class="t-fig-k">' + esc(t.cap) + '</span>' +
+        '<b class="t-fig-v">' + esc(none || t.show(v)) + '</b>' + (tg ? '<span class="t-fig-tgt' + tone + '">' + tg.replace(/<[^>]+>/g, '') + '</span>' : '') + '</span>' +
+        '<span class="t-fig-say">' + esc(say) + (tv.every((x) => x != null) ? ' · by month ' + tv.map((x) => esc(t.show(x))).join(' → ') : '') + '</span></li>';
     };
-    const board = (label, list) => '<div class="t-kpis t-kpis-eq" aria-label="' + esc(label) + '">' + list.map(tile).join('') + '</div>';
-    /* The filters: the period as three chips, each with how many it holds,
-       and the account as chips too, wrapping rather than scrolling (Sales's
-       filter row), because a filter you cannot see is one you forget is on. */
-    const filters = '<div class="t-rpt-filters">' +
-      '<div class="s-views" role="group" aria-label="Opened in"><span class="t-rpt-lab">Opened in</span>' + PERIODS.map((p) =>
-        '<button class="s-view' + (per === p[0] ? ' is-on' : '') + '" type="button" data-period="' + p[0] + '" aria-pressed="' + (per === p[0]) + '">' + esc(p[1]) +
-        '<span class="s-view-n">' + inAcc.filter((q) => openedIn(q, 0, p[0])).length + '</span></button>').join('') + '</div>' +
-      (accs.length > 1 ? '<div class="s-views" role="group" aria-label="Account"><span class="t-rpt-lab">Account</span>' +
-        '<button class="s-view' + (!accIn ? ' is-on' : '') + '" type="button" data-account="" aria-pressed="' + !accIn + '">All accounts</button>' +
-        accs.map((a) => '<button class="s-view' + (accIn === a ? ' is-on' : '') + '" type="button" data-account="' + a.id + '" aria-pressed="' + (accIn === a) + '">' + esc(a.name) +
-          '<span class="s-view-n">' + pool.filter((q) => q.acc === a.id && openedIn(q, 0, per)).length + '</span></button>').join('') + '</div>' : '') +
-    '</div>';
+    const board = (label, list) => '<ul class="t-figs" aria-label="' + esc(label) + '">' + list.map(figLine).join('') + '</ul>';
+    /* THE SCOPE, SAID AS A SENTENCE, IS THE FILTER (Engy, 4 Nov: option 1
+       of deliverables/reports-filters.html). The line under the title
+       already said the view in words; its two phrases now open a menu each,
+       with how many requisitions every choice holds, so the two rows of
+       pills are gone and the page starts as it reads: what it covers, then
+       what happened (Deel, Homerun; fill in the blanks). One account only,
+       and the account is said, not offered. */
     const whose = isHR() ? 'Everyone’s requisitions' : isHM() ? 'The requisitions you asked for' : 'Your requisitions';
-    const head = '<div class="s-camp-list-head">' + switcher('reports') + '<span class="s-block-say">' + esc(whose + ', opened in the last ' + per + ' days' + (accIn ? ', for ' + accIn.name : '')) + '</span></div>' + filters;
+    const blank = (id, label, cap, items) => '<span class="b-menu-wrap t-blank-wrap"><button class="t-blank" type="button" data-pickopen="' + id + '" aria-haspopup="menu" aria-expanded="false">' +
+        esc(label) + svg('down', 13) + '</button>' +
+      /* A span, not a div: it sits inside the sentence's paragraph. */
+      '<span class="b-menu t-rpt-menu" id="' + id + '" role="menu" hidden><span class="b-menu-cap">' + esc(cap) + '</span>' + items + '</span></span>';
+    const item = (attr, on, name, n) => '<button class="b-menu-item" type="button" role="menuitemradio" aria-checked="' + on + '" ' + attr + (on ? ' aria-current="true"' : '') + '>' +
+      '<span class="t-rpt-tick" aria-hidden="true">' + (on ? svg('check', 13) : '') + '</span><span class="b-menu-name">' + esc(name) + '</span><span class="tel-menu-cc">' + n + '</span></button>';
+    const perBlank = blank('perMenu', 'the last ' + per + ' days', 'Opened in', PERIODS.map((x) =>
+      item('data-period="' + x[0] + '"', per === x[0], 'The last ' + x[0] + ' days', inAcc.filter((q) => openedIn(q, 0, x[0])).length)).join(''));
+    const accBlank = accs.length > 1 ? blank('accMenu', accIn ? accIn.name : 'every account', 'Account · ' + accs.length + ' in view',
+      item('data-account=""', !accIn, 'Every account', pool.filter((q) => openedIn(q, 0, per)).length) + '<span class="t-rpt-sep" aria-hidden="true"></span>' +
+      accs.map((x) => item('data-account="' + x.id + '"', accIn === x, x.name, pool.filter((q) => q.acc === x.id && openedIn(q, 0, per)).length)).join('')) : accs[0] ? esc(accs[0].name) : '';
+    const head = '<div class="s-camp-list-head t-rpt-head">' + switcher('reports') +
+      '<p class="t-rpt-scope">' + esc(whose) + ' opened in ' + perBlank + (accBlank ? ', on ' + accBlank : '') + '.</p></div>';
     if (!reqs.length) {
       return '<div class="s-home"><section class="s-block s-block-wide" aria-label="Reports">' + head +
         '<p class="t-rpt-none">No requisitions opened in the last ' + per + ' days' + (accIn ? ' for ' + esc(accIn.name) : '') + '. Try a longer period' + (accIn ? ' or all accounts' : '') + '.</p></section></div>';
@@ -6376,112 +6771,81 @@
     const repl = reqs.filter((q) => q.kind === 'replacement').length;
     const bill = reqs.filter((q) => q.billable).length;
     const bar = (v, max, tone) => '<span class="t-fn-track"><span class="t-fn-fill' + (tone ? ' ' + tone : '') + '" style="width:' + (v / max * 100).toFixed(1) + '%"></span></span>';
-    /* THE HONEST LINE (P2). Client acceptance looks like the leak, but
-       about three to five profiles per client interview is the agency norm,
-       so the loss worth naming is the one in people, upstream, and the
-       days it takes to send. The benchmark is weak and the line says so. */
-    const sentN = reached('sent'), metN = reached('client');
-    const slow = reqs.filter(noSend);
-    /* WHERE TIME GOES (R5: in FlairsTech's own data, 46 of 105 lost
-       requisition-days were spent waiting for feedback). Now, on the open
-       requisitions in view: the days each person is past the usual time for
-       their step, added up by the step and by who it waits on. The
-       recruiter's own steps are counted too, so the chart is not a list of
-       other people to blame. */
-    const WHO_SAY = { me: 'you', interviewer: 'the interviewer', hm: 'the hiring manager', client: 'the client', candidate: 'the candidate' };
-    const lost = {};
-    reqs.filter(isOpen).forEach((q) => activeOf(q).forEach((c) => {
-      const w = waitsOn(c), d = lostDays(c);
-      if (!WHO_SAY[w] || !d) return;
-      const k = c.stage + '|' + w;
-      lost[k] = lost[k] || { stage: c.stage, w: w, d: 0, n: 0 };
-      lost[k].d += d; lost[k].n++;
-    }));
-    const lostRows = Object.keys(lost).map((k) => lost[k]).sort((x, y) => y.d - x.d);
-    const lostAll = lostRows.reduce((s, x) => s + x.d, 0);
-    const lostThem = lostRows.filter((x) => x.w !== 'me').reduce((s, x) => s + x.d, 0);
-    const maxLost = Math.max(1, ...lostRows.map((x) => x.d));
-    return '<div class="s-home">' +
-      '<section class="s-block s-block-wide" aria-label="Reports">' + head +
-        board('Reports', tiles) +
-      '</section>' +
-      '<section class="s-block s-block-wide" aria-label="Staffing"><div class="s-camp-list-head"><h2 class="s-block-h">Staffing</h2><span class="s-block-say">what a hire takes, and what happens after it</span></div>' +
-        board('Staffing', staffing) +
-      '</section>' +
-      (phones ? (function () {
-        /* AiMY's one finding: a client's decline pattern waiting on a
-           person, if there is one; otherwise the honest line (P2). */
-        const dp = isRec() || isHR() ? dProposals()[0] : null;
-        const say = dp ? dp.evidence + ' ' + esc(dp.rule)
-          : '<b>' + sentN + ' of ' + phones + '</b> people screened by phone were sent to a client. Most are lost before the client, not at it' +
-            (sendAvg != null ? ', and the first profile takes <b>' + days(sendAvg) + '</b> to send.' : '.');
-        const act = dp ? (isHR() ? rcBtn('Approve the rule', 'data-prop="' + esc(dp.key) + '|approve"', 'psmall') : dp.rec && dp.rec.state === 'waiting' ? '<span class="sub">Waiting on ' + esc(DESKS.dina.name) + '</span>'
-            : rcBtn('Send it to ' + DESKS.dina.name, 'data-prop="' + esc(dp.key) + '|send"', 'psmall')) + rcBtn('Not now', 'data-prop="' + esc(dp.key) + '|later"', 'small')
-          : slow.length ? rcBtn('Open the ' + plural(slow.length, 'requisition') + ' with no profile after ' + NOSEND_DAYS + ' days', goAttr({ on: 'reqs', q: 'nosend' }).trim(), 'psmall') : '';
-        return insight({ label: 'Where people are lost', say: say, act: act,
-          src: dp ? 'Learning proposal · from ' + esc(dp.from) + ' in 90 days · reason codes · an HR Manager approves'
-            : 'Clients met ' + metN + ' of them, about ' + (metN ? (sentN / metN).toFixed(1) : '·') + ' profiles per client interview. ' + versusNorm(metN ? sentN / metN : null) + ' A weak benchmark: vendor blogs and one 2018 survey.',
-          metrics: [
-            { cap: 'Profiles sent → client interview', n: sentN ? (metN / sentN * 100).toFixed(1) + '%' : '·', of: metN + ' of ' + sentN + ' · the requisitions in view',
-              def: [['Unit', 'Person'], ['Starts', 'Profile sent'], ['Stops', 'Client accepts an interview']] },
-            { cap: 'Hired', n: String(hiredO.length), of: 'people · the requisitions in view',
-              def: [['Unit', 'Person'], ['Counts at', 'Offer accepted'], ['Not to mix', 'Vacancies filled: ' + hiredSeats]] },
-          ],
-          foot: isHR() ? 'Team and request views. Per-recruiter scorecards live in AiMY QA; the counts below are alphabetical, not a ranking.' : 'Team and request views only. Per-recruiter scorecards live in AiMY QA.' });
-      })() : '') +
-      '<section class="s-block s-block-wide" aria-label="Where time goes"><div class="s-camp-list-head"><h2 class="s-block-h">Where time goes</h2><span class="s-block-say">days past the usual time, now · by step and who it waits on</span></div>' +
-        (lostRows.length ? '<div class="t-funnel">' + lostRows.map((x, i) => '<div class="t-fn-row t-lost-row' + (x.w === 'me' ? ' is-mine' : '') + (i === 0 ? ' is-top' : '') + '">' +
-            '<span class="t-fn-label"><span class="t-lost-step">' + esc(STAGE[x.stage].label) + '</span><span class="t-lost-who">waiting on ' + esc(WHO_SAY[x.w]) + '</span></span>' +
-            bar(x.d, maxLost) + '<span class="t-fn-n"><b>' + days(x.d) + '</b> · ' + plural(x.n, 'person', 'people') + '</span></div>').join('') + '</div>' +
-          aimyBlock({ text: '<b>' + lostThem + ' of ' + lostAll + '</b> days past the usual time are spent waiting on someone else’s answer' +
-            (lostAll - lostThem ? ', and <b>' + days(lostAll - lostThem) + '</b> on steps that are yours' : '') + '. In FlairsTech’s own data it was 46 of 105, so waiting is where to look first. Today lists each one with its nudge.',
-            from: 'the open requisitions in view, and the recruitment data' })
-          : '<p class="t-rpt-none">Nothing is past its usual time on the open requisitions in view.</p>') +
-      '</section>' +
-      (function () {
-        /* THE FUNNEL, ACROSS POSITIONS OR FOR ONE (position funnel
-           ticket). The same period and account as the rest of the page; the
-           menu on the head narrows it to one position without a second
-           filter row. A stage someone is at now opens them: on that
-           requisition when narrowed, in the Candidates queue when not. */
-        const one = reqs.filter((q) => q.id === S.rq)[0] || null;
-        const set = one ? [one] : reqs;
-        const rows = stageStats(set, one ? tplOf(one).filter((k) => k !== 'joined') : stagesOf(reqs));
-        const canQueue = isRec() || isHR();
-        const read = stageRead(rows, one ? 'every candidate on ' + one.title : 'every requisition in view');
-        const facts = one ? '' : ' ' + dropped + ' offers were declined. ' + repl + ' of ' + reqs.length + ' requests were replacements, and ' + bill + ' are billable.';
-        const menu = '<span class="b-menu-wrap"><button class="b-ghost t-rq-btn" type="button" data-pickopen="fnMenu" aria-haspopup="menu" aria-expanded="false">' +
-            '<span class="t-rq-label">' + esc(one ? one.title + ', ' + accOf(one).name : 'All positions in view') + '</span>' + svg('down', 14) + '</button>' +
-          '<div class="b-menu t-fn-menu" id="fnMenu" role="menu" hidden><span class="b-menu-cap">Position</span>' +
-            '<button class="b-menu-item" type="button" role="menuitem" data-rq=""' + (one ? '' : ' aria-current="true"') + '><span class="b-menu-name">All positions in view</span><span class="tel-menu-cc">' + reqs.length + '</span></button>' +
-            reqs.slice().sort((a, b) => isOpen(b) - isOpen(a) || a.title.localeCompare(b.title)).map((q) => '<button class="b-menu-item" type="button" role="menuitem" data-rq="' + q.id + '"' + (one === q ? ' aria-current="true"' : '') + '>' +
-              '<span class="t-rq-item"><span class="b-menu-name">' + esc(q.title) + '</span><span class="t-crow-sub">' + esc(accOf(q).name + (isOpen(q) ? '' : ' · ' + lower(REQ_STATE[stateOf(q)].label))) + '</span></span>' +
-              '<span class="tel-menu-cc">' + activeOf(q).length + '</span></button>').join('') +
-          '</div></span>';
-        return '<section class="s-block s-block-wide" aria-label="Funnel"><div class="s-camp-list-head t-fn-head"><h2 class="s-block-h">The funnel</h2>' + menu +
-            '<span class="s-block-say">' + esc(one ? 'one position · who moved on · days in each stage' : 'everyone who reached each stage, across ' + plural(reqs.length, 'position') + ' · who moved on · days in it') + '</span></div>' +
-          stageFunnel(rows, { of: set.length, doorSay: one ? '' : ' Press to see who is at it now, on all your open requisitions.', drill: (s) => (!s.here ? '' : one ? ' data-fdrill="' + s.k + '|' + one.id + '"' : canQueue ? ' data-fdrill="' + s.k + '"' : ''),
-            say: read ? { text: read.text + facts, from: read.from } : null }) +
-        '</section>';
-      })() +
-      reasonsBlock(declines(reqs), 'clients') +
-      (accIn ? '' : '<section class="s-block s-block-wide" aria-label="By account"><div class="s-camp-list-head"><h2 class="s-block-h">By account</h2><span class="s-block-say">requests · open · filled</span></div>' +
-        '<div class="t-funnel">' + byAcc.map((x) => '<button class="t-fn-row t-fn-btn" type="button" data-acc="' + x.a.id + '"><span class="t-fn-label">' + esc(x.a.name) + '</span>' + bar(x.n, maxAcc) +
-          '<span class="t-fn-n"><b>' + x.n + '</b> · ' + x.open + ' · ' + x.hired + '</span></button>').join('') + '</div>' +
-      '</section>') +
-      '<section class="s-block s-block-wide" aria-label="By role"><div class="s-camp-list-head"><h2 class="s-block-h">By role</h2><span class="s-block-say">requests</span></div>' +
-        '<div class="t-funnel">' + byTitle.map((x) => '<div class="t-fn-row"><span class="t-fn-label">' + esc(x.t) + '</span>' + bar(x.n, byTitle[0].n) + '<span class="t-fn-n"><b>' + x.n + '</b></span></div>').join('') + '</div>' +
-      '</section>' +
+    /* THE STORY LEADS (V6). The headline, a contents line to each chapter,
+       the chapters; then the figures behind them, whole, one press down. */
+    const sto = story(reqs, past);
+    const chs = sto.chapters;
+    STORY_NOW = { sto: sto, scope: whose + ', the last ' + per + ' days' + (accIn ? ', ' + accIn.name : '') };
+    let n = 0;
+    const lead = '<div class="t-story">' +
+        '<p class="t-story-h">' + sto.head + '</p>' +
+        '<p class="t-story-from">' + mark(11) + '<span>AiMY · from the ' + plural(reqs.length, 'requisition') + ' in view · every figure below is one press from its definition</span></p>' +
+        /* Each chapter, asked: the answer opens in AiMY's canvas, drawn as
+           QA draws its answers (Engy, 4 Nov). */
+        '<nav class="t-story-toc" aria-label="Ask AiMY about a chapter">' + chs.map((c) => '<button class="t-ask" type="button" data-story="' + c.k + '">' +
+          '<span class="t-ask-mark" aria-hidden="true">' + mark(12) + '</span><span class="t-ask-text">' + esc(c.ask) + '</span><span class="t-ask-go" aria-hidden="true">' + svg('send', 11) + '</span></button>').join('') + '</nav>' +
+      '</div>';
+    const scope = whose + ', the last ' + per + ' days' + (accIn ? ', ' + accIn.name : '');
+    RECAP = sto.slides.map((x) => x.k + ': ' + x.big + ' ' + x.say + ' (' + x.foot + ')').join('\n');
+    /* BEHIND THE STORY, ASKED (Engy, 4 Nov: "like the AiMY insights, to open
+       the chat"). The figures, the breakdowns and the recap were rows that
+       opened in place; now each is one of AiMY's insights, the finding in a
+       sentence and a question that opens the canvas, where the answer is
+       drawn as QA draws one: a type label, the content, and the other two
+       questions to ask next. */
+    const K = { figs: 'q' + (++CHAT_N), cuts: 'q' + (++CHAT_N), recap: 'q' + (++CHAT_N) };
+    const QS = { figs: 'Show me all 13 figures', cuts: 'Break it down stage by stage', recap: 'Make the month’s recap' };
+    const crAns = (k, label, title, body) => '<div class="canvas-render t-cr"><div class="canvas-type-label">' + esc(label) + ' · ' + esc(scope) + '</div>' +
+      (title ? '<p class="t-cr-h">' + title + '</p>' : '') + body +
+      '<div class="canvas-action-row t-cr-next">' + Object.keys(K).filter((x) => x !== k).map((x) =>
+        '<button class="entry-action em-investigate" type="button" data-chat="' + K[x] + '">' + mark(11) + esc(QS[x]) + '</button>').join('') + '</div></div>';
+    const sec = (title, say, body) => '<div class="t-appx-sec"><p class="t-cr-sub">' + esc(title) + (say ? '<span>' + esc(say) + '</span>' : '') + '</p>' + body + '</div>';
+    /* The figures: how many of those with a target miss it, by name. */
+    const missed = tiles.concat(staffing).filter((t) => {
+      if (!t.tgt) return false;
+      const v = t.tgtV ? t.tgtV(st) : t.v(st);
+      return v != null && !(t.tgt.dir === 'le' ? v <= t.tgt.v : v >= t.tgt.v);
+    });
+    const withTgt = tiles.concat(staffing).filter((t) => t.tgt).length;
+    const missSay = missed.length ? '<b>' + missed.length + ' of the ' + withTgt + '</b> with a target miss it: ' + esc(listSay(missed.map((t) => lower(t.cap)))) + '.' : 'Every one with a target meets it.';
+    /* The breakdown: the funnel for every position in view, then the cuts. */
+    const fRows = stageStats(reqs, stagesOf(reqs));
+    const fRead = stageRead(fRows, 'every requisition in view');
+    const facts = ' ' + dropped + ' offers were declined. ' + repl + ' of ' + reqs.length + ' requests were replacements, and ' + bill + ' are billable.';
+    const cuts = sec('The funnel', 'everyone who reached each stage, across ' + plural(reqs.length, 'position') + ' · who moved on · days in it',
+        stageFunnel(fRows, { of: reqs.length, doorSay: ' Press to see who is at it now, on all your open requisitions.', drill: (x) => (x.here && (isRec() || isHR()) ? ' data-fdrill="' + x.k + '"' : ''),
+          say: fRead ? { text: fRead.text + facts, from: fRead.from } : null })) +
+      (accIn ? '' : sec('By account', 'requests · open · filled', '<div class="t-funnel">' + byAcc.map((x) => '<button class="t-fn-row t-fn-btn" type="button" data-acc="' + x.a.id + '"><span class="t-fn-label">' + esc(x.a.name) + '</span>' + bar(x.n, maxAcc) +
+          '<span class="t-fn-n"><b>' + x.n + '</b> · ' + x.open + ' · ' + x.hired + '</span></button>').join('') + '</div>')) +
+      sec('By role', 'requests', '<div class="t-funnel">' + byTitle.map((x) => '<div class="t-fn-row"><span class="t-fn-label">' + esc(x.t) + '</span>' + bar(x.n, byTitle[0].n) + '<span class="t-fn-n"><b>' + x.n + '</b></span></div>').join('') + '</div>') +
       /* Counts, alphabetical, no bars: nothing here can be read as a
          ranking until decision D5 (P6; rank incentives cut productivity in
          a field experiment, R6). The same period and account as the rest. */
-      (isHR() ? '<section class="s-block s-block-wide" aria-label="By recruiter"><div class="s-camp-list-head"><h2 class="s-block-h">By recruiter</h2><span class="s-block-say">alphabetical · not a ranking</span></div>' +
+      (isHR() ? sec('By recruiter', 'alphabetical · not a ranking',
         aimyBlock({ text: 'The same numbers the dashboard shows today, as counts. Whether per-person numbers stay in Talent is decision D5; the research leans to team views here and coaching one person at a time in AiMY QA.', from: 'the UI/UX plan, P6' }) +
         '<div class="t-tbl" role="table" aria-label="By recruiter"><div class="t-tbl-row t-tbl-head" role="row"><span role="columnheader">Recruiter</span><span role="columnheader">Open requisitions</span><span role="columnheader">People in progress</span><span role="columnheader">Days to send profiles</span></div>' +
         RECRUITERS.slice().sort((x, y) => x.name.localeCompare(y.name)).map((rc) => { const mineR = reqs.filter((q) => q.rec === rc.id);
-          const act = mineR.filter(isOpen).reduce((s, q) => s + activeOf(q).length, 0);
-          return '<div class="t-tbl-row" role="row"><span role="cell">' + esc(rc.name) + '</span><span role="cell">' + mineR.filter(isOpen).length + '</span><span role="cell">' + act + '</span><span role="cell">' + (avgSent(mineR) != null ? avgSent(mineR) : '·') + '</span></div>'; }).join('') + '</div>' +
-      '</section>' : '') +
+          const act = mineR.filter(isOpen).reduce((t, q) => t + activeOf(q).length, 0);
+          return '<div class="t-tbl-row" role="row"><span role="cell">' + esc(rc.name) + '</span><span role="cell">' + mineR.filter(isOpen).length + '</span><span role="cell">' + act + '</span><span role="cell">' + (avgSent(mineR) != null ? avgSent(mineR) : '·') + '</span></div>'; }).join('') + '</div>') : '');
+    const deck = '<div class="t-deck">' + sto.slides.map((x) => '<div class="t-slide"><span class="t-slide-k">' + esc(x.k) + '</span><span class="t-slide-s"><em>' + esc(x.big) + '</em>' + esc(x.say) + '</span><span class="t-slide-f">' + esc(x.foot) + '</span></div>').join('') + '</div>' +
+      '<div class="canvas-action-row"><button class="s-insight-lnk primary" type="button" data-recap-copy>Copy the recap</button><span class="t-of-say">as text, to paste into an email or a chat</span></div>';
+    const behind = [
+      insightRow({ k: K.figs, ws: 'detected', wsSay: 'All 13 figures', q: QS.figs,
+        say: 'The <b>13 figures</b> behind the story, each with its target and trend. ' + missSay,
+        a: crAns('figs', 'Figures · 13', missSay, board('Reports', tiles) + sec('Staffing', 'what a hire takes, and what happens after it', board('Staffing', staffing))) }),
+      insightRow({ k: K.cuts, ws: 'detected', wsSay: 'Stage by stage', q: QS.cuts,
+        say: (fRead ? fRead.text : 'Every stage is near its usual.') + ' Then by account and role' + (isHR() ? ', and by recruiter' : '') + '.',
+        a: crAns('cuts', 'Breakdown', fRead ? fRead.text : '', cuts) }),
+      insightRow({ k: K.recap, ws: 'drafted', wsSay: 'Share the month', q: QS.recap,
+        say: 'The month in <b>' + plural(sto.slides.length, 'slide') + '</b>, one sentence each, ready to send to a BU director or a client.',
+        a: crAns('recap', 'Recap · ' + plural(sto.slides.length, 'slide'), '', deck) }),
+    ];
+    return '<div class="s-home">' +
+      '<section class="s-block s-block-wide" aria-label="Reports">' + head + lead + '</section>' +
+      chs.map((c) => chapterBlock(c, c.k === 'journey' ? 0 : ++n)).join('') +
+      '<section class="s-block s-block-wide" aria-label="Behind the story"><div class="s-camp-list-head"><h2 class="s-block-h">Behind the story</h2></div>' +
+        '<div class="t-insights">' + behind.join('') + '</div>' +
+      '</section>' +
     '</div>';
   }
 
@@ -7199,7 +7563,7 @@
     if (/\bwhy\b.*\b(pass|passed|decline|declined|turn|reject)/.test(lc) && !isClient()) {
       const said = declines(deskReqs()).filter((c) => c.decline.day >= -90), counts = declineCounts(said);
       peek(counts.length ? 'Clients gave <b>' + plural(said.length, 'reason') + '</b> in 90 days, one per decision. ' + counts.slice(0, 3).map((x) => esc(x.d.label) + ' ' + x.n).join(', ') +
-        '. Each feeds matching for its own client only.' : 'No client has passed with a reason yet.', [{ label: 'Open the reports', go: { on: 'reports' }, primary: true }]);
+        '. Each feeds matching for its own client only.' : 'No client has passed with a reason yet.', [{ label: 'Open the reports', go: { on: 'reports', ch: 'loss' }, primary: true }]);
       return;
     }
     if ((isClient() || isBU()) && /\b(need|hire|hiring|request|another|more|want)\b/.test(lc)) { clientRequest(t); return; }
@@ -7266,13 +7630,13 @@
       if (!pick) { peek('Too few people have moved yet to say where they drop.', []); return; }
       const x = tot[pick];
       peek((asked ? 'At ' : 'The biggest drop comes after ') + '<b>' + esc(STAGE[pick].label) + '</b>: ' + x.m + ' of ' + x.n + ' who reached it went on to the next stage (' +
-        Math.round(x.m / x.n * 100) + '%), across ' + plural(reqs.length, 'requisition') + '.', [{ label: 'Open the reports', go: { on: 'reports' }, primary: true }]);
+        Math.round(x.m / x.n * 100) + '%), across ' + plural(reqs.length, 'requisition') + '.', [{ label: 'Open the reports', go: { on: 'reports', ch: 'journey' }, primary: true }]);
       return;
     }
     if (/\b(how long|time to|average|days to|how fast)\b/.test(lc) && !isClient()) {
       const reqs = deskReqs().filter((q) => q.state !== 'draft'), a = avgSent(reqs);
       peek(a != null ? 'On average it takes <b>' + days(a) + '</b> from opening a requisition to sending the first profile, across ' + plural(reqs.length, 'requisition') + '.'
-        : 'No profile has been sent yet, so there is no time to report.', [{ label: 'Open the reports', go: { on: 'reports' }, primary: true }]);
+        : 'No profile has been sent yet, so there is no time to report.', [{ label: 'Open the reports', go: { on: 'reports', ch: 'speed' }, primary: true }]);
       return;
     }
     /* A search: names first, then requisitions. */
@@ -7807,14 +8171,6 @@
       '</div>';
   }
 
-  /* The switcher bar slides to the lit tab (Sales, placeSwitchBar). */
-  function placeSwitchBar() {
-    const bar = document.querySelector('.b-switch-bar');
-    const on = document.querySelector('.b-switch-btn.is-on');
-    if (!bar || !on) return;
-    bar.style.transform = 'translate(' + on.offsetLeft + 'px, ' + (on.offsetTop + on.offsetHeight - 2) + 'px) scaleX(' + on.offsetWidth + ')';
-  }
-
   /* WHERE YOU ARE, AND HOW YOU GOT THERE (Engy, 29 Oct). Every page's
      top bar is a trail by the product's own hierarchy, not by history:
      Today / Requisitions / AI Business Analyst / Rana Tawfik. Each step up
@@ -7888,7 +8244,6 @@
     paintBell();
     paintProto();
     paintDial();
-    requestAnimationFrame(placeSwitchBar);
     requestAnimationFrame(afterPaint);
   }
 
@@ -8050,14 +8405,36 @@
     go({});
   }
 
-  /* A pinned How it is counted lets go on a press anywhere outside it, or Escape. */
-  const unpinDefs = () => document.querySelectorAll('.t-def.is-pinned').forEach((x) => { x.classList.remove('is-pinned'); x.querySelector('[data-def]').setAttribute('aria-expanded', 'false'); });
-  document.addEventListener('click', (e) => { if (!e.target.closest('.t-def')) unpinDefs(); }, true);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') unpinDefs(); });
+  /* THE RAIL AS A DRAWER, below 1080px (sales.css). Its button had no
+     handler, which mattered once the tabs moved into the rail: on a narrow
+     screen it is the only way to another page. Picking an entry, the scrim
+     or Escape closes it. */
+  function railDrawer(on) {
+    const rail = byId('appRail');
+    /* Opening, the head and sections rise in one after another (QA's
+       rail-motion: 240ms each, 30ms apart), then the class comes off. */
+    if (on && !rail.classList.contains('is-open')) {
+      rail.classList.remove('rail-motion');
+      void rail.offsetWidth;
+      rail.classList.add('rail-motion');
+      setTimeout(() => rail.classList.remove('rail-motion'), 700);
+    }
+    rail.classList.toggle('is-open', on);
+    byId('railScrim').classList.toggle('is-open', on);
+    byId('railToggle').setAttribute('aria-expanded', String(on));
+  }
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') railDrawer(false); });
   document.addEventListener('click', (e) => {
     const t = e.target;
     const at = (sel) => t.closest(sel);
     let el;
+    if (at('#railToggle')) { railDrawer(!byId('appRail').classList.contains('is-open')); return; }
+    if (at('#railScrim')) { railDrawer(false); return; }
+    if (at('.snav-section-head, .snav-finding.is-link')) {
+      RAIL_MOVE = !!at('button.snav-section-head') && e.detail > 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey &&
+        !!Element.prototype.animate && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+      railDrawer(false);
+    }
     if ((el = at('[data-undo]'))) { const u = UNDO; toastGone(); if (u) u(); return; }
     /* ── The canvas ── */
     if (at('#canvasOpen')) { if (canvasShown()) closeCanvas(); else openCanvas(); return; }
@@ -8460,11 +8837,6 @@
     /* Prepare me travels to the bar like an insight's question, then the
        brief opens in the chat (find-animation-opportunities, 29 Oct). */
     if ((el = at('[data-prep]'))) { const c = DB.byId[val('data-prep')]; flyToBar(el, () => prepMe(c)); return; }
-    if ((el = at('[data-def]'))) {
-      const box = el.closest('.t-def'), on = !box.classList.contains('is-pinned');
-      unpinDefs();
-      box.classList.toggle('is-pinned', on); el.setAttribute('aria-expanded', String(on)); return;
-    }
     if ((el = at('[data-cb]'))) { if (PENDING) { PENDING.cb = val('data-cb'); paintThread(); } return; }
     if ((el = at('[data-fu]'))) { if (PENDING) { PENDING.fu = !fuOn(PENDING); paintThread(); } return; }
     if ((el = at('[data-runn]'))) { UI.runN = Number(val('data-runn')); saveUI(); paint(); return; }
@@ -8540,6 +8912,20 @@
     }
     if ((el = at('[data-q]'))) { go(Object.assign({}, S, { q: el.getAttribute('data-q') }), true); return; }
     /* The report's view: 90 days and every account are the plain link. */
+    /* ── Reports: a chapter from the contents line, the recap, nudging a lane ── */
+    if ((el = at('[data-story]'))) { storyAsk(el, val('data-story')); return; }
+    if ((el = at('[data-recap-copy]'))) {
+      const done = () => toast('The recap is copied', null, 'Paste it into an email or a chat.');
+      if (navigator.clipboard) navigator.clipboard.writeText(RECAP).then(done, () => toast('Could not copy', null, 'Select the slides and copy them instead.')); else done();
+      return;
+    }
+    if ((el = at('[data-nudge-all]'))) {
+      const cs = val('data-nudge-all').split(',').map((id) => DB.byId[id]).filter((c) => c && c.nudged == null);
+      cs.forEach((c) => write(c, { nudged: 0 }));
+      paint();
+      toast('Nudged about ' + plural(cs.length, 'person', 'people'), () => { cs.forEach((c) => write(c, { nudged: null })); paint(); }, 'Each one is logged on its requisition.');
+      return;
+    }
     if ((el = at('[data-period]'))) { const p = val('data-period'); go(Object.assign({}, S, { period: p === '90' ? null : p }), true); return; }
     if ((el = at('[data-account]'))) { go(Object.assign({}, S, { account: val('data-account') || null }), true); return; }
     if ((el = at('[data-trail]'))) { go(TRAIL && !TRAIL.req ? TRAIL : { on: 'reqs' }); return; }
@@ -8552,6 +8938,7 @@
     /* The product list that hangs from the mark below 720px (Sales). */
     if ((el = at('[data-pickopen]'))) {
       const m = byId(el.getAttribute('data-pickopen'));
+      document.querySelectorAll('.t-rpt-menu:not([hidden])').forEach((x) => { if (x !== m) { x.hidden = true; x.previousElementSibling.setAttribute('aria-expanded', 'false'); } });
       m.hidden = !m.hidden; el.setAttribute('aria-expanded', String(!m.hidden)); return;
     }
     if ((el = at('[data-req]'))) { go({ req: el.getAttribute('data-req') }); return; }
@@ -8563,6 +8950,8 @@
     if (!at('#ntfPanel') && !at('#ntfBell')) { const p = byId('ntfPanel'); if (!p.hidden) { p.hidden = true; byId('ntfBell').setAttribute('aria-expanded', 'false'); } }
     if (!at('#dialAnchor')) closeDial();
     if (!at('.b-menu-wrap')) document.querySelectorAll('.tel-menu').forEach((m) => { m.hidden = true; });
+    /* The scope's menus close on a press anywhere but the one that is open. */
+    document.querySelectorAll('.t-rpt-menu:not([hidden])').forEach((m) => { if (!m.parentNode.contains(e.target)) { m.hidden = true; m.previousElementSibling.setAttribute('aria-expanded', 'false'); } });
   });
 
   /* Find, as you type. The page repaints and the cursor stays where it was. */
@@ -8717,7 +9106,6 @@
     }
     parse(); paint();
   });
-  window.addEventListener('resize', () => requestAnimationFrame(placeSwitchBar), { passive: true });
 
 
   /* ══ 9. BOOT ════════════════════════════════════════════════════════════ */
@@ -8731,5 +9119,7 @@
   load();
   parse();
   paint();
-  window.TALENT = { DB: DB, S: S, decisions: decisions, waits: waits, health: health, funnel: funnel };
+  /* A shared link to one chapter of the reports opens on it. */
+  if (S.ch) { const k = S.ch; delete S.ch; history.replaceState(null, '', urlOf(S)); toChapter(k, true); }
+  window.TALENT ={ DB: DB, S: S, decisions: decisions, waits: waits, health: health, funnel: funnel };
 })();

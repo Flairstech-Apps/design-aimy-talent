@@ -53,8 +53,6 @@
   margin-bottom: 10px; font-size: var(--fs-xs); color: var(--d100);
 }
 .t-sf-key { display: inline-flex; align-items: center; gap: 6px; }
-.t-sf-legend .t-def { margin-left: auto; }
-.t-sf-legend .t-def-pop { left: auto; right: 0; width: min(380px, calc(100vw - 48px)); }
 .t-sf-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; box-sizing: border-box; }
 .t-sf-dot.is-ok { background: var(--ok); }
 .t-sf-dot.is-warn { background: var(--warn); }
@@ -92,8 +90,6 @@
 .t-sf-val.is-warn b { color: var(--warn-text); }
 .t-sf-val.is-err b { color: var(--err-text); }
 .t-sf-cap { display: none; }
-.t-fn-head .b-menu-wrap { margin-left: auto; }
-.t-fn-head .t-fn-menu { left: auto; right: 0; }
 @media (max-width: 640px) {
   .t-sf-cols { display: none; }
   .t-sf-row {
@@ -104,9 +100,7 @@
   .t-sf-row + .t-sf-row { border-top: 1px solid var(--card-border); border-radius: 0; }
   .t-sf-val { align-items: flex-start; }
   .t-sf-cap { display: block; text-transform: uppercase; letter-spacing: 0.06em; }
-  .t-sf-legend .t-def { margin-left: 0; flex-basis: 100%; }
-  .t-sf-legend .t-def-pop { right: auto; left: 0; }
-}
+    }
 
 /* ══ 3. LOGGING A CALL, IN THE CONVERSATION ══════════════════════════════
    As Sales does since 28 Oct: hanging up closes the panel and the call is
@@ -367,11 +361,6 @@ textarea.dial-input.t-area { height: auto; padding: 10px 12px; }
 .t-asq-rate.is-low, .t-asq-rate.is-low b { color: var(--warn-text); }
 .t-tpl { padding: 16px 0; border-top: 1px solid var(--card-border); }
 .t-tpl:first-child { border-top: 0; padding-top: 4px; }
-.t-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 12px; margin: 4px 0 20px; }
-.t-kpi { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border: 1px solid var(--card-border); border-radius: var(--r-lg); background: var(--card-bg); }
-.t-kpi-cap { font-size: var(--t-micro); font-weight: var(--fw-medium); letter-spacing: 0.08em; text-transform: uppercase; color: var(--d100); }
-.t-kpi-n { font-family: var(--font-display); font-size: 28px; line-height: 1.1; font-weight: var(--fw-bold); color: var(--d50); font-variant-numeric: tabular-nums; }
-.t-kpi-say { font-size: var(--fs-sm); color: var(--d100); line-height: var(--lh-snug); }
 .t-fn-btn {
   width: 100%; background: none; border: 0; padding: 4px 6px; margin: 0 -6px; font: inherit; color: inherit;
   text-align: left; border-radius: 6px; cursor: pointer; box-sizing: content-box;
@@ -619,7 +608,7 @@ body.is-portal .aimy-overlay { display: none !important; }
   --card-see: color-mix(in srgb, var(--card-bg) 85%, transparent);
   --raised-see: color-mix(in srgb, var(--card-bg-raised) 85%, transparent);
 }
-.type-card, .bcard, .rail-card, .b-door, .s-start, .b-find, .t-iv, .t-kpi, .t-msg, .t-prop,
+.type-card, .s-start, .b-find, .t-iv, .t-msg, .t-prop,
 .rc .card, .rc .tile, .rc .search {
   background: var(--card-see) !important;
   -webkit-backdrop-filter: blur(12px);
@@ -909,16 +898,34 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-prep-btn { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; margin-left: 16px; }
 
 /* ══ REPORTS, READ AGAINST SOMETHING ══════════════════════════════════════
-   The view (period, account) as Sales's view chips, labelled, wrapping
-   rather than scrolling. Each tile carries its target as a chip that says
+   The view (period, account) is the sentence under the title, its two
+   phrases each a menu (talent.js reportsPage). Each tile carries its target as a chip that says
    met or by how much it is off, in words as well as colour, and its trend
    as a small line with the three numbers beside it (talent.js reportsPage). */
-.t-rpt-filters { display: grid; gap: 4px; margin: 4px 0 16px; }
-.t-rpt-filters .s-views { align-items: center; margin-bottom: 0; }
-.t-rpt-lab {
-  min-width: 76px; margin-right: 4px;
-  font-size: var(--t-micro); font-weight: var(--fw-medium); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted);
+/* The sentence sits under the title, as every block's line does (Sales). */
+.t-rpt-head { flex-direction: column; align-items: flex-start; gap: 0; }
+.t-rpt-scope { margin: 2px 0 0; color: var(--d100); font-size: var(--fs-sm); line-height: 1.7; }
+/* A phrase you can press: the value in full weight, a dashed accent line
+   under it and a chevron, so on dark it reads as a control, not emphasis. */
+.t-blank {
+  display: inline-flex; align-items: center; gap: 3px; padding: 0 2px; margin: 0 1px;
+  border: 0; border-bottom: 1.5px dashed rgba(var(--accent-rgb), 0.75); border-radius: 0; background: none;
+  font: inherit; font-weight: var(--fw-semibold); color: var(--d50); line-height: 1.35; cursor: pointer;
+  transition: color var(--t-fast) ease, border-color var(--t-fast) ease;
 }
+.t-blank svg { flex: none; opacity: 0.8; transition: transform var(--t-fast) var(--ease-out); }
+.t-blank:hover, .t-blank[aria-expanded="true"] { color: var(--accent-text, var(--accent)); border-bottom-style: solid; border-bottom-color: var(--accent); }
+.t-blank[aria-expanded="true"] svg { transform: rotate(180deg); }
+.t-blank:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
+/* The block head lays its children out as flex boxes; the sentence and its
+   phrases are text, so they are put back inline. */
+.t-rpt-head .t-rpt-scope { display: block; }
+.t-rpt-head .t-blank-wrap { display: inline-flex; vertical-align: baseline; }
+.t-rpt-head .t-blank { display: inline-flex; }
+.t-rpt-menu { min-width: 248px; }
+.t-rpt-tick { display: inline-flex; width: 14px; flex: none; color: var(--accent-text, var(--accent)); }
+.t-rpt-sep { height: 1px; margin: 3px 8px; background: var(--card-border); }
+@media (prefers-reduced-motion: reduce) { .t-blank, .t-blank svg { transition: none; } }
 .t-rpt-none { margin: 4px 0 8px; font-size: var(--fs-sm); color: var(--d100); }
 .t-kpi-tgt {
   display: flex; align-items: baseline; gap: 6px;
@@ -929,27 +936,6 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-kpi-tgt.is-ok::before { background: currentColor; }
 .t-kpi-tgt.is-warn { color: var(--warn-text, var(--warn)); }
 .t-kpi-tgt.is-warn::before { background: currentColor; }
-.t-kpi-trend {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px;
-  font-size: var(--fs-xs); color: var(--d100); font-variant-numeric: tabular-nums;
-}
-.t-spark { flex: none; overflow: visible; }
-.t-spark path { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.t-spark circle { fill: var(--accent); }
-/* Where time goes: the step and who it waits on, on two lines in the
-   label; the recruiter's own steps in the plain bar colour, others' in the
-   accent, so the split is in the words first. */
-.t-lost-row { grid-template-columns: minmax(0, 180px) minmax(0, 1fr) auto; }
-.t-lost-row .t-fn-n { white-space: nowrap; }
-.t-lost-row .t-fn-label { display: flex; flex-direction: column; gap: 1px; white-space: normal; }
-.t-lost-step { color: var(--d50); font-weight: var(--fw-medium); }
-.t-lost-who { font-size: var(--fs-xs); color: var(--ink-muted); }
-.t-lost-row .t-fn-fill { background: var(--accent); }
-.t-lost-row.is-mine .t-fn-fill { background: var(--brand); opacity: 0.55; }
-@media (max-width: 560px) {
-  .t-rpt-lab { flex: 1 1 100%; }
-  .t-lost-row { grid-template-columns: minmax(0, 1fr) auto; }
-}
 
 /* ══ CANDIDATES: FIND, ONE REQUISITION, CARDS ══════════════════════════════
    The search and the requisition menu (Sales's .b-menu)
@@ -987,22 +973,6 @@ body.is-portal .aimy-overlay { display: none !important; }
    target, what it counts kept to three lines (the whole sentence is its
    title and in How it is counted), and the trend at the foot. How it is
    counted opens as a panel over the card, so opening one moves nothing. */
-.t-kpis.t-kpis-eq {
-  grid-template-columns: repeat(auto-fill, minmax(min(236px, 100%), 1fr));
-  grid-auto-rows: 1fr; align-items: stretch;
-}
-/* One floor for both grids, so Reports and Staffing cards match too. */
-.t-kpi-eq { position: relative; gap: 6px; min-height: 268px; }
-/* One card a row on a phone: still one height, the tallest one's, no floor. */
-@media (max-width: 560px) { .t-kpi-eq { min-height: 0; } }
-.t-kpi-eq:has(.t-def:hover, .t-def.is-pinned, .t-def:focus-within) { z-index: 25; }
-.t-kpi-eq .t-kpi-cap { min-height: 2.6em; line-height: 1.3; }
-.t-kpi-eq .t-kpi-tgt { min-height: 2.7em; }
-.t-kpi-eq .t-kpi-say {
-  font-size: var(--fs-xs); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
-}
-.t-kpi-eq .t-kpi-trend { margin-top: auto; padding-top: 4px; }
-.t-spark-none { flex: none; width: 64px; height: 20px; }
 
 /* ══ HOW IT IS COUNTED, AS A PANEL ═════════════════════════════════════════
    The metric dictionary (R6) opens on hover or focus and stays while it is
@@ -1010,39 +980,8 @@ body.is-portal .aimy-overlay { display: none !important; }
    nothing moves. Inside, the definition's own shape: the measure and its
    unit, Starts → Stops, what it counts, then under a rule the target, what
    it is not to be mixed with, and how the trend reads. */
-.t-def { display: block; }
-.t-def-btn {
-  padding: 0; border: 0; background: none; cursor: pointer; font: inherit;
-  font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--accent-label, var(--accent));
-}
-.t-def-btn:hover, .t-def.is-pinned .t-def-btn { text-decoration: underline; }
-.t-def-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
-.t-def-pop {
-  display: none; position: absolute; left: -1px; right: -1px; top: calc(100% - 4px); z-index: 1;
-  min-width: 260px; padding: 14px 16px; flex-direction: column; gap: 12px;
-  border: 1px solid var(--card-border-hover); border-radius: var(--r-lg); background: var(--card-bg-raised);
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.38); font-size: var(--fs-xs); line-height: var(--lh-snug); color: var(--d100);
-}
 /* A bridge over the gap, so the pointer can travel from the link to the panel. */
-.t-def-pop::before { content: ''; position: absolute; left: 0; right: 0; top: -14px; height: 14px; }
-.t-def:hover .t-def-pop, .t-def:focus-within .t-def-pop, .t-def.is-pinned .t-def-pop { display: flex; }
-.t-def-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 10px; }
-.t-def-head b { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--d50); }
-.t-def-unit {
-  padding: 1px 8px; border-radius: var(--r-pill); border: 1px solid var(--card-border-hover);
-  font-size: var(--fs-2xs); color: var(--d100);
-}
-.t-def-span { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: start; gap: 8px; }
-.t-def-pt { display: flex; flex-direction: column; gap: 2px; color: var(--d50); }
-.t-def-arrow { padding-top: 14px; color: var(--ink-muted); }
-.t-def-sec { display: flex; flex-direction: column; gap: 8px; }
-.t-def-foot { padding-top: 12px; border-top: 1px solid var(--card-border); }
-.t-def-row { display: flex; flex-direction: column; gap: 2px; }
-.t-def-k { font-size: var(--fs-2xs); font-weight: var(--fw-medium); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); }
-.t-def-v { color: var(--d50); }
-.t-def-foot .t-def-v { color: var(--d100); }
 /* A card with nothing to count says what there is, in words, smaller. */
-.t-kpi-n.is-none { font-size: 20px; line-height: 1.4; color: var(--d100); }
 
 /* ══ REQUISITIONS: THE FORECAST, THE TWO STARTS, THE APPROVAL ═════════════
    The forecast is two short rows on the card, the late one in warn and in
@@ -1173,7 +1112,7 @@ body.is-portal .aimy-overlay { display: none !important; }
 
 /* ══ THE CV ON HOVER ══════════════════════════════════════════════════════
    A candidate's CV, small, under their name while it is hovered. The same
-   raised surface as "How it is counted" (.t-def-pop), fixed to the window
+   raised surface as the menus, fixed to the window
    so a card's overflow cannot clip it. Read in this order: who they are
    now, each must-have against the CV, skills, calls, then the latest. */
 .t-cv {
@@ -1316,3 +1255,290 @@ body.is-portal .aimy-overlay { display: none !important; }
 #asPanel .b-menu-item { gap: 16px; }
 #asPanel .b-menu-name, #asPanel .tel-menu-cc { white-space: nowrap; }
 #asPanel .tel-menu-cc { font-weight: var(--fw-medium); color: var(--ink-muted); }
+
+/* ══ THE RAIL, IN AiMY QA's FORM (Engy, 4 Nov) ═══════════════════════════
+   The tabs moved into the rail, and the rail takes QA's open side nav: AiMY
+   UI's side-nav, values from QA's aimy-rail.css. 272px wide on a card
+   ground; an AiMY head; a section per page with its icon, name and a
+   chevron, its figures under it in a 42px right-set column; the page you
+   are on first, in an accent card with You're here. Nothing in it wears a
+   severity colour, as in QA. Below 1080 it is Sales's drawer, as before. */
+@media (min-width: 1080px) {
+  :root { --rail-w: 272px; }
+  .app-rail { background: rgba(20, 27, 36, 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  :root[data-theme="light"] .app-rail { background: rgba(255, 255, 255, 0.85); }
+}
+.app-rail { padding: 16px 12px 24px; }
+/* QA's two washes, which this build only declared on the bell's panel
+   (bdr.css .ntf-anchor). Without them the hover filled nothing and the
+   hairlines between sections drew nothing. QA's values, both themes. */
+.app-rail { --wash-3: rgba(255, 255, 255, 0.04); --wash-6: rgba(255, 255, 255, 0.07); }
+:root[data-theme="light"] .app-rail { --wash-3: rgba(16, 24, 40, 0.05); --wash-6: rgba(16, 24, 40, 0.09); }
+.snav-head {
+  display: flex; align-items: center; gap: 7px; margin: 0 0 12px; padding: 6px 12px; min-height: 40px;
+  position: sticky; top: 0; z-index: 2;
+  border-radius: var(--r-md); background: var(--card-bg); border: 1px solid var(--glass-border);
+}
+.snav-head-mark { display: inline-flex; flex-shrink: 0; }
+.snav-head-label { font-size: 11px; font-weight: var(--fw-bold); letter-spacing: 0.02em; color: var(--ai-text); }
+.snav-head-count { margin-left: auto; color: var(--d300); font-size: 10px; font-weight: var(--fw-medium); white-space: nowrap; }
+
+.snav-groups, .snav-findings { list-style: none; margin: 0; padding: 0; }
+.snav-groups { display: flex; flex-direction: column; }
+.snav-section { position: relative; padding: 8px 4px; border-radius: 10px; transition: background-color var(--t-fast) ease; }
+.snav-section:not(.is-current) + .snav-section:not(.is-current) { border-top: 1px solid var(--wash-6); }
+.snav-section.is-current {
+  margin-bottom: 8px; padding: 8px 6px 10px; border-radius: 12px;
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(var(--accent-rgb), 0.26), transparent 70%),
+    linear-gradient(120deg, rgba(var(--accent-rgb), 0.14), rgba(0, 102, 255, 0.06));
+  border: 1px solid rgba(var(--accent-rgb), 0.42);
+}
+:root[data-theme="light"] .snav-section.is-current { background: linear-gradient(120deg, rgba(var(--accent-rgb), 0.12), rgba(0, 102, 255, 0.05)); }
+.snav-section-head {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 5px 6px; border: 0; border-radius: 8px;
+  background: transparent; font: inherit; text-align: left; color: var(--d100);
+  font-size: 12.5px; font-weight: var(--fw-semibold); line-height: 1.3;
+  transition: background-color var(--t-fast) ease, color var(--t-fast) ease;
+}
+/* The whole section is the link: the head's ::after stretches over it. */
+button.snav-section-head { cursor: pointer; }
+button.snav-section-head::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+/* HOVER FILLS THE WHOLE CARD, AS QA's DOES (Engy, 4 Nov, with QA's rail
+   as the reference). QA's aimy-rail.css: the section under the pointer
+   takes --wash-3 across its whole 10px card, nothing more. On the whole
+   section, so the card stays lit over a finding that is its own link. */
+.snav-section:not(.is-current):hover { background: var(--wash-3); }
+button.snav-section-head:hover { color: var(--d50); }
+button.snav-section-head:focus-visible { outline: none; }
+button.snav-section-head:focus-visible::after { outline: 2px solid var(--brand); outline-offset: -2px; border-radius: 10px; }
+.snav-section-icon { display: inline-flex; flex-shrink: 0; color: var(--d400); }
+.snav-section.is-current .snav-section-icon { color: var(--d100); }
+.snav-section-name { flex: 1; min-width: 0; }
+.snav-chevron { display: inline-flex; flex-shrink: 0; color: var(--d400); transition: transform var(--t-base) var(--ease-out), color var(--t-fast) ease; }
+button.snav-section-head:hover .snav-chevron { color: var(--d200); transform: translateX(2px); }
+.snav-here {
+  flex-shrink: 0; padding: 2px 7px; border-radius: 999px; background: rgba(var(--accent-rgb), 0.28); color: var(--d50);
+  font-size: 9.5px; font-weight: var(--fw-bold); letter-spacing: 0.06em; text-transform: uppercase;
+}
+:root[data-theme="light"] .snav-here { background: rgba(var(--accent-rgb), 0.16); color: var(--d100); }
+
+.snav-findings { margin-top: 2px; }
+.snav-finding {
+  display: grid; grid-template-columns: 42px minmax(0, 1fr); column-gap: 8px; align-items: baseline;
+  width: 100%; padding: 4px 6px; border: 0; border-radius: 8px; background: transparent; font: inherit; text-align: left;
+  color: var(--d300); font-size: 12px; font-weight: var(--fw-medium); line-height: 1.4;
+  transition: background-color var(--t-fast) ease, color var(--t-fast) ease;
+}
+.snav-finding.is-link { position: relative; z-index: 1; cursor: pointer; }
+.snav-finding.is-link:hover { background: var(--wash-3); color: var(--d100); }
+.snav-finding.is-link:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.snav-fig {
+  color: var(--d50); font-size: 15px; font-weight: var(--fw-bold); line-height: 1.2;
+  text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+/* Opening the rail as a drawer, the head and each section rise in one after
+   another (QA's rail-section-in). Transform and opacity only. */
+@keyframes snav-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.rail-motion .snav-head, .rail-motion .snav-section { animation: snav-in 240ms var(--ease-out) both; }
+.rail-motion .snav-section:nth-child(2) { animation-delay: 30ms; }
+.rail-motion .snav-section:nth-child(3) { animation-delay: 60ms; }
+.rail-motion .snav-section:nth-child(4) { animation-delay: 90ms; }
+.rail-motion .snav-section:nth-child(5) { animation-delay: 120ms; }
+.rail-motion .snav-section:nth-child(6) { animation-delay: 150ms; }
+.rail-motion .snav-section:nth-child(7) { animation-delay: 180ms; }
+.rail-motion .snav-section:nth-child(8) { animation-delay: 210ms; }
+@media (prefers-reduced-motion: reduce) {
+  .snav-section, .snav-section-head, .snav-finding, .snav-chevron { transition: none; }
+  button.snav-section-head:hover .snav-chevron { transform: none; }
+  .rail-motion .snav-head, .rail-motion .snav-section { animation: none; }
+}
+
+/* ══ THE REPORTS STORY (V6, 4 Nov) ═══════════════════════════════════════
+   A headline in AiMY's voice, a contents line, then one chapter a block:
+   its sentence, its picture, AiMY's reading, the move. Colour carries
+   meaning only: violet the flow and your own steps, amber off target or
+   waiting on someone else, green on target. Every coloured figure is also
+   said in words. */
+.t-story { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.t-story-h { margin: 0; max-width: 46ch; color: var(--d50); font-size: clamp(19px, 2.1vw, 24px); font-weight: var(--fw-semibold); line-height: 1.35; text-wrap: pretty; }
+.t-mk { padding: 0 2px; border-radius: 4px; background: none; color: var(--warn-text, var(--warn)); box-shadow: inset 0 -0.32em 0 rgba(var(--warn-rgb), 0.16); }
+.t-mk.is-ok { color: var(--ok-text, var(--ok)); box-shadow: inset 0 -0.32em 0 rgba(var(--ok-rgb), 0.16); }
+.t-story-from { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; color: var(--ink-muted); font-size: var(--fs-xs); }
+.t-story-toc { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.t-ch { scroll-margin-top: 16px; }
+.t-ch.is-lit { animation: t-ch-lit 1.4s var(--ease-out); }
+@keyframes t-ch-lit { from { box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.55); } to { box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0); } }
+.t-ch-cap { color: var(--accent-text, var(--accent)); font-size: var(--fs-2xs); font-weight: var(--fw-semibold); letter-spacing: 0.06em; text-transform: uppercase; }
+.t-ch-h { margin: 4px 0 14px; color: var(--d50); font-size: 17px; font-weight: var(--fw-semibold); line-height: 1.35; text-wrap: balance; }
+.t-ch-h:focus { outline: none; }
+.t-pic-key { margin: 8px 0 0; color: var(--ink-muted); font-size: var(--fs-2xs); line-height: 1.5; }
+.t-pic-cap { margin: 14px 0 8px; color: var(--d100); font-size: var(--fs-xs); font-weight: var(--fw-medium); }
+.t-ch .b-aimy { margin-top: 14px; }
+
+/* The journey: names and counts in a grid, the bands drawn under them. */
+/* The diagrams fit their box; on a phone one scrolls sideways, under the
+   product's one scrollbar (aimy-responsive.css §9, from QA). */
+.t-jy-wrap, .t-ru-wrap, .t-ln-wrap { overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; }
+.t-jy { min-width: calc(var(--n) * 84px); }
+.canvas-chart .t-jy { min-width: calc(var(--n) * 54px); }
+.canvas-chart .t-jy-stage b { font-size: 16px; }
+.canvas-chart .t-jy-name, .canvas-chart .t-jy-note { font-size: 10.5px; }
+.canvas-chart .t-ln-who { font-size: 12px; }
+.t-jy-row { display: grid; grid-template-columns: repeat(var(--n), 1fr); }
+.t-jy-stage { display: flex; flex-direction: column; gap: 1px; min-width: 0; margin: 0 6px 6px 0; padding: 4px 6px 4px 0; border: 0; border-radius: 8px; background: none; font: inherit; text-align: left; color: inherit; }
+.t-jy-stage b { color: var(--d50); font-size: 20px; font-weight: var(--fw-bold); line-height: 1.15; font-variant-numeric: tabular-nums; }
+.t-jy-name { color: var(--d100); font-size: var(--fs-2xs); line-height: 1.3; }
+.t-jy-sub { color: var(--ink-muted); font-size: 10.5px; line-height: 1.3; }
+.t-jy-stage.is-off b, .t-jy-stage.is-off .t-jy-sub { color: var(--warn-text, var(--warn)); }
+.t-jy-stage.is-door { cursor: pointer; transition: background-color var(--t-fast) ease; }
+.t-jy-stage.is-door:hover { background: rgba(var(--accent-rgb), 0.08); }
+.t-jy-stage.is-door:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.t-jy-draw { position: relative; height: 200px; margin-top: 2px; }
+.t-jy-svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; overflow: visible; }
+.t-jy-stop-a { stop-color: var(--accent); stop-opacity: 0.42; }
+.t-jy-stop-b { stop-color: var(--accent); stop-opacity: 0.12; }
+.t-jy-band { fill: url(#jyBand); }
+.t-jy-bar { fill: var(--accent); }
+.t-jy-bar.is-off { fill: var(--warn); }
+.t-jy-lead { stroke-width: 1; }
+.t-jy-lead.is-ok { stroke: var(--ok-text, var(--ok)); }
+.t-jy-lead.is-off { stroke: var(--warn-text, var(--warn)); }
+/* Under each gap, how many did not go on; set at the band's lower edge. */
+.t-jy-drop { position: absolute; transform: translateX(-50%); color: var(--ink-muted); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none; }
+.t-jy-note { position: absolute; display: flex; flex-direction: column; color: var(--d100); font-size: 12px; line-height: 1.4; white-space: nowrap; pointer-events: none; }
+.t-jy-note b { font-weight: var(--fw-semibold); }
+.t-jy-note.is-ok b { color: var(--ok-text, var(--ok)); }
+.t-jy-note.is-off b { color: var(--warn-text, var(--warn)); }
+/* On the page (not in a chat answer, which repaints with every turn) the
+   bars grow down in order and the bands and notes follow. */
+.t-ch .t-jy-bar { transform-box: fill-box; transform-origin: top; animation: t-jy-grow 560ms var(--ease-out) both; animation-delay: calc(var(--i) * 55ms); }
+.t-ch .t-jy-band { animation: t-jy-fade 520ms var(--ease-out) both; animation-delay: calc(var(--i) * 55ms + 160ms); }
+.t-ch .t-jy-drop, .t-ch .t-jy-note, .t-ch .t-jy-lead { animation: t-jy-fade 420ms var(--ease-out) 640ms both; }
+@keyframes t-jy-grow { from { transform: scaleY(0); } to { transform: none; } }
+@keyframes t-jy-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .t-ch .t-jy-bar, .t-ch .t-jy-band, .t-ch .t-jy-drop, .t-ch .t-jy-note, .t-ch .t-jy-lead { animation: none; } }
+
+/* The ruler: each step's days end to end, the target and the real day as lines. */
+.t-ru { position: relative; min-width: 440px; padding: 44px 0 30px; }
+.t-ru-late { position: absolute; top: 38px; bottom: 26px; right: 0; background: rgba(var(--warn-rgb), 0.06); border-radius: 0 8px 8px 0; }
+.t-ru-track { position: relative; display: flex; }
+.t-ru-seg { flex: none; display: flex; flex-direction: column; gap: 6px; min-width: 0; padding-right: 3px; }
+.t-ru-bar { display: flex; flex-direction: column; justify-content: center; height: 54px; padding: 0 8px; border-radius: 6px; background: rgba(var(--accent-rgb), 0.78); color: #fff; overflow: hidden; white-space: nowrap; }
+.t-ru-seg:nth-child(even) .t-ru-bar { background: rgba(var(--accent-rgb), 0.58); }
+.t-ru-seg.is-part .t-ru-bar { background: repeating-linear-gradient(45deg, rgba(var(--accent-rgb), 0.55) 0 3px, rgba(var(--accent-rgb), 0.22) 3px 7px); }
+.t-ru-seg.is-slow .t-ru-bar { background: rgba(var(--warn-rgb), 0.85); color: #241a02; }
+:root[data-theme="light"] .t-ru-seg.is-part .t-ru-bar { color: var(--d50); }
+.t-ru-bar b { font-size: 12px; font-weight: var(--fw-semibold); overflow: hidden; text-overflow: ellipsis; }
+.t-ru-bar span { font-size: 11.5px; opacity: 0.85; }
+.t-ru-usual { padding-left: 2px; color: var(--ink-muted); font-size: 10.5px; white-space: nowrap; }
+.t-ru-gap { flex: none; height: 54px; border: 1px dashed var(--card-border-hover); border-radius: 6px; }
+.t-ru-line { position: absolute; top: 38px; bottom: 26px; width: 0; border-left: 2px solid currentColor; }
+/* Two rows of labels, the target above the real day, so they never meet. */
+.t-ru-line > span { position: absolute; top: -38px; left: 6px; font-size: 11.5px; font-weight: var(--fw-semibold); white-space: nowrap; }
+.t-ru-line.is-target { border-left-style: dashed; color: var(--ok-text, var(--ok)); }
+.t-ru-line.is-late { color: var(--warn-text, var(--warn)); }
+.t-ru-line.is-met { color: var(--ok-text, var(--ok)); }
+.t-ru-line.is-end > span { top: -20px; left: auto; right: 6px; }
+.t-ru-axis { position: absolute; left: 0; right: 0; bottom: 0; height: 16px; border-top: 1px solid var(--line); }
+.t-ru-axis span { position: absolute; top: 3px; transform: translateX(-50%); color: var(--ink-muted); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.t-ru-axis span:first-child { transform: none; }
+.t-ru-axis span:last-child { transform: translateX(-100%); }
+
+/* The lanes: who it waits on, down; the steps, across. */
+.t-ln { min-width: calc(96px + var(--c) * 48px + 44px); }
+.t-ln-row { display: grid; grid-template-columns: minmax(96px, 150px) repeat(var(--c), minmax(48px, 1fr)) 44px; align-items: center; min-height: 52px; border-radius: 10px; }
+.t-ln-row:nth-child(even) { background: rgba(255, 255, 255, 0.03); }
+:root[data-theme="light"] .t-ln-row:nth-child(even) { background: rgba(16, 24, 40, 0.03); }
+.t-ln-head { min-height: 28px; color: var(--ink-muted); font-size: var(--fs-2xs); }
+.t-ln-head span { text-align: center; }
+.t-ln-head span:first-child { padding-left: 12px; text-align: left; }
+.t-ln-who { padding-left: 12px; color: var(--d50); font-size: var(--fs-xs); font-weight: var(--fw-semibold); }
+.t-ln-cell { display: grid; place-items: center; padding: 4px 0; }
+.t-ln-dot { display: grid; place-items: center; width: var(--r); height: var(--r); border: 1.5px solid var(--warn); border-radius: 50%; background: rgba(var(--warn-rgb), 0.24); color: var(--d50); font-size: 11px; font-weight: var(--fw-bold); font-variant-numeric: tabular-nums; }
+.t-ln-row.is-mine .t-ln-dot { border-color: var(--accent); background: rgba(var(--accent-rgb), 0.26); }
+.t-ln-sum { padding-right: 12px; text-align: right; color: var(--warn-text, var(--warn)); font-size: var(--fs-sm); }
+.t-ln-row.is-mine .t-ln-sum { color: var(--d100); }
+
+/* The offers and day 90: one mark a person, the lost ones hollow. */
+.t-of, .t-d90 { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.t-of-dot, .t-d90-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); }
+.t-of-dot.is-lost, .t-d90-dot.is-left { background: none; box-shadow: inset 0 0 0 2px var(--warn); }
+.t-of-say { margin-left: 6px; color: var(--ink-muted); font-size: var(--fs-2xs); }
+
+/* Behind the story, answered in the canvas: its sections, each under a
+   small heading with the line that says what it counts. */
+.t-appx-sec + .t-appx-sec { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--line); }
+.t-cr-sub { display: flex; flex-direction: column; gap: 2px; margin: 0 0 12px; color: var(--d50); font-size: 13px; font-weight: var(--fw-semibold); }
+.t-cr-sub span { color: var(--ink-muted); font-size: 11px; font-weight: 400; }
+
+/* The recap: a sentence a slide. */
+.t-deck { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.t-slide { display: flex; flex-direction: column; gap: 10px; min-height: 180px; padding: 16px; border-radius: 14px; background: linear-gradient(160deg, rgba(var(--accent-rgb), 0.30), rgba(var(--accent-rgb), 0.08)); }
+.t-slide-k { color: var(--accent-text, var(--accent)); font-size: var(--fs-2xs); font-weight: var(--fw-semibold); letter-spacing: 0.06em; text-transform: uppercase; }
+.t-slide-s { flex: 1; color: var(--d50); font-size: 15px; font-weight: var(--fw-medium); line-height: 1.35; }
+.t-slide-s em { display: block; margin-bottom: 4px; font-size: 30px; font-style: normal; font-weight: var(--fw-bold); line-height: 1.1; }
+.t-slide-f { color: var(--d100); font-size: var(--fs-2xs); }
+@media (prefers-reduced-motion: reduce) {
+  .t-ch.is-lit { animation: none; }
+  .t-jy-stage.is-door { transition: none; }
+}
+
+/* ══ A CHAPTER, ANSWERED IN THE CANVAS (QA's canvas render, 4 Nov) ════════
+   QA's own rules, ported: the 9px type label, the chart, the reading under
+   it at 13px, then an action row. In the canvas the follow-up prompts are
+   QA's small AI-blue investigate pills, not Sales's text links: there,
+   asking the next question is the interaction. */
+.canvas-render { width: 100%; max-width: 720px; padding: 0 4px; }
+.canvas-type-label { display: flex; align-items: center; gap: 5px; margin-bottom: 10px; color: var(--d500); font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.canvas-action-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 18px; }
+.msg-bubble:has(> .canvas-render) { flex: 1; min-width: 0; max-width: 720px; }
+.t-cr-h { margin: 0 0 16px; color: var(--d50); font-size: 15px; font-weight: var(--fw-semibold); line-height: 1.4; }
+.t-cr .canvas-chart { padding: 16px; border: 1px solid var(--card-border); border-radius: 12px; background: rgba(255, 255, 255, 0.02); }
+:root[data-theme="light"] .t-cr .canvas-chart { background: rgba(16, 24, 40, 0.02); }
+.t-cr-say { margin-top: 18px; color: var(--d100); font-size: 13px; font-weight: 400; line-height: 1.7; max-width: 64ch; }
+.t-cr-from { margin: 6px 0 0; line-height: 1.5; color: var(--d500); font-size: 11px; }
+.canvas-render .entry-action.em-investigate {
+  display: inline-flex; align-items: center; gap: 5px; min-height: 0; padding: 5px 10px;
+  border: 1px solid rgba(0, 102, 255, 0.28); border-radius: var(--r-md); background: rgba(0, 102, 255, 0.1);
+  color: var(--ai-text); font-size: 10.5px; font-weight: 700; text-decoration: none;
+  transition: background-color var(--t-fast) ease;
+}
+.canvas-render .entry-action.em-investigate:hover { background: rgba(0, 102, 255, 0.18); color: var(--ai-text); text-decoration: none; }
+.canvas-render .entry-action.em-investigate svg { width: 11px; height: 12px; flex: none; }
+.t-cr-next { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+/* Inside an answer, AiMY's reading and a funnel's rows get room to breathe. */
+.t-cr .b-aimy { margin-top: 16px; }
+.t-cr .t-funnel { display: grid; gap: 6px; }
+.t-cr .t-deck { margin-top: 4px; }
+@media (prefers-reduced-motion: reduce) {
+  .canvas-render .entry-action.em-investigate { transition: none; }
+}
+
+/* ══ THE FIGURES, AS DATA IN THE CHAT (4 Nov) ══════════════════════════════
+   No cards: a line a figure. The measure, its number, its target said in
+   words and coloured only when it is met or missed; under it what it counts
+   and its three months. */
+.t-figs { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.t-fig { display: flex; flex-direction: column; gap: 4px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.t-fig:last-child { border-bottom: 0; }
+.t-fig-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.t-fig-k { color: var(--d100); font-size: 13px; }
+.t-fig-v { color: var(--d50); font-size: 15px; font-weight: var(--fw-bold); font-variant-numeric: tabular-nums; }
+.t-fig-tgt { margin-left: auto; color: var(--ink-muted); font-size: 11.5px; }
+.t-fig-tgt.is-ok { color: var(--ok-text, var(--ok)); }
+.t-fig-tgt.is-warn { color: var(--warn-text, var(--warn)); }
+.t-fig-say { color: var(--ink-muted); font-size: 11.5px; line-height: 1.5; }
+
+/* ══ ONE SCROLLBAR, AND QA'S SCROLL DOT (Engy, 4 Nov: "apply the global
+   scroll that is in AiMY QA, with its animation, and make it global here").
+   assets/aimy-scroll.js and .css are QA's, unchanged: every vertical
+   scroller shows a translucent accent dot in place of the bar, that trails a
+   flame by speed and lands with a squash; sideways scrollers keep the thin
+   shared bar (aimy-responsive.css §9). The two tokens they read, as QA
+   declares them on :root. */
+:root { --qa-accent-rgb: var(--accent-rgb); --wash-6: rgba(255, 255, 255, 0.07); }
+:root[data-theme="light"] { --wash-6: rgba(16, 24, 40, 0.09); }

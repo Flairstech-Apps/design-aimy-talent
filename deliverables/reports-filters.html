@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reports Filter Options</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+  /* Talent's own dark tokens (aimy-ds.css), so the mocks read as the product. */
+  :root {
+    --bg: #0d1117; --card: #141b24; --raised: #1c2630; --pop: #1a222c; --line: rgba(255,255,255,0.07); --line2: rgba(255,255,255,0.12);
+    --d50: #eef2f6; --d100: #d8e0e8; --d200: #c8d2dc; --d300: #b0bcca; --d400: #8b9aaa; --d500: #637280; --d600: #4a5b6e;
+    --accent: #8b4ff4; --accent-rgb: 139,79,244; --accent-text: #b18cff; --ai: #61adf1; --brand: #3369ff;
+    --ok: #4ed6a1; --warn: #f7c95c;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: 'Poppins', system-ui, sans-serif; color: var(--d100); font-size: 14px; line-height: 1.55; }
+  button { font: inherit; color: inherit; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 48px 24px 96px; }
+  h1 { font-size: 34px; line-height: 1.15; letter-spacing: -0.5px; color: var(--d50); margin: 6px 0 10px; }
+  h2 { font-size: 22px; line-height: 1.25; color: var(--d50); margin: 0 0 6px; letter-spacing: -0.2px; }
+  h3 { font-size: 15px; color: var(--d50); margin: 18px 0 6px; }
+  p { margin: 0 0 10px; }
+  a { color: var(--accent-text); }
+  b, strong { color: var(--d50); font-weight: 600; }
+  .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 1.6px; text-transform: uppercase; color: var(--accent-text); }
+  .lead { font-size: 16px; color: var(--d300); max-width: 76ch; }
+  .mute { color: var(--d400); font-size: 12.5px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
+  .pill { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--raised); color: var(--d300); border: 1px solid var(--line); }
+
+  section.it { margin-top: 56px; padding-top: 32px; border-top: 1px solid var(--line); }
+  .it-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; }
+  .it-n { font-size: 12px; font-weight: 700; color: var(--bg); background: var(--accent-text); border-radius: 6px; padding: 2px 8px; }
+  .it-n.rec { background: var(--ok); }
+  .cols { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; margin-top: 18px; }
+  @media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
+  .notes { display: grid; gap: 12px; align-content: start; }
+  .note { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; font-size: 13px; color: var(--d300); }
+  .note h4 { margin: 0 0 6px; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--d400); }
+  .note ul { margin: 0; padding-left: 18px; } .note li { margin: 3px 0; }
+  .refs a { display: block; margin: 4px 0; text-decoration: none; line-height: 1.4; }
+  .refs a:hover { text-decoration: underline; }
+  .refs .why { display: block; color: var(--d400); font-size: 11.5px; }
+
+  /* The page the filters sit on: Reports' head and its headline, as built. */
+  .page { background: #0b0f14; border: 1px solid var(--line2); border-radius: 18px; }
+  .page-bar { display: flex; gap: 8px; align-items: center; padding: 10px 14px; background: var(--card); border-bottom: 1px solid var(--line); font-size: 12px; color: var(--d400); border-radius: 18px 18px 0 0; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--d600); }
+  .page-body { padding: 24px 26px 28px; }
+  .rh { font-size: 16px; font-weight: 600; color: var(--d50); margin: 0; }
+  .rsay { font-size: 12.5px; color: var(--d300); margin: 2px 0 0; }
+  .story { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 22px; line-height: 1.35; font-weight: 600; color: var(--d50); max-width: 34ch; }
+  .story mark { background: none; color: var(--warn); } .story mark.o { color: var(--ok); }
+  .before { font-size: 11px; color: var(--d500); margin-top: 10px; }
+
+  /* Shared controls */
+  .pick { position: relative; display: inline-block; }
+  .pop { position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; min-width: 240px; padding: 6px; border-radius: 12px; background: var(--pop);
+    border: 1px solid var(--line2); box-shadow: 0 18px 40px rgba(0,0,0,0.45); display: none; }
+  .pick.open .pop { display: block; }
+  .pop-cap { padding: 6px 10px 4px; font-size: 10.5px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--d500); }
+  .opt { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: none; text-align: left; font-size: 13px; color: var(--d200); cursor: pointer; }
+  .opt:hover { background: rgba(255,255,255,0.05); color: var(--d50); }
+  .opt .n { margin-left: auto; color: var(--d500); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .opt .tick { width: 14px; color: var(--accent-text); visibility: hidden; }
+  .opt[aria-checked="true"] { color: var(--d50); }
+  .opt[aria-checked="true"] .tick { visibility: visible; }
+  .sep, .pop-cap { display: block; }
+  .sep { height: 1px; margin: 4px 6px; background: var(--line); }
+  .chev { width: 12px; height: 12px; flex: none; opacity: 0.8; }
+
+  /* F1 · the sentence */
+  .sent { font-size: 13px; color: var(--d300); margin: 3px 0 0; }
+  .blank { display: inline-flex; align-items: center; gap: 4px; padding: 0 2px; border: 0; background: none; cursor: pointer; color: var(--d50); font-weight: 600;
+    border-bottom: 1.5px dashed rgba(var(--accent-rgb),0.7); line-height: 1.4; }
+  .blank:hover { color: var(--accent-text); border-bottom-style: solid; }
+  .story .blank { font-size: inherit; border-bottom-width: 2px; }
+
+  /* F2 · segmented + menu */
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+  .seg { display: inline-flex; padding: 3px; border-radius: 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--line); }
+  .seg button { display: inline-flex; align-items: baseline; gap: 6px; padding: 5px 12px; border: 0; border-radius: 7px; background: none; font-size: 12.5px; font-weight: 500; color: var(--d300); cursor: pointer; }
+  .seg button .n { font-size: 11px; color: var(--d500); }
+  .seg button[aria-pressed="true"] { background: rgba(var(--accent-rgb),0.22); color: var(--d50); box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb),0.5); }
+  .seg button[aria-pressed="true"] .n { color: var(--accent-text); }
+  .menu-btn { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 10px; border: 1px solid var(--line2); background: rgba(255,255,255,0.03); font-size: 12.5px; color: var(--d100); cursor: pointer; }
+  .menu-btn:hover { border-color: rgba(var(--accent-rgb),0.5); }
+  .menu-btn .lab { color: var(--d500); }
+  .lab-sm { font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--d500); }
+
+  /* F3 · value chips */
+  .vchip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 12px; border-radius: 999px; border: 1px solid var(--line2); background: none; font-size: 12.5px; color: var(--d100); cursor: pointer; }
+  .vchip.set { border-color: rgba(var(--accent-rgb),0.55); background: rgba(var(--accent-rgb),0.12); }
+  .reset { border: 0; background: none; font-size: 12px; color: var(--d400); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+  /* F4 · scope in the title */
+  .title-switch { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px 2px 4px; margin-left: -4px; border: 0; border-radius: 8px; background: none; font-size: 16px; font-weight: 600; color: var(--d50); cursor: pointer; }
+  .title-switch:hover { background: rgba(255,255,255,0.05); }
+  .titlerow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+
+  /* F5 · ask AiMY */
+  .bar { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 7px 8px 7px 12px; border-radius: 40px; background: #1e2428; border: 1px solid rgba(255,255,255,0.1); max-width: 520px; }
+  .bar .mk { width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg,#3d1f6b,#1a3a6e); border: 1px solid rgba(139,79,244,0.3); flex: none; }
+  .bar span { flex: 1; font-size: 13px; color: var(--d100); }
+  .bar i { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); flex: none; }
+  .fcard { display: grid; gap: 9px; max-width: 360px; margin-top: 12px; padding: 11px 12px; border: 1px solid var(--line2); border-radius: 10px; background: rgba(255,255,255,0.02); }
+  .fcard-t { color: var(--d50); font-size: 12px; font-weight: 700; }
+  .fcard-c { margin: 0; color: var(--d300); font-size: 11px; line-height: 1.5; }
+  .fchips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .fchip { padding: 4px 7px; border: 1px solid rgba(255,255,255,0.1); border-radius: 999px; background: rgba(51,105,255,0.15); color: var(--d200); font-size: 10px; }
+  .facts { display: flex; align-items: center; gap: 6px; }
+  .facts button { min-height: 27px; padding: 0 9px; border: 0; border-radius: 7px; background: transparent; color: var(--d300); font-size: 10px; font-weight: 600; cursor: pointer; }
+  .facts button.apply { background: var(--brand); color: #fff; }
+  .facts .st { margin-left: auto; color: var(--d400); font-size: 10px; }
+  .scopetag { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 3px 4px 3px 10px; border-radius: 999px; background: rgba(51,105,255,0.12); border: 1px solid rgba(51,105,255,0.3); font-size: 12px; color: var(--ai); }
+  .scopetag button { border: 0; background: none; color: var(--d400); cursor: pointer; padding: 0 4px; }
+
+  /* Today, for the comparison */
+  .today .lab { font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--d500); margin-right: 6px; }
+  .today .c { display: inline-block; margin: 3px 2px; font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line2); color: var(--d200); background: rgba(255,255,255,0.03); }
+  .today .c.on { border-color: rgba(var(--accent-rgb),0.6); background: rgba(var(--accent-rgb),0.16); color: var(--d50); }
+  .today .c b { font-weight: 600; color: var(--d500); margin-left: 4px; font-size: 11px; }
+  .today .c.on b { color: var(--accent-text); }
+
+  table.cmp { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 14px; }
+  table.cmp th, table.cmp td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.cmp th { color: var(--d400); font-weight: 600; font-size: 11.5px; letter-spacing: 0.8px; text-transform: uppercase; }
+  table.cmp td:first-child { color: var(--d50); font-weight: 600; white-space: nowrap; }
+  .tblwrap { overflow-x: auto; }
+  .refgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin-top: 14px; }
+  .ref { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font-size: 13px; color: var(--d300); }
+  .ref a { font-weight: 600; text-decoration: none; }
+  .ref .src { color: var(--d400); font-size: 11.5px; }
+  .ref img { display: block; width: 100%; height: 150px; object-fit: cover; object-position: top; border-radius: 8px; margin-bottom: 10px; background: var(--raised); }
+  @media (max-width: 600px) { .wrap { padding: 32px 16px 72px; } h1 { font-size: 28px; } .page-body { padding: 18px 16px 22px; } .story { font-size: 18px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">AiMY Talent · Reports · filter options</div>
+  <h1>Two choices, five ways to make them</h1>
+  <p class="lead">The Reports page has two filters: when the requisitions opened (last 30, 60 or 90 days) and which client account. Today they are two rows of pills that wrap onto three lines, before the story even starts. Each option below is a working mock: press the controls. They are drawn with the page’s real counts (Omar Saeed, 4 Nov) and sit above the real headline, because the filters exist to change it. Option 1 is the recommendation.</p>
+  <div class="meta">
+    <span class="pill">4 Nov 2026</span>
+    <span class="pill">Periods: 30 days (5) · 60 (8) · 90 (10) requisitions</span>
+    <span class="pill">Accounts in view: 6, counts for the last 90 days</span>
+    <span class="pill">References: Mobbin (14 screens) + web (9)</span>
+  </div>
+
+  <!-- ═══ TODAY ═══ -->
+  <section class="it">
+    <div class="eyebrow">Today</div>
+    <h2>Why they feel heavy</h2>
+    <div class="cols">
+      <div class="page"><div class="page-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span style="margin-left:8px">Reports</span></div>
+        <div class="page-body today">
+          <p class="rh">Reports</p><p class="rsay">Your requisitions, opened in the last 90 days</p>
+          <div style="margin-top:12px"><span class="lab">Opened in</span><span class="c">Last 30 days<b>5</b></span><span class="c">Last 60 days<b>8</b></span><span class="c on">Last 90 days<b>10</b></span></div>
+          <div style="margin-top:4px"><span class="lab">Account</span><span class="c on">All accounts</span><span class="c">Northwind Software<b>5</b></span><span class="c">FlairsTech<b>1</b></span><span class="c">Halcyon Mobile<b>1</b></span><span class="c">Quarry Payroll<b>1</b></span><span class="c">Kestrel Labs<b>1</b></span><span class="c">Seaborne Cruises<b>1</b></span></div>
+          <p class="story">125 people found, <mark class="o">4 hired</mark>. The first profile takes <mark>19 days</mark>…</p>
+        </div>
+      </div>
+      <div class="notes">
+        <div class="note"><h4>What is wrong</h4><ul>
+          <li>Ten pills of equal weight for two decisions; the account row alone wraps.</li>
+          <li>The scope is said twice: in the line under the title and again in the pills.</li>
+          <li>It grows with every new client; at twelve accounts it is four lines.</li>
+          <li>Two filter rows breaks the page’s own rule: one filter row per page.</li>
+        </ul></div>
+        <div class="note"><h4>What must stay</h4><ul>
+          <li>The count beside each choice: it says whether a view has enough to read.</li>
+          <li>The view in the link, so a view can be sent.</li>
+          <li>Changing either one rewrites the headline and chapters.</li>
+        </ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ F1 SENTENCE ═══ -->
+  <section class="it">
+    <div class="it-head"><span class="it-n rec">1 · Recommended</span><h2>The sentence: the scope line becomes the filter</h2></div>
+    <p class="lead">The line under the title already says the scope in words. Make its two blanks pressable and the filter row disappears. Each blank opens a short menu with the counts. The story reads straight on from it.</p>
+    <div class="cols">
+      <div class="page"><div class="page-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span style="margin-left:8px">Reports</span></div>
+        <div class="page-body" data-mock="f1">
+          <p class="rh">Reports</p>
+          <p class="sent">Your requisitions opened in
+            <span class="pick"><button class="blank" data-open aria-haspopup="menu"><span data-val="per">the last 90 days</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6"/></svg></button>
+              <span class="pop" role="menu"><span class="pop-cap">Opened in</span>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="per" data-label="the last 30 days"><span class="tick">✓</span>The last 30 days<span class="n">5</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="per" data-label="the last 60 days"><span class="tick">✓</span>The last 60 days<span class="n">8</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="true" data-set="per" data-label="the last 90 days"><span class="tick">✓</span>The last 90 days<span class="n">10</span></button>
+              </span></span>,
+            on
+            <span class="pick"><button class="blank" data-open aria-haspopup="menu"><span data-val="acc">every account</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6"/></svg></button>
+              <span class="pop" role="menu"><span class="pop-cap">Account</span>
+                <button class="opt" role="menuitemradio" aria-checked="true" data-set="acc" data-label="every account"><span class="tick">✓</span>Every account<span class="n">10</span></button>
+                <span class="sep"></span>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="Northwind Software"><span class="tick">✓</span>Northwind Software<span class="n">5</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="FlairsTech"><span class="tick">✓</span>FlairsTech<span class="n">1</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="Halcyon Mobile"><span class="tick">✓</span>Halcyon Mobile<span class="n">1</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="Quarry Payroll"><span class="tick">✓</span>Quarry Payroll<span class="n">1</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="Kestrel Labs"><span class="tick">✓</span>Kestrel Labs<span class="n">1</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="Seaborne Cruises"><span class="tick">✓</span>Seaborne Cruises<span class="n">1</span></button>
+              </span></span>.
+          </p>
+          <p class="story">125 people found, <mark class="o">4 hired</mark>. The first profile takes <mark>19 days</mark> because the path is long, not slow, and <mark>offers</mark> are where people are lost.</p>
+          <p class="before">From three lines of pills to one sentence. Press either underlined phrase.</p>
+        </div>
+      </div>
+      <div class="notes">
+        <div class="note refs"><h4>Inspired by</h4>
+          <a href="https://mobbin.com/screens/11fce065-f1f2-403e-b4a1-db66c2f8b972" target="_blank">Deel · Insights<span class="why">two filter chips, then the scope said as a sentence</span></a>
+          <a href="https://mobbin.com/screens/7fc1842b-ac85-46d5-a571-847957823a8e" target="_blank">Homerun · Insights<span class="why">the card’s heading repeats the scope in words</span></a>
+          <a href="https://ui-patterns.com/patterns/FillInTheBlanks" target="_blank">UI Patterns · Fill in the blanks<span class="why">best for a few required fields, which is this page</span></a>
+          <a href="https://appsilon.com/human-readable-filters" target="_blank">Appsilon · Human-readable filters<span class="why">a sentence of clickable conditions that rewrites itself</span></a>
+        </div>
+        <div class="note"><h4>Works</h4><ul><li>No filter row at all: the scope line that was already there does the job.</li><li>The page reads as one story, from what it covers to what happened.</li><li>Grows with clients inside the menu, never across the page.</li></ul></div>
+        <div class="note"><h4>Falls short</h4><ul><li>The counts are only seen once a menu opens.</li><li>The underline has to be clear enough on dark; a dashed accent line with a chevron.</li><li>Harder to translate: word order changes between languages.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ F2 SEGMENTED + MENU ═══ -->
+  <section class="it">
+    <div class="it-head"><span class="it-n">2</span><h2>One row: the period as a segmented control, the account as a menu</h2></div>
+    <p class="lead">The analytics standard. Three periods are exactly what a segmented control is for, and the counts stay visible on it. The accounts move into one menu that lists each with its count.</p>
+    <div class="cols">
+      <div class="page"><div class="page-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span style="margin-left:8px">Reports</span></div>
+        <div class="page-body" data-mock="f2">
+          <p class="rh">Reports</p><p class="rsay">Your requisitions, opened in the last 90 days</p>
+          <div class="row">
+            <div class="seg" role="group" aria-label="Opened in">
+              <button aria-pressed="false" data-seg>30 days <span class="n">5</span></button>
+              <button aria-pressed="false" data-seg>60 days <span class="n">8</span></button>
+              <button aria-pressed="true" data-seg>90 days <span class="n">10</span></button>
+            </div>
+            <span class="pick"><button class="menu-btn" data-open aria-haspopup="menu"><span class="lab">Account</span><span data-val="acc">All accounts</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6"/></svg></button>
+              <span class="pop" role="menu"><span class="pop-cap">Account · 6 in view</span>
+                <button class="opt" role="menuitemradio" aria-checked="true" data-set="acc" data-label="All accounts"><span class="tick">✓</span>All accounts<span class="n">10</span></button>
+                <span class="sep"></span>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="Northwind Software"><span class="tick">✓</span>Northwind Software<span class="n">5</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="FlairsTech"><span class="tick">✓</span>FlairsTech<span class="n">1</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="Halcyon Mobile"><span class="tick">✓</span>Halcyon Mobile<span class="n">1</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="Quarry Payroll"><span class="tick">✓</span>Quarry Payroll<span class="n">1</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="Kestrel Labs"><span class="tick">✓</span>Kestrel Labs<span class="n">1</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="Seaborne Cruises"><span class="tick">✓</span>Seaborne Cruises<span class="n">1</span></button>
+              </span></span>
+          </div>
+          <p class="story">125 people found, <mark class="o">4 hired</mark>. The first profile takes <mark>19 days</mark>…</p>
+        </div>
+      </div>
+      <div class="notes">
+        <div class="note refs"><h4>Inspired by</h4>
+          <a href="https://mobbin.com/screens/6bb2f3c7-0180-4737-84a8-7cbc56aab5fe" target="_blank">Amplitude · 7d / 30d / 60d / 90d segmented<span class="why">almost exactly these three periods</span></a>
+          <a href="https://mobbin.com/screens/ca38e7f1-0157-4475-82f0-603103421c77" target="_blank">Hotjar · segmented range + segment menu<span class="why">period and audience in one row</span></a>
+          <a href="https://mobbin.com/screens/8150194b-b4ea-4860-9bcf-033ad1383628" target="_blank">Juicebox · labelled date range and users menus<span class="why">a recruiting tool’s report bar</span></a>
+          <a href="https://mobbin.com/screens/09fe5cd9-772b-4a42-944f-08bf0d19b932" target="_blank">Revolut Business · filter by accounts<span class="why">the account menu, with a figure on each row (dark)</span></a>
+          <a href="https://www.nngroup.com/articles/filter-categories-values/" target="_blank">NN/g · Filter categories vs values<span class="why">concrete labels: “Opened in”, not “Period”</span></a>
+        </div>
+        <div class="note"><h4>Works</h4><ul><li>One row, the period counts still visible.</li><li>Familiar from every analytics tool; nothing to learn.</li></ul></div>
+        <div class="note"><h4>Falls short</h4><ul><li>The scope is still said twice, in the line and the controls.</li><li>Reads as a dashboard toolbar on a page that is now a story.</li><li>A segmented control will not stretch to a custom range later.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ F3 VALUE CHIPS ═══ -->
+  <section class="it">
+    <div class="it-head"><span class="it-n">3</span><h2>Two value chips: the chosen value is the label</h2></div>
+    <p class="lead">The lightest bar. Each chip shows what is chosen, not the name of the filter; pressing it opens the menu. A chip changed from its default is tinted, and Reset appears.</p>
+    <div class="cols">
+      <div class="page"><div class="page-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span style="margin-left:8px">Reports</span></div>
+        <div class="page-body" data-mock="f3">
+          <p class="rh">Reports</p><p class="rsay">Your requisitions</p>
+          <div class="row">
+            <span class="pick"><button class="vchip" data-open aria-haspopup="menu" data-def="Last 90 days"><span data-val="per">Last 90 days</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6"/></svg></button>
+              <span class="pop" role="menu"><span class="pop-cap">Opened in</span>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="per" data-label="Last 30 days"><span class="tick">✓</span>Last 30 days<span class="n">5</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="per" data-label="Last 60 days"><span class="tick">✓</span>Last 60 days<span class="n">8</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="true" data-set="per" data-label="Last 90 days"><span class="tick">✓</span>Last 90 days<span class="n">10</span></button>
+              </span></span>
+            <span class="pick"><button class="vchip" data-open aria-haspopup="menu" data-def="All accounts"><span data-val="acc">All accounts</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6"/></svg></button>
+              <span class="pop" role="menu"><span class="pop-cap">Account</span>
+                <button class="opt" role="menuitemradio" aria-checked="true" data-set="acc" data-label="All accounts"><span class="tick">✓</span>All accounts<span class="n">10</span></button>
+                <span class="sep"></span>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="Northwind Software"><span class="tick">✓</span>Northwind Software<span class="n">5</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="FlairsTech"><span class="tick">✓</span>FlairsTech<span class="n">1</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="Halcyon Mobile"><span class="tick">✓</span>Halcyon Mobile<span class="n">1</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="Quarry Payroll"><span class="tick">✓</span>Quarry Payroll<span class="n">1</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="Kestrel Labs"><span class="tick">✓</span>Kestrel Labs<span class="n">1</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="Seaborne Cruises"><span class="tick">✓</span>Seaborne Cruises<span class="n">1</span></button>
+              </span></span>
+            <button class="reset" data-reset hidden>Reset</button>
+          </div>
+          <p class="story">125 people found, <mark class="o">4 hired</mark>. The first profile takes <mark>19 days</mark>…</p>
+        </div>
+      </div>
+      <div class="notes">
+        <div class="note refs"><h4>Inspired by</h4>
+          <a href="https://mobbin.com/screens/b783d9e0-bb77-4c63-a1f6-3c0e3a2360e6" target="_blank">Peec AI · a row of small value chips<span class="why">each defaults to “All …”</span></a>
+          <a href="https://mobbin.com/screens/974ba92d-69d3-4b7f-9abb-39c4f7a6664f" target="_blank">Calendly · Analytics<span class="why">“Last 30 days” chip beside Filters</span></a>
+          <a href="https://www.aufaitux.com/blog/dashboard-filter-design-guide/" target="_blank">Aufait UX · Dashboard filter guide<span class="why">page-wide filters: time and segment; keep them visible</span></a>
+        </div>
+        <div class="note"><h4>Works</h4><ul><li>The smallest footprint that is still a visible control.</li><li>Tint and Reset say at a glance that a view is narrowed.</li></ul></div>
+        <div class="note"><h4>Falls short</h4><ul><li>No counts until a menu opens.</li><li>Two chips alone look slight next to a big headline.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ F4 SCOPE IN THE TITLE ═══ -->
+  <section class="it">
+    <div class="it-head"><span class="it-n">4</span><h2>The account in the title, the period beside it</h2></div>
+    <p class="lead">The account is what the report is <em>about</em>, so it becomes the title: “Reports · All accounts”, a switcher with a chevron. The period sits on the right as a small segmented control.</p>
+    <div class="cols">
+      <div class="page"><div class="page-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span style="margin-left:8px">Reports</span></div>
+        <div class="page-body" data-mock="f4">
+          <div class="titlerow">
+            <span class="pick"><button class="title-switch" data-open aria-haspopup="menu">Reports · <span data-val="acc">All accounts</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6"/></svg></button>
+              <span class="pop" role="menu"><span class="pop-cap">Account</span>
+                <button class="opt" role="menuitemradio" aria-checked="true" data-set="acc" data-label="All accounts"><span class="tick">✓</span>All accounts<span class="n">10</span></button>
+                <span class="sep"></span>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="Northwind Software"><span class="tick">✓</span>Northwind Software<span class="n">5</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="FlairsTech"><span class="tick">✓</span>FlairsTech<span class="n">1</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="Halcyon Mobile"><span class="tick">✓</span>Halcyon Mobile<span class="n">1</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="Quarry Payroll"><span class="tick">✓</span>Quarry Payroll<span class="n">1</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="Kestrel Labs"><span class="tick">✓</span>Kestrel Labs<span class="n">1</span></button>
+                <button class="opt" role="menuitemradio" aria-checked="false" data-set="acc" data-label="Seaborne Cruises"><span class="tick">✓</span>Seaborne Cruises<span class="n">1</span></button>
+              </span></span>
+            <div class="seg" role="group" aria-label="Opened in">
+              <button aria-pressed="false" data-seg>30d</button><button aria-pressed="false" data-seg>60d</button><button aria-pressed="true" data-seg>90d</button>
+            </div>
+          </div>
+          <p class="rsay">Your requisitions, opened in the last 90 days</p>
+          <p class="story">125 people found, <mark class="o">4 hired</mark>. The first profile takes <mark>19 days</mark>…</p>
+        </div>
+      </div>
+      <div class="notes">
+        <div class="note refs"><h4>Inspired by</h4>
+          <a href="https://mobbin.com/screens/be6e685f-96c6-4f3e-a911-526bfc00522a" target="_blank">Pin · Pipeline Insights<span class="why">a recruiting tool: the scope switcher heads the page</span></a>
+          <a href="https://mobbin.com/screens/dc57b02f-216b-4e09-934d-d3dec71482ee" target="_blank">Steep · KPI report as a document<span class="why">the closest to a story page: scope under the title</span></a>
+        </div>
+        <div class="note"><h4>Works</h4><ul><li>Says what the report is about in the place you read first.</li><li>Fits the client’s and account manager’s mental model: “Northwind’s report”.</li></ul></div>
+        <div class="note"><h4>Falls short</h4><ul><li>Splits the two choices into two places.</li><li>A switcher in a title is easy to miss; it needs its chevron.</li><li>Sales titles are plain text; this one would be the only control in a title.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ F5 ASK AIMY ═══ -->
+  <section class="it">
+    <div class="it-head"><span class="it-n">5</span><h2>Ask AiMY: say the view, confirm the change</h2></div>
+    <p class="lead">No control on the page at all, beyond a tag saying the scope. You type “Northwind, last 30 days” in the AiMY bar; AiMY answers with QA’s filter card, the changes it read as chips, and Apply. The tag on the page shows the view and clears it. A companion to 1 rather than a replacement.</p>
+    <div class="cols">
+      <div class="page"><div class="page-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span style="margin-left:8px">Reports</span></div>
+        <div class="page-body" data-mock="f5">
+          <p class="rh">Reports</p><p class="rsay">Your requisitions, opened in the last 90 days</p>
+          <div class="bar"><span class="mk"></span><span>Show me Northwind for the last 30 days</span><i></i></div>
+          <div class="fcard">
+            <div class="fcard-t">Change the reports to this view?</div>
+            <p class="fcard-c">I read two changes. The story and every chapter will be about these requisitions only.</p>
+            <div class="fchips"><span class="fchip">Opened in: last 30 days · 5</span><span class="fchip">Account: Northwind Software · 3</span></div>
+            <div class="facts"><button class="apply" data-apply>Apply</button><button>Not now</button><span class="st">2 changes</span></div>
+          </div>
+          <div class="scopetag" hidden data-tag>Northwind Software · last 30 days <button data-clear aria-label="Clear the view">✕</button></div>
+        </div>
+      </div>
+      <div class="notes">
+        <div class="note refs"><h4>Inspired by</h4>
+          <a href="https://design-aimy-qa.aimy.flairstech.com/" target="_blank">AiMY QA · the chat filter card<span class="why">QA’s own: the changes as chips, Apply, a status; our house pattern</span></a>
+          <a href="https://aiuxplayground.com/pattern/nl-filter" target="_blank">AIUX Playground · NL filter<span class="why">free text becomes editable chips</span></a>
+          <a href="https://mobbin.com/screens/a99cade3-b46a-4e45-8f9e-ac84d6a9c878" target="_blank">Visitors · sentence-like tokens<span class="why">the applied view, said and removable</span></a>
+        </div>
+        <div class="note"><h4>Works</h4><ul><li>Fits a product that is chat-first, and QA already has the card.</li><li>Nothing to scan on the page.</li></ul></div>
+        <div class="note"><h4>Falls short</h4><ul><li>Hidden: nobody knows they can until told.</li><li>Slower than one press for the common change, the period.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ COMPARISON ═══ -->
+  <section class="it">
+    <h2>Side by side</h2>
+    <div class="tblwrap"><table class="cmp">
+      <tr><th>Option</th><th>Rows used</th><th>Counts visible</th><th>Fits a story page</th><th>Grows with clients</th><th>Effort</th></tr>
+      <tr><td>Today</td><td>3 lines</td><td>Yes</td><td>No, a toolbar before the story</td><td>Badly, it wraps</td><td>–</td></tr>
+      <tr><td>1 · Sentence</td><td>0 (the scope line)</td><td>In the menu</td><td><b>Best</b>: the scope is the first sentence</td><td>Yes, in a menu</td><td>Small</td></tr>
+      <tr><td>2 · Segmented + menu</td><td>1</td><td>Period yes, account in menu</td><td>Fair, reads as a dashboard</td><td>Yes</td><td>Small</td></tr>
+      <tr><td>3 · Value chips</td><td>1, short</td><td>In the menu</td><td>Good</td><td>Yes</td><td>Small</td></tr>
+      <tr><td>4 · Scope in title</td><td>0 + a control at the right</td><td>Account in menu</td><td>Good</td><td>Yes</td><td>Small</td></tr>
+      <tr><td>5 · Ask AiMY</td><td>0 + a tag</td><td>In the card</td><td>Good, as a companion</td><td>Yes</td><td>Medium</td></tr>
+    </table></div>
+    <h3>Considered and set aside</h3>
+    <p class="mute" style="max-width:80ch">A date picker with presets and Compare (<a href="https://mobbin.com/screens/84cbfb37-c0fb-4b57-b230-c75a2300837f" target="_blank">Wix</a>, <a href="https://mobbin.com/screens/205aefea-2dfc-4668-9af7-bc4921da1762" target="_blank">Mintlify</a>, <a href="https://mixpanel.com/blog/introducing-insights-2-0/" target="_blank">Mixpanel</a>): a calendar invites ranges the three windows do not support; Compare is worth adding only if the story wants “against the last 30 days”. Tokens with Add filter (<a href="https://mobbin.com/screens/4decf4c4-fc52-43f9-ad63-355647d67ed2" target="_blank">Grain</a>): built for open-ended filtering, and it would hide the period, which always applies. Saved views (<a href="https://mobbin.com/screens/a3d99cef-0268-42c3-a8ca-fc8388e5503f" target="_blank">Qatalog</a>, <a href="https://www.ashbyhq.com/product-updates/saved-dashboard-views" target="_blank">Ashby</a>): three periods times six accounts is eighteen views, too few to need saving; the link already keeps the view.</p>
+  </section>
+
+  <!-- ═══ RECOMMENDATION ═══ -->
+  <section class="it">
+    <div class="it-head"><span class="it-n rec">Recommendation</span><h2>Option 1, with option 5 behind it</h2></div>
+    <div class="cols" style="grid-template-columns:1fr 1fr">
+      <div class="note"><h4>Why the sentence</h4><ul>
+        <li>The page is now a story; its first line should be a sentence, not a toolbar.</li>
+        <li>It removes the second filter row the page’s own rule forbids, and the duplicate scope line.</li>
+        <li>Menus carry the counts, from Revolut’s account list and Amplitude’s periods.</li>
+        <li>The same blanks can sit in the recap and the shared link, so a sent view reads the same.</li>
+      </ul></div>
+      <div class="note"><h4>And AiMY behind it</h4><ul>
+        <li>Typing “Northwind, last 30 days” in the bar applies the same two blanks, through QA’s filter card.</li>
+        <li>The chapter questions already open in the canvas; asking for a view is the same move.</li>
+        <li>If the sentence tests as too hidden, fall back to option 2: it keeps the same menus.</li>
+      </ul></div>
+    </div>
+  </section>
+
+</div>
+<script>
+  /* The mocks work: menus open and close, a choice rewrites its label, the
+     segmented controls press, option 3 tints a changed chip, option 5 applies. */
+  const closeAll = (except) => document.querySelectorAll('.pick.open').forEach((p) => { if (p !== except) p.classList.remove('open'); });
+  document.addEventListener('click', (e) => {
+    const open = e.target.closest('[data-open]');
+    if (open) { const p = open.closest('.pick'); closeAll(p); p.classList.toggle('open'); return; }
+    const opt = e.target.closest('[data-set]');
+    if (opt) {
+      const pick = opt.closest('.pick');
+      pick.querySelectorAll('.opt').forEach((o) => o.setAttribute('aria-checked', String(o === opt)));
+      const val = pick.querySelector('[data-val]'); val.textContent = opt.dataset.label;
+      const chip = pick.querySelector('.vchip');
+      if (chip) {
+        chip.classList.toggle('set', opt.dataset.label !== chip.dataset.def);
+        const mock = chip.closest('[data-mock]');
+        mock.querySelector('[data-reset]').hidden = !mock.querySelector('.vchip.set');
+      }
+      pick.classList.remove('open'); return;
+    }
+    const seg = e.target.closest('[data-seg]');
+    if (seg) { seg.parentNode.querySelectorAll('[data-seg]').forEach((b) => b.setAttribute('aria-pressed', String(b === seg))); return; }
+    const reset = e.target.closest('[data-reset]');
+    if (reset) {
+      const mock = reset.closest('[data-mock]');
+      mock.querySelectorAll('.pick').forEach((p) => { const c = p.querySelector('.vchip'); c.classList.remove('set'); p.querySelector('[data-val]').textContent = c.dataset.def;
+        p.querySelectorAll('.opt').forEach((o) => o.setAttribute('aria-checked', String(o.dataset.label === c.dataset.def))); });
+      reset.hidden = true; return;
+    }
+    if (e.target.closest('[data-apply]')) { const m = e.target.closest('[data-mock]'); m.querySelector('.fcard').hidden = true; m.querySelector('[data-tag]').hidden = false; return; }
+    if (e.target.closest('[data-clear]')) { const m = e.target.closest('[data-mock]'); m.querySelector('[data-tag]').hidden = true; m.querySelector('.fcard').hidden = false; return; }
+    if (!e.target.closest('.pop')) closeAll();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
+</script>
+</body>
+</html>
