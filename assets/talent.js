@@ -2641,7 +2641,7 @@
     const steps = '<span class="t-steps">' +
       (prev ? step('is-done', svg('check', 9), esc(name(prev))) : step('is-start', '', 'Start')) + '<span class="t-st-ln"></span>' +
       (c.exit ? step('is-out', '', esc(EXIT[c.exit].label) + ' · ' + esc(name(c.stage)))
-        : step('is-now' + (late ? ' is-late' : ''), '', esc(name(c.stage)) + ' · ' + days(c.since) + (late ? ', usually ' + STAGE[c.stage].exp : ''))) +
+        : step('is-now' + (late ? ' is-late' : ''), '', esc(name(c.stage)))) +
       (nx ? '<span class="t-st-ln is-ahead"></span>' + step('is-next', '', esc(name(nx))) : '') + '</span>';
     return '<div class="t-prog" title="' + esc((c.exit ? EXIT[c.exit].label + ' ' + exitAt(c) : STAGE[c.stage].label) + ', stage ' + (cur + 1) + ' of ' + t.length) + '">' + steps + '</div>';
   }
@@ -2691,11 +2691,13 @@
       '<p class="tc-summary b-qcard-role">' + esc(c.at) + '</p>' +
       /* Why they fit, in AiMY's words, first under the name (4 Nov). */
       whySay(c) +
-      '<p class="b-qcard-where">' + fact('job', plural(c.years, 'year') + ' of experience') + fact('pin', c.place) + '</p>' +
-      '<p class="b-qcard-where">' + fact('lang', c.langs.join(', ')) + '</p>' +
+      '<p class="b-qcard-where">' + fact('job', plural(c.years, 'year')) + fact('pin', c.place) + fact('lang', c.langs.join(', ')) + '</p>' +
       (was ? '<p class="b-qcard-where t-before">' + fact('hist', beforeSay(was)) + '</p>' : '') +
       (isClient() ? '' : stageProgress(c)) +
-      '<p class="b-qcard-where t-cnow">' + fact('clock', say + (s && s.status === 'done' ? ' Assessment ' + scoreShort(asmtOf(s.asmt), s) + '.' : '')) + '</p>' +
+      /* The days in the stage are said here once, so the steps above carry
+         names only; past its usual time, the line says that too. */
+      '<p class="b-qcard-where t-cnow">' + fact('clock', say + (slowAt(c) ? ' Usually ' + days(STAGE[c.stage].exp) + '.' : '') +
+        (s && s.status === 'done' ? ' Assessment ' + scoreShort(asmtOf(s.asmt), s) + '.' : '')) + '</p>' +
       (c.stage === 'sent' || (isClient() && c.exit === 'clientno') ? sendout(c) : '') +
       /* AT THE SCREEN, THE CALL IS THE MOVE. Someone who applied or is due a
          phone screen moves forward by being called and the call being
@@ -2950,12 +2952,13 @@
        shows two or more must-haves, Partly fits where it shows some, Not
        shown yet where it is silent. Then the sentence, the topics it found
        tinted. No chip per must-have under it (Engy, 5 Nov): the sentence
-       already names them. */
-    const verdict = met.length >= 2 ? ['Strong', 'is-strong'] : met.length || part.length ? ['Partly fits', 'is-part'] : ['Not shown yet', 'is-none'];
-    return '<div class="t-ins">' +
-      '<div class="t-ins-h">' + mark(12) + '<span>AiMY · why they fit</span><span class="t-ins-v ' + verdict[1] + '">' + verdict[0] + '</span></div>' +
-      '<p class="t-ins-say">' + say + '</p>' +
-      '<span class="t-ins-from">the CV, against the must-haves</span></div>';
+       already names them. Distilled 5 Nov: the verdict is the block's
+       heading, in its tone's colour, with no eyebrow over it and no pill;
+       where the read comes from moves to the hover. */
+    const verdict = met.length >= 2 ? ['Strong fit', 'is-strong'] : met.length || part.length ? ['Partly fits', 'is-part'] : ['Not shown yet', 'is-none'];
+    return '<div class="t-ins" title="AiMY’s read of the CV, against the must-haves">' +
+      '<p class="t-ins-h">' + mark(12) + '<span class="t-ins-v ' + verdict[1] + '">' + verdict[0] + '</span></p>' +
+      '<p class="t-ins-say">' + say + '</p></div>';
   }
   function whyTags(c, bare) {
     const must = reqOf(c).must || [];
