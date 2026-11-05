@@ -1116,26 +1116,29 @@ body.is-portal .aimy-overlay { display: none !important; }
    A candidate's CV, small, under their name while it is hovered. The same
    raised surface as the menus, fixed to the window
    so a card's overflow cannot clip it. Read in this order: who they are
-   now, each must-have against the CV, skills, calls, then the latest. */
+   now, each must-have against the CV, skills, calls, then the latest.
+   Distilled 5 Nov, as the card: the groups part by 16px of space, not by
+   rules; section names are sentence case in ink, not uppercase captions;
+   three sizes (name, sentences, labels). */
 .t-cv {
   position: fixed; z-index: 800; left: 0; top: 0;
   width: 340px; max-width: calc(var(--vp-w) - 16px);
-  display: flex; flex-direction: column; gap: 10px; padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 16px; padding: 16px;
   border: 1px solid var(--card-border-hover); border-radius: var(--r-lg); background: var(--card-bg-raised);
   box-shadow: 0 14px 32px rgba(0, 0, 0, 0.38);
   font-size: var(--fs-xs); line-height: var(--lh-snug); color: var(--d100);
 }
 .t-cv[hidden] { display: none; }
 .t-cv p { margin: 0; }
+.t-cv-who { display: flex; flex-direction: column; gap: 4px; }
 .t-cv-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .t-cv-name { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--d50); }
-.t-cv-role { color: var(--d50); margin-top: -6px; }
-.t-cv-facts { display: flex; flex-wrap: wrap; gap: 4px 12px; }
-.t-cv-sec { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid var(--card-border); }
-.t-cv-cap { font-size: var(--fs-2xs); font-weight: var(--fw-medium); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); }
-.t-cv-chips { display: flex; flex-wrap: wrap; gap: 4px; }
-.t-cv-chip { padding: 2px 8px; border: 1px solid var(--card-border); border-radius: 999px; color: var(--d50); }
-.t-cv-foot { padding-top: 10px; border-top: 1px solid var(--card-border); color: var(--ink-muted); }
+.t-cv-role { color: var(--ink-secondary); font-weight: var(--fw-medium); }
+.t-cv .t-cv-facts { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 4px; font-size: var(--fs-2xs); color: var(--ink-muted); }
+.t-cv-facts .b-fact > svg { --mark: 10px; }
+.t-cv-sec { display: flex; flex-direction: column; gap: 6px; }
+.t-cv-cap { font-weight: var(--fw-semibold); color: var(--d50); }
+.t-cv-foot { font-size: var(--fs-2xs); color: var(--ink-muted); }
 /* Each must-have: its mark, the must-have, the CV's line under it, and what
    an interview found. Full purple for shown, a dot for partly, a question
    for silent, as on the card. */
@@ -1148,9 +1151,9 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-cv-line { display: block; color: var(--d100); }
 .t-cv-must.is-n .t-cv-line { color: var(--ink-muted); }
 .t-cv-iv { flex: none; font-size: var(--fs-2xs); font-weight: var(--fw-medium); color: var(--ink-muted); }
-.t-cv-iv.is-ok { color: var(--ok); }
-.t-cv-iv.is-warn { color: var(--warn); }
-.t-cv-iv.is-err { color: var(--err); }
+.t-cv-iv.is-ok { color: var(--ok-text, var(--ok)); }
+.t-cv-iv.is-warn { color: var(--warn-text, var(--warn)); }
+.t-cv-iv.is-err { color: var(--err-text, var(--err)); }
 .t-cv-none { color: var(--ink-muted); }
 .t-cv-event { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 10px; }
 .t-cv-event > span { color: var(--ink-muted); }

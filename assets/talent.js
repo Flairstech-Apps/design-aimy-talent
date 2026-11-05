@@ -4957,11 +4957,13 @@
        and applying apart since the foot says where they came from. */
     const lately = inside ? historyOf(c).filter((x) => x.kind !== 'call' && x.kind !== 'apply').slice(0, 1) : [];
     const was = inside ? before(c) : null;
-    return '<div class="t-cv-head"><span class="t-cv-name">' + esc(c.name) + '</span>' + stageTag(c) + '</div>' +
+    /* Distilled 5 Nov, as the card: who they are as one group, then each
+       section by space alone, no rules between them and no chips. */
+    return '<div class="t-cv-who"><div class="t-cv-head"><span class="t-cv-name">' + esc(c.name) + '</span>' + stageTag(c) + '</div>' +
       '<p class="t-cv-role">' + esc(c.at) + '</p>' +
-      '<p class="t-cv-facts">' + fact('job', plural(c.years, 'year')) + fact('pin', c.place) + fact('lang', c.langs.join(', ')) + '</p>' +
+      '<p class="t-cv-facts">' + fact('job', plural(c.years, 'year')) + fact('pin', c.place) + fact('lang', c.langs.join(', ')) + '</p></div>' +
       musts +
-      ((c.skills || []).length ? sec('Skills', '<span class="t-cv-chips">' + c.skills.map((s) => '<span class="t-cv-chip">' + esc(s) + '</span>').join('') + '</span>') : '') +
+      ((c.skills || []).length ? sec('Skills', '<p>' + esc(c.skills.join(' · ')) + '</p>') : '') +
       calls +
       (lately.length ? sec('Lately', lately.map((x) => '<p class="t-cv-event"><span>' + esc(dayLabel(x.day)) + '</span>' + esc(x.text) + '</p>').join('')) : '') +
       '<p class="t-cv-foot">' + esc(c.source) + ' · for ' + esc(q.title) + (was ? '<br>' + esc(beforeSay(was)) + '.' : '') + '</p>';
