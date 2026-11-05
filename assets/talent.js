@@ -2196,13 +2196,19 @@
     const owed = untold();
     const late = owed.filter((c) => c.since >= TELL_DAYS);
     const ins = todayInsights();
-    /* THE ORDER IS THE URGENCY (Engy, 5 Nov): the briefing, then the one
-       block with a deadline, then what AiMY noticed that is said nowhere
-       else. Not told yet lost its "Reads" line, its explainer and the
+    /* The briefing, then what AiMY noticed that is said nowhere else, then
+       Not told yet (Engy, 5 Nov: AiMY's read stays right under the
+       briefing). Not told yet lost its "Reads" line, its explainer and the
        preview's own Send: the message shows once, the rows send, and one
        button sends to everyone. */
+    const noticed = ins.length ? '<section class="s-block s-block-wide" aria-label="What AiMY noticed">' +
+        '<div class="s-camp-list-head"><h2 class="s-block-h">What AiMY noticed</h2>' +
+          '<span class="s-block-say">each opens in the chat, with the record behind it</span></div>' +
+        '<div class="t-insights">' + ins.join('') + '</div>' +
+      '</section>' : '';
     return '<div class="s-home">' +
       topBrief() +
+      noticed +
       (owed.length ? '<section class="s-block s-block-wide" aria-label="Not told yet">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">Not told yet</h2>' +
           '<span class="s-block-say">' + plural(owed.length, 'person', 'people') + ' owed an answer · ' + (late.length ? late.length + ' past the ' + TELL_DAYS + '-day limit' : 'all inside the ' + TELL_DAYS + '-day limit') + '</span></div>' +
@@ -2216,11 +2222,6 @@
         moreLinks('tell', owed.length) +
         (selN('tell') ? batchBar('tell', '<button class="s-insight-lnk primary" type="button" data-tell-sel>Send the answer to ' + plural(selN('tell'), 'person', 'people') + '</button>')
           : owed.length > 1 ? '<p class="t-acts"><button class="s-insight-lnk primary" type="button" data-tell-all="' + owed.map((c) => c.id).join(',') + '">' + svg('send', 14) + 'Send the answer to all ' + owed.length + '</button></p>' : '') +
-      '</section>' : '') +
-      (ins.length ? '<section class="s-block s-block-wide" aria-label="What AiMY noticed">' +
-        '<div class="s-camp-list-head"><h2 class="s-block-h">What AiMY noticed</h2>' +
-          '<span class="s-block-say">each opens in the chat, with the record behind it</span></div>' +
-        '<div class="t-insights">' + ins.join('') + '</div>' +
       '</section>' : '') +
       /* Today's interviews open in the Diary; waiting on others is gone (Engy,
          29 Oct); requisitions likely to miss their date are the hiring
