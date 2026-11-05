@@ -1611,22 +1611,16 @@ body.is-portal .aimy-overlay { display: none !important; }
   .t-trk-split span { top: -9px; left: 28px; padding: 0 6px; background: var(--card-bg); }
 }
 
-/* ══ AiMY'S INSIGHT, FIRST ON THE CARD (4 Nov) ═══════════════════════════════
-   Under the name, the card's centre: the verdict in words as its heading,
-   then the sentence. Distilled 5 Nov: one flat tint, no border or gradient,
-   no eyebrow and no pill; the verdict's tone is its text colour, and the
-   topics the CV shows stand out by weight and ink, not a second colour. */
-.t-ins { flex: none; display: flex; flex-direction: column; gap: 6px; margin: 12px 14px 0; padding: 12px; border-radius: 10px; background: rgba(var(--accent-rgb), 0.08); }
-/* Three sizes on the card: the name at --fs-lg, sentences at --fs-xs (this
-   one included, so AiMY's read never out-masses the name), labels at --fs-2xs. */
-.t-ins-h { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--accent-text, var(--accent)); font-size: var(--fs-xs); }
-.t-ins-h svg { flex: none; }
-.t-ins-v { font-weight: var(--fw-semibold); }
-.t-ins-v.is-strong { color: var(--ok-text, var(--ok)); }
-.t-ins-v.is-part { color: var(--warn-text, var(--warn)); }
-.t-ins-v.is-none { color: var(--ink-muted); }
-.t-ins-say { margin: 0; color: var(--d100); font-size: var(--fs-xs); line-height: 1.5; }
-.t-ins-say b, .t-ins-say em { color: var(--d50); font-style: normal; font-weight: var(--fw-semibold); }
+/* ══ AiMY'S READ, FIRST ON THE CARD (4 Nov; the library's, 5 Nov) ══════════
+   AiMY UI's AimyNote (Sales's .b-aimy, styled in bdr.css) holding its Tag:
+   the verdict as a state's name, then one sentence. `.t-fit` only keeps it
+   its own height on a card (bdr.css lets a note grow to fill the card) and
+   reads the partly-shown topics as weight, not italics. */
+.b-qcard .b-aimy.t-fit { flex: none; margin: 12px 14px 0; }
+.b-aimy.t-fit .tag { margin-right: 2px; vertical-align: 1px; }
+.b-aimy.t-fit em { font-style: normal; font-weight: var(--fw-semibold); }
+/* The library's screen-reader-only text: AimyNote's "AiMY:" prefix. */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 /* ══ THE CARD'S PROGRESS: THE STEPS EITHER SIDE (4 Nov) ═══════════════════ */
 .t-prog { display: flex; flex-direction: column; gap: 8px; margin: 12px 14px 0; }
@@ -1728,7 +1722,7 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-cand-more .b-cmeta-part + .b-cmeta-part { margin-top: 12px; }
 .t-hist-tabs { margin: 12px 0 8px; }
 /* AiMY's read inside a record card sits on the card's own edges. */
-.rc .t-ins { margin: 12px 0 0; }
+.rc .b-aimy.t-fit { margin: 12px 0 0; }
 @media (max-width: 1180px) {
   .t-cand-grid { grid-template-columns: minmax(0, 1fr); }
   .t-cand-work, .t-cand-about { grid-column: 1; grid-row: auto; }

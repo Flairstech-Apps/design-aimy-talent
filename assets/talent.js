@@ -3041,7 +3041,7 @@
      insights, not points"). On the cards and the CV on hover, AiMY says
      why they fit in one or two sentences; the profile keeps the labels and
      the line of the CV under each. */
-  function whySay(c) {
+  function whySay(c, withFrom) {
     const must = reqOf(c).must || [], f = first(c.name);
     /* Mid-sentence, a must-have keeps its capital when it starts with a
        name (German, NetSuite, SQL); otherwise it goes lower case. */
@@ -3088,11 +3088,21 @@
        already names them. Distilled 5 Nov: the verdict is the block's
        heading, in its tone's colour, with no eyebrow over it and no pill;
        where the read comes from moves to the hover. */
-    const verdict = met.length >= 2 ? ['Strong fit', 'is-strong'] : met.length || part.length ? ['Partly fits', 'is-part'] : ['Not shown yet', 'is-none'];
-    return '<div class="t-ins" title="AiMY’s read of the CV, against the must-haves">' +
-      '<p class="t-ins-h">' + mark(12) + '<span class="t-ins-v ' + verdict[1] + '">' + verdict[0] + '</span></p>' +
-      '<p class="t-ins-say">' + say + '</p></div>';
+    /* As AiMY UI draws it (5 Nov): an AiMY note holding a Tag for the
+       verdict, then the sentence. The source line is left off on a card, as
+       the library says; the candidate page keeps it. */
+    const v = fitVerdict(met.length, part.length);
+    const heard = verified(c).some((x) => x.seen.length);
+    return aimyNote(tag(v[0], v[1]) + ' ' + say, withFrom ? (heard ? 'the CV and the interviews, against the must-haves' : 'the CV, against the must-haves') : null,
+      'AiMY’s read of the CV' + (heard ? ' and the interviews' : '') + ', against the must-haves');
   }
+  /* The fit verdict as a library Tag: the state's name, both words capitalised. */
+  const fitVerdict = (met, part) => met >= 2 ? ['Strong Fit', 'ok'] : met || part ? ['Partly Fits', 'warn'] : ['Not Shown Yet', 'neutral'];
+  /* AiMY UI's AimyNote (Sales's .b-aimy): the mark, one sentence, where it
+     came from, read as AiMY's by a screen reader. */
+  const aimyNote = (inner, from, title) => '<div class="b-aimy t-fit"' + (title ? ' title="' + esc(title) + '"' : '') + '>' +
+    '<svg class="b-aimy-mark" width="13" height="15" viewBox="0 0 18 20" aria-hidden="true"><use href="#aimy-logo-small"/></svg>' +
+    '<span class="b-aimy-say"><span class="sr-only">AiMY: </span>' + inner + (from ? '<span class="b-aimy-from">' + esc(from) + '</span>' : '') + '</span></div>';
   function whyTags(c, bare) {
     const must = reqOf(c).must || [];
     const tags = must.map((m, i) => ({ m: m, e: c.ev[i] })).filter((x) => x.e === 'm' || x.e === 'p')
@@ -3115,7 +3125,7 @@
        that the list under it already names. */
     return rcard({ cap: 'Why they fit', ico: 'listc', label: 'Why they fit', bare: true,
       body: rcHead('Why ' + esc(first(c.name)) + ' fits', esc(q.title) + ' · ' + esc(accOf(q).name)) +
-        whySay(c) +
+        whySay(c, true) +
         '<div class="row between" style="margin-top:8px;flex-wrap:wrap;gap:6px"><span class="sub">each quoted from the CV · ' + (conf ? conf + ' confirmed in interview' : 'none confirmed in interview yet') + '</span>' +
           (diff ? rcChip(diff + (diff === 1 ? ' differs' : ' differ') + ' in interview', 'err') : '') + '</div>' +
         '<div style="margin-top:12px">' + q.must.map((m, i) => {
@@ -6389,12 +6399,11 @@
   function shortRead(x, crit) {
     const lc = (m) => /^(German|English|Arabic|NetSuite|SQL|Jira|REST|Advanced Excel)\b/.test(m) ? m : m.charAt(0).toLowerCase() + m.slice(1);
     const met = crit.filter((m, k) => x.ev[k] === 'm').map(lc), part = crit.filter((m, k) => x.ev[k] === 'p').map(lc), unk = crit.filter((m, k) => x.ev[k] === 'n').map(lc);
-    const v = met.length >= 2 ? ['Strong fit', 'is-strong'] : met.length || part.length ? ['Partly fits', 'is-part'] : ['Not shown yet', 'is-none'];
+    const v = fitVerdict(met.length, part.length);
     const f = first(x.name);
     const say = (met.length ? f + ' shows <b>' + esc(listSay(met)) + '</b>' + (part.length ? ', and partly <em>' + esc(listSay(part)) + '</em>' : '') : part.length ? f + ' partly shows <em>' + esc(listSay(part)) + '</em>' : f + '’s profile is silent on these') + '.' +
       (unk.length ? ' I’d check ' + esc(listSay(unk)) + '.' : '');
-    return '<div class="t-ins" title="AiMY’s read of ' + (x.src === 'pool' ? 'their history with us' : 'a public page, named on the card') + '">' +
-      '<p class="t-ins-h">' + mark(12) + '<span class="t-ins-v ' + v[1] + '">' + v[0] + '</span></p><p class="t-ins-say">' + say + '</p></div>';
+    return aimyNote(tag(v[0], v[1]) + ' ' + say, null, 'AiMY’s read of ' + (x.src === 'pool' ? 'their history with us' : 'a public page, named on the card'));
   }
   function draftCard(x, i, d, saved) {
     const met = x.ev.filter((e) => e === 'm').length;
