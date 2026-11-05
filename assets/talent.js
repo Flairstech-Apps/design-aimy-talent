@@ -110,7 +110,7 @@
     cal: '<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
     goal: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
     pin: '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
-    clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+    clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
     lang: '<path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>',
     job: '<path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/>',
     go: '<path d="m9 18 6-6-6-6"/>',
@@ -132,7 +132,7 @@
     videooff: '<path d="M10.66 6H14a2 2 0 0 1 2 2v2.5l5.248-3.062A.5.5 0 0 1 22 7.87v8.196"/><path d="M16 16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2"/><path d="m2 2 20 20"/>',
     skip: '<polygon points="5 4 15 12 5 20 5 4"/><line x1="19" x2="19" y1="5" y2="19"/>',
     check: '<path d="M20 6 9 17l-5-5"/>',
-    upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>',
+    upload: '<path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>',
     plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
     trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
     link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
@@ -592,7 +592,7 @@
      phone→HR through client→offer rates are the dashboard's. */
   const PASS = { sourced: 0.62, applied: 0.8, assess: 0.72, ctech: 0.82, phone: 0.71, hr: 0.54, tech: 0.79, mgr: 0.75, sent: 0.30, client: 0.88, offer: 0.86, accepted: 0.92 };
 
-  const DB = { reqs: [], cands: [], byReq: {}, byId: {}, reqById: {}, calls: [] };
+  const DB = { reqs: [], cands: [], byReq: {}, byId: {}, reqById: {}, calls: [], msgs: [] };
 
   function seed() {
     const r = rng(20261026);
@@ -863,6 +863,35 @@
     seedApproval();
     seedAsmtTrust();
     seedStageDays();
+    seedMsgs();
+  }
+  /* ── WhatsApp so far (Conversations, 5 Nov) ── three threads on the
+     recruiter's own desk, each with someone who opted in: a reply to the
+     message after a missed call, a question from yesterday evening, and an
+     interview reminder answered two days ago, which needs nothing more and
+     sits outside WhatsApp's 24 hours. Drawn after everything else and from
+     no random stream, so no other record moves. */
+  function seedMsgs() {
+    DB.msgs = [];
+    let n = 0;
+    const M = (c, dir, day, time, text, x) => DB.msgs.push(Object.assign({ id: 'm' + (++n), cand: c.id, dir: dir, day: day, time: time, text: text, by: dir === 'out' ? ME : null }, x || {}));
+    const mine = DB.cands.filter((c) => !c.exit && DB.reqById[c.req].rec === ME && !CLOSED[DB.reqById[c.req].state] && DB.reqById[c.req].state !== 'hold');
+    const optIn = (c) => { if (!c.wa) { c.wa = true; c.waDay = -6; } };
+    const tried = mine.filter((c) => c.stage === 'applied' && DB.calls.some((t) => t.cand === c.id && t.day === 0 && t.outcome === 'noanswer'))[0];
+    if (tried) {
+      optIn(tried); tried.fuDay = 0;
+      const q = DB.reqById[tried.req];
+      M(tried, 'out', 0, '11:16', 'Hi ' + first(tried.name) + ', this is ' + first(RECRUITERS[0].name) + ' from FlairsTech about the ' + q.title + ' role. I tried to call you just now. When is a good time to talk?', { tpl: 'talk' });
+      M(tried, 'in', 0, '11:40', 'Hi, yes I can talk after 4pm today. Thank you!');
+    }
+    const asks = mine.filter((c) => c.stage === 'phone' && c !== tried)[0];
+    if (asks) { optIn(asks); M(asks, 'in', -1, '18:10', 'Hello, is the ' + DB.reqById[asks.req].title + ' role hybrid or fully in the office?'); }
+    const booked = mine.filter((c) => c.stage === 'hr')[0];
+    if (booked) {
+      optIn(booked);
+      M(booked, 'out', -2, '10:00', 'Hi ' + first(booked.name) + ', a reminder of your HR interview for ' + DB.reqById[booked.req].title + '. Reply here if the time no longer works. ' + first(RECRUITERS[0].name) + ', FlairsTech', { tpl: 'iv' });
+      M(booked, 'in', -2, '10:20', 'Thank you, see you then.', { done: true });
+    }
   }
   /* Days spent at each stage a person has finished (`took`), drawn from
      their id and their requisition's own pace rather than the random
@@ -1146,7 +1175,7 @@
   /* `news` is work coming back to a desk (Sales's bell: a hand-over, an
      assignment, a decision taken somewhere else). `lists` are shortlists a
      person saved from the chat. */
-  const fresh = () => ({ c: {}, calls: [], added: [], x: {}, tpl: {}, auto: {}, autoLog: [], news: [], lists: [] });
+  const fresh = () => ({ c: {}, calls: [], msgs: [], waDone: {}, added: [], x: {}, tpl: {}, auto: {}, autoLog: [], news: [], lists: [] });
   /* Every other collection keeps its changes the same way: `D.x[col][id]`
      holds the fields a person changed, and a record made here carries
      `_new` so it is rebuilt on load. `props` are Learning proposals. */
@@ -1161,6 +1190,7 @@
     D.gone.forEach((g) => { const c = DB.byId[g.id]; if (c) { DB.cands = DB.cands.filter((x) => x.id !== c.id); DB.byReq[c.req] = DB.byReq[c.req].filter((x) => x.id !== c.id); delete DB.byId[c.id]; } });
     D.x = D.x || {}; D.tpl = D.tpl || {}; D.auto = D.auto || {}; D.autoLog = D.autoLog || [];
     D.news = D.news || []; D.lists = D.lists || [];
+    D.msgs = D.msgs || []; D.waDone = D.waDone || {};
     D.flags = D.flags || []; D.searches = D.searches || []; D.searchRun = D.searchRun || {}; D.searchGone = D.searchGone || [];
     Object.keys(D.tpl).forEach((k) => { TEMPLATE[k] = D.tpl[k].slice(); });
     /* A SENT ANSWER LASTS UNTIL THE PROTOTYPE RESTARTS (Engy, 29 Oct), so
@@ -1192,6 +1222,7 @@
     D.added.forEach((c) => { if (!DB.byId[c.id] && DB.byReq[c.req]) { DB.cands.push(c); DB.byId[c.id] = c; DB.byReq[c.req].push(c); } });
     Object.keys(D.c).forEach((id) => { if (DB.byId[id]) Object.assign(DB.byId[id], D.c[id]); });
     D.calls.forEach((t) => DB.calls.push(t));
+    D.msgs.forEach((m) => DB.msgs.push(m));
   }
   function put(col, rec, fields) {
     D.x[col] = D.x[col] || {};
@@ -1692,7 +1723,7 @@
      `approve` are the screens people outside the recruiting team reach from a
      link: the careers page, a candidate's own profile, an assessment, an
      interviewer's debrief and an approver's offer packet. */
-  const KEYS = ['as', 'on', 'req', 'cand', 'asmt', 'acc', 'q', 'p', 'list', 'find', 'edit', 'apply', 'me', 'take', 'debrief', 'approve', 'by', 'src', 'period', 'account', 'rq', 'day', 'st', 'ch'];
+  const KEYS = ['as', 'on', 'req', 'cand', 'asmt', 'acc', 'q', 'p', 'list', 'find', 'edit', 'th', 'lg', 'apply', 'me', 'take', 'debrief', 'approve', 'by', 'src', 'period', 'account', 'rq', 'day', 'st', 'ch'];
   const OUTSIDE = ['apply', 'me', 'take', 'debrief', 'approve'];
   const outside = () => OUTSIDE.some((k) => !!S[k]);
   function parse() {
@@ -1793,7 +1824,7 @@
      in bold, the figures behind it as pills, and one way in. Changing page
      closes the old reading while the new one opens. It replaced QA's open
      side nav (4 Nov) and its collapsed form (5 Nov). ── */
-  const TAB_ICO = { '': 'home', cands: 'users', reqs: 'req', calls: 'phone', diary: 'cal', asmts: 'goal', templates: 'doc', reports: 'bars' };
+  const TAB_ICO = { '': 'home', cands: 'users', reqs: 'req', calls: 'msg', diary: 'cal', asmts: 'goal', templates: 'doc', reports: 'bars' };
   /* Every reading stays in the rail, shut unless you are on its page, so a
      change of page can close one while the next opens (grid rows 0fr to
      1fr). The rail is painted again on each change, so the row you left is
@@ -1874,7 +1905,7 @@
     const avg = avgSent(mine());
     const team = avgSent(DB.reqs);
     const client = waits().filter((c) => waitsOn(c) === 'client');
-    const tc = toCall(), miss = missed().length, cb = tc.filter((x) => x.why === 'callback').length;
+    const tc = toCall(), miss = missed().length, cb = tc.filter((x) => x.why === 'callback').length, wa = waOwed().length;
     const me = queue().filter((c) => queueCut(c) === 'me').length;
     putRail(sideNav({
       '': d.length
@@ -1888,11 +1919,12 @@
         say: '<b>' + open.length + ' open</b>' + (avg != null ? '; your first profile goes in <b>' + days(avg) + '</b>, the team’s in ' + days(team) + '.' : '.'),
         ev: client.length ? [{ val: client.length, cap: 'owed an answer by clients' }] : [],
         act: client.length ? { label: 'Show the ' + client.length + ' with clients', go: { on: 'reqs', q: 'client' } } : null },
-      calls: tc.length || miss
-        ? { state: 'Awaiting you', tone: 'warn', say: '<b>' + plural(tc.length, 'person', 'people') + '</b> to call' + (miss ? ', and <b>' + miss + '</b> called and got nobody.' : '.'),
+      calls: tc.length || miss || wa
+        ? { state: 'Awaiting you', tone: 'warn', say: '<b>' + plural(tc.length, 'person', 'people') + '</b> to reach' +
+            (miss || wa ? ', ' + listSay([miss ? '<b>' + plural(miss, 'missed call') + '</b>' : null, wa ? '<b>' + plural(wa, 'WhatsApp reply', 'WhatsApp replies') + '</b>' : null].filter(Boolean)) : '') + '.',
             ev: cb ? [{ val: cb, cap: cb === 1 ? 'callback due today' : 'callbacks due today' }] : [],
-            act: miss ? { label: miss === 1 ? 'Show the missed call' : 'Show the ' + miss + ' missed calls', go: { on: 'calls', q: 'missed' } } : { label: 'Call the next one', start: 'screen' } }
-        : { state: 'Done', tone: 'ok', say: 'Nobody is waiting for a call.' },
+            act: miss || wa ? { label: 'Open the inbox', go: { on: 'calls', q: 'inbox' } } : { label: 'Call the next one', start: 'screen' } }
+        : { state: 'Done', tone: 'ok', say: 'Nobody is waiting on you to call or reply.' },
       reports: railStory(),
     }) + diaryDoor());
   }
@@ -1921,9 +1953,11 @@
     }
     const tc = toCall();
     const miss = missed();
+    const waN = waOwed().length;
+    if (waN && !miss.length) lines.push('<button class="slv-n" type="button"' + goAttr({ on: 'calls', q: 'inbox' }) + '>' + plural(waN, 'WhatsApp reply', 'WhatsApp replies') + '</button> ' + (waN === 1 ? 'waits' : 'wait') + ' on you.');
     if (miss.length) {
-      lines.push('<button class="slv-n" type="button"' + goAttr({ on: 'calls', q: 'missed' }) + '>' + plural(miss.length, 'person', 'people') + '</button>' +
-        ' called and got nobody' + (tc.filter((x) => x.why === 'callback').length ? ', and <b>' + plural(tc.filter((x) => x.why === 'callback').length, 'callback') + '</b> ' +
+      lines.push('<button class="slv-n" type="button"' + goAttr({ on: 'calls', q: 'inbox' }) + '>' + plural(miss.length, 'person', 'people') + '</button>' +
+        ' called and got nobody' + (waN ? ', <button class="slv-n" type="button"' + goAttr({ on: 'calls', q: 'inbox' }) + '>' + plural(waN, 'WhatsApp reply', 'WhatsApp replies') + '</button> ' + (waN === 1 ? 'waits' : 'wait') : '') + (tc.filter((x) => x.why === 'callback').length ? ', and <b>' + plural(tc.filter((x) => x.why === 'callback').length, 'callback') + '</b> ' +
         (tc.filter((x) => x.why === 'callback').length === 1 ? 'is' : 'are') + ' due today.' : '.'));
     }
     const ready = d.filter((c) => c.stage === 'tech' && reqOf(c).tpl !== 'internal');
@@ -1954,7 +1988,7 @@
      the one way round: every tab is a rail entry with its count, and what a
      rail card used to say (the next interview, a missed call) is the line
      under its entry. The page keeps its name as a plain heading. ── */
-  const TAB_NAME = { '': 'Today', cands: 'Candidates', reqs: 'Requisitions', calls: 'Calls', diary: 'Diary', asmts: 'Assessments', templates: 'Templates', reports: 'Reports' };
+  const TAB_NAME = { '': 'Today', cands: 'Candidates', reqs: 'Requisitions', calls: 'Conversations', diary: 'Diary', asmts: 'Assessments', templates: 'Templates', reports: 'Reports' };
   function tabsFor() {
     const open = myOpen().length;
     /* Each desk's row is the work that desk does (Sales: a surface belongs
@@ -3486,7 +3520,9 @@
     clearCallTimers();
     c.dialing = c.state === 'connecting';
     c.state = 'logging';
-    c.read = c.recording && c.shown ? readCall(heardText(c)) : { outcome: null, notice: null, salary: null, when: null };
+    /* On Teams the recording and transcript come back when the call ends
+       (Engy, 5 Nov), so a video call is read like a recorded one. */
+    c.read = (c.recording || c.video) && c.shown ? readCall(heardText(c)) : { outcome: null, notice: null, salary: null, when: null };
     c.lit = c.dialing ? 'noanswer' : c.read.outcome || (c.dir === 'in' && c.cand ? 'reached' : null);
     if (!c.cand) c.who = readWho(c.script.slice(0, c.shown));
     briefFreeze();
@@ -3532,11 +3568,14 @@
     const now = new Date();
     const time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
     const rd = call.read || {};
+    /* A call made elsewhere brings its own day, time and channel (`via`). */
+    const teamsRec = !!call.video && !call.via && call.secs > 0;
     const t = { id: 'u' + Date.now().toString(36), cand: call.cand || null, phone: call.phone, who: call.who || null,
-      day: 0, time: time, dir: call.dir, secs: call.secs, outcome: o, by: ME, missed: false, from: call.dir === 'out' && !call.video ? call.from : null, video: !!call.video,
+      day: call.day != null ? call.day : 0, time: call.time || time, dir: call.dir, secs: call.secs, outcome: o, by: ME, missed: false, from: call.dir === 'out' && !call.video && !call.via ? call.from : null, video: !!call.video,
+      via: call.via || null, recName: call.recName || null, teamsRec: teamsRec,
       note: call.note || (rd.notice || rd.salary ? 'Said on the call: ' + [rd.notice, rd.salary ? 'expects ' + rd.salary : null].filter(Boolean).join(', ') + '.'
         : call.dir === 'in' ? 'They called in.' : OUTCOME[o].label + '.'),
-      lines: call.recording ? call.script.slice(0, call.shown).map((l) => ({ who: l[0], text: l[1] })) : [] };
+      lines: call.recording || teamsRec ? call.script.slice(0, call.shown).map((l) => ({ who: l[0], text: l[1] })) : [] };
     const c = DB.byId[call.cand];
     let undo, said;
     if (c) {
@@ -4179,7 +4218,8 @@
         '<button class="btn btn-brand btn-sm" type="button" data-call-consent="yes">I have told them</button></div></div>' : '') +
       (st === 'ready' && call.dir === 'out' && c ? '<div class="b-cuts t-call-mode" role="group" aria-label="How to reach them">' +
         '<button class="filter-chip' + (call.video ? '' : ' active') + '" type="button" data-call-mode="phone" aria-pressed="' + !call.video + '">' + svg('phone', 14) + 'Phone</button>' +
-        '<button class="filter-chip' + (call.video ? ' active' : '') + '" type="button" data-call-mode="video" aria-pressed="' + !!call.video + '">' + svg('video', 14) + 'Video on Teams</button></div>' : '') +
+        '<button class="filter-chip' + (call.video ? ' active' : '') + '" type="button" data-call-mode="video" aria-pressed="' + !!call.video + '">' + svg('video', 14) + 'Video on Teams</button></div>' +
+        (call.video ? '<p class="call-num t-call-teams">Teams tells them it is recording. When it ends, the recording and transcript come back here and AiMY reads them.</p>' : '') : '') +
       (st === 'ready' && call.dir === 'out' && !call.video ? '<div class="call-from"><span class="call-from-cap">From</span>' + telPick('Call') + '</div>' : '') +
       '<div class="call-tools">' +
         (st === 'ready' ? (sess ? '<button class="call-tool" type="button" data-call-skip aria-label="Skip to the next one" title="Skip to the next one">' + svg('skip') + '</button>' : '') +
@@ -4544,7 +4584,8 @@
     return logRow({
       tone: t.missed ? 'is-missed' : '', ico: ico,
       who: withName ? (c ? c.name : t.who || t.phone) : (t.dir === 'in' ? (t.missed ? 'Missed call' : 'They called') : t.video ? 'Video call' : 'You called'),
-      meta: logMeta([t.missed ? (t.vm ? 'Missed, left a message' : 'Missed') : OUTCOME[t.outcome].label, t.video ? 'on Teams' : null, t.secs ? fmtClock(t.secs) : null, t.time,
+      meta: logMeta([t.missed ? (t.vm ? 'Missed, left a message' : 'Missed') : OUTCOME[t.outcome].label, t.via ? VIA_SAY[t.via] + ', logged by hand' : t.video ? 'on Teams' : null,
+        t.via && t.recName ? 'recording read by AiMY' : t.teamsRec ? 'Teams sent the recording back' : null, t.secs ? fmtClock(t.secs) : null, t.time,
         withName && c ? reqOf(c).title : null, t.from && telLine(t.from) ? 'from ' + telTag(telLine(t.from)) : null]),
       say: t.vm ? '“' + esc(t.vm.text) + '”' : esc(t.note || ''),
       vm: t.vm || null, vmId: t.id,
@@ -4571,12 +4612,180 @@
   const RUN_N = [5, 10, 0];
   const runN = (n) => { const k = UI.runN != null ? UI.runN : 10; return k && k < n ? k : n; };
   const runMins = (n) => Math.max(5, Math.round(n * (0.6 * 10 + 0.4) / 5) * 5);
-  /* ── CALLS ── who to call, who called and got nobody, and every call. */
+  /* ══ CONVERSATIONS: WHATSAPP, AND CALLS MADE ELSEWHERE (Engy, 5 Nov) ═════
+     Calls became Conversations: every way the recruiter and a candidate
+     talk, in one place. WhatsApp runs through AiMY Connect, which checks
+     the person's own opt-in before anything goes. Within 24 hours of their
+     last message a reply is free text; after that only an approved template
+     may open the conversation again (WhatsApp's own rule). A call made
+     outside AiMY, on a mobile, a WhatsApp call or Teams, is logged by hand,
+     and its recording, uploaded with their agreement, is read like AiMY's. */
+  const nowHM = () => { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+  const msgsOf = (id) => DB.msgs.filter((m) => m.cand === id).sort((a, b) => callKey(a) - callKey(b));
+  /* Hours of WhatsApp's window left after their last message; 0 is shut. */
+  function waHrs(c) {
+    const l = msgsOf(c.id).filter((m) => m.dir === 'in').pop();
+    if (!l) return 0;
+    const t = l.time.split(':').map(Number), d = new Date();
+    const since = -l.day * 24 + d.getHours() + d.getMinutes() / 60 - (t[0] + t[1] / 60);
+    return Math.max(0, Math.min(24, Math.floor(24 - since)));
+  }
+  /* THE INBOX'S WHATSAPP: a thread whose last word is theirs, on your desk,
+     until you reply or say it needs nothing (Done). */
+  function waOwed() {
+    const last = {};
+    DB.msgs.forEach((m) => { if (!last[m.cand] || callKey(m) >= callKey(last[m.cand])) last[m.cand] = m; });
+    return Object.keys(last).map((k) => last[k]).filter((m) => {
+      const c = DB.byId[m.cand];
+      return m.dir === 'in' && !m.done && !D.waDone[m.id] && c && reqOf(c).rec === ME;
+    }).sort((a, b) => callKey(b) - callKey(a));
+  }
+  const myMsgs = () => DB.msgs.filter((m) => DB.byId[m.cand] && reqOf(DB.byId[m.cand]).rec === ME);
+  /* The HR Manager's approved WhatsApp templates (AiMY Connect's list). */
+  const WA_TPL = [
+    { k: 'talk', label: 'A good time to talk', text: 'Hi {first}, this is {me} from FlairsTech about the {role} role. When is a good time for a short call?' },
+    { k: 'update', label: 'An update', text: 'Hi {first}, an update on your application for {role}: it is with us and moving. I will be in touch this week. {me}, FlairsTech' },
+    { k: 'iv', label: 'Your interview', text: 'Hi {first}, a reminder of your interview for {role}. Reply here if the time no longer works. {me}, FlairsTech' },
+  ];
+  const waFill = (t, c) => t.split('{first}').join(first(c.name)).split('{me}').join(first(me().name)).split('{role}').join(reqOf(c).title);
+  function msgRow(m, i, inbox) {
+    const c = DB.byId[m.cand];
+    return logRow({ tone: '', ico: svg('msg'), who: c.name,
+      meta: logMeta(['WhatsApp', m.dir === 'in' ? 'they wrote' : 'you wrote', m.time, reqOf(c).title]),
+      say: '“' + esc(m.text) + '”', act: goAttr({ on: 'calls', th: c.id }).trim(), go: inbox ? 'Reply' : 'Open', goIco: inbox ? svg('msg', 14) : '' }, i);
+  }
+
+  /* ONE WHATSAPP THREAD (?on=calls&th=): their messages left, yours right,
+     by day; under it the reply, free text inside the 24 hours and a template
+     outside them. Somebody who never opted in gets no box at all. */
+  let WA_TPL_ON = null;
+  function threadPage(c) {
+    const ms = msgsOf(c.id), hrs = c.wa ? waHrs(c) : 0, last = ms[ms.length - 1];
+    const owed = last && last.dir === 'in' && !last.done && !D.waDone[last.id];
+    let day = null;
+    const list = ms.map((m) => {
+      const h = m.day !== day ? '<p class="t-wa-day">' + esc(dayLabel(m.day)) + '</p>' : '';
+      day = m.day;
+      return h + '<div class="t-wa-m ' + (m.dir === 'out' ? 'is-out' : 'is-in') + '"><p class="t-wa-text">' + esc(m.text) + '</p>' +
+        '<span class="t-wa-t">' + esc(m.dir === 'out' ? 'You' + (m.tpl ? ', template' : '') : first(c.name)) + ' · ' + esc(m.time) + '</span></div>';
+    }).join('');
+    const tpl = WA_TPL.filter((x) => x.k === WA_TPL_ON)[0];
+    const box = !c.wa ? '<p class="t-wa-win">' + esc(first(c.name)) + ' has not opted in to WhatsApp, so nothing can go there. Email reaches them at ' + esc(c.email || 'the address on file') + '.</p>'
+      : hrs ? '<div class="t-wa-box"><textarea class="input t-wa-in" id="waText" rows="3" placeholder="Write to ' + esc(first(c.name)) + '…" aria-label="Your reply to ' + esc(c.name) + '"></textarea>' +
+          '<div class="t-wa-end"><p class="t-wa-win">Open for ' + plural(hrs, 'more hour') + '. After that, only an approved template can start it again.</p>' +
+          '<button class="s-insight-lnk primary" type="button" data-wa-send="' + c.id + '">' + svg('send', 14) + 'Send</button></div></div>'
+      : '<div class="t-wa-box"><p class="t-wa-win">' + (ms.length ? 'More than 24 hours since ' + esc(first(c.name)) + ' last wrote' : 'No conversation yet') + ', so it opens with one of ' + esc(DESKS.dina.name) + '’s approved templates.</p>' +
+          '<div class="b-cuts t-wa-tpls" role="group" aria-label="Templates">' + WA_TPL.map((x) => '<button class="filter-chip' + (WA_TPL_ON === x.k ? ' active' : '') + '" type="button" data-wa-tpl="' + x.k + '" aria-pressed="' + (WA_TPL_ON === x.k) + '">' + esc(x.label) + '</button>').join('') + '</div>' +
+          (tpl ? '<div class="t-msg"><p class="t-msg-body">' + esc(waFill(tpl.text, c)) + '</p><div class="t-msg-end"><p class="t-msg-foot">To ' + esc(first(c.name)) + ' on WhatsApp · template approved by ' + esc(DESKS.dina.name) + '.</p>' +
+            '<button class="s-insight-lnk primary" type="button" data-wa-send="' + c.id + '">' + svg('send', 14) + 'Send the template</button></div></div>' : '') + '</div>';
+    return '<div class="s-home">' +
+      '<div class="b-topbar s-block-wide"><button class="s-back" type="button"' + goAttr({ on: 'calls', q: 'inbox' }) + '>' + svg('back', 14) + 'Conversations</button>' +
+        '<span class="b-draft-acts">' + (canCall(c) ? '<button class="b-ghost" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call</button>' : '') +
+          '<button class="b-ghost" type="button"' + goAttr({ on: 'calls', lg: c.id }) + '>Log a call from elsewhere</button></span></div>' +
+      '<section class="s-block s-block-wide" aria-label="WhatsApp with ' + esc(c.name) + '">' +
+        '<div class="s-camp-list-head"><h2 class="s-block-h">' + esc(c.name) + '</h2>' +
+          '<span class="s-block-say">WhatsApp · ' + esc(c.wa ? 'opted in ' + sayWhen(c.waDay != null ? c.waDay : -3) : 'no opt-in') + ' · ' + esc(reqOf(c).title) + ', ' + esc(accOf(reqOf(c)).name) + '</span></div>' +
+        '<div class="t-wa">' + (list || '<p class="b-vfoot">Nothing on WhatsApp yet.</p>') + '</div>' +
+        (owed ? '<p class="t-acts t-wa-done"><button class="b-ghost" type="button" data-wa-done="' + last.id + '">Needs no reply</button></p>' : '') +
+        box +
+      '</section></div>';
+  }
+  function sendWa(c) {
+    const hrs = waHrs(c), tpl = WA_TPL.filter((x) => x.k === WA_TPL_ON)[0];
+    const el = byId('waText');
+    const text = hrs ? (el ? el.value.trim() : '') : tpl ? waFill(tpl.text, c) : '';
+    if (!text) { toast(hrs ? 'Write something first.' : 'Pick a template first.'); return; }
+    const m = { id: 'w' + Date.now().toString(36), cand: c.id, dir: 'out', day: 0, time: nowHM(), text: text, by: ME, tpl: hrs ? null : tpl.k };
+    D.msgs.push(m); DB.msgs.push(m);
+    const e = note(c, 'msg', 'On WhatsApp to ' + first(c.name) + ': “' + text + '”');
+    WA_TPL_ON = null;
+    paint();
+    toast('Sent to ' + first(c.name) + ' on WhatsApp', () => { D.msgs = D.msgs.filter((x) => x.id !== m.id); DB.msgs = DB.msgs.filter((x) => x.id !== m.id); unmake('events', e); save(); paint(); },
+      'Through AiMY Connect. It is on their history too.');
+  }
+
+  /* A CALL MADE ELSEWHERE (?on=calls&lg=): on the recruiter's own mobile,
+     a WhatsApp call or Teams outside AiMY. Logged by hand, the same
+     outcomes as the call panel, with the same effects and Undo. A recording
+     is optional, and only one they agreed to: AiMY transcribes it, picks
+     the outcome it heard and keeps what they said about notice and pay. */
+  let EL = null;
+  const EL_VIA = [['mobile', 'My mobile'], ['wa', 'WhatsApp call'], ['teams', 'Teams']];
+  const VIA_SAY = { mobile: 'on your mobile', wa: 'a WhatsApp call', teams: 'on Teams' };
+  function elsewherePage() {
+    const pre = S.lg && DB.byId[S.lg] ? S.lg : null;
+    if (!EL || EL.for !== S.lg) EL = { for: S.lg, cand: pre, via: 'mobile', day: 0, time: nowHM(), consent: false, rec: null, busy: false, read: null, lit: null };
+    const c = EL.cand ? DB.byId[EL.cand] : null;
+    const people = [];
+    myOpen().forEach((q) => activeOf(q).forEach((x) => people.push(x)));
+    people.sort((a, b) => a.name.localeCompare(b.name));
+    const row = (cap, body) => '<div class="t-el-row"><span class="t-el-cap">' + cap + '</span><div class="t-el-body">' + body + '</div></div>';
+    const chips = (k, list, on) => '<div class="b-cuts" role="group" aria-label="' + k + '">' + list.map((x) => '<button class="filter-chip' + (on === x[0] ? ' active' : '') + '" type="button" data-el="' + k + '|' + x[0] + '" aria-pressed="' + (on === x[0]) + '">' + esc(x[1]) + '</button>').join('') + '</div>';
+    const rd = EL.read;
+    const recBody = EL.busy ? '<p class="t-el-note">' + svg('upload', 14) + 'Transcribing ' + esc(EL.rec) + ' and reading it against the role…</p>'
+      : rd ? '<p class="t-el-note">' + sayMark() + '<span><b>Read from ' + esc(EL.rec) + '.</b> ' + (rd.outcome ? 'AiMY heard: ' + esc(OUTCOME[rd.outcome].label.toLowerCase()) + '. ' : 'AiMY could not tell the outcome; pick it below. ') +
+          [rd.notice ? esc(rd.notice.charAt(0).toUpperCase() + rd.notice.slice(1)) : null, rd.salary ? 'expects ' + esc(rd.salary) : null].filter(Boolean).join(', ') + (rd.notice || rd.salary ? '.' : '') + '</span></p>'
+      : '<p class="t-q"><button class="t-check' + (EL.consent ? ' is-on' : '') + '" type="button" data-el-consent aria-pressed="' + EL.consent + '" aria-label="They agreed to be recorded">' + (EL.consent ? svg('check', 12) : '') + '</button>' +
+          '<span>They agreed to be recorded' + (EL.via === 'teams' ? ' (Teams said so on the call)' : '') + '.</span></p>' +
+        (EL.consent ? '<label class="t-drop t-drop-sm" for="elFile">' + svg('upload', 18) + '<b>Add the recording</b><span>Audio or video. AiMY transcribes it, picks the outcome it heard and keeps notice and salary.</span>' +
+          '<input class="t-file" id="elFile" type="file" accept=".mp3,.m4a,.wav,.ogg,.mp4,.webm" data-el-file></label>' : '<p class="t-el-note">Optional. Without one, the log is your word.</p>');
+    const call = c ? { cand: c.id, lit: EL.lit, dir: 'out', fu: false, read: rd || {} } : null;
+    return '<div class="s-home">' +
+      '<div class="b-topbar s-block-wide"><button class="s-back" type="button"' + goAttr(c && pre ? { cand: c.id } : { on: 'calls' }) + '>' + svg('back', 14) + 'Back</button></div>' +
+      '<section class="s-block s-block-wide" aria-label="Log a call from elsewhere">' +
+        '<div class="s-camp-list-head"><h2 class="s-block-h">Log a call from elsewhere</h2>' +
+          '<span class="s-block-say">a call outside AiMY, so it is on their record like any other</span></div>' +
+        row('With', pre ? '<b>' + esc(c.name) + '</b> <span class="b-kind">' + esc(reqOf(c).title) + '</span>'
+          : '<span class="b-menu-wrap"><button class="b-ghost b-menu-open" type="button" data-pickopen="elWhoMenu" aria-haspopup="menu" aria-expanded="false">' +
+              esc(c ? c.name + ' · ' + reqOf(c).title : 'Choose the candidate') + svg('down', 14) + '</button>' +
+            '<div class="b-menu" id="elWhoMenu" role="menu" hidden><span class="b-menu-cap">On your open requisitions</span>' +
+              people.map((x) => '<button class="b-menu-item" type="button" role="menuitem" data-el="who|' + x.id + '"' + (EL.cand === x.id ? ' aria-current="true"' : '') + '>' +
+                '<span class="b-menu-name">' + esc(x.name) + '</span><span class="tel-menu-cc">' + esc(reqOf(x).title) + '</span></button>').join('') + '</div></span>') +
+        row('On', chips('via', EL_VIA, EL.via)) +
+        row('When', chips('day', [['0', 'Today'], ['-1', 'Yesterday']], String(EL.day)) + '<input class="input t-el-time" id="elTime" type="time" value="' + esc(EL.time) + '" aria-label="What time">') +
+        row('Recording', recBody) +
+        row('What happened', '<div class="b-cuts" role="group" aria-label="What happened">' + OUTCOMES.map((o) => '<button class="filter-chip' + (EL.lit === o.k ? ' active' : '') + '" type="button" data-el="o|' + o.k + '" aria-pressed="' + (EL.lit === o.k) + '">' + esc(o.label) + '</button>').join('') + '</div>' +
+          (call ? '<p class="t-el-note">' + esc(willSay(call)) + '</p>' : '')) +
+        row('Note', '<textarea class="input" id="elNote" rows="2" placeholder="Anything worth keeping (optional)" aria-label="A note on the call"></textarea>') +
+        '<p class="t-acts t-el-acts"><button class="b-ghost" type="button"' + goAttr(c && pre ? { cand: c.id } : { on: 'calls' }) + '>Cancel</button>' +
+          '<button class="s-insight-lnk primary" type="button" data-el-log' + (c && EL.lit && !EL.busy ? '' : ' disabled') + '>Log it</button></p>' +
+      '</section></div>';
+  }
+  function elRead(name) {
+    if (!EL || !name || !EL.cand) return;
+    EL.rec = name; EL.busy = true; paint();
+    setTimeout(() => {
+      if (!EL || EL.rec !== name) return;
+      const c = DB.byId[EL.cand];
+      EL.read = readCall(scriptFor(c).map((l) => l[1]).join(' '));
+      EL.lit = EL.read.outcome || EL.lit;
+      EL.busy = false; paint();
+    }, 1600);
+  }
+  function logElsewhere() {
+    if (!EL || !EL.cand || !EL.lit || EL.busy) return;
+    if (busy()) return;
+    const c = DB.byId[EL.cand], t = byId('elTime'), n = byId('elNote');
+    const script = EL.read ? scriptFor(c) : [];
+    PENDING = { cand: c.id, phone: c.phone, dir: 'out', secs: EL.read ? 420 : 0, lit: EL.lit, read: EL.read || {}, video: EL.via === 'teams', via: EL.via,
+      recording: !!EL.read, script: script, shown: script.length, note: n && n.value.trim() ? n.value.trim() : '', fu: false,
+      day: EL.day, time: t && t.value ? t.value : nowHM(), recName: EL.rec };
+    const back = S.lg && DB.byId[S.lg] ? { cand: c.id } : { on: 'calls', q: 'log' };
+    EL = null;
+    go(back, true);
+    logCall();
+  }
+
+  /* ── CONVERSATIONS ── who to reach, what came in, and everything said. */
   function callsPage() {
-    const list = toCall(), miss = missed(), log = myCalls();
-    const tab = S.q === 'missed' || S.q === 'log' ? S.q : 'tocall';
-    const n = { tocall: list.length, missed: miss.length, log: log.filter((t) => t.day === 0).length };
-    const TABS = [['tocall', 'To call'], ['missed', 'Missed'], ['log', 'Today']];
+    /* A thread and the call-from-elsewhere form are pages of their own. */
+    if (S.lg) return elsewherePage();
+    if (S.th && DB.byId[S.th]) return threadPage(DB.byId[S.th]);
+    const list = toCall(), miss = missed(), log = myCalls(), owed = waOwed();
+    /* "missed" was the Inbox's old name; links to it still land. */
+    const tab = S.q === 'missed' || S.q === 'inbox' ? 'inbox' : S.q === 'log' ? 'log' : 'tocall';
+    const n = { tocall: list.length, inbox: miss.length + owed.length, log: null };
+    const TABS = [['tocall', 'To reach'], ['inbox', 'Inbox'], ['log', 'History']];
     const counts = { callback: 0, screen: 0, applied: 0 };
     list.forEach((x) => counts[x.why]++);
     const WHY = { callback: 'asked for a callback', screen: 'phone screen due', applied: 'applied, not called yet' };
@@ -4607,10 +4816,17 @@
             aimy: true, act: 'data-call="' + x.c.id + '"', go: 'Call', goIco: svg('phone', 14),
           }, i)).join('') + '</div>'
         : '<p class="b-vfoot">Nobody is waiting for a call from you.</p>';
-    } else if (tab === 'missed') {
-      body = miss.length
-        ? aimyBlock({ text: '<b>' + plural(miss.length, 'person', 'people') + '</b> called and nobody picked up. Calling them back clears them from here.' }, true) +
-          '<div class="b-log">' + logDays(miss, (t, i) => {
+    } else if (tab === 'inbox') {
+      /* Missed calls and WhatsApp replies, newest first: calling back or
+         replying clears each one. */
+      const items = miss.map((t) => ({ k: 'call', t: t, day: t.day, time: t.time })).concat(owed.map((m) => ({ k: 'msg', m: m, day: m.day, time: m.time })))
+        .sort((a, b) => callKey(b) - callKey(a));
+      body = items.length
+        ? aimyBlock({ text: [miss.length ? '<b>' + plural(miss.length, 'missed call') + '</b>' : null, owed.length ? '<b>' + plural(owed.length, 'WhatsApp reply', 'WhatsApp replies') + '</b>' : null].filter(Boolean).join(' and ') +
+            ' waiting on you. Calling back or replying clears each one.' }, true) +
+          '<div class="b-log">' + logDays(items, (x, i) => {
+            if (x.k === 'msg') return msgRow(x.m, i, true);
+            const t = x.t;
             const c = DB.byId[t.cand];
             return c ? logRow({ tone: 'is-missed', ico: svg('callin'), who: c.name, meta: logMeta([t.vm ? 'Missed, left a message' : 'Missed', c.phone, t.time]),
               say: t.vm ? '“' + esc(t.vm.text) + '”' : ringRead(c), aimy: !t.vm, act: 'data-call="' + c.id + '"', go: 'Call them back', goIco: svg('phone', 14),
@@ -4619,18 +4835,23 @@
               say: 'Nobody on file has this number. Calling back puts it in the dialer.', aimy: true,
               act: 'data-redial="' + esc(t.phone) + '"', go: 'Call them back', goIco: svg('phone', 14) }, i);
           }) + '</div>'
-        : '<p class="b-vfoot">Every call that came in got answered or returned.</p>';
+        : '<p class="b-vfoot">Every call and message that came in has its answer.</p>';
     } else {
-      const shown = log.slice(0, 40);
-      body = shown.length ? '<div class="b-log">' + logDays(shown, (t, i) => callRow(t, i, true)) + '</div>' +
-        '<p class="b-vfoot">The last ' + shown.length + ' of ' + log.length + ' calls.</p>' : '<p class="b-vfoot">No calls yet.</p>';
+      /* Every channel in one history: calls in AiMY, calls logged from
+         elsewhere, Teams, and WhatsApp both ways. */
+      const all = log.map((t) => ({ k: 'call', t: t, day: t.day, time: t.time })).concat(myMsgs().map((m) => ({ k: 'msg', m: m, day: m.day, time: m.time })))
+        .sort((a, b) => callKey(b) - callKey(a));
+      const shown = all.slice(0, 40);
+      body = shown.length ? '<div class="b-log">' + logDays(shown, (x, i) => x.k === 'msg' ? msgRow(x.m, i, false) : callRow(x.t, i, true)) + '</div>' +
+        '<p class="b-vfoot">The last ' + shown.length + ' of ' + all.length + ' calls and messages.</p>' : '<p class="b-vfoot">Nothing yet.</p>';
     }
     return '<div class="s-home">' +
-      '<section class="s-block s-block-wide" aria-label="Calls">' +
-        '<div class="s-camp-list-head">' + switcher('calls') + '</div>' +
-        '<p class="t-scope">' + tag('Design target', 'warn') + '<span>Telephony for Talent is on hold with AiMY Phone. These calls show where it is going, not what ships first.</span></p>' +
+      '<section class="s-block s-block-wide" aria-label="Conversations">' +
+        '<div class="s-camp-list-head">' + switcher('calls') +
+          '<span class="b-draft-acts"><button class="b-ghost" type="button"' + goAttr({ on: 'calls', lg: 'new' }) + '>Log a call from elsewhere</button></span></div>' +
+        '<p class="t-scope">' + tag('Design target', 'warn') + '<span>Calls wait on AiMY Phone, and WhatsApp on AiMY Connect’s templates being approved. This shows where it is going, not what ships first.</span></p>' +
         '<div class="b-cuts b-log-tabs">' + TABS.map((x) => '<button class="filter-chip' + (tab === x[0] ? ' active' : '') + '" type="button" data-q="' + x[0] + '"' +
-          (tab === x[0] ? ' aria-current="true"' : '') + '>' + esc(x[1]) + '<span class="b-cut-n">' + n[x[0]] + '</span></button>').join('') + '</div>' +
+          (tab === x[0] ? ' aria-current="true"' : '') + '>' + esc(x[1]) + (n[x[0]] != null ? '<span class="b-cut-n">' + n[x[0]] + '</span>' : '') + '</button>').join('') + '</div>' +
         body +
       '</section></div>';
   }
@@ -4678,7 +4899,9 @@
         '<div class="b-cmeta">' +
           part('Now', p(esc(c.at)) + p(esc(plural(c.years, 'year')) + ' of experience')) +
           (isClient() ? '' : part('Reach them', p('<b>' + esc(c.phone || 'No phone yet') + '</b>') + p(esc(c.email || '')) +
-            p(esc(c.dnc ? 'Asked not to be called again.' : c.badNumber ? 'This number did not work.' : c.callback != null && c.callback <= 0 ? 'Asked to be called back today' + (c.cbWin ? ', ' + winSay(c.cbWin) : '') + '.' : plural(calls.length, 'call') + ' so far.')))) +
+            p(esc(c.dnc ? 'Asked not to be called again.' : c.badNumber ? 'This number did not work.' : c.callback != null && c.callback <= 0 ? 'Asked to be called back today' + (c.cbWin ? ', ' + winSay(c.cbWin) : '') + '.' : plural(calls.length, 'call') + ' so far.')) +
+            (works ? p((c.wa ? '<button class="t-inline-link" type="button"' + goAttr({ on: 'calls', th: c.id }) + '>WhatsApp' + (msgsOf(c.id).length ? ' (' + msgsOf(c.id).length + ')' : '') + '</button> · ' : '') +
+              '<button class="t-inline-link" type="button"' + goAttr({ on: 'calls', lg: c.id }) + '>Log a call from elsewhere</button>') : ''))) +
           part('Languages and skills', p(esc(c.langs.join(', '))) + p(esc((c.skills || []).join(', ')))) +
           (isClient() ? '' : part('Said on calls', c.notice || c.salary ? (c.notice ? p(esc(c.notice.charAt(0).toUpperCase() + c.notice.slice(1))) : '') +
             (c.salary ? p('Expects ' + esc(c.salary)) : '') : '<p class="b-cmeta-p b-draft-none">Nothing yet. The phone screen asks.</p>')) +
@@ -8336,6 +8559,10 @@
     if (S.on === 'add') { const q = S.req && DB.reqById[S.req]; if (q) { reqs(); reqStep(q); } return { up: up, now: 'Add a candidate' }; }
     if (S.on === 'find') return { up: up, now: 'Find candidates' };
     if (S.on === 'decide') return { up: up, now: S.q === 'send' ? 'Sending profiles' : 'Deciding' };
+    if (S.on === 'calls' && (S.th || S.lg)) {
+      add('Conversations', goAttr({ on: 'calls' }).trim());
+      return { up: up, now: S.lg ? 'Log a call from elsewhere' : (DB.byId[S.th] || {}).name || 'WhatsApp' };
+    }
     if (S.on === 'newreq') { reqs(); const a = ACCOUNTS.filter((x) => x.id === S.account)[0]; return { up: up, now: 'New requisition' + (a ? ' for ' + a.name : '') }; }
     if (S.on === 'draft') { add('Find candidates', goAttr({ on: 'find' }).trim()); const l = S.list ? D.lists.filter((x) => x.id === S.list)[0] : DRAFT; return { up: up, now: l ? l.name : 'Shortlist' }; }
     if (S.cand && DB.byId[S.cand]) {
@@ -9029,6 +9256,18 @@
     if ((el = at('[data-diary-day]'))) { const v = val('data-diary-day'); go(Object.assign({}, S, { day: v === '0' ? null : v }), true); return; }
     if ((el = at('[data-nudge]'))) { nudge(DB.byId[el.getAttribute('data-nudge')]); return; }
     if ((el = at('[data-start]'))) { start(el.getAttribute('data-start')); return; }
+    /* ── Conversations: WhatsApp and calls made elsewhere ── */
+    if ((el = at('[data-wa-send]'))) { sendWa(DB.byId[val('data-wa-send')]); return; }
+    if ((el = at('[data-wa-tpl]'))) { const k = val('data-wa-tpl'); WA_TPL_ON = WA_TPL_ON === k ? null : k; paint(); return; }
+    if ((el = at('[data-wa-done]'))) { const id = val('data-wa-done'); D.waDone[id] = 1; save(); paint(); toast('Set aside: it needs no reply', () => { delete D.waDone[id]; save(); paint(); }); return; }
+    if ((el = at('[data-el-consent]'))) { if (EL) { EL.consent = !EL.consent; paint(); } return; }
+    if ((el = at('[data-el-log]'))) { logElsewhere(); return; }
+    if ((el = at('[data-el]'))) {
+      const p = val('data-el').split('|');
+      if (EL) { if (p[0] === 'via') EL.via = p[1]; if (p[0] === 'who') { EL.cand = p[1]; EL.read = null; EL.rec = null; EL.consent = false; } if (p[0] === 'day') EL.day = Number(p[1]); if (p[0] === 'o') EL.lit = EL.lit === p[1] ? null : p[1];
+        const t = byId('elTime'); if (t) EL.time = t.value; paint(); }
+      return;
+    }
     if ((el = at('[data-run-skip]'))) { if (RUN) RUN.skip[el.getAttribute('data-run-skip')] = 1; paint(); return; }
     if ((el = at('[data-run-again]'))) { if (RUN) RUN.skip = {}; paint(); return; }
     /* ── Finding through the chat, and the shortlist it brings back ── */
@@ -9157,6 +9396,7 @@
        ends the typing still lands. */
     if (e.target.matches('[data-find-q]')) { const b = byId('findCrit'); if (b) b.outerHTML = critBlock(); }
     if (e.target.matches('[data-apply-file]')) applyRead(f ? f.name : null);
+    if (e.target.matches('[data-el-file]')) elRead(f ? f.name : null);
   });
   document.addEventListener('input', (e) => {
     const t = e.target;

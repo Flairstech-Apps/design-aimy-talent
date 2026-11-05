@@ -1658,3 +1658,47 @@ body.is-portal .aimy-overlay { display: none !important; }
 /* The briefing's own 32px under it stacked on the grid's gap and the next
    block's padding (88px); without it Today keeps one rhythm between blocks. */
 .s-home > .slv { margin-bottom: 0; }
+
+/* ══ CONVERSATIONS: A WHATSAPP THREAD (5 Nov) ═════════════════════════════
+   Theirs on the left on the card's surface, yours on the right in a light
+   tint of the accent, each with who and when under it; days part the run.
+   The reply box sits under the thread at the same reading width. */
+.t-wa { display: flex; flex-direction: column; gap: 8px; max-width: 640px; margin-top: 16px; }
+.t-wa-day { margin: 8px 0 0; align-self: center; font-size: var(--fs-2xs); color: var(--ink-muted); }
+.t-wa-m { max-width: 80%; padding: 10px 12px; border-radius: 12px; display: flex; flex-direction: column; gap: 4px; }
+.t-wa-m.is-in { align-self: flex-start; background: var(--card-bg); border: 1px solid var(--card-border); border-bottom-left-radius: 4px; }
+.t-wa-m.is-out { align-self: flex-end; background: rgba(var(--accent-rgb), 0.12); border-bottom-right-radius: 4px; }
+.t-wa-text { margin: 0; font-size: var(--fs-xs); line-height: 1.5; color: var(--d50); white-space: pre-wrap; }
+.t-wa-t { font-size: var(--fs-2xs); color: var(--ink-muted); }
+.t-wa-m.is-out .t-wa-t { align-self: flex-end; }
+.t-wa-done { max-width: 640px; justify-content: flex-start; margin-top: 8px; }
+.t-wa-box { max-width: 640px; margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+.t-wa-in { width: 100%; resize: vertical; }
+.t-wa-end { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.t-wa-win { margin: 0; font-size: var(--fs-2xs); color: var(--ink-muted); }
+.t-wa-tpls { margin: 0; }
+
+/* ══ CONVERSATIONS: A CALL MADE ELSEWHERE (5 Nov) ═════════════════════════
+   One labelled row per answer, the label in a fixed column on wide
+   screens and above its answer on a phone. */
+.t-el-row { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 8px 16px; align-items: start; padding: 12px 0; max-width: 760px; }
+.t-el-row + .t-el-row { border-top: 1px solid var(--card-border); }
+.t-el-cap { padding-top: 6px; font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--d50); }
+.t-el-body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.t-el-body .b-cuts { margin: 0; }
+.t-el-time { max-width: 140px; }
+.t-el-note { display: flex; align-items: flex-start; gap: 6px; margin: 0; font-size: var(--fs-2xs); color: var(--ink-muted); line-height: 1.5; }
+.t-el-note > svg { flex: none; margin-top: 2px; }
+.t-el-acts { max-width: 760px; justify-content: flex-end; margin-top: 8px; }
+.t-call-teams { margin-top: 8px; }
+@media (max-width: 640px) {
+  .t-el-row { grid-template-columns: 1fr; }
+  .t-el-cap { padding-top: 0; }
+  .t-wa-m { max-width: 92%; }
+}
+/* The diary door's clock on AiMY UI's icon scale (12px, Lucide at stroke 2),
+   not Sales's 0.62em of the time beside it, which drew it at 12.4px. */
+.rail-doors .b-door-clock svg { width: 12px; height: 12px; }
+/* The consent tick borrows the careers page's .t-q; inside the form it
+   reads at the form's size. */
+.t-el-body .t-q { margin: 0; font-size: var(--fs-xs); }

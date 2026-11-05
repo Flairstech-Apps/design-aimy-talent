@@ -27,10 +27,13 @@ The recruiter's desk opens as **Omar Saeed**. The other three desks are describe
   - The funnel, with the biggest drop marked.
   - The candidates on it, cut by stage. Each card has its next move and its exit, each with Undo.
 
-- **Calls** (`?on=calls`) has three tabs:
-  - **To call:** callbacks someone asked for come first, then phone screens that are due, then people who applied and haven't been called. "Call them in order" calls down the list, with "Log it and call the next one" or "Log it and stop" after each call.
-  - **Missed:** people who called and got nobody. A missed call clears when you call them back, or when they call again and get you.
-  - **Today:** every call, grouped by day.
+- **Conversations** (`?on=calls`, Calls until 5 Nov) is every way the recruiter and a candidate talk, with three tabs:
+  - **To reach:** callbacks someone asked for come first, then phone screens that are due, then people who applied and haven't been called. "Call them in order" calls down the list, with "Log it and call the next one" or "Log it and stop" after each call.
+  - **Inbox:** missed calls (with any message they left) and WhatsApp replies, newest first. A missed call clears when you call them back; a WhatsApp reply clears when you answer it or press Needs no reply.
+  - **History:** every call and message on every channel, grouped by day: calls in AiMY, Teams calls, calls logged from elsewhere, and WhatsApp both ways.
+  - **A WhatsApp thread** (`?on=calls&th=`) runs through AiMY Connect, only for people who opted in. Within 24 hours of their last message a reply is free text; after that only one of the HR Manager's approved templates can be sent. Each send has Undo and lands on their history.
+  - **Log a call from elsewhere** (`?on=calls&lg=`, also on the candidate page) records a call on the recruiter's mobile, a WhatsApp call or Teams outside AiMY: who, the channel, when, what happened and a note. A recording is optional and needs a tick that they agreed to it; AiMY transcribes it, picks the outcome it heard and keeps notice and salary. The log has the same effects and Undo as a call in AiMY.
+  - **Teams calls** from the call panel say that Teams tells them it is recording; when the call ends the recording and transcript come back and AiMY reads them, so History shows "Teams sent the recording back".
 - **One candidate** (`?cand=k20`) is Sales's contact record turned into a candidate:
   - Who they are and their phone number.
   - What they said on calls (notice period and salary).
