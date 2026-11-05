@@ -2689,9 +2689,10 @@
       '<div class="tc-head">' + (pick1 ? selBox('sourced', c.id, c.name) : owedTell ? selBox('tell', c.id, c.name) : '') + stageTag(c) + (was ? tag('Returning', 'info') : '') + '<span class="b-kind">' + esc(c.source) + '</span></div>' +
       '<div class="b-qcard-top"><button class="tc-title s-card-title" type="button" data-cand="' + c.id + '">' + esc(c.name) + '</button></div>' +
       '<p class="tc-summary b-qcard-role">' + esc(c.at) + '</p>' +
-      /* Why they fit, in AiMY's words, first under the name (4 Nov). */
-      whySay(c) +
+      /* Who they are stays together under the name (Engy, 5 Nov), then
+         AiMY's read of why they fit (4 Nov). */
       '<p class="b-qcard-where">' + fact('job', plural(c.years, 'year')) + fact('pin', c.place) + fact('lang', c.langs.join(', ')) + '</p>' +
+      whySay(c) +
       (was ? '<p class="b-qcard-where t-before">' + fact('hist', beforeSay(was)) + '</p>' : '') +
       (isClient() ? '' : stageProgress(c)) +
       /* The days in the stage are said here once, so the steps above carry

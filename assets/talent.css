@@ -949,7 +949,9 @@ body.is-portal .aimy-overlay { display: none !important; }
 #rqMenu { min-width: 280px; max-height: 360px; overflow-y: auto; }
 .t-rq-item { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .t-cf-on { margin: 0 0 10px; }
+/* Its own group under AiMY's read, not a third line of facts. */
 .t-before { color: var(--d100); }
+.b-qcard .t-before { margin-top: 12px; }
 /* The requisition menu's second line. */
 .t-crow-sub { font-size: var(--fs-xs); color: var(--ink-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 560px) {
