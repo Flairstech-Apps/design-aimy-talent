@@ -85,7 +85,6 @@ const MARKERS = {
   'cv-file': 'the CV file box, read by the change listener',
   'apply-file': 'the careers-page CV box, read by the change listener',
   'crit-ed': 'which criterion a Find box rewrites, read by the input listener',
-  'tip': 'the tooltip of a collapsed rail icon, read by the pointer and focus listeners',
 };
 
 /* ── 1 & 2. CONTROLS AND HANDLERS, BOTH DIRECTIONS ───────────────────────── */

@@ -1254,186 +1254,96 @@ body.is-portal .aimy-overlay { display: none !important; }
 #asPanel .b-menu-name, #asPanel .tel-menu-cc { white-space: nowrap; }
 #asPanel .tel-menu-cc { font-weight: var(--fw-medium); color: var(--ink-muted); }
 
-/* ══ THE RAIL, IN AiMY QA's FORM (Engy, 4 Nov) ═══════════════════════════
-   The tabs moved into the rail, and the rail takes QA's open side nav: AiMY
-   UI's side-nav, values from QA's aimy-rail.css. 272px wide on a card
-   ground; an AiMY head; a section per page with its icon, name and a
-   chevron, its figures under it in a 42px right-set column; the page you
-   are on first, in an accent card with You're here. Nothing in it wears a
-   severity colour, as in QA. It collapses, and narrower it is a drawer:
-   see COLLAPSED, AND AS A DRAWER below. */
-@media (min-width: 1080px) {
-  :root { --rail-w: 272px; }
-  .app-rail { background: rgba(20, 27, 36, 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
-  :root[data-theme="light"] .app-rail { background: rgba(255, 255, 255, 0.85); }
+/* ══ THE RAIL, IN SALES'S FORM (Engy, 5 Nov) ═════════════════════════════
+   AiMY UI 1.4.0's side-nav, its default variant: Sales's tabs (railNav and
+   tabRead, bdr.css 111, Sales d24d176), values from the library's tokens
+   sidenav.css. One card at the top of the rail (6px padding, the card
+   border, radius 2xl, the small shadow and a 1px inner highlight), a 40px
+   pill row per page. The page you are on is the tinted block, its icon and
+   count in the accent ink, and it opens to hold AiMY's reading: the state
+   in capitals in its tone, the sentence, the figures as pills and a
+   full-width pill button. Changing page closes the old reading while the
+   new one opens, grid rows 0fr to 1fr over 250ms with the tint
+   crossfading. The rail itself is Sales's column (320px), and below 1080
+   Sales's drawer, as sales.css draws them. */
+.app-rail {
+  --w04: rgba(255, 255, 255, 0.04); --w05: rgba(255, 255, 255, 0.05);
+  --w08: rgba(255, 255, 255, 0.08); --w10: rgba(255, 255, 255, 0.10);
 }
-.app-rail { padding: 16px 12px 24px; }
-/* QA's two washes, which this build only declared on the bell's panel
-   (bdr.css .ntf-anchor). Without them the hover filled nothing and the
-   hairlines between sections drew nothing. QA's values, both themes. */
-.app-rail { --wash-3: rgba(255, 255, 255, 0.04); --wash-6: rgba(255, 255, 255, 0.07); }
-:root[data-theme="light"] .app-rail { --wash-3: rgba(16, 24, 40, 0.05); --wash-6: rgba(16, 24, 40, 0.09); }
-.snav-head {
-  display: flex; align-items: center; gap: 7px; margin: 0 0 12px; padding: 6px 12px; min-height: 40px;
-  position: sticky; top: 0; z-index: 2;
-  border-radius: var(--r-md); background: var(--card-bg); border: 1px solid var(--glass-border);
+:root[data-theme="light"] .app-rail {
+  --w04: rgba(15, 23, 42, 0.030); --w05: rgba(15, 23, 42, 0.038);
+  --w08: rgba(15, 23, 42, 0.085); --w10: rgba(15, 23, 42, 0.100);
 }
-.snav-head-mark { display: inline-flex; flex-shrink: 0; }
-.snav-head-label { font-size: 11px; font-weight: var(--fw-bold); letter-spacing: 0.02em; color: var(--ai-text); }
-.snav-head-count { margin-left: auto; color: var(--d300); font-size: 10px; font-weight: var(--fw-medium); white-space: nowrap; }
-
-.snav-groups, .snav-findings { list-style: none; margin: 0; padding: 0; }
-.snav-groups { display: flex; flex-direction: column; }
-.snav-section { position: relative; padding: 8px 4px; border-radius: 10px; transition: background-color var(--t-fast) ease; }
-.snav-section:not(.is-current) + .snav-section:not(.is-current) { border-top: 1px solid var(--wash-6); }
-.snav-section.is-current {
-  margin-bottom: 8px; padding: 8px 6px 10px; border-radius: 12px;
+.snav-tabs > ul {
+  display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 6px; list-style: none;
+  border: 1px solid var(--card-border); border-radius: var(--r-2xl);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+.snav-tab { position: relative; isolation: isolate; border-radius: var(--r-xl); }
+.snav-tab::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit;
   background:
-    radial-gradient(120% 90% at 0% 0%, rgba(var(--accent-rgb), 0.26), transparent 70%),
-    linear-gradient(120deg, rgba(var(--accent-rgb), 0.14), rgba(0, 102, 255, 0.06));
-  border: 1px solid rgba(var(--accent-rgb), 0.42);
+    radial-gradient(120% 90% at 0% 0%, rgba(var(--accent-rgb), 0.24), transparent 70%),
+    linear-gradient(120deg, rgba(var(--accent-rgb), 0.13), rgba(0, 102, 255, 0.05));
+  box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.42);
+  opacity: 0; transition: opacity 250ms var(--ease-out);
+  pointer-events: none;
 }
-:root[data-theme="light"] .snav-section.is-current { background: linear-gradient(120deg, rgba(var(--accent-rgb), 0.12), rgba(0, 102, 255, 0.05)); }
-.snav-section-head {
-  display: flex; align-items: center; gap: 8px; width: 100%; padding: 5px 6px; border: 0; border-radius: 8px;
-  background: transparent; font: inherit; text-align: left; color: var(--d100);
-  font-size: 12.5px; font-weight: var(--fw-semibold); line-height: 1.3;
-  transition: background-color var(--t-fast) ease, color var(--t-fast) ease;
+.snav-tab.is-on::before { opacity: 1; }
+.snav-tab-link {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px;
+  padding: 8px 12px; border: 0; border-radius: var(--r-pill); background: transparent; cursor: pointer; text-align: left;
+  font-family: var(--font-display); font-size: var(--fs-sm); font-weight: var(--fw-semibold);
+  color: var(--d100);
+  transition: background-color var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out);
 }
-/* The whole section is the link: the head's ::after stretches over it. */
-button.snav-section-head { cursor: pointer; }
-button.snav-section-head::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
-/* HOVER FILLS THE WHOLE CARD, AS QA's DOES (Engy, 4 Nov, with QA's rail
-   as the reference). QA's aimy-rail.css: the section under the pointer
-   takes --wash-3 across its whole 10px card, nothing more. On the whole
-   section, so the card stays lit over a finding that is its own link. */
-.snav-section:not(.is-current):hover { background: var(--wash-3); }
-button.snav-section-head:hover { color: var(--d50); }
-button.snav-section-head:focus-visible { outline: none; }
-button.snav-section-head:focus-visible::after { outline: 2px solid var(--brand); outline-offset: -2px; border-radius: 10px; }
-.snav-section-icon { display: inline-flex; flex-shrink: 0; color: var(--d400); }
-.snav-section.is-current .snav-section-icon { color: var(--d100); }
-.snav-section-name { flex: 1; min-width: 0; }
-.snav-chevron { display: inline-flex; flex-shrink: 0; color: var(--d400); transition: transform var(--t-base) var(--ease-out), color var(--t-fast) ease; }
-button.snav-section-head:hover .snav-chevron { color: var(--d200); transform: translateX(2px); }
-.snav-here {
-  flex-shrink: 0; padding: 2px 7px; border-radius: 999px; background: rgba(var(--accent-rgb), 0.28); color: var(--d50);
-  font-size: 9.5px; font-weight: var(--fw-bold); letter-spacing: 0.06em; text-transform: uppercase;
+.snav-tab-icon { display: inline-flex; flex: none; color: var(--d200); }
+.snav-tab-icon svg { width: 16px; height: 16px; }
+.snav-tab-name { flex: 1; min-width: 0; }
+.snav-tab-n { font-size: var(--fs-xs); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; color: var(--d200); }
+.snav-tab:not(.is-on) .snav-tab-link:hover { background: color-mix(in srgb, var(--d50) 6%, transparent); color: var(--d50); }
+.snav-tab.is-on .snav-tab-link { color: var(--d50); font-weight: var(--fw-bold); }
+.snav-tab.is-on .snav-tab-icon, .snav-tab.is-on .snav-tab-n { color: var(--accent-text); }
+.snav-tab-link:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
+/* Padding on the body, never on the track, or the shut row keeps a strip. */
+.snav-tab-read {
+  display: grid; grid-template-rows: 0fr; opacity: 0;
+  transition: grid-template-rows 250ms var(--ease-out), opacity 250ms var(--ease-out);
 }
-:root[data-theme="light"] .snav-here { background: rgba(var(--accent-rgb), 0.16); color: var(--d100); }
-
-.snav-findings { margin-top: 2px; }
-.snav-finding {
-  display: grid; grid-template-columns: 42px minmax(0, 1fr); column-gap: 8px; align-items: baseline;
-  width: 100%; padding: 4px 6px; border: 0; border-radius: 8px; background: transparent; font: inherit; text-align: left;
-  color: var(--d300); font-size: 12px; font-weight: var(--fw-medium); line-height: 1.4;
-  transition: background-color var(--t-fast) ease, color var(--t-fast) ease;
+.snav-tab.is-on .snav-tab-read { grid-template-rows: 1fr; opacity: 1; }
+.snav-tab-read-in { min-height: 0; overflow: hidden; }
+.snav-tab-body { padding: 2px 12px 12px; }
+/* The reading: Sales's railReadHtml. */
+.snav-read-state {
+  margin: 0 0 8px; font-size: var(--fs-xs); font-weight: var(--fw-bold);
+  letter-spacing: 0.05em; text-transform: uppercase; color: var(--warn-text);
 }
-.snav-finding.is-link { position: relative; z-index: 1; cursor: pointer; }
-.snav-finding.is-link:hover { background: var(--wash-3); color: var(--d100); }
-.snav-finding.is-link:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
-.snav-fig {
-  color: var(--d50); font-size: 15px; font-weight: var(--fw-bold); line-height: 1.2;
-  text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap;
+.snav-read-state.is-err { color: var(--err-text); }
+.snav-read-state.is-ok { color: var(--ok-text); }
+.snav-read-text { margin: 0 0 12px; font-size: var(--fs-xs); font-weight: var(--fw-medium); line-height: var(--lh-base); color: var(--d100); }
+.snav-read-text b { font-weight: var(--fw-semibold); color: var(--d50); }
+.snav-read-evidence { display: flex; flex-wrap: wrap; gap: 5px; margin: 0 0 12px; padding: 0; list-style: none; }
+.snav-read-pill {
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px;
+  border: 1px solid var(--w08); border-radius: var(--r-pill); background: var(--w04);
+  font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--ink-secondary);
 }
-/* ══ COLLAPSED, AND AS A DRAWER (AiMY UI side-nav, variant qa, 5 Nov) ═════
-   The head's panel button collapses the rail to 64px: the mark's button
-   with the count, then a 40px icon square a page, its count as a badge,
-   the page you are on first in the accent wash. The mark opens it again.
-   Between 640 and 1080 it stays collapsed and the open form comes in as a
-   drawer, min(308px, 88%), over a 45% scrim. On a phone it is Sales's
-   drawer from the bar's button, as before. */
-.snav-collapse {
-  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
-  width: 28px; height: 28px; margin: -4px -6px -4px 2px; padding: 0; border: 0; border-radius: 8px;
-  background: transparent; color: var(--d300); cursor: pointer;
-  transition: background-color var(--t-fast) ease, color var(--t-fast) ease;
+.snav-read-val { font-weight: var(--fw-bold); color: var(--d50); }
+.snav-read-act {
+  display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 28px;
+  padding: 0 12px; border: 1px solid var(--w10); border-radius: var(--r-pill);
+  background: var(--w05); font-family: inherit; font-size: var(--fs-xs); font-weight: var(--fw-semibold);
+  color: var(--d100); cursor: pointer;
+  transition: transform var(--t-press) var(--ease-out), background-color var(--t-fast), color var(--t-fast);
 }
-.snav-collapse:hover { background: var(--wash-6); color: var(--d50); }
-.snav-collapse:focus-visible, .snav-expand:focus-visible, .snav-icon:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
-.snav-mini { display: none; flex-direction: column; align-items: center; gap: 6px; }
-.app-rail[data-rail="collapsed"] .snav-open { display: none; }
-.app-rail[data-rail="collapsed"] .snav-mini { display: flex; }
-.snav-expand, .snav-icon {
-  position: relative; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
-  width: 40px; height: 40px; padding: 0; border: 1px solid transparent; border-radius: 10px;
-  background: transparent; color: var(--d300); cursor: pointer;
-  transition: background-color var(--t-fast) ease, color var(--t-fast) ease;
-}
-.snav-expand { margin-bottom: 6px; border-color: var(--glass-border); background: var(--card-bg); }
-.snav-expand:hover { border-color: rgba(var(--accent-rgb), 0.42); }
-.snav-icon:hover { background: var(--wash-3); color: var(--d50); }
-.snav-icon[aria-current="page"] {
-  border-color: rgba(var(--accent-rgb), 0.42); color: var(--d50);
-  background:
-    radial-gradient(120% 90% at 0% 0%, rgba(var(--accent-rgb), 0.26), transparent 70%),
-    linear-gradient(120deg, rgba(var(--accent-rgb), 0.14), rgba(0, 102, 255, 0.06));
-}
-:root[data-theme="light"] .snav-icon[aria-current="page"] { background: linear-gradient(120deg, rgba(var(--accent-rgb), 0.12), rgba(0, 102, 255, 0.05)); color: var(--d100); }
-.snav-badge {
-  position: absolute; top: -4px; right: -4px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
-  background: var(--accent); color: #fff; font-size: 9.5px; font-weight: var(--fw-bold); line-height: 16px;
-  text-align: center; font-variant-numeric: tabular-nums;
-}
-.snav-tip {
-  position: fixed; z-index: 900; transform: translateY(-50%); padding: 5px 9px; border-radius: 8px; max-width: 260px;
-  background: var(--panel-bg); border: 1px solid var(--glass-border); box-shadow: var(--shadow-xl);
-  color: var(--d50); font-size: 11.5px; font-weight: var(--fw-medium); line-height: 1.35;
-  opacity: 0; pointer-events: none; transition: opacity var(--t-fast) ease;
-}
-.snav-tip.is-on { opacity: 1; }
-@media (min-width: 1080px) {
-  :root:has(#appRail[data-rail="collapsed"]) { --rail-w: 64px; }
-  .app-rail[data-rail="collapsed"] { padding: 12px 0 24px; scrollbar-gutter: auto; scrollbar-width: none; }
-}
-@media (min-width: 640px) and (max-width: 1079.98px) {
-  :root { --rail-w: 64px; }
-  .rail-toggle { display: none; }
-  .app-rail {
-    position: relative; top: auto; bottom: auto; z-index: 700; width: var(--rail-w); padding: 12px 0 24px;
-    transform: none; visibility: visible; background: transparent; box-shadow: none; border-right: 1px solid var(--hairline);
-    -webkit-backdrop-filter: none; backdrop-filter: none; scrollbar-gutter: auto; scrollbar-width: none;
-  }
-  .app-rail .snav-mini { display: flex; }
-  .app-rail[data-rail] .snav-open {
-    display: block; position: fixed; z-index: 700; top: var(--topbar-height); bottom: 0; left: 0;
-    width: min(308px, 88%); padding: 16px 12px 24px; overflow-y: auto;
-    background: var(--panel-bg); border-right: 1px solid var(--glass-border); box-shadow: var(--shadow-xl);
-    -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
-    transform: translateX(-100%); visibility: hidden;
-  }
-  .app-rail.is-open .snav-open { transform: none; visibility: visible; }
-  .rail-scrim { background: rgba(10, 14, 18, 0.45); }
-}
-@media (max-width: 639.98px) {
-  .app-rail[data-rail] .snav-open { display: block; }
-  .app-rail .snav-mini { display: none; }
-}
-@media (min-width: 640px) and (max-width: 1079.98px) and (prefers-reduced-motion: no-preference) {
-  .app-rail { transition: none; }
-  .app-rail .snav-open { transition: transform 220ms var(--ease-out), visibility 220ms; }
-  .app-rail.is-open .snav-open { transition: transform 220ms var(--ease-out), visibility 0s; }
-}
-
-/* Opening the rail as a drawer, the head and each section rise in one after
-   another (QA's rail-section-in). Transform and opacity only. */
-@keyframes snav-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: none; }
-}
-.rail-motion .snav-head, .rail-motion .snav-section { animation: snav-in 240ms var(--ease-out) both; }
-.rail-motion .snav-section:nth-child(2) { animation-delay: 30ms; }
-.rail-motion .snav-section:nth-child(3) { animation-delay: 60ms; }
-.rail-motion .snav-section:nth-child(4) { animation-delay: 90ms; }
-.rail-motion .snav-section:nth-child(5) { animation-delay: 120ms; }
-.rail-motion .snav-section:nth-child(6) { animation-delay: 150ms; }
-.rail-motion .snav-section:nth-child(7) { animation-delay: 180ms; }
-.rail-motion .snav-section:nth-child(8) { animation-delay: 210ms; }
+.snav-read-act:hover { background: var(--w08); color: var(--d50); }
+.snav-read-act:active { transform: scale(0.97); }
+.snav-read-act:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+:root[data-theme="light"] .snav-tabs > ul { box-shadow: var(--shadow-sm); }
+:root[data-theme="light"] .snav-tab::before { background: linear-gradient(120deg, rgba(var(--accent-rgb), 0.12), rgba(0, 102, 255, 0.05)); }
 @media (prefers-reduced-motion: reduce) {
-  .snav-section, .snav-section-head, .snav-finding, .snav-chevron { transition: none; }
-  button.snav-section-head:hover .snav-chevron { transform: none; }
-  .rail-motion .snav-head, .rail-motion .snav-section { animation: none; }
-  .snav-collapse, .snav-expand, .snav-icon, .snav-tip { transition: none; }
+  .snav-tab::before, .snav-tab-link, .snav-tab-read, .snav-read-act { transition: none; }
 }
 
 /* ══ THE REPORTS STORY (V6, 4 Nov) ═══════════════════════════════════════

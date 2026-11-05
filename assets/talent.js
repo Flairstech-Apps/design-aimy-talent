@@ -114,8 +114,6 @@
     lang: '<path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>',
     job: '<path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/>',
     go: '<path d="m9 18 6-6-6-6"/>',
-    /* The rail's collapse (lucide panel-left). */
-    panel: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>',
     back: '<path d="M15 18l-6-6 6-6"/>',
     find: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
     /* The call's own icons, verbatim from Sales's ICONS. */
@@ -1786,52 +1784,62 @@
     }).join('');
   }
 
-  /* ── THE RAIL, IN AiMY QA's FORM (Engy, 4 Nov: "do it the style of AiMY
-     QA"). QA's open side nav (AiMY UI side-nav; QA's aimy-rail.css): an
-     AiMY head saying how much there is, then one section per page, the
-     page's icon and name with its figures under it in a right-set column.
-     The page you are on leads, in an accent card that says You're here.
-     The reading card that stood above it is gone: its figures are Today's
-     findings now, as QA keeps every reading under the page it belongs to.
-     Findings take their own link where one goes somewhere narrower than
-     the page (Calls, missed). ── */
+  /* ── THE RAIL, IN SALES'S FORM (Engy, 5 Nov: "use sales method in the
+     left rail"; AiMY UI side-nav, the default variant, 1.4.0, from Sales's
+     railNav and tabRead, bdr.css 111, Sales d24d176). One card at the top
+     of the rail, a row per page with its icon, name and count. The page you
+     are on is the tinted block, and it opens to hold AiMY's reading of that
+     page: where it stands in Sales's words, one sentence with the numbers
+     in bold, the figures behind it as pills, and one way in. Changing page
+     closes the old reading while the new one opens. It replaced QA's open
+     side nav (4 Nov) and its collapsed form (5 Nov). ── */
   const TAB_ICO = { '': 'home', cands: 'users', reqs: 'req', calls: 'phone', diary: 'cal', asmts: 'goal', templates: 'doc', reports: 'bars' };
-  const pl = (n, one, many) => n === 1 ? one : many;
-  /* PICKING A PAGE, THE RAIL REORDERS (QA's aimy-rail.js, travel). The page
-     you are on leads the rail, so picking another moves it: the section you
-     picked rises to the top slot and the one you left drops back into its
-     place. A FLIP on transform only, 240ms on the strong ease-in-out, no
-     bounce. QA plays it before the next page loads; here the page changes
-     in place, so it plays as the rail is painted again. Only for a pointer
-     press on a section: a keyed one, reduced motion, or any other way of
-     changing page repaints without it. */
-  let RAIL_MOVE = false;
-  const railRects = () => {
-    const m = {};
-    byId('appRail').querySelectorAll('.snav-section').forEach((s) => { m[s.querySelector('.snav-section-name').textContent] = s.getBoundingClientRect().top; });
-    return m;
-  };
+  /* Every reading stays in the rail, shut unless you are on its page, so a
+     change of page can close one while the next opens (grid rows 0fr to
+     1fr). The rail is painted again on each change, so the row you left is
+     put back open for a frame and the two swap. */
   function putRail(html) {
-    const before = RAIL_MOVE ? railRects() : null;
-    RAIL_MOVE = false;
-    byId('appRail').innerHTML = html;
-    byId('appRail').dataset.rail = UI.rail === 'collapsed' ? 'collapsed' : 'open';
-    railLabels();
-    if (!before) return;
-    byId('appRail').querySelectorAll('.snav-section').forEach((s) => {
-      const was = before[s.querySelector('.snav-section-name').textContent];
-      const dy = was == null ? 0 : was - s.getBoundingClientRect().top;
-      if (Math.abs(dy) >= 1) s.animate([{ transform: 'translateY(' + dy + 'px)' }, { transform: 'translateY(0)' }], { duration: 240, easing: 'cubic-bezier(0.77, 0, 0.175, 1)' });
-    });
+    const rail = byId('appRail');
+    const was = [].indexOf.call(rail.querySelectorAll('.snav-tab'), rail.querySelector('.snav-tab.is-on'));
+    const n = rail.querySelectorAll('.snav-tab').length;
+    rail.innerHTML = html;
+    const rows = rail.querySelectorAll('.snav-tab');
+    const now = [].indexOf.call(rows, rail.querySelector('.snav-tab.is-on'));
+    if (was < 0 || was === now || rows.length !== n || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    rows[was].classList.add('is-on');
+    if (now >= 0) rows[now].classList.remove('is-on');
+    void rail.offsetWidth;
+    rows[was].classList.remove('is-on');
+    if (now >= 0) rows[now].classList.add('is-on');
   }
-  /* Reports, in the rail: the story's two findings, each opening its chapter. */
+  /* THE DIARY, A CARD OF ITS OWN UNDER THE TABS (Engy, 5 Nov: "show the
+     card of the diary alone like sales"). Sales's door (.b-door in
+     .rail-doors; AiMY UI's RailDoor): what is next today at the size of a
+     figure with a clock before it, who and what under it, how many more,
+     and where it opens. A clear day says so, and how much is ahead. */
+  function diaryDoor() {
+    const left = diaryItems(0, 0).filter((m) => !m.done && m.kind !== 'owed')
+      .sort((a, b) => (a.time || '99').localeCompare(b.time || '99'));
+    const nx = left[0];
+    const door = (inner) => '<div class="rail-doors"><button class="b-door" type="button"' + goAttr({ on: 'diary' }) + '>' +
+      '<span class="b-door-cap">Today</span> ' + inner + ' <span class="b-door-go">Open the diary' + svg('go', 13) + '</span></button></div>';
+    if (!nx) {
+      const ahead = diaryItems(1, 14).length;
+      return door('<span class="b-door-who">Nothing is in the diary <span class="b-kind">' + (ahead ? plural(ahead, 'thing') + ' in the fortnight ahead' : 'nor in the fortnight ahead') + '</span></span>');
+    }
+    return door((nx.time ? '<span class="b-door-fig"><span class="b-door-clock" aria-hidden="true">' + svg('clock', 24) + '</span>' + esc(nx.time) + '</span> ' : '') +
+      '<span class="b-door-who">' + esc(nx.c.name) + ' <span class="b-kind">' + esc(nx.what) + '</span></span>' +
+      (left.length > 1 ? ' <span class="b-door-say">' + plural(left.length - 1, 'more thing') + ' today.</span>' : ''));
+  }
+  /* Reports' reading: the story's speed, and where people are lost. */
   function railStory() {
     const sto = deskStory();
-    if (!sto) return [];
-    const out = [];
-    if (sto.actual != null) out.push({ fig: sto.actual, text: 'days to the first profile; the target is ' + SEND_TARGET, go: { on: 'reports', ch: 'speed' } });
-    if (sto.off) out.push({ fig: (sto.off.decided - sto.off.passed) + '/' + sto.off.decided, text: sto.off.k === 'offer' ? 'offers turned down' : 'lost at ' + STEP_SAY[sto.off.k], go: { on: 'reports', ch: 'journey' } });
-    return out;
+    if (!sto || sto.actual == null) return null;
+    const late = sto.actual > SEND_TARGET;
+    return { state: 'Found', tone: late ? 'warn' : 'ok',
+      say: 'The first profile goes <b>' + days(sto.actual) + '</b> after a requisition opens; the target is <b>' + SEND_TARGET + '</b>.',
+      ev: sto.off ? [{ val: (sto.off.decided - sto.off.passed) + '/' + sto.off.decided, cap: sto.off.k === 'offer' ? 'offers turned down' : 'lost at ' + STEP_SAY[sto.off.k] }] : [],
+      act: { label: 'Read the story', go: { on: 'reports', ch: 'speed' } } };
   }
   function paintDeskRail() {
     const a = asks();
@@ -1839,13 +1847,19 @@
     const open = reqs.filter(isOpen);
     const risky = open.filter((q) => health(q).risk);
     const filled = reqs.filter((q) => q.state === 'filled' || q.state === 'started').length;
-    putRail(sideNav(isHR() ? risky.length + ' at risk' : a.length + ' waiting', {
-      '': [isHR() ? { fig: risky.length + '/' + open.length, text: 'open requisitions likely to miss their date' }
-          : { fig: a.length, text: pl(a.length, 'thing waits on you', 'things wait on you') }]
-        .concat(a[0] ? [{ fig: 'Next', text: a[0].head, go: a[0].go }] : []),
-      reqs: [{ fig: open.length, text: 'open' }].concat(isClient() ? [] : [{ fig: filled, text: 'filled' }]),
-      reports: isClient() ? [] : railStory(),
-    }, isHR() ? risky.length : a.length));
+    const qn = isHR() ? queue().length : 0;
+    putRail(sideNav({
+      '': isHR()
+        ? { state: 'Found', tone: risky.length ? 'err' : 'ok',
+            say: risky.length ? '<b>' + risky.length + ' of ' + open.length + '</b> open requisitions are likely to miss their date.' : 'Every open requisition is on course for its date.',
+            act: risky.length ? { label: 'Show the ' + risky.length, start: 'risk' } : null }
+        : a.length
+          ? { state: 'Awaiting you', tone: 'warn', say: '<b>' + plural(a.length, 'thing') + '</b> ' + (a.length === 1 ? 'waits' : 'wait') + ' on you. First: ' + esc(a[0].head) + '.', act: { label: a[0].verb || 'Open it', go: a[0].go } }
+          : { state: 'Done', tone: 'ok', say: 'Nothing waits on you.' },
+      cands: qn ? { state: 'Awaiting you', tone: 'warn', say: '<b>' + plural(qn, 'person', 'people') + '</b> on the open requisitions.', act: { label: 'Show who waits on you', go: { on: 'cands', q: 'me' } } } : null,
+      reqs: { state: 'Found', tone: 'ok', say: '<b>' + open.length + ' open</b>' + (isClient() ? '.' : ', and <b>' + filled + '</b> filled.') },
+      reports: isClient() ? null : railStory(),
+    }) + (isHM() ? diaryDoor() : ''));
   }
   function paintRail() {
     if (!isRec()) { paintDeskRail(); return; }
@@ -1853,21 +1867,30 @@
     const open = myOpen();
     const people = open.reduce((n, q) => n + activeOf(q).length, 0);
     const t = today();
-    const nxt = t[0];
     const avg = avgSent(mine());
     const team = avgSent(DB.reqs);
+    const client = waits().filter((c) => waitsOn(c) === 'client');
     const tc = toCall(), miss = missed().length, cb = tc.filter((x) => x.why === 'callback').length;
-    putRail(sideNav(plural(d.length, 'decision'), {
-      '': [{ fig: d.length, text: pl(d.length, 'decision waits on you', 'decisions wait on you') },
-        { fig: t.length, text: pl(t.length, 'interview today', 'interviews today') }],
-      cands: [{ fig: people, text: 'people on your open requisitions' }],
-      reqs: [{ fig: open.length, text: 'open' }].concat(avg != null ? [{ fig: avg, text: 'days to the first profile sent; the team’s is ' + team }] : []),
-      calls: [{ fig: tc.length, text: 'to call' }]
-        .concat(miss ? [{ fig: miss, text: pl(miss, 'missed call', 'missed calls'), go: { on: 'calls', q: 'missed' } }] : [])
-        .concat(cb ? [{ fig: cb, text: pl(cb, 'callback due today', 'callbacks due today') }] : []),
-      diary: nxt ? [{ fig: nxt.slot, text: nxt.name + ', ' + lower(STAGE[nxt.stage].label) }] : [],
+    const me = queue().filter((c) => queueCut(c) === 'me').length;
+    putRail(sideNav({
+      '': d.length
+        ? { state: 'Awaiting you', tone: 'warn', say: '<b>' + plural(d.length, 'decision') + '</b> ' + (d.length === 1 ? 'waits' : 'wait') + ' on you, the oldest <b>' + days(d[0].since) + '</b>.',
+            ev: [{ val: t.length, cap: t.length === 1 ? 'interview today' : 'interviews today' }], act: { label: 'Decide the oldest one', start: 'decide' } }
+        : { state: 'Done', tone: 'ok', say: 'Nothing waits on your call.', ev: [{ val: t.length, cap: t.length === 1 ? 'interview today' : 'interviews today' }] },
+      cands: { state: me ? 'Awaiting you' : 'Done', tone: me ? 'warn' : 'ok',
+        say: '<b>' + plural(me, 'person', 'people') + '</b> ' + (me === 1 ? 'waits' : 'wait') + ' on you, of <b>' + people + '</b> on your open requisitions.',
+        act: me ? { label: 'Show the ' + me, go: { on: 'cands', q: 'me' } } : null },
+      reqs: { state: 'Found', tone: avg != null && avg > team ? 'warn' : 'ok',
+        say: '<b>' + open.length + ' open</b>' + (avg != null ? '; your first profile goes in <b>' + days(avg) + '</b>, the team’s in ' + days(team) + '.' : '.'),
+        ev: client.length ? [{ val: client.length, cap: 'owed an answer by clients' }] : [],
+        act: client.length ? { label: 'Show the ' + client.length + ' with clients', go: { on: 'reqs', q: 'client' } } : null },
+      calls: tc.length || miss
+        ? { state: 'Awaiting you', tone: 'warn', say: '<b>' + plural(tc.length, 'person', 'people') + '</b> to call' + (miss ? ', and <b>' + miss + '</b> called and got nobody.' : '.'),
+            ev: cb ? [{ val: cb, cap: cb === 1 ? 'callback due today' : 'callbacks due today' }] : [],
+            act: miss ? { label: miss === 1 ? 'Show the missed call' : 'Show the ' + miss + ' missed calls', go: { on: 'calls', q: 'missed' } } : { label: 'Call the next one', start: 'screen' } }
+        : { state: 'Done', tone: 'ok', say: 'Nobody is waiting for a call.' },
       reports: railStory(),
-    }, d.length));
+    }) + diaryDoor());
   }
 
   /* ── The briefing, on Today only. Sales opens a desk on it; every other
@@ -1945,57 +1968,31 @@
   function switcher(here) {
     return '<h2 class="s-block-h">' + esc((tabsFor().filter((t) => t.k === here)[0] || { label: 'Today' }).label) + '</h2>';
   }
-  /* The rail's sections, as AiMY UI's side-nav draws them. `found` holds
-     each tab's findings: { fig, text, go? }. Away from a tab's own page (a
-     requisition, a candidate), the tab it belongs under is the one you are
-     in. The whole section is the link (its head's ::after covers it); a
-     finding with its own link sits above that. */
-  /* COLLAPSED, AND AS A DRAWER (AiMY UI side-nav, variant qa, 5 Nov). Both
-     forms are painted; the rail's data-rail and the width pick one. Open
-     (272px): the head's panel button collapses it. Collapsed (64px): the
-     mark's button, with the count, opens it again, then each page as a 40px
-     icon square with its count and a tooltip of its name and first figure,
-     the page you are on first. The choice is kept in UI. Between 640 and
-     1080 it stays collapsed and the mark brings the open form in as a
-     drawer over the scrim; on a phone the bar's rail button does, as before. */
-  const railNarrow = matchMedia('(max-width: 1079.98px)');
-  function railLabels() {
-    const n = railNarrow.matches;
-    byId('appRail').querySelectorAll('[data-rail-close]').forEach((b) => b.setAttribute('aria-label', n ? 'Close the pages' : 'Collapse the pages'));
-    byId('appRail').querySelectorAll('[data-rail-open]').forEach((b) => {
-      b.setAttribute('aria-label', n ? 'Open the pages' : 'Expand the pages');
-      b.setAttribute('data-tip', n ? 'Open the pages' : 'Expand the pages');
-      b.setAttribute('aria-expanded', String(n && byId('appRail').classList.contains('is-open')));
-    });
+  /* The rail's card, as AiMY UI's side-nav draws Sales's tabs. `reads`
+     holds each tab's reading: { state, label?, tone, say, ev?, act? }, the
+     state one of Sales's six words, tone warn, err or ok; `act` goes
+     somewhere ({ go }) or starts something ({ start }). Away from a tab's
+     own page (a requisition, a candidate), the tab it belongs under is the
+     one you are on. */
+  const READ_TONE = { warn: 'snav-read-state', err: 'snav-read-state is-err', ok: 'snav-read-state is-ok' };
+  function readHtml(r) {
+    return '<p class="' + READ_TONE[r.tone || 'warn'] + '">' + esc(r.label || r.state) + '</p>' +
+      '<p class="snav-read-text">' + r.say + '</p>' +
+      (r.ev && r.ev.length ? '<ul class="snav-read-evidence">' + r.ev.map((e) => '<li class="snav-read-pill"><span class="snav-read-val">' + esc(String(e.val)) + '</span> ' + esc(e.cap) + '</li>').join('') + '</ul>' : '') +
+      (r.act ? '<button class="snav-read-act" type="button"' + (r.act.start ? ' data-start="' + r.act.start + '"' : goAttr(r.act.go)) + '>' + esc(r.act.label) + '</button>' : '');
   }
-  function sideNav(summary, found, count) {
+  function sideNav(reads) {
     const tabs = tabsFor(), on = S.on || '';
     const here = on && tabs.some((t) => t.k === on) ? on : S.cand ? 'cands' : S.req || S.acc ? 'reqs' : S.asmt ? 'asmts' : on ? null : '';
-    const ordered = tabs.filter((t) => t.k === here).concat(tabs.filter((t) => t.k !== here));
-    const finding = (f) => {
-      const body = '<span class="snav-fig">' + esc(String(f.fig)) + '</span><span>' + esc(f.text) + '</span>';
-      return '<li>' + (f.go ? '<button class="snav-finding is-link" type="button"' + goAttr(f.go) + '>' + body + '</button>' : '<div class="snav-finding">' + body + '</div>') + '</li>';
-    };
-    const mini = '<div class="snav-mini">' +
-      '<button class="snav-expand" type="button" data-rail-open aria-controls="appRail">' + mark(20) + (count ? '<span class="snav-badge" aria-hidden="true">' + count + '</span>' : '') + '</button>' +
-      ordered.map((t) => {
-        const cur = t.k === here, f = (found[t.k] || [])[0];
-        const name = t.label + (f ? ': ' + f.fig + ' ' + f.text : '') + (cur ? ' (you’re here)' : '');
-        return '<button class="snav-icon" type="button"' + goAttr(t.k ? { on: t.k } : {}) + (cur ? ' aria-current="page"' : '') + ' aria-label="' + esc(name) + '" data-tip="' + esc(name) + '">' +
-          svg(TAB_ICO[t.k], 16) + (t.n ? '<span class="snav-badge" aria-hidden="true">' + t.n + '</span>' : '') + '</button>';
-      }).join('') + '</div>';
-    return '<div class="snav-open"><div class="snav-head"><span class="snav-head-mark">' + mark(16) + '</span><span class="snav-head-label">AiMY</span>' +
-        '<span class="snav-head-count">' + esc(summary) + '</span>' +
-        '<button class="snav-collapse" type="button" data-rail-close aria-expanded="true" aria-controls="appRail">' + svg('panel', 16) + '</button></div>' +
-      '<ul class="snav-groups">' + ordered.map((t) => {
-        const cur = t.k === here, f = found[t.k] || [];
-        const inner = '<span class="snav-section-icon">' + svg(TAB_ICO[t.k], 16) + '</span><span class="snav-section-name">' + esc(t.label) + '</span>';
-        return '<li class="' + (cur ? 'snav-section is-current' : 'snav-section') + '">' +
-          (cur ? '<div class="snav-section-head" aria-current="page">' + inner + '<span class="snav-here">You’re here</span></div>'
-            : '<button class="snav-section-head" type="button"' + goAttr(t.k ? { on: t.k } : {}) + '>' + inner + '<span class="snav-chevron">' + svg('go', 16) + '</span></button>') +
-          (f.length ? '<ul class="snav-findings" aria-label="' + esc(t.label) + '">' + f.map(finding).join('') + '</ul>' : '') +
-        '</li>';
-      }).join('') + '</ul></div>' + mini;
+    return '<div class="snav-tabs"><ul>' + tabs.map((t) => {
+      const cur = t.k === here, r = reads[t.k];
+      return '<li class="' + (cur ? 'snav-tab is-on' : 'snav-tab') + '">' +
+        '<button class="snav-tab-link" type="button"' + goAttr(t.k ? { on: t.k } : {}) + (cur ? ' aria-current="page"' : '') + '>' +
+          '<span class="snav-tab-icon" aria-hidden="true">' + svg(TAB_ICO[t.k], 16) + '</span><span class="snav-tab-name">' + esc(t.label) + '</span>' +
+          (t.n ? ' <span class="snav-tab-n">' + t.n + '</span>' : '') + '</button>' +
+        (r ? '<div class="snav-tab-read"' + (cur ? '' : ' inert') + '><div class="snav-tab-read-in"><div class="snav-tab-body">' + readHtml(r) + '</div></div></div>' : '') +
+      '</li>';
+    }).join('') + '</ul></div>';
   }
 
   /* ── One row of work: who, for what, why, and the one move. ── */
@@ -8523,71 +8520,22 @@
   /* THE RAIL AS A DRAWER, below 1080px (sales.css). Its button had no
      handler, which mattered once the tabs moved into the rail: on a narrow
      screen it is the only way to another page. Picking an entry, the scrim
-     or Escape closes it. */
-  /* Opening, the head and sections rise in one after another (QA's
-     rail-motion: 240ms each, 30ms apart), then the class comes off. */
-  function railRise() {
-    const rail = byId('appRail');
-    rail.classList.remove('rail-motion');
-    void rail.offsetWidth;
-    rail.classList.add('rail-motion');
-    setTimeout(() => rail.classList.remove('rail-motion'), 700);
-  }
+     or Escape closes it. Every row and reading in it is a way out of it
+     (Sales: railOpen(false) on every move). */
   function railDrawer(on) {
     const rail = byId('appRail');
-    const was = rail.classList.contains('is-open');
-    if (on && !was) railRise();
     rail.classList.toggle('is-open', on);
     byId('railScrim').classList.toggle('is-open', on);
     byId('railToggle').setAttribute('aria-expanded', String(on));
-    railLabels();
-    /* Focus goes into the drawer, and back to the mark when it shuts. */
-    if (on && !was) requestAnimationFrame(() => { const b = rail.querySelector('[data-rail-close]'); if (b) b.focus(); });
-    if (!on && was && rail.contains(document.activeElement) && railNarrow.matches) { const m = rail.querySelector('[data-rail-open]'); if (m && m.offsetParent) m.focus(); }
   }
-  /* The open or collapsed choice, on a wide screen; narrow, the drawer. */
-  function railPref(open) {
-    if (railNarrow.matches) { railDrawer(open); return; }
-    UI.rail = open ? 'open' : 'collapsed';
-    saveUI();
-    byId('appRail').dataset.rail = UI.rail;
-    tipHide();
-    if (open) railRise();
-    requestAnimationFrame(() => { const b = byId('appRail').querySelector(open ? '[data-rail-close]' : '[data-rail-open]'); if (b) b.focus(); });
-  }
-  railNarrow.addEventListener('change', () => { if (!railNarrow.matches) railDrawer(false); railLabels(); });
-  /* The collapsed icons' tooltips: one, fixed beside the icon, so the
-     rail's scroll does not clip it. Rects are divided by the body's zoom,
-     as aimy-scroll.js does. */
-  let TIP = null;
-  function tipHide() { if (TIP) TIP.classList.remove('is-on'); }
-  function tipShow(el) {
-    if (!TIP) { TIP = document.createElement('div'); TIP.className = 'snav-tip'; TIP.setAttribute('aria-hidden', 'true'); document.body.appendChild(TIP); }
-    const z = parseFloat(getComputedStyle(document.body).zoom) || 1, r = el.getBoundingClientRect();
-    TIP.textContent = el.getAttribute('data-tip');
-    TIP.style.left = (r.right / z + 10) + 'px';
-    TIP.style.top = ((r.top + r.height / 2) / z) + 'px';
-    TIP.classList.add('is-on');
-  }
-  const tipAt = (e) => e.target.closest && e.target.closest('.snav-mini [data-tip]');
-  document.addEventListener('pointerover', (e) => { const el = tipAt(e); if (el) tipShow(el); });
-  document.addEventListener('pointerout', (e) => { if (tipAt(e)) tipHide(); });
-  document.addEventListener('focusin', (e) => { const el = tipAt(e); if (el && el.matches(':focus-visible')) tipShow(el); else tipHide(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { tipHide(); railDrawer(false); } });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') railDrawer(false); });
   document.addEventListener('click', (e) => {
     const t = e.target;
     const at = (sel) => t.closest(sel);
     let el;
     if (at('#railToggle')) { railDrawer(!byId('appRail').classList.contains('is-open')); return; }
     if (at('#railScrim')) { railDrawer(false); return; }
-    if (at('[data-rail-open]')) { railPref(true); return; }
-    if (at('[data-rail-close]')) { railPref(false); return; }
-    if (at('.snav-icon')) tipHide();
-    if (at('.snav-section-head, .snav-finding.is-link, .snav-icon')) {
-      RAIL_MOVE = !!at('button.snav-section-head') && e.detail > 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey &&
-        !!Element.prototype.animate && !matchMedia('(prefers-reduced-motion: reduce)').matches;
-      railDrawer(false);
-    }
+    if (at('.snav-tab-link, .snav-read-act, .rail-doors .b-door')) railDrawer(false);
     if ((el = at('[data-undo]'))) { const u = UNDO; toastGone(); if (u) u(); return; }
     /* ── The canvas ── */
     if (at('#canvasOpen')) { if (canvasShown()) closeCanvas(); else openCanvas(); return; }
