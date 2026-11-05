@@ -900,6 +900,13 @@
       DB.ivs = DB.ivs.filter((v) => !(v.cand === c.id && v.stage === c.stage));
       c.meet = null; c.slot = null; c.fb = false;
     });
+    /* On Teams (5 Nov): today's first interview, so it can be joined from
+       the diary, and the oldest result still owed, so its recording is
+       shown come back from Teams by itself. */
+    const today1 = DB.ivs.filter((v) => v.status === 'booked' && v.day === 0 && mine.some((c) => c.id === v.cand)).sort((a, b) => a.slot.localeCompare(b.slot))[0];
+    if (today1) today1.mode = 'video';
+    const late1 = DB.ivs.filter((v) => v.status === 'owed' && v.by.split(',')[0] !== RECRUITERS[0].name && mine.some((c) => c.id === v.cand)).sort((a, b) => a.day - b.day)[0];
+    if (late1) late1.mode = 'video';
   }
   /* Days spent at each stage a person has finished (`took`), drawn from
      their id and their requisition's own pace rather than the random
@@ -1400,10 +1407,15 @@
     return out.sort((a, b) => b.since - a.since);
   }
   /* The nudge names who it goes to, in words a person would say. */
+  /* The interviewer and the hiring manager are nudged on Teams, the client
+     by email, the candidate the way they opted in to (5 Nov). */
+  const nudgeTo = (c) => {
+    const w = waitsOn(c), q = reqOf(c), v = ivNow(c);
+    return w === 'client' ? accOf(q).name : w === 'hm' ? first(hmOf(q).name) : w === 'candidate' ? first(c.name) : v ? first(v.by.split(',')[0]) : 'the interviewer';
+  };
   const nudgeSay = (c) => {
-    const w = waitsOn(c), q = reqOf(c);
-    return w === 'client' ? 'Nudge the client' : w === 'hm' ? 'Nudge ' + first(hmOf(q).name)
-      : w === 'candidate' ? 'Nudge ' + first(c.name) : 'Nudge the interviewer';
+    const w = waitsOn(c);
+    return w === 'client' ? 'Nudge the client' : w === 'candidate' ? 'Nudge ' + first(c.name) : 'Nudge ' + nudgeTo(c) + ' on Teams';
   };
   const waitWho = (c) => {
     const w = waitsOn(c), q = reqOf(c);
@@ -2126,7 +2138,7 @@
     const body = '<div class="b-prep">' +
       '<p class="b-prep-id">' + esc(STAGE[c.stage].label) + ' at ' + esc(c.slot) + ' · ' + esc(q.title) + ' · ' + esc(accOf(q).name) +
         (v ? ' · with ' + esc(v.by) + (v.mode === 'video' ? ', on Teams' : ', in person') : '') + '</p>' +
-      openQ('Open with', 'Say who is in the room and that it takes about 45 minutes. Ask if they are happy for it to be recorded; nothing is recorded until they agree.') +
+      openQ('Open with', 'Say who is in the room and that it takes about 45 minutes. ' + (v && v.mode === 'video' ? 'Teams tells them it is recording; the recording and transcript come back here when it ends.' : 'Ask if they are happy for it to be recorded; nothing is recorded until they agree.')) +
       (tpl ? openQ('The agenda · ' + tpl.title, tpl.items.map((x) => esc(x)).join('<br>')) : '') +
       (probe.length ? openQ('Probe', esc(probe.join('; ')) + '. Ask for an example of each.') : '') +
       (done.length ? openQ('Already confirmed', esc(done.join('; ')) + '. No need to cover it again.') : '') +
@@ -2134,7 +2146,8 @@
       openQ('Your verdict', 'Rate each must-have, then say proceed or not. AiMY never fills it, and other interviewers’ feedback stays hidden until you send yours.') +
     '</div>';
     callChat(null, 'Before you interview ' + c.name);
-    callTurn({ who: 'aimy', html: answerBlock('Before you interview ' + c.name, body, plural(ivsOf(c).filter((x) => x.status === 'done').length, 'interview') + ' so far'),
+    callTurn({ who: 'aimy', html: answerBlock('Before you interview ' + c.name, body, plural(ivsOf(c).filter((x) => x.status === 'done').length, 'interview') + ' so far') +
+        (v && v.mode === 'video' ? '<p class="t-acts">' + teamsJoin(v) + '</p>' : ''),
       acts: [{ label: 'Open their record', go: { cand: c.id } }] });
   }
 
@@ -5359,8 +5372,8 @@
       '<div class="t-iv-head">' +
         '<span class="t-iv-main"><b>' + esc(STAGE[v.stage].label) + '</b><span class="b-kind">' + esc(v.by) + ' · ' + esc(IV_MODES[v.mode]) + '</span><span class="t-iv-st">' + esc(st) + '</span></span>' +
         '<span class="t-acts">' +
-          (v.status !== 'done' && works ? '<button class="s-insight-lnk' + (v.status === 'owed' ? ' primary' : '') + '" type="button"' + goAttr({ debrief: v.id }) + '>' + (v.status === 'owed' ? 'Open the debrief' : 'The debrief link') + '</button>' : '') +
-          (v.status === 'owed' && (isRec() || isHR()) ? '<button class="b-ghost" type="button" data-nudge-iv="' + v.id + '">' + (v.nudged ? 'Nudged' : 'Nudge ' + esc(first(v.by))) + '</button>' : '') +
+          (v.status !== 'done' && works ? '<button class="s-insight-lnk' + (v.status === 'owed' ? ' primary' : '') + '" type="button"' + goAttr({ debrief: v.id }) + '>' + (v.status === 'owed' ? (ivMine(v) ? 'Write your result' : 'Open the debrief') : 'The debrief link') + '</button>' : '') +
+          (v.status === 'owed' && (isRec() || isHR()) && !ivMine(v) ? '<button class="b-ghost" type="button" data-nudge-iv="' + v.id + '">' + (v.nudged ? 'Nudged' : 'Nudge ' + esc(first(v.by)) + ' on Teams') + '</button>' : '') +
           (v.status !== 'booked' && !rec && works && !isClient() ? '<button class="b-ghost" type="button" data-rec-up="' + v.id + '">Upload the recording</button>' : '') +
           (v.status === 'done' || rec ? '<button class="b-ghost t-acc-head" type="button" aria-expanded="false" data-acc-toggle>Details<span class="t-acc-chevron">' + svg('down', 14) + '</span></button>' : '') +
         '</span>' +
@@ -5368,7 +5381,7 @@
       (v.status === 'done' || rec ? '<div class="t-acc-panel"><div class="t-acc-panel-inner">' +
         (v.ratings ? '<div class="t-qlist">' + reqOf(c).must.map((m, i) => '<p class="t-q"><span class="tag tag-' + (v.ratings[i] === 'm' ? 'ok' : v.ratings[i] === 'p' ? 'warn' : 'neutral') + '">' + RATE[v.ratings[i]] + '</span>' +
           '<span>' + esc(m) + '. ' + esc(v.notes ? v.notes[i] : '') + '</span></p>').join('') + '</div>' : '') +
-        (rec ? '<div class="t-rec">' + aimyBlock({ text: '<b>Recording, ' + rec.mins + ' minutes, transcribed.</b> ' + esc(rec.summary || 'Summarised and matched to the success profile.'), from: 'the recording, read by AiMY' }) +
+        (rec ? '<div class="t-rec">' + aimyBlock({ text: '<b>' + (rec.teams ? 'Teams sent the recording back' : 'Recording') + ', ' + rec.mins + ' minutes, transcribed.</b> ' + esc(rec.summary || 'Summarised and matched to the success profile.'), from: rec.teams ? 'the Teams recording, read by AiMY' : 'the recording, read by AiMY' }) +
           (rec.lines ? '<div class="s-said-lines">' + rec.lines.map((l) => '<p class="call-line ' + (l[0] === 'them' ? 'is-them' : 'is-you') + '"><span class="call-who">' + esc(l[0] === 'them' ? first(c.name) : first(v.by)) + '</span>' + esc(l[1]) + '</p>').join('') + '</div>' : '') +
           (rec.suggests ? '<p class="b-vfoot">AiMY’s read of the recording, kept apart from the interviewer’s own rating: ' + reqOf(c).must.map((m, i) => esc(m) + ', ' + RATE[rec.suggests[i]].toLowerCase()).join('; ') + '.</p>' : '') +
         '</div>' : '') +
@@ -5800,6 +5813,22 @@
     p: 'I have done some of it, mostly with help from my team lead.',
     n: 'I have not done that yet, but I would like to learn it.',
   };
+  function recBuild(v) {
+    const c = DB.byId[v.cand], q = reqOf(c);
+    const sug = c.ev.map((x, i) => (i % 3 === 2 && x === 'm' ? 'p' : x === 'n' && i % 2 ? 'p' : x));
+    const lines = [];
+    q.must.forEach((m, i) => { lines.push(['you', 'Give me an example for this one: ' + lower(m) + '.']); lines.push(['them', ANSWER[sug[i]]]); });
+    const strong = q.must.filter((m, i) => sug[i] === 'm'), weak = q.must.filter((m, i) => sug[i] !== 'm');
+    return { mins: 26 + (v.id.length % 17), at: 0, lines: lines,
+      summary: (strong.length ? 'Clear examples on ' + strong.join('; ') + '. ' : '') + (weak.length ? 'Less to go on for ' + weak.join('; ') + '.' : ''), suggests: sug };
+  }
+  /* AN INTERVIEW ON TEAMS BRINGS ITS RECORDING BACK (5 Nov), as a Teams
+     call does: once it has been held, the recording and transcript are on
+     the interview, read the same way an upload is. Teams announced the
+     recording in the meeting, so nothing is uploaded by hand. */
+  function teamsRecs() {
+    DB.ivs.forEach((v) => { if (v.mode === 'video' && v.status !== 'booked' && !v.recording && DB.byId[v.cand]) v.recording = Object.assign(recBuild(v), { teams: true }); });
+  }
   function uploadRec(v) {
     if (REC_BUSY[v.id] || v.recording) return;
     REC_BUSY[v.id] = true;
@@ -5808,13 +5837,7 @@
     setTimeout(() => {
       delete REC_BUSY[v.id];
       const c = DB.byId[v.cand];
-      const q = reqOf(c);
-      const sug = c.ev.map((x, i) => (i % 3 === 2 && x === 'm' ? 'p' : x === 'n' && i % 2 ? 'p' : x));
-      const lines = [];
-      q.must.forEach((m, i) => { lines.push(['you', 'Give me an example for this one: ' + lower(m) + '.']); lines.push(['them', ANSWER[sug[i]]]); });
-      const strong = q.must.filter((m, i) => sug[i] === 'm'), weak = q.must.filter((m, i) => sug[i] !== 'm');
-      put('ivs', v, { recording: { mins: 26 + (v.id.length % 17), at: 0, lines: lines,
-        summary: (strong.length ? 'Clear examples on ' + strong.join('; ') + '. ' : '') + (weak.length ? 'Less to go on for ' + weak.join('; ') + '.' : ''), suggests: sug } });
+      put('ivs', v, { recording: recBuild(v) });
       note(c, 'iv', 'Recording of the ' + lower(STAGE[v.stage].label) + ' uploaded and transcribed.');
       paint();
       toast('Transcribed', null, 'It is on the interview, with AiMY’s read of it beside the interviewer’s.');
@@ -5835,6 +5858,12 @@
     if (!v) return '<div class="t-out">' + outsideHead('Interview debrief', 'FlairsTech') + '<p class="s-none">This link has expired.</p></div>';
     const c = DB.byId[v.cand], q = reqOf(c);
     if (!DEBRIEF || DEBRIEF.id !== v.id) DEBRIEF = { id: v.id, r: v.ratings ? v.ratings.slice() : [], n: v.notes ? v.notes.slice() : [], v: v.verdict, sent: false };
+    if ((DEBRIEF.sent || (v.status === 'done' && v.verdict)) && v.by.split(',')[0] === DESKS.omar.name) {
+      return '<div class="t-out">' + outsideHead('Interview debrief', 'For ' + v.by) +
+        '<section class="t-out-card t-done">' + successCheck() + '<h1 class="t-out-h">Saved. The result is in.</h1>' +
+          '<p>You said <b>' + (v.verdict === 'yes' ? 'proceed' : 'do not proceed') + '</b> for ' + esc(c.name) + '. It waits on your call with the other results.</p>' +
+          '<p class="t-acts"><button class="s-insight-lnk primary" type="button"' + goAttr({ cand: c.id }) + '>Back to ' + esc(first(c.name)) + '</button></p></section></div>';
+    }
     if (DEBRIEF.sent || (v.status === 'done' && v.verdict)) {
       return '<div class="t-out">' + outsideHead('Interview debrief', 'For ' + v.by) +
         '<section class="t-out-card t-done">' + successCheck() + '<h1 class="t-out-h">Thank you. It is with the recruiter.</h1>' +
@@ -5884,7 +5913,8 @@
       day: v.status === 'booked' && v.day > 0 ? 0 : v.day });
     if (c.stage === v.stage && !c.exit) write(c, { fb: true, meet: Math.min(0, c.meet == null ? 0 : c.meet) });
     note(c, 'iv', v.by + ' sent the debrief: ' + (DEBRIEF.v === 'yes' ? 'proceed.' : 'do not proceed.'), { by: null });
-    tellDesk(q.rec, { sev: 'p1', type: 'Debrief in', cta: 'Decide', go: { cand: c.id },
+    /* Nobody is told of their own debrief. */
+    if (v.by.split(',')[0] !== (DESKS[q.rec] || {}).name) tellDesk(q.rec, { sev: 'p1', type: 'Debrief in', cta: 'Decide', go: { cand: c.id },
       body: v.by.split(',')[0] + ' says ' + (DEBRIEF.v === 'yes' ? 'proceed' : 'do not proceed') + ' on ' + c.name + ', ' + lower(STAGE[v.stage].label) + ' for ' + q.title + '.' });
     DEBRIEF.sent = true;
     paint();
@@ -7633,16 +7663,23 @@
   const resultsOwed = () => diaryItems(-400, -1).filter((m) => m.kind === 'owed').sort((a, b) => a.day - b.day);
   /* The one thing to do about a result not in: the hiring manager writes
      their own; for anyone else, the recruiter nudges, once, and it says so. */
+  /* Held by the person at this desk: theirs to write, not to nudge (5 Nov). */
+  const ivMine = (v) => v.by.split(',')[0] === me().name;
   function owedAct(m) {
     const c = m.c, v = m.v;
-    if (isHM() && v.by.indexOf(me().name) === 0) return '<button class="s-inline-btn t-prep-btn" type="button"' + goAttr({ debrief: v.id }) + '>Write it</button>';
+    if (isHM() && ivMine(v)) return '<button class="s-inline-btn t-prep-btn" type="button"' + goAttr({ debrief: v.id }) + '>Write it</button>';
+    if (isRec() && ivMine(v)) return '<button class="s-inline-btn t-prep-btn" type="button"' + goAttr({ debrief: v.id }) + '>Write your result</button>';
     if (c.nudged != null) return '<span class="b-kind">Nudged ' + esc(sayWhen(c.nudged)) + '</span>';
     return isRec() ? '<button class="s-inline-btn t-prep-btn" type="button" data-nudge="' + c.id + '">' + esc(nudgeSay(c)) + '</button>' : '';
   }
+  /* Today's interview on Teams is joined from where it is listed (5 Nov). */
+  const teamsJoin = (v) => v && v.mode === 'video' && v.status === 'booked' && v.day === 0
+    ? '<button class="s-inline-btn t-prep-btn" type="button" data-teams-join="' + v.id + '">' + svg('video', 12) + 'Join on Teams</button>' : '';
   function diaryRow(m, i) {
     const c = m.c;
+    const bv = (m.kind === 'iv' || m.kind === 'client') && !m.done ? ivsOf(c).filter((x) => x.status === 'booked' && x.day === m.day)[0] : null;
     const act = m.kind === 'callback' && m.day <= 0 ? '<button class="s-inline-btn t-prep-btn" type="button" data-call="' + c.id + '">' + svg('phone', 12) + 'Call ' + esc(first(c.name)) + '</button>'
-      : (m.kind === 'iv' || m.kind === 'client') && !m.done ? '<button class="s-inline-btn t-prep-btn" type="button" data-prep="' + c.id + '">' + mark(12) + 'Prepare me</button>'
+      : (m.kind === 'iv' || m.kind === 'client') && !m.done ? teamsJoin(bv) + '<button class="s-inline-btn t-prep-btn" type="button" data-prep="' + c.id + '">' + mark(12) + 'Prepare me</button>'
       : m.kind === 'owed' ? owedAct(m) : '';
     return '<div class="b-cal-ev is-plain t-cal-ev" style="--i:' + Math.min(i, 8) + '">' +
       '<button class="t-cal-open" type="button"' + goAttr({ cand: c.id }) + '>' +
@@ -7702,9 +7739,10 @@
       /* Results that are in and wait on your move, beside the ones that are
          not. They stood under Today's tabs until 29 Oct. */
       (isRec() ? '<section class="s-block s-block-wide" aria-label="Results in"><div class="s-camp-list-head"><h2 class="s-block-h">Results in</h2></div>' +
-        '<p class="b-tocall">' + (dec.length ? '<b>' + plural(dec.length, 'decision') + '</b> waiting on you, oldest first. Each is one press, and each can be undone.'
-          : 'Nothing is waiting on your call.') + '</p>' +
-        srcNote([['Debrief results', true], ['Assessment results', true]]) +
+        /* Said as Today says it, with the same run (5 Nov). */
+        '<p class="b-tocall">' + (dec.length ? '<b>' + plural(dec.length, 'result') + '</b> ' + (dec.length === 1 ? 'waits' : 'wait') + ' on your call, oldest first. Each is one press, and each can be undone.'
+          : 'No result waits on your call.') + '</p>' +
+        (dec.length > 1 ? '<p class="t-acts"><button class="s-insight-lnk primary" type="button" data-start="decide">Decide them one at a time</button></p>' : '') +
         (dec.length ? '<div class="b-owed">' + topN('decide', dec).map((c, i) => workRow(c, i)).join('') + '</div>' + moreLinks('decide', dec.length) : '') +
       '</section>' : '') +
       '<section class="s-block s-block-wide" aria-label="Results not in"><div class="s-camp-list-head"><h2 class="s-block-h">Results not in</h2>' +
@@ -7712,7 +7750,7 @@
         (owed.length ? '<div class="b-owed">' + owed.map((m, i) => '<div class="b-owed-row t-row" style="--i:' + Math.min(i, 8) + '"><span class="b-owed-sev" aria-hidden="true"></span>' +
           '<button class="b-owed-main t-row-open" type="button"' + goAttr({ cand: m.c.id }) + '><span class="b-owed-head"><span class="b-owed-type">' + esc(m.c.name) + '</span>' +
             '<span class="b-owed-by">' + esc(reqOf(m.c).title) + ' · ' + esc(accOf(reqOf(m.c)).name) + '</span></span>' +
-            '<span class="b-owed-body">' + esc(STAGE[m.v.stage].label) + ' with ' + esc(m.v.by) + ', ' + esc(sayWhen(m.day)) + '. <b>' + days(-m.day) + '</b> without a result.</span></button>' +
+            '<span class="b-owed-body">' + esc(STAGE[m.v.stage].label) + ' with ' + (ivMine(m.v) ? 'you' : esc(m.v.by)) + ', ' + esc(sayWhen(m.day)) + '. <b>' + days(-m.day) + '</b> without a result.</span></button>' +
           '<span class="t-acts">' + owedAct(m) + '</span></div>').join('') + '</div>'
           : '<p class="s-none">Every interview so far has its result.</p>') +
       '</section>' +
@@ -8963,6 +9001,7 @@
   function paint() {
     /* The name a CV card hangs from is about to be redrawn. */
     cvHide();
+    teamsRecs();
     CHAT_Q = {}; CHAT_N = 0;
     /* Somebody outside the team gets the page alone, with none of the
        product's chrome (the careers page, a profile, a test, a debrief). */
@@ -9142,7 +9181,10 @@
     if (c.nudged != null) return;
     write(c, { nudged: 0 });
     paint();
-    toast(nudgeSay(c).replace('Nudge', 'Nudged'), () => { write(c, { nudged: null }); paint(); }, 'About ' + c.name + '. Logged on the requisition.');
+    const w = waitsOn(c), v = ivNow(c);
+    toast(nudgeSay(c).replace('Nudge', 'Nudged'), () => { write(c, { nudged: null }); paint(); },
+      w === 'client' || w === 'candidate' ? 'About ' + c.name + '. Logged on the requisition.'
+        : '“Hi ' + nudgeTo(c) + ', ' + first(c.name) + '’s ' + lower(STAGE[c.stage].label) + (v ? ' was ' + sayWhen(v.day) : ' result is still owed') + '. Your result takes about two minutes: the debrief link is here.”');
   }
 
   function start(k) {
@@ -9379,7 +9421,7 @@
       const v = DB.ivs.filter((x) => x.id === val('data-nudge-iv'))[0];
       if (v.nudged) return;
       put('ivs', v, { nudged: true }); paint();
-      toast('Nudged ' + v.by.split(',')[0], () => { put('ivs', v, { nudged: false }); paint(); }, 'With the debrief link. Logged on the interview.');
+      toast('Nudged ' + first(v.by.split(',')[0]) + ' on Teams', () => { put('ivs', v, { nudged: false }); paint(); }, 'With the debrief link. Logged on the interview.');
       return;
     }
     if ((el = at('[data-rec-up]'))) { uploadRec(DB.ivs.filter((x) => x.id === val('data-rec-up'))[0]); return; }
@@ -9626,6 +9668,7 @@
     if ((el = at('[data-nudge]'))) { nudge(DB.byId[el.getAttribute('data-nudge')]); return; }
     if ((el = at('[data-start]'))) { start(el.getAttribute('data-start')); return; }
     /* ── Interactions: WhatsApp and calls made elsewhere ── */
+    if ((el = at('[data-teams-join]'))) { try { window.open('https://teams.microsoft.com/l/meetup-join/' + val('data-teams-join'), '_blank', 'noopener'); } catch (e) {} toast('Opening the meeting in Teams', null, 'Teams tells them it is recording; the recording comes back here when it ends.'); return; }
     if ((el = at('[data-hist-tab]'))) { HIST_TAB = val('data-hist-tab'); paint(); return; }
     if ((el = at('[data-book-chat]'))) { bookChat(DB.byId[val('data-book-chat')] || null, null, !!el.closest('#overlayThread')); return; }
     if ((el = at('[data-draft-chat]'))) { draftChat(DB.byId[val('data-draft-chat')], ''); return; }
