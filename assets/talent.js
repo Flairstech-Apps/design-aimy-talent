@@ -6791,7 +6791,7 @@
             const fix = [bad ? plural(bad, 'check') + ' ' + (bad === 1 ? 'fails' : 'fail') : '', hard].filter(Boolean).join(' · ');
             return '<p class="b-qcard-where t-req-facts">' + esc(plural(a.questions.length, 'question') + ' · pass ' + passSayOf(a) + ' · ' + (a.kind === 'live' ? 'spoken' : 'written')) + '</p>' +
               results +
-              (fix ? '<p class="b-qcard-where t-asmt-checks is-warn">' + fact('listc', fix.charAt(0).toUpperCase() + fix.slice(1)) + '</p>' : '') +
+              (fix ? '<p class="b-qcard-where t-asmt-checks is-warn"><button class="t-asmt-fix" type="button" data-asmt-review="' + a.id + '">' + fact('listc', fix.charAt(0).toUpperCase() + fix.slice(1)) + '</button></p>' : '') +
               '<div class="tc-gov b-qcard-foot">' + (wait.length
                 ? '<span class="t-asmt-foot-who">' + faceStack(wait.map((x) => DB.byId[x.cand].name), 3) + '<span class="b-kind">' + waitSay + '</span></span>' + review
                 : '<span class="b-kind">' + (last || 'Not taken yet') + (r.length ? ' · nobody waits' : '') + '</span>') + '</div>';
@@ -6839,8 +6839,7 @@
             '<p class="b-cmeta-p t-acts"><button class="s-insight-lnk" type="button" data-copy="https://' + esc(link) + '">Copy the link</button></p></div></div>' +
         '</div>' +
       '</section>' +
-      (asmtDesigner() ? (edit ? '' : checksCard(a)) +
-      (r.length && !edit ? itemInsights(a, rates, outs, worst, link) : '') +
+      (asmtDesigner() ? (edit ? '' : asmtReview(a, rates, outs, worst)) +
       '<section class="s-block s-block-wide" aria-label="Questions">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">Questions</h2><span class="s-block-say">' + plural(a.questions.length, 'question') + (r.length ? ' · share who got each right' : '') + '</span></div>' +
         (a.questions.length ? '<div class="t-asq">' + a.questions.map((qq, i) => '<div class="t-asq-row">' +
@@ -6891,42 +6890,54 @@
           return logRow({ tone: '', ico: svg('send'), who: c.name, meta: logMeta(['sent ' + sayWhen(x.day), reqOf(c).title]), act: 'data-cand="' + c.id + '"', go: 'Open' }, i); }).join('') + '</div>' : '') +
     '</section>';
   }
-  function checksCard(a) {
-    const ck = asmtChecks(a), ok = ck.filter((x) => x.ok).length, can = asmtDesigner();
-    return rcard({ cap: 'Assessments · before anyone takes it', ico: 'shield', label: 'Checklist',
-      body: rcHead('What keeps people finishing, and keeps it fair', 'From the assessment research (R4) · the settings are one press', rcChip(ok + ' of ' + ck.length, ok === ck.length ? 'ok' : 'warn')) +
-        '<div style="margin-top:12px">' + ck.map((x) => rcGate(x.ok ? 'okc' : 'warnc', x.ok ? 'ok' : 'warn', esc(x.label), esc(x.say),
-          (x.k === 'practice' || x.k === 'feedback') && can ? rcBtn(x.ok ? 'Turn it off' : x.k === 'practice' ? 'Add one' : 'Turn it on', 'data-asmt-check="' + a.id + '|' + x.k + '"', x.ok ? 'quiet' : 'small')
-            : x.k === 'length' && !x.ok && can ? rcBtn('Shorten it', goAttr({ asmt: a.id, edit: '1' }).trim(), 'small') : rcChip(x.ok ? 'Done' : 'To do', x.ok ? 'ok' : 'warn'))).join('') + '</div>' });
-  }
-  /* ── 8. ITEM INSIGHTS (assessment-item-insights) ── each question's pass
-     rate against what happened next, and the question to fix as a learning
-     proposal an HR Manager approves. Nothing is named below the sample. */
-  function itemInsights(a, rates, outs, worst, link) {
-    const r = resultsOf(a);
-    const first0 = r.reduce((d, s) => Math.min(d, s.doneDay != null ? s.doneDay : s.day), 0);
+  /* HOW GOOD IS THIS TEST (Engy, 6 Nov). The hiring manager's review of
+     their own assessment, as one section at the top of its page: before
+     anyone takes it (the research checks, failing ones first, each with its
+     one-press fix; the passing ones folded), and what the answers show
+     (only the questions worth acting on; every rate is in Questions below).
+     It replaces the checklist card and the item-insights table. The card's
+     amber line opens the page here. */
+  function asmtReview(a, rates, outs, worst) {
+    const r = resultsOf(a), ck = asmtChecks(a), bad = ck.filter((x) => !x.ok), good = ck.filter((x) => x.ok);
+    const fix = (x) => (x.k === 'practice' || x.k === 'feedback')
+      ? '<button class="' + (x.ok ? 'b-ghost' : 's-insight-lnk primary') + '" type="button" data-asmt-check="' + a.id + '|' + x.k + '">' + (x.ok ? 'Turn it off' : x.k === 'practice' ? 'Add one' : 'Turn it on') + '</button>'
+      : x.k === 'length' && !x.ok ? '<button class="s-insight-lnk primary" type="button"' + goAttr({ asmt: a.id, edit: '1' }) + '>Shorten it</button>' : '';
+    const row = (tone, ico, k, say, act) => '<li class="t-rv-row' + (tone ? ' is-' + tone : '') + '">' + svg(ico, 16) +
+      '<div class="t-rv-main"><p class="t-rv-k">' + k + '</p>' + (say ? '<p class="t-rv-say">' + say + '</p>' : '') + '</div>' + (act ? '<span class="t-rv-act">' + act + '</span>' : '') + '</li>';
+    const checks = '<div class="s-camp-list-head t-asmt-sub"><h3 class="s-block-h">Before anyone takes it</h3><span class="s-block-say">' + good.length + ' of ' + ck.length + ' checks pass · from the assessment research</span></div>' +
+      (bad.length ? '<ul class="t-rv">' + bad.map((x) => row('warn', 'warnc', esc(x.label), esc(x.say), fix(x))).join('') + '</ul>' : '') +
+      (good.length ? '<details class="t-rv-more"' + (bad.length ? '' : ' open') + '><summary>' + svg('down', 14) + (bad.length ? plural(good.length, 'more check') + ' ' + (good.length === 1 ? 'passes' : 'pass') : 'All ' + ck.length + ' checks pass') + '</summary>' +
+        '<ul class="t-rv">' + good.map((x) => row('ok', 'okc', esc(x.label), esc(x.say), fix(x))).join('') + '</ul></details>' : '');
+    if (!r.length) return '<section class="s-block s-block-wide" id="asmtReview" aria-label="How good is this test"><div class="s-camp-list-head"><h2 class="s-block-h">How good is this test</h2></div>' + checks +
+      '<p class="b-tocall t-rv-none">What the answers show comes once people take it.</p></section>';
+    /* A question is worth acting on when nearly everyone misses it, or when
+       enough people were sent on to say whether it predicts anything. */
     const verdict = (o) => {
-      if (!o || o.n < GATE) return rcChip('Too few results yet', 'dash');
+      if (!o || o.n < GATE || o.right < 5 || o.wrong < 5) return null;
       const pr = o.right ? o.rightMet / o.right : 0, pw = o.wrong ? o.wrongMet / o.wrong : 0;
-      if (o.right < 5 || o.wrong < 5) return rcChip('Too few missed it to compare', 'dash');
-      return pr - pw >= 0.2 ? rcChip('Predicts client acceptance', 'ok') : pw - pr >= 0.2 ? rcChip('Points the wrong way', 'err') : rcChip('Predicts nothing we measure', 'err');
+      return pr - pw >= 0.2 ? 'good' : pw - pr >= 0.2 ? 'wrong' : 'none';
     };
-    const p = worst != null && rates[worst] < 40 ? qProposals(a.id)[0] : null;
+    const pp = worst != null && rates[worst] < 40 ? qProposals(a.id)[0] : null;
+    const items = a.questions.map((qq, i) => ({ i: i, q: qq.q, rate: rates[i], v: verdict(outs[i]) }));
+    const weak = items.filter((x) => (x.rate != null && x.rate < 40) || x.v === 'none' || x.v === 'wrong');
+    const strong = items.filter((x) => x.v === 'good' && weak.indexOf(x) < 0);
+    const quiet = items.length - weak.length - strong.length;
+    const vSay = { none: 'predicts nothing we measure', wrong: 'points the wrong way', good: 'predicts who the client accepts' };
+    const propActs = (x) => !pp || pp.i !== x.i ? '' : isHR()
+      ? '<button class="s-insight-lnk primary" type="button" data-prop="' + esc(pp.key) + '|approve">Approve the rewording</button><button class="b-ghost" type="button" data-prop="' + esc(pp.key) + '|drop">Drop Q' + (x.i + 1) + ' instead</button><button class="b-ghost" type="button" data-prop="' + esc(pp.key) + '|later">Keep Q' + (x.i + 1) + '</button>'
+      : pp.rec && pp.rec.state === 'waiting' ? '<span class="b-kind">Rewording waits on ' + esc(DESKS.dina.name) + '</span>'
+      : '<button class="s-insight-lnk primary" type="button" data-prop="' + esc(pp.key) + '|send">Send the rewording to ' + esc(DESKS.dina.name) + '</button><button class="b-ghost" type="button" data-prop="' + esc(pp.key) + '|later">Keep Q' + (x.i + 1) + '</button>';
     const sentN = Math.max.apply(null, outs.map((o) => o.n).concat([0]));
-    const acts = p ? (isHR() ? rcBtn('Approve the rewording', 'data-prop="' + esc(p.key) + '|approve"', 'psmall') + rcBtn('Drop Q' + (p.i + 1) + ' instead', 'data-prop="' + esc(p.key) + '|drop"', 'small')
-        : p.rec && p.rec.state === 'waiting' ? '<span class="sub">Waiting on ' + esc(DESKS.dina.name) + '</span>'
-        : rcBtn('Review proposal', 'data-prop="' + esc(p.key) + '|send"', 'psmall')) + rcBtn('Keep Q' + (p.i + 1), 'data-prop="' + esc(p.key) + '|later"', 'small') : '';
-    return rcard({ cap: 'Assessments · item insights', ico: 'clip', label: 'Item insights',
-      body: rcHead(esc(a.title), plural(r.length, 'taken', 'taken') + ' since ' + esc(sayDay(first0)) + ' · linked to what happened next',
-          '<button class="chip" type="button" data-copy="https://' + esc(link) + '">' + svg('link', 12) + ' Shared by link</button>') +
-        '<table style="margin-top:14px"><tr><th>Question</th><th>Pass rate</th><th>Against later outcomes</th></tr>' +
-          a.questions.map((qq, i) => '<tr><td><b>Q' + (i + 1) + '</b> · ' + esc(qq.q.length > 46 ? qq.q.slice(0, 45) + '…' : qq.q) + '</td>' +
-            '<td><b>' + (rates[i] != null ? rates[i] + '%' : '·') + '</b><div class="bar"><i style="width:' + (rates[i] || 0) + '%;background:var(' + (rates[i] != null && rates[i] < 40 ? '--err' : '--brand') + ')"></i></div></td>' +
-            '<td>' + verdict(outs[i]) + '</td></tr>').join('') +
-        '</table>' +
-        (sentN < GATE ? gate(sentN, GATE, 'people sent to a client after taking it', 'Below ' + GATE + ', no question is said to predict anything.') : '') +
-        (p ? rcAimy((100 - rates[worst]) + '% get Q' + (worst + 1) + ' wrong. When nearly everyone misses one question, the question is usually the problem. Reword it: “' + esc(p.to) + '”?',
-          'Learning Proposal · from ' + plural(r.length, 'result') + ' and ' + plural(sentN, 'client decision') + ' · an HR Manager approves', acts) : '') });
+    const answers = '<div class="s-camp-list-head t-asmt-sub"><h3 class="s-block-h">What the answers show</h3><span class="s-block-say">' + plural(r.length, 'person', 'people') + ' took it · against who the client accepted</span></div>' +
+      '<ul class="t-rv">' +
+        weak.map((x) => row('warn', 'warnc', '<b>Q' + (x.i + 1) + '</b> · ' + [x.rate != null ? x.rate + '% right' : '', x.v ? vSay[x.v] : ''].filter(Boolean).join(', '),
+          '“' + esc(x.q) + '”' + (pp && pp.i === x.i ? '<span class="t-rv-to">AiMY’s rewording: “' + esc(pp.to) + '”</span>' : ''), propActs(x))).join('') +
+        strong.map((x) => row('ok', 'okc', '<b>Q' + (x.i + 1) + '</b> ' + vSay.good, '“' + esc(x.q) + '”', '')).join('') +
+      '</ul>' +
+      (quiet ? '<p class="t-rv-quiet">' + plural(quiet, 'other question') + ': too few missed ' + (quiet === 1 ? 'it' : 'them') + ' to say. Each rate is under Questions.</p>' : '') +
+      (sentN < GATE ? gate(sentN, GATE, 'people sent to a client after taking it', 'Below ' + GATE + ', no question is said to predict anything.') : '');
+    return '<section class="s-block s-block-wide" id="asmtReview" aria-label="How good is this test">' +
+      '<div class="s-camp-list-head"><h2 class="s-block-h">How good is this test</h2></div>' + checks + answers + '</section>';
   }
   function asmtSet(a, fields, say) {
     const before = JSON.parse(JSON.stringify({ title: a.title, kind: a.kind, pass: a.pass, questions: a.questions, level: a.level || null, practice: !!a.practice, feedback: !!a.feedback }));
@@ -9519,6 +9530,8 @@
     }
     if ((el = at('[data-acc]'))) { go({ acc: val('data-acc') }); return; }
     if ((el = at('[data-asmt]'))) { go({ asmt: val('data-asmt') }); return; }
+    /* The card's amber line: the page, at How good is this test. */
+    if ((el = at('[data-asmt-review]'))) { go({ asmt: val('data-asmt-review') }); const t = byId('asmtReview'); if (t) t.scrollIntoView({ block: 'start' }); return; }
     /* ── Candidates ── */
     if ((el = at('[data-edit-cand]'))) { EDIT = null; go({ cand: val('data-edit-cand'), edit: '1' }); return; }
     if ((el = at('[data-save-cand]'))) { saveCand(DB.byId[val('data-save-cand')]); return; }

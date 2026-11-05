@@ -1773,7 +1773,9 @@ body.is-portal .aimy-overlay { display: none !important; }
 /* The prototype panel's desks: the one you are on is marked. */
 .t-proto-desk[aria-pressed="true"] { color: var(--accent-text, var(--accent)); }
 /* The recruiter's results on an assessment: its sub-lists. */
-.t-asmt-sub { margin-top: 16px; }
+.t-asmt-sub { margin-top: 20px; }
+/* A part inside a section reads a step below the section's own title. */
+.t-asmt-sub .s-block-h { font-size: var(--fs-xs); color: var(--d100); }
 
 /* ══ THE ASSESSMENT CARD, PEOPLE FIRST (6 Nov, variation 5) ══════════════
    Who waits on a person leads: their faces and how many, then the results
@@ -1798,3 +1800,39 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-asmt-foot-who { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
 .t-asmt-foot-who .t-face { width: 28px; height: 28px; }
 .b-qcard .t-asmt-checks { padding-top: 10px; }
+
+/* ══ HOW GOOD IS THIS TEST (6 Nov) ══════════════════════════════════════
+   The hiring manager's review of an assessment: rows like Questions below
+   (a rule between, none above the first), a mark, what it is and why, and
+   its one fix on the right. Passing checks fold under a native disclosure. */
+.t-rv { list-style: none; margin: 4px 0 0; padding: 0; display: grid; }
+.t-rv-row { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: start; gap: 12px; padding: 12px 0; border-top: 1px solid var(--card-border); }
+.t-rv-row:first-child { border-top: 0; }
+.t-rv-row > svg { margin-top: 3px; color: var(--ink-muted); }
+.t-rv-row.is-warn > svg { color: var(--warn-text, var(--warn)); }
+.t-rv-row.is-ok > svg { color: var(--ok-text, var(--ok)); }
+.t-rv-main { display: grid; gap: 2px; min-width: 0; }
+.t-rv-k { margin: 0; font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--d50); }
+.t-rv-k b { font-weight: var(--fw-semibold); }
+.t-rv-say { margin: 0; font-size: var(--fs-2xs); line-height: var(--lh-snug); color: var(--ink-muted); }
+.t-rv-to { display: block; margin-top: 6px; color: var(--d100); }
+.t-rv-act { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; }
+.t-rv-more { margin-top: 2px; }
+.t-rv-more > summary { display: inline-flex; align-items: center; gap: 8px; padding: 8px 0; cursor: pointer; list-style: none; font-size: var(--fs-2xs); font-weight: var(--fw-medium); color: var(--ink-muted); }
+.t-rv-more > summary::-webkit-details-marker { display: none; }
+.t-rv-more > summary > svg { transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1); transform: rotate(-90deg); }
+.t-rv-more[open] > summary > svg { transform: none; }
+.t-rv-more > summary:hover { color: var(--d50); }
+.t-rv-more > summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
+.t-rv-quiet { margin: 4px 0 0; font-size: var(--fs-2xs); color: var(--ink-muted); }
+.t-rv-none { margin-top: 12px; }
+#asmtReview { scroll-margin-top: 16px; }
+@media (max-width: 640px) {
+  .t-rv-row { grid-template-columns: 16px minmax(0, 1fr); }
+  .t-rv-act { grid-column: 2; justify-content: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) { .t-rv-more > summary > svg { transition: none; } }
+/* The card's amber line is a way into the review. */
+.t-asmt-fix { all: unset; cursor: pointer; border-radius: 4px; }
+.t-asmt-fix:hover .b-fact > span { text-decoration: underline; text-underline-offset: 3px; }
+.t-asmt-fix:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
