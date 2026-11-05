@@ -1912,5 +1912,8 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-range .t-num { width: 12ch; text-align: right; font-variant-numeric: tabular-nums; }
 .t-grow { resize: none; field-sizing: content; min-height: 88px; line-height: var(--lh-base); }
 .t-field.is-error { border-color: var(--err); }
-.t-edit-stages { display: flex; flex-wrap: wrap; gap: 4px 0; margin: 10px 0 0; padding: 0; list-style: none; font-size: var(--fs-2xs); color: var(--ink-muted); }
-.t-edit-stages li + li::before { content: '→'; margin: 0 8px; color: var(--d500, #637280); }
+/* The stages as the profile's track with nobody on it: the path drawn in a
+   quiet accent, every stage ahead. */
+.t-trk.is-plan .t-trk-step::before { background: rgba(var(--accent-rgb), 0.3); }
+.t-trk.is-plan .t-trk-dot { border-color: rgba(var(--accent-rgb), 0.6); }
+.t-trk.is-plan .t-trk-k { color: var(--d100); }

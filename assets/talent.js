@@ -2692,6 +2692,20 @@
   const EXIT_TONE = { out: 'err', clientno: 'err', offerno: 'err', withdrew: 'neutral' };
   /* Written out whole, so each class reads as itself (and the audit can pair it with its rule). */
   const TONE_CLS = { neutral: 'tone-neutral', warn: 'tone-warn', ok: 'tone-ok', err: 'tone-err' };
+  /* A REQUISITION'S STAGES, AS THE TRACK (Engy, 6 Nov): the profile's
+     story-so-far track with nobody on it yet. Every stage ahead, each with
+     how long it usually takes, and the dashed mark where the decision
+     passes to the client or the hiring manager. */
+  function planTrack(t) {
+    const hi = t.indexOf('sent') >= 0 ? t.indexOf('sent') : t.indexOf('mgr');
+    const name = (k) => JY_SHORT[k] || STAGE[k].label;
+    return '<div class="t-trk-wrap"><ol class="t-trk is-plan" style="--n:' + t.length + '" aria-label="The stages, in order">' + t.map((k, i) =>
+      '<li class="t-trk-step' + (i === hi ? ' is-hand' : '') + '" title="' + esc(STAGE[k].label + (STAGE[k].exp ? ', usually ' + days(STAGE[k].exp) : '')) + '">' +
+        '<span class="t-trk-dot" aria-hidden="true"></span><span class="t-trk-k">' + esc(name(k)) + '</span>' +
+        (STAGE[k].exp && i < t.length - 1 ? '<span class="t-trk-t">usually ' + days(STAGE[k].exp) + '</span>' : '') +
+        (i === hi ? '<span class="t-trk-split" aria-hidden="true"><span>' + (t[hi] === 'sent' ? 'the client decides' : 'the hiring manager decides') + '</span></span>' : '') + '</li>').join('') +
+      '</ol></div>';
+  }
   function storyTrack(c) {
     const q = reqOf(c), t = tplOf(q);
     const cur = t.indexOf(c.stage);
@@ -9048,7 +9062,7 @@
           part('Budget, EGP a month', '<span class="t-range"><input class="t-field t-num" type="text" inputmode="numeric" data-ed="bmin" value="' + esc(f.bmin) + '" aria-label="Lowest monthly budget, EGP">' +
             '<span aria-hidden="true">to</span><input class="t-field t-num" type="text" inputmode="numeric" data-ed="bmax" value="' + esc(f.bmax) + '" aria-label="Highest monthly budget, EGP"></span>') +
           part('Stages', pick('tpl', 'Stages', Object.keys(TEMPLATE).map((k) => [k, TEMPLATE_NAME[k] || k]), true) +
-            '<ol class="t-edit-stages" aria-label="The stages, in order">' + TEMPLATE[f.tpl].filter((k) => k !== 'joined').map((k) => '<li>' + esc(STAGE[k].label) + '</li>').join('') + '</ol>', true) +
+            planTrack(TEMPLATE[f.tpl].filter((k) => k !== 'joined')), true) +
           (hasAssess ? part('Assessment', pick('asmt', 'Assessment', DB.asmts.map((a) => [a.id, a.title]), true), true) : '') +
         '</div>' +
         '<div class="b-cmeta b-said">' +
