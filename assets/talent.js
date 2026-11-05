@@ -1834,7 +1834,7 @@
     '</div>';
   }
   const goAttr = (s) => " data-go='" + esc(JSON.stringify(s)) + "'";
-  const tag = (label, tone) => '<span class="tag tag-' + (tone || 'neutral') + '">' + esc(label) + '</span>';
+  const tag = (label, tone) => '<span class="tag ' + (tone ? 'tag-' + tone : 'tag-neutral') + '">' + esc(label) + '</span>';
   const stageTag = (c) => c.exit ? tag(EXIT[c.exit].label) : tag(STAGE[c.stage].label,
     c.stage === 'joined' || c.stage === 'accepted' ? 'ok' : waitsOn(c) === 'me' && MEETS[c.stage] ? 'warn' : 'neutral');
 
@@ -3378,9 +3378,11 @@
     const v = qq.versions || [];
     if (!v.length) return '';
     const last = v[v.length - 1];
-    return '<div class="t-acc" data-acc-open="false"><p class="b-vfoot">Version ' + (v.length + 1) + ', approved by ' + esc(DESKS[last.by] ? DESKS[last.by].name : 'the HR Manager') + ' ' + esc(sayWhen(last.day)) + '. ' + esc(last.why) + ' ' +
+    /* Distilled 6 Nov: who approved this wording and when, on one line;
+       why it changed sits with the earlier wording, inside the fold. */
+    return '<div class="t-acc" data-acc-open="false"><p class="b-vfoot">Version ' + (v.length + 1) + ' · approved by ' + esc(DESKS[last.by] ? DESKS[last.by].name : 'the HR Manager') + ' ' + esc(sayWhen(last.day)) + ' ' +
       '<button class="t-inline-link t-acc-head" type="button" aria-expanded="false" data-acc-toggle>Earlier wording<span class="t-acc-chevron">' + svg('down', 12) + '</span></button></p>' +
-      '<div class="t-acc-panel"><div class="t-acc-panel-inner"><div class="t-qlist">' + v.slice().reverse().map((x) => '<p class="t-q"><span class="tag tag-neutral">Version ' + x.v + '</span><span>' + esc(x.q) + '</span></p>').join('') + '</div></div></div></div>';
+      '<div class="t-acc-panel"><div class="t-acc-panel-inner"><div class="t-qlist"><p class="b-vfoot">' + esc(last.why) + '</p>' + v.slice().reverse().map((x) => '<p class="b-vfoot t-qold"><b>Version ' + x.v + '</b> ' + esc(x.q) + '</p>').join('') + '</div></div></div></div>';
   }
   /* A person answers a proposal. Approving a question rewords it, or drops
      it, and keeps the wording before; approving a decline rule puts it in
@@ -3449,11 +3451,14 @@
   }
   function outcomeLink(o) {
     if (!o || !o.n) return '';
-    if (o.n < GATE) return '<p class="t-olink"><span>Outcomes: <b>' + o.n + ' of ' + GATE + '</b> people sent to a client so far. Too few to say what this question predicts.</span></p>';
-    const pr = o.right ? o.rightMet / o.right : 0, pw = o.wrong ? o.wrongMet / o.wrong : 0;
-    const enough = o.right >= 5 && o.wrong >= 5;
-    const verdict = !enough ? ['neutral', 'Too few missed it to compare'] : pr - pw >= 0.2 ? ['ok', 'Predicts the client’s yes'] : pw - pr >= 0.2 ? ['warn', 'Points the wrong way'] : ['neutral', 'No difference yet'];
-    return '<p class="t-olink"><span class="tag tag-' + verdict[0] + '">' + verdict[1] + '</span><span>Got it right: <b>' + o.rightMet + ' of ' + o.right + '</b> met the client. Got it wrong: <b>' + o.wrongMet + ' of ' + o.wrong + '</b>.</span></p>';
+    /* Distilled 6 Nov: no chip on every row. Below the sample, or with too
+       few who missed it, there is nothing to compare, and How good is this
+       test says so once above; otherwise one line says what it predicts and
+       why, in words first and colour second. */
+    if (o.n < GATE || o.right < 5 || o.wrong < 5) return '';
+    const pr = o.rightMet / o.right, pw = o.wrongMet / o.wrong;
+    const v = pr - pw >= 0.2 ? ['ok', 'Predicts the client’s yes'] : pw - pr >= 0.2 ? ['warn', 'Points the wrong way'] : ['', 'Predicts nothing yet'];
+    return '<p class="b-vfoot t-olink' + (v[0] ? ' is-' + v[0] : '') + '"><b>' + v[1] + ':</b> ' + o.rightMet + ' of ' + o.right + ' who got it right met the client, ' + o.wrongMet + ' of ' + o.wrong + ' who missed it.</p>';
   }
 
   /* ── WHAT AiMY MAY DO (m4) ── one row per action, three rungs. AiMY
@@ -6841,7 +6846,7 @@
       '</section>' +
       (asmtDesigner() ? (edit ? '' : asmtReview(a, rates, outs, worst)) +
       '<section class="s-block s-block-wide" aria-label="Questions">' +
-        '<div class="s-camp-list-head"><h2 class="s-block-h">Questions</h2><span class="s-block-say">' + plural(a.questions.length, 'question') + (r.length ? ' · share who got each right' : '') + '</span></div>' +
+        '<div class="s-camp-list-head"><h2 class="s-block-h">Questions</h2><span class="s-block-say">' + plural(a.questions.length, 'question') + (r.length ? ' · how many got each right' : '') + '</span></div>' +
         (a.questions.length ? '<div class="t-asq">' + a.questions.map((qq, i) => '<div class="t-asq-row">' +
           '<span class="t-asq-n">Q' + (i + 1) + '</span>' +
           '<div class="t-asq-main">' + (edit

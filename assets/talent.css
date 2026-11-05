@@ -543,8 +543,12 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-gate-say { margin: 0; font-size: var(--fs-xs); color: var(--d100); line-height: var(--lh-base); }
 
 /* Does a question predict anything (P3). */
-.t-olink { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: var(--fs-xs); color: var(--d100); }
-.t-olink b { color: var(--d50); font-variant-numeric: tabular-nums; }
+/* What a question predicts, one line under its answer (distilled 6 Nov). */
+.t-olink { margin: 0; font-variant-numeric: tabular-nums; }
+.t-olink b { color: var(--d50); font-weight: var(--fw-semibold); }
+.t-olink.is-ok b { color: var(--ok-text, var(--ok)); }
+.t-olink.is-warn b { color: var(--warn-text, var(--warn)); }
+.t-qold b { color: var(--d100); font-weight: var(--fw-semibold); margin-right: 4px; }
 
 /* What AiMY may do (m4): three rungs, filled up to where it stands. */
 .t-ladder { display: grid; gap: 0; }
@@ -1836,3 +1840,4 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-asmt-fix { all: unset; cursor: pointer; border-radius: 4px; }
 .t-asmt-fix:hover .b-fact > span { text-decoration: underline; text-underline-offset: 3px; }
 .t-asmt-fix:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.t-asq .t-acc-panel .t-qlist { gap: 4px; margin-top: 6px; }
