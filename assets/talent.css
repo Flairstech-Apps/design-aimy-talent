@@ -1702,3 +1702,6 @@ body.is-portal .aimy-overlay { display: none !important; }
 /* The consent tick borrows the careers page's .t-q; inside the form it
    reads at the form's size. */
 .t-el-body .t-q { margin: 0; font-size: var(--fs-xs); }
+/* Their reply, pasted in by hand when WhatsApp is the recruiter's own. */
+.t-wa-add { display: flex; flex-direction: column; gap: 8px; }
+.t-wa-add .t-acts { margin: 0; justify-content: flex-end; }

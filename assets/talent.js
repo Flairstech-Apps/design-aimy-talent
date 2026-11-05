@@ -2180,9 +2180,9 @@
     /* First contact waiting on your yes (standalone: approval queue). */
     const fc = queue().filter((c) => c.stage === 'sourced' && !c.contactOk);
     if (fc.length) {
-      const reqs = open.filter((q) => fc.some((c) => c.req === q.id)), wa = fc.filter((c) => c.wa).length;
+      const reqs = open.filter((q) => fc.some((c) => c.req === q.id)), wa = fc.filter(waAuto).length;
       out.push(insightRow({ ws: 'staged', wsSay: 'Your yes',
-        say: '<b>' + plural(fc.length, 'person', 'people') + '</b> found ' + (fc.length === 1 ? 'is' : 'are') + ' waiting on your yes for first contact, on ' + plural(reqs.length, 'requisition') + '. <b>' + wa + '</b> opted in to WhatsApp; the rest get an email.',
+        say: '<b>' + plural(fc.length, 'person', 'people') + '</b> found ' + (fc.length === 1 ? 'is' : 'are') + ' waiting on your yes for first contact, on ' + plural(reqs.length, 'requisition') + '. ' + (connectOn() ? '<b>' + wa + '</b> opted in to WhatsApp; the rest get an email.' : 'Each gets an email.'),
         q: 'Who is waiting on first contact?',
         a: '<p>' + reqs.map((q) => '<b>' + esc(q.title) + '</b>: ' + esc(listSay(fc.filter((c) => c.req === q.id).map((c) => c.name))) + '.').join('<br>') + ' Each gets one short message naming the role, nothing about pay, once you approve.</p>',
         acts: [{ label: 'Open them', go: { on: 'cands', q: 'new' }, primary: true }] }));
@@ -3156,7 +3156,7 @@
     /* `alone`: the profile, where ticks on a list do not apply. */
     const many = withSend && !alone && selN('tell') > 1;
     const say = many ? 'Shown for ' + first(c.name) + '. Each of the ' + selN('tell') + ' ticked gets their own name and role.'
-      : 'To ' + first(c.name) + ' by ' + (c.wa ? 'WhatsApp and email' : 'email (no WhatsApp opt-in)') + ' · HR template, approved by ' + DESKS.dina.name + '.';
+      : 'To ' + first(c.name) + ' by ' + (waAuto(c) ? 'WhatsApp and email' : noWaSay(c)) + ' · HR template, approved by ' + DESKS.dina.name + '.';
     return '<div class="t-msg">' +
       '<p class="t-msg-body">' + esc(tellText(c)) + '</p>' +
       '<div class="t-msg-end"><p class="t-msg-foot">' + esc(say) + '</p>' +
@@ -3166,7 +3166,7 @@
   function tell(ids) {
     const list = ids.map((id) => DB.byId[id]).filter((c) => c && c.told === false);
     if (!list.length) return;
-    const es = list.map((c) => { write(c, { told: true }); return note(c, 'out', 'Told by ' + me().name + ' under the HR decline template, by ' + (c.wa ? 'WhatsApp and email.' : 'email.')); });
+    const es = list.map((c) => { write(c, { told: true }); return note(c, 'out', 'Told by ' + me().name + ' under the HR decline template, by ' + (waAuto(c) ? 'WhatsApp and email.' : 'email.')); });
     SEL.tell = {};
     paint();
     toast(list.length === 1 ? 'Sent the answer to ' + first(list[0].name) : 'Sent the answer to ' + plural(list.length, 'person', 'people'),
@@ -3210,7 +3210,15 @@
         rcNote('ban', 'No emotion or personality read from face or voice.') +
       '</div>'] });
   }
-  const viaSay = (c) => c.wa ? 'by WhatsApp and email' : 'by email (no WhatsApp opt-in)';
+  /* AiMY CONNECT IS AN OPTION, NOT A NEED (Engy, 5 Nov). The company says,
+     on the HR Manager's Templates page, whether WhatsApp goes through AiMY
+     Connect. Without it Talent cannot send or hear WhatsApp on its own:
+     what Talent sends by itself goes by email, and a recruiter's WhatsApp is
+     their own app, which Talent opens with the message written and logs. */
+  const connectOn = () => D.connect !== false;
+  const waAuto = (c) => !!c.wa && connectOn();
+  const noWaSay = (c) => c.wa ? 'email (WhatsApp is not connected)' : 'email (no WhatsApp opt-in)';
+  const viaSay = (c) => waAuto(c) ? 'by WhatsApp and email' : 'by ' + noWaSay(c);
 
   /* ── A LEARNING PROPOSAL (P5, R6) ── AiMY proposes a change to its own
      rules; the HR Manager approves it, and the version before is kept. One
@@ -3684,8 +3692,8 @@
      recruiter logs the call: the press is the approval. By WhatsApp where
      they opted in, by email where not. */
   const fuText = (c) => 'Hi ' + first(c.name) + ', this is ' + first(me().name) + ' from FlairsTech about the ' + reqOf(c).title + ' role. I tried to call you just now. ' +
-    'When is a good time to talk? ' + (c.wa ? 'You can reply here or call me back on this number.' : 'You can reply to this email.');
-  const fuBy = (c) => (c.wa ? 'WhatsApp' : 'email');
+    'When is a good time to talk? ' + (waAuto(c) ? 'You can reply here or call me back on this number.' : 'You can reply to this email.');
+  const fuBy = (c) => (waAuto(c) ? 'WhatsApp' : 'email');
   const fuOn = (call) => (call.fu != null ? call.fu : DB.byId[call.cand] ? DB.byId[call.cand].fuDay !== 0 : false);
   const narrowCall = () => window.matchMedia('(max-width: 760px)').matches;
   const answerBlock = (title, body, cite) => '<div class="s-ans"><div class="s-ans-title">' + esc(title) + '</div>' +
@@ -3801,7 +3809,7 @@
       (o === 'noanswer' && c && call.dir === 'out' ? '<div class="t-fu">' +
         '<button class="filter-chip' + (fuOn(call) ? ' active' : '') + '" type="button" data-fu aria-pressed="' + fuOn(call) + '">' + (fuOn(call) ? svg('check', 12) : '') + 'Also send them a message</button>' +
         '<p class="t-fu-say">“' + esc(fuText(c)) + '”</p>' +
-        '<p class="t-fu-how">By ' + fuBy(c) + (c.wa ? ', which they opted in to' : ': no WhatsApp opt-in') + '. It goes when you log the call' + (c.fuDay === 0 ? '; they already had one today' : '') + '.</p></div>' : '') +
+        '<p class="t-fu-how">By ' + fuBy(c) + (waAuto(c) ? ', which they opted in to' : c.wa ? ': WhatsApp is not connected' : ': no WhatsApp opt-in') + '. It goes when you log the call' + (c.fuDay === 0 ? '; they already had one today' : '') + '.</p></div>' : '') +
       '<p class="t-log-will">' + esc(willSay(call)) + '</p>' +
       '<p class="t-acts">' +
         (!c && call.who ? '<button class="btn btn-ghost btn-sm" type="button" data-add-stranger>Add ' + esc(first(call.who)) + ' as a candidate</button>' : '') +
@@ -4658,7 +4666,7 @@
   /* ONE WHATSAPP THREAD (?on=calls&th=): their messages left, yours right,
      by day; under it the reply, free text inside the 24 hours and a template
      outside them. Somebody who never opted in gets no box at all. */
-  let WA_TPL_ON = null;
+  let WA_TPL_ON = null, WA_ADD = null;
   function threadPage(c) {
     const ms = msgsOf(c.id), hrs = c.wa ? waHrs(c) : 0, last = ms[ms.length - 1];
     const owed = last && last.dir === 'in' && !last.done && !D.waDone[last.id];
@@ -4667,10 +4675,21 @@
       const h = m.day !== day ? '<p class="t-wa-day">' + esc(dayLabel(m.day)) + '</p>' : '';
       day = m.day;
       return h + '<div class="t-wa-m ' + (m.dir === 'out' ? 'is-out' : 'is-in') + '"><p class="t-wa-text">' + esc(m.text) + '</p>' +
-        '<span class="t-wa-t">' + esc(m.dir === 'out' ? 'You' + (m.tpl ? ', template' : '') : first(c.name)) + ' · ' + esc(m.time) + '</span></div>';
+        '<span class="t-wa-t">' + esc(m.dir === 'out' ? 'You' + (m.tpl ? ', template' : '') + (m.own ? ', from your WhatsApp' : '') : first(c.name) + (m.added ? ', added by you' : '')) + ' · ' + esc(m.time) + '</span></div>';
     }).join('');
     const tpl = WA_TPL.filter((x) => x.k === WA_TPL_ON)[0];
-    const box = !c.wa ? '<p class="t-wa-win">' + esc(first(c.name)) + ' has not opted in to WhatsApp, so nothing can go there. Email reaches them at ' + esc(c.email || 'the address on file') + '.</p>'
+    /* Without AiMY Connect: no 24 hours and no templates, since it is their
+       own number. The box writes the message, Open in WhatsApp hands it to
+       their app and logs it here, and a reply is pasted in by hand. */
+    const own = c.wa && !connectOn();
+    const adding = WA_ADD === c.id;
+    const ownBox = '<div class="t-wa-box"><textarea class="input t-wa-in" id="waText" rows="3" placeholder="Write to ' + esc(first(c.name)) + '…" aria-label="Your message to ' + esc(c.name) + '"></textarea>' +
+        '<div class="t-wa-end"><p class="t-wa-win">Opens WhatsApp with this message on your own number; it is logged here when you press it.</p>' +
+        '<button class="s-insight-lnk primary" type="button" data-wa-open="' + c.id + '">' + svg('send', 14) + 'Open in WhatsApp</button></div>' +
+        (adding ? '<div class="t-wa-add"><textarea class="input t-wa-in" id="waReply" rows="2" placeholder="Paste what ' + esc(first(c.name)) + ' wrote" aria-label="Their reply"></textarea>' +
+          '<p class="t-acts"><button class="b-ghost" type="button" data-wa-add="">Cancel</button><button class="s-insight-lnk" type="button" data-wa-addgo="' + c.id + '">Add their reply</button></p></div>'
+          : '<p class="t-acts t-wa-done"><button class="b-ghost" type="button" data-wa-add="' + c.id + '">Add their reply</button></p>') + '</div>';
+    const box = own ? ownBox : !c.wa ? '<p class="t-wa-win">' + esc(first(c.name)) + ' has not opted in to WhatsApp, so nothing can go there. Email reaches them at ' + esc(c.email || 'the address on file') + '.</p>'
       : hrs ? '<div class="t-wa-box"><textarea class="input t-wa-in" id="waText" rows="3" placeholder="Write to ' + esc(first(c.name)) + '…" aria-label="Your reply to ' + esc(c.name) + '"></textarea>' +
           '<div class="t-wa-end"><p class="t-wa-win">Open for ' + plural(hrs, 'more hour') + '. After that, only an approved template can start it again.</p>' +
           '<button class="s-insight-lnk primary" type="button" data-wa-send="' + c.id + '">' + svg('send', 14) + 'Send</button></div></div>'
@@ -4684,7 +4703,7 @@
           '<button class="b-ghost" type="button"' + goAttr({ on: 'calls', lg: c.id }) + '>Log a call from elsewhere</button></span></div>' +
       '<section class="s-block s-block-wide" aria-label="WhatsApp with ' + esc(c.name) + '">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">' + esc(c.name) + '</h2>' +
-          '<span class="s-block-say">WhatsApp · ' + esc(c.wa ? 'opted in ' + sayWhen(c.waDay != null ? c.waDay : -3) : 'no opt-in') + ' · ' + esc(reqOf(c).title) + ', ' + esc(accOf(reqOf(c)).name) + '</span></div>' +
+          '<span class="s-block-say">WhatsApp · ' + esc(c.wa ? 'opted in ' + sayWhen(c.waDay != null ? c.waDay : -3) + (connectOn() ? '' : ' · your own number') : 'no opt-in') + ' · ' + esc(reqOf(c).title) + ', ' + esc(accOf(reqOf(c)).name) + '</span></div>' +
         '<div class="t-wa">' + (list || '<p class="b-vfoot">Nothing on WhatsApp yet.</p>') + '</div>' +
         (owed ? '<p class="t-acts t-wa-done"><button class="b-ghost" type="button" data-wa-done="' + last.id + '">Needs no reply</button></p>' : '') +
         box +
@@ -4702,6 +4721,49 @@
     paint();
     toast('Sent to ' + first(c.name) + ' on WhatsApp', () => { D.msgs = D.msgs.filter((x) => x.id !== m.id); DB.msgs = DB.msgs.filter((x) => x.id !== m.id); unmake('events', e); save(); paint(); },
       'Through AiMY Connect. It is on their history too.');
+  }
+
+  /* THEIR OWN WHATSAPP: wa.me opens the app or WhatsApp Web with the text
+     written; the recruiter presses send there. The log is made on the press,
+     with Undo for the time it was not sent after all. */
+  function openWa(c) {
+    const el = byId('waText'), text = el ? el.value.trim() : '';
+    if (!text) { toast('Write something first.'); return; }
+    try { window.open('https://wa.me/' + String(c.phone || '').replace(/\D/g, '') + '?text=' + encodeURIComponent(text), '_blank', 'noopener'); } catch (e) {}
+    const m = { id: 'w' + Date.now().toString(36), cand: c.id, dir: 'out', day: 0, time: nowHM(), text: text, by: ME, own: true };
+    D.msgs.push(m); DB.msgs.push(m);
+    const e = note(c, 'msg', 'On WhatsApp from ' + first(me().name) + '’s own number to ' + first(c.name) + ': “' + text + '”');
+    paint();
+    toast('Opened WhatsApp with the message', () => { D.msgs = D.msgs.filter((x) => x.id !== m.id); DB.msgs = DB.msgs.filter((x) => x.id !== m.id); unmake('events', e); save(); paint(); },
+      'Logged on ' + first(c.name) + '’s thread. Undo if you did not send it.');
+  }
+  function addWaReply(c) {
+    const el = byId('waReply'), text = el ? el.value.trim() : '';
+    if (!text) { toast('Paste what they wrote first.'); return; }
+    const m = { id: 'w' + Date.now().toString(36), cand: c.id, dir: 'in', day: 0, time: nowHM(), text: text, by: null, added: true };
+    D.msgs.push(m); DB.msgs.push(m);
+    WA_ADD = null;
+    paint();
+    toast('Added ' + first(c.name) + '’s reply', () => { D.msgs = D.msgs.filter((x) => x.id !== m.id); DB.msgs = DB.msgs.filter((x) => x.id !== m.id); save(); paint(); });
+  }
+  /* The company's choice, on the HR Manager's Templates page. */
+  function connectBlock() {
+    const on = connectOn();
+    return '<section class="s-block s-block-wide" aria-label="How Talent reaches candidates">' +
+      '<div class="s-camp-list-head"><h2 class="s-block-h">How Talent reaches candidates</h2><span class="s-block-say">for everyone in the company · set by the HR Manager</span></div>' +
+      '<div class="b-cuts" role="group" aria-label="WhatsApp">' +
+        '<button class="filter-chip' + (on ? ' active' : '') + '" type="button" data-connect="on" aria-pressed="' + on + '">WhatsApp through AiMY Connect</button>' +
+        '<button class="filter-chip' + (on ? '' : ' active') + '" type="button" data-connect="off" aria-pressed="' + !on + '">Each recruiter’s own WhatsApp</button></div>' +
+      '<p class="b-tocall">' + (on ? 'Talent sends and receives WhatsApp through AiMY Connect, for people who opted in. Replies land in each recruiter’s Inbox, and what Talent sends by itself (the message after a missed call, answers, invites) goes there too.'
+        : 'Talent has no WhatsApp of its own. Recruiters use their own: Talent opens WhatsApp with the message written and logs it, and they add replies by hand. Everything Talent sends by itself goes by email.') + '</p>' +
+    '</section>';
+  }
+  function setConnect(on) {
+    const was = D.connect;
+    D.connect = on ? undefined : false;
+    save(); paint();
+    toast(on ? 'WhatsApp goes through AiMY Connect' : 'Recruiters use their own WhatsApp', () => { D.connect = was; save(); paint(); },
+      on ? 'For everyone in the company.' : 'Talent sends by email; WhatsApp is logged by hand.');
   }
 
   /* A CALL MADE ELSEWHERE (?on=calls&lg=): on the recruiter's own mobile,
@@ -4849,7 +4911,7 @@
       '<section class="s-block s-block-wide" aria-label="Conversations">' +
         '<div class="s-camp-list-head">' + switcher('calls') +
           '<span class="b-draft-acts"><button class="b-ghost" type="button"' + goAttr({ on: 'calls', lg: 'new' }) + '>Log a call from elsewhere</button></span></div>' +
-        '<p class="t-scope">' + tag('Design target', 'warn') + '<span>Calls wait on AiMY Phone, and WhatsApp on AiMY Connect’s templates being approved. This shows where it is going, not what ships first.</span></p>' +
+        '<p class="t-scope">' + tag('Design target', 'warn') + '<span>' + (connectOn() ? 'Calls wait on AiMY Phone, and WhatsApp on AiMY Connect’s templates being approved.' : 'Calls wait on AiMY Phone. WhatsApp is each recruiter’s own, logged here.') + ' This shows where it is going, not what ships first.</span></p>' +
         '<div class="b-cuts b-log-tabs">' + TABS.map((x) => '<button class="filter-chip' + (tab === x[0] ? ' active' : '') + '" type="button" data-q="' + x[0] + '"' +
           (tab === x[0] ? ' aria-current="true"' : '') + '>' + esc(x[1]) + (n[x[0]] != null ? '<span class="b-cut-n">' + n[x[0]] + '</span>' : '') + '</button>').join('') + '</div>' +
         body +
@@ -5117,8 +5179,8 @@
     const works = isRec() || isHR();
     return '<div class="t-onb"><h3 class="b-month">Before day one</h3>' +
       ONBOARD.map((x, i) => '<p class="t-q"><button class="t-check' + (done[i] ? ' is-on' : '') + '" type="button" ' + (works ? 'data-onb="' + c.id + '|' + i + '"' : 'disabled') +
-        ' aria-pressed="' + !!done[i] + '" aria-label="' + esc(x[0].replace('{via}', c.wa ? 'on WhatsApp' : 'by email')) + '">' + (done[i] ? svg('check', 12) : '') + '</button><span>' +
-        esc(x[0].replace('{via}', c.wa ? 'on WhatsApp' : 'by email')) + '</span><span class="b-kind">' + esc(x[1]) + '</span></p>').join('') +
+        ' aria-pressed="' + !!done[i] + '" aria-label="' + esc(x[0].replace('{via}', waAuto(c) ? 'on WhatsApp' : 'by email')) + '">' + (done[i] ? svg('check', 12) : '') + '</button><span>' +
+        esc(x[0].replace('{via}', waAuto(c) ? 'on WhatsApp' : 'by email')) + '</span><span class="b-kind">' + esc(x[1]) + '</span></p>').join('') +
     '</div>' + dayNinety(c, o);
   }
   /* ── 6. DAY 90, AND THE LOOP IT FEEDS (day-90-learning-loop) ── the
@@ -5649,7 +5711,7 @@
     const e = note(c, 'asmt', 'Sent the ' + a.title + ' assessment.');
     paint();
     toast('Sent the assessment to ' + first(c.name), () => { unmake('sends', s); unmake('events', e); paint(); },
-      (c.wa ? 'By WhatsApp and email' : 'By email only: no WhatsApp opt-in') + ', with their link. AiMY scores it when they finish.');
+      (waAuto(c) ? 'By WhatsApp and email' : 'By ' + noWaSay(c)) + ', with their link. AiMY scores it when they finish.');
   }
 
   /* ══ FINDING CANDIDATES ══════════════════════════════════════════════════
@@ -6551,7 +6613,7 @@
             '<button class="b-ghost" type="button" data-tpl-del="' + t.id + '|' + i + '" aria-label="Remove">Remove</button></p>').join('') +
           '<p class="t-acts"><button class="s-insight-lnk" type="button" data-tpl-add="' + t.id + '">Add an item</button></p></div>').join('') +
       '</section>' +
-      (isHR() ? ladder() : '') +
+      (isHR() ? connectBlock() + ladder() : '') +
     '</div>';
   }
   function toggleStage(k, s) {
@@ -7973,10 +8035,14 @@
     }
     if (/what needs me|what is waiting|today|my day|waiting on me/.test(lc)) {
       if (isRec()) {
-        const d = decisions(), tc = toCall(), m = missed();
-        peek('<b>' + plural(d.length, 'decision') + '</b> wait on you, <b>' + plural(tc.length, 'person', 'people') + '</b> to call, and <b>' + plural(m.length, 'missed call') + '</b>.' +
-          (d[0] ? ' The oldest decision is ' + esc(d[0].name) + ', ' + esc(lower(STAGE[d[0].stage].label)) + '.' : ''),
-          [d[0] ? { label: 'Open ' + first(d[0].name), go: { cand: d[0].id }, primary: true } : null, tc.length ? { label: 'Call them in order', data: 'call-all' } : null].filter(Boolean));
+        /* Said as Today says it (5 Nov): results on your call, then who to
+           reach, then what came in. */
+        const d = decisions(), tc = toCall(), m = missed(), wa = waOwed();
+        peek('<b>' + plural(d.length, 'result') + '</b> ' + (d.length === 1 ? 'waits' : 'wait') + ' on your call, <b>' + plural(tc.length, 'person', 'people') + '</b> to reach, ' +
+          listSay(['<b>' + plural(m.length, 'missed call') + '</b>', '<b>' + plural(wa.length, 'WhatsApp reply', 'WhatsApp replies') + '</b>']) + '.' +
+          (d[0] ? ' The oldest result is ' + esc(d[0].name) + ', ' + esc(lower(STAGE[d[0].stage].label)) + '.' : ''),
+          [d.length ? { label: 'Decide the oldest one', go: { on: 'decide' }, primary: true } : null, tc.length ? { label: 'Call them in order', data: 'call-all' } : null,
+            m.length + wa.length ? { label: 'Open the inbox', go: { on: 'calls', q: 'inbox' } } : null].filter(Boolean));
       } else {
         const a = asks();
         peek(a.length ? '<b>' + plural(a.length, 'thing') + '</b> wait on you. First: ' + esc(a[0].head) + '.' : 'Nothing waits on you today.', a[0] ? [{ label: a[0].verb, go: a[0].go, primary: true }] : []);
@@ -8533,6 +8599,7 @@
         '<button class="proto-link" type="button" data-ring="named">A stranger calls in, and says who they are</button>' +
         '<button class="proto-link" type="button" data-ring="anon">A stranger calls in, and will not say</button>' +
         '<button class="proto-link" type="button" data-quiet>' + (UI.quiet ? 'Sound on' : 'Sound off') + '</button>' +
+        '<button class="proto-link" type="button" data-connect="' + (connectOn() ? 'off' : 'on') + '">' + (connectOn() ? 'Without AiMY Connect' : 'With AiMY Connect') + '</button>' +
       '</div>' +
       /* AiMY coaching a run: the habit the recruiter's calls carry, for the demo. */
       '<div class="proto-sec">' +
@@ -9257,6 +9324,10 @@
     if ((el = at('[data-nudge]'))) { nudge(DB.byId[el.getAttribute('data-nudge')]); return; }
     if ((el = at('[data-start]'))) { start(el.getAttribute('data-start')); return; }
     /* ── Conversations: WhatsApp and calls made elsewhere ── */
+    if ((el = at('[data-connect]'))) { setConnect(val('data-connect') === 'on'); return; }
+    if ((el = at('[data-wa-open]'))) { openWa(DB.byId[val('data-wa-open')]); return; }
+    if ((el = at('[data-wa-addgo]'))) { addWaReply(DB.byId[val('data-wa-addgo')]); return; }
+    if ((el = at('[data-wa-add]'))) { WA_ADD = val('data-wa-add') || null; paint(); const r = byId('waReply'); if (r) r.focus(); return; }
     if ((el = at('[data-wa-send]'))) { sendWa(DB.byId[val('data-wa-send')]); return; }
     if ((el = at('[data-wa-tpl]'))) { const k = val('data-wa-tpl'); WA_TPL_ON = WA_TPL_ON === k ? null : k; paint(); return; }
     if ((el = at('[data-wa-done]'))) { const id = val('data-wa-done'); D.waDone[id] = 1; save(); paint(); toast('Set aside: it needs no reply', () => { delete D.waDone[id]; save(); paint(); }); return; }
