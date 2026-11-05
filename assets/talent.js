@@ -1878,7 +1878,7 @@
     const me = queue().filter((c) => queueCut(c) === 'me').length;
     putRail(sideNav({
       '': d.length
-        ? { state: 'Awaiting you', tone: 'warn', say: '<b>' + plural(d.length, 'decision') + '</b> ' + (d.length === 1 ? 'waits' : 'wait') + ' on you, the oldest <b>' + days(d[0].since) + '</b>.',
+        ? { state: 'Awaiting you', tone: 'warn', say: '<b>' + plural(d.length, 'result') + '</b> ' + (d.length === 1 ? 'waits' : 'wait') + ' on your call, the oldest <b>' + days(d[0].since) + '</b>.',
             ev: [{ val: t.length, cap: t.length === 1 ? 'interview today' : 'interviews today' }], act: { label: 'Decide the oldest one', start: 'decide' } }
         : { state: 'Done', tone: 'ok', say: 'Nothing waits on your call.', ev: [{ val: t.length, cap: t.length === 1 ? 'interview today' : 'interviews today' }] },
       cands: { state: me ? 'Awaiting you' : 'Done', tone: me ? 'warn' : 'ok',
@@ -1908,10 +1908,13 @@
     const lines = [];
     /* Today's interviews open in the Diary. A requisition likely to miss
        its date is the hiring manager's to say (Engy, 29 Oct). */
-    const ivs = t.length ? '<button class="slv-n" type="button"' + goAttr({ on: 'diary' }) + '>' + plural(t.length, 'interview') + '</button> today, the first at <b>' + esc(t[0].slot) + '</b> with ' + esc(t[0].name) + '.' : '';
+    /* One fact a sentence (5 Nov). "Results wait on your call", not
+       "decisions wait on you": Candidates' "wait on you" counts everyone
+       with a next step of yours, a different, larger set. */
     lines.push(d.length
-      ? '<b>' + plural(d.length, 'decision') + '</b> ' + (d.length === 1 ? 'waits' : 'wait') + ' on you, the oldest <b>' + days(oldest.since) + '</b>. ' + (ivs || 'No interviews today.')
-      : 'Nothing waits on your call. ' + ivs);
+      ? '<b>' + plural(d.length, 'result') + '</b> ' + (d.length === 1 ? 'waits' : 'wait') + ' on your call, the oldest <b>' + days(oldest.since) + '</b>.'
+      : 'No result waits on your call.');
+    if (t.length) lines.push('<button class="slv-n" type="button"' + goAttr({ on: 'diary' }) + '>' + plural(t.length, 'interview') + '</button> today, the first at <b>' + esc(t[0].slot) + '</b> with ' + esc(t[0].name) + '.');
     if (client.length) {
       lines.push('Clients owe an answer on <button class="slv-n" type="button"' + goAttr({ on: 'reqs', q: 'client' }) + '>' + plural(client.length, 'candidate') + '</button>' +
         ', the oldest waiting <b>' + days(client[0].since) + '</b>.');
@@ -1936,7 +1939,7 @@
       '<div class="slv-head">' + mark(18).replace('<svg ', '<svg ') + '<h1 class="slv-title">Today</h1>' +
         '<span class="slv-time">' + sayDay(0) + '</span></div>' +
       '<div class="slv-body">' + lines.map((l) => '<p class="slv-line">' + l + '</p>').join('') + '</div>' +
-      '<div class="s-starts-wrap"><span class="s-starts-cap">Start</span><div class="s-starts">' +
+      '<div class="s-starts-wrap"><div class="s-starts">' +
         starts.map((s) => '<button class="s-start" type="button" data-start="' + s.k + '">' +
           '<span class="s-start-top"><span class="s-start-label">' + esc(s.label) + '</span>' +
             '<span class="s-start-n">' + (s.n || '​') + '</span></span>' +
@@ -2137,23 +2140,9 @@
   const listSay = (l) => l.length > 1 ? l.slice(0, -1).join(', ') + ' and ' + l[l.length - 1] : l[0] || '';
   function todayInsights() {
     const out = [], open = myOpen(), on = (c) => !!c && open.indexOf(reqOf(c)) >= 0;
-    /* Results in, waiting on your call (standalone: What needs you). */
-    const d = decisions();
-    if (d.length) out.push(insightRow({ ws: 'staged', wsSay: 'Your call',
-      say: '<b>' + plural(d.length, 'result') + '</b> ' + (d.length === 1 ? 'is' : 'are') + ' in and waiting on your call, the oldest <b>' + days(d[0].since) + '</b>: ' + esc(d[0].name) + ', ' + esc(lower(STAGE[d[0].stage].label)) + '.',
-      q: 'Which results are waiting on me?',
-      a: '<p>' + d.map((c) => '<b>' + esc(c.name) + '</b>, ' + esc(lower(STAGE[c.stage].label)) + ' for ' + esc(reqOf(c).title) + ': proceed.' + (nextOf(c) ? ' Next: ' + esc(STAGE[nextOf(c)].label) + '.' : '')).join('<br>') + '</p>',
-      acts: [{ label: 'Open the diary', go: { on: 'diary' }, primary: true }] }));
-    /* The next working day (standalone: interviews booked, kits sent). */
-    const tm = DB.ivs.filter((v) => v.status === 'booked' && v.day === 1 && on(DB.byId[v.cand]));
-    const td = today();
-    out.push(insightRow({ ws: 'detected', wsSay: 'Tomorrow',
-      say: tm.length ? '<b>' + plural(tm.length, 'interview') + '</b> booked for tomorrow, ' + esc(sayDay(1)) + ', each with its kit sent.'
-        : 'Nothing is booked for tomorrow yet. Today has <b>' + plural(td.length, 'interview') + '</b>' + (td.length ? ', the first at <b>' + esc(td[0].slot) + '</b>.' : '.'),
-      q: 'What is booked for tomorrow?',
-      a: '<p>' + (tm.length ? tm.map((v) => esc(v.slot) + ' · <b>' + esc(DB.byId[v.cand].name) + '</b>, ' + esc(lower(STAGE[v.stage].label)) + ' with ' + esc(v.by.split(',')[0])).join('<br>')
-        : 'Nothing yet for tomorrow. Today: ' + (td.length ? td.map((c) => esc(c.slot) + ' ' + esc(c.name)).join(', ') : 'nothing') + '.') + '</p>',
-      acts: [{ label: 'Open the diary', go: { on: 'diary', day: '1' }, primary: true }] }));
+    /* Results waiting on your call and today's interviews are the briefing's
+       own lines and the Decide tile above; they came off here on 5 Nov so
+       each fact is said once on the page. */
     /* First contact waiting on your yes (standalone: approval queue). */
     const fc = queue().filter((c) => c.stage === 'sourced' && !c.contactOk);
     if (fc.length) {
@@ -2207,34 +2196,72 @@
     const owed = untold();
     const late = owed.filter((c) => c.since >= TELL_DAYS);
     const ins = todayInsights();
+    /* THE ORDER IS THE URGENCY (Engy, 5 Nov): the briefing, then the one
+       block with a deadline, then what AiMY noticed that is said nowhere
+       else. Not told yet lost its "Reads" line, its explainer and the
+       preview's own Send: the message shows once, the rows send, and one
+       button sends to everyone. */
     return '<div class="s-home">' +
       topBrief() +
-      '<section class="s-block s-block-wide" aria-label="What AiMY noticed">' +
-        '<div class="s-camp-list-head"><h2 class="s-block-h">What AiMY noticed</h2></div>' +
-        (ins.length ? '<p class="b-tocall">AiMY noticed <b>' + plural(ins.length, 'thing') + '</b> on your requisitions. Each opens in the chat, with the record behind it.</p>' +
-          '<div class="t-insights">' + ins.join('') + '</div>' : '') +
-      '</section>' +
       (owed.length ? '<section class="s-block s-block-wide" aria-label="Not told yet">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">Not told yet</h2>' +
           '<span class="s-block-say">' + plural(owed.length, 'person', 'people') + ' owed an answer · ' + (late.length ? late.length + ' past the ' + TELL_DAYS + '-day limit' : 'all inside the ' + TELL_DAYS + '-day limit') + '</span></div>' +
-        srcNote([['Exits on each candidate', false], ['HR message templates', true]]) +
-        aimyBlock({ text: 'Nobody waits more than ' + TELL_DAYS + ' days to hear back. A person sends the answer, under the HR Manager’s template; AiMY only suggests it.', from: 'how declines work here' }) +
-        msgPreview(DB.byId[Object.keys(SEL.tell)[0]] || owed[0], true) +
+        msgPreview(DB.byId[Object.keys(SEL.tell)[0]] || owed[0], false) +
         '<div class="b-owed">' + topN('tell', owed).map((c, i) => '<div class="b-owed-row t-row" style="--i:' + Math.min(i, 8) + '">' + selBox('tell', c.id, c.name) +
           '<button class="b-owed-main t-row-open" type="button" data-cand="' + c.id + '"><span class="b-owed-head"><span class="b-owed-type">' + esc(c.name) + '</span>' +
             '<span class="b-owed-by">' + esc(reqOf(c).title) + ' · ' + esc(accOf(reqOf(c)).name) + '</span>' + tag(EXIT[c.exit].label, c.since >= TELL_DAYS ? 'warn' : 'neutral') + '</span>' +
             '<span class="b-owed-body">' + esc(EXIT[c.exit].label) + ' ' + esc(sayWhen(-c.since)) + (c.decline ? ': ' + esc(lower(DECLINE_K[c.decline.why].label)) : '') + '. ' +
               (c.since >= TELL_DAYS ? '<b>Past the ' + TELL_DAYS + '-day limit.</b>' : 'Tell them by ' + esc(sayDay(TELL_DAYS - c.since)) + '.') + '</span></button>' +
           '<button class="b-owed-go t-row-go" type="button" data-tell="' + c.id + '">Send the answer</button></div>').join('') + '</div>' +
-        moreLinks('tell', owed.length, { label: 'Open all ' + owed.length + ' in Candidates', go: { on: 'cands', q: 'untold' } }) +
+        moreLinks('tell', owed.length) +
         (selN('tell') ? batchBar('tell', '<button class="s-insight-lnk primary" type="button" data-tell-sel>Send the answer to ' + plural(selN('tell'), 'person', 'people') + '</button>')
-          : '<p class="t-acts"><button class="b-ghost" type="button" data-sel-all="tell">Select all ' + owed.length + '</button></p>') +
+          : owed.length > 1 ? '<p class="t-acts"><button class="s-insight-lnk primary" type="button" data-tell-all="' + owed.map((c) => c.id).join(',') + '">' + svg('send', 14) + 'Send the answer to all ' + owed.length + '</button></p>' : '') +
+      '</section>' : '') +
+      (ins.length ? '<section class="s-block s-block-wide" aria-label="What AiMY noticed">' +
+        '<div class="s-camp-list-head"><h2 class="s-block-h">What AiMY noticed</h2>' +
+          '<span class="s-block-say">each opens in the chat, with the record behind it</span></div>' +
+        '<div class="t-insights">' + ins.join('') + '</div>' +
       '</section>' : '') +
       /* Today's interviews open in the Diary; waiting on others is gone (Engy,
          29 Oct); requisitions likely to miss their date are the hiring
          manager's, on their home. */
     '</div>';
   }
+  /* ══ DECIDING, ONE AT A TIME (Engy, 5 Nov) ══════════════════════════════
+     Today's Decide and Send profiles tiles named a person and then opened
+     their requisition, its record above them and the card three screens
+     down. Now they open a run, as Call them in order does: one card with
+     the result and its own buttons, the rest named under it. Deciding takes
+     the card out of the list, so the next one is simply the first left;
+     Skip sets one aside for the end of this run. */
+  let RUN = null;
+  const runList = (k) => decisions().filter((c) => k !== 'send' || (c.stage === 'tech' && reqOf(c).tpl !== 'internal'));
+  function decidePage() {
+    const k = S.q === 'send' ? 'send' : 'decide';
+    if (!RUN || RUN.k !== k) RUN = { k: k, total: runList(k).length, skip: {} };
+    const all = runList(k), left = all.filter((c) => !RUN.skip[c.id]), skipped = all.length - left.length;
+    const total = Math.max(RUN.total, all.length), c = left[0];
+    const head = '<div class="b-topbar s-block-wide"><button class="s-back" type="button" data-home>Today</button></div>';
+    const what = k === 'send' ? 'profile' : 'decision';
+    if (!c) {
+      const done = total - all.length;
+      return '<div class="s-home">' + head + '<section class="s-block s-block-wide t-dec-end">' +
+        '<h2 class="s-block-h">' + (done ? plural(done, what) + ' done' : 'Nothing is waiting on your call') + '</h2>' +
+        '<p class="b-tocall">' + (skipped ? plural(skipped, 'one') + ' set aside in this run.' : 'Every result that was in has its answer.') + '</p>' +
+        '<p class="t-acts">' + (skipped ? '<button class="b-ghost" type="button" data-run-again>Go through the ' + skipped + ' set aside</button>' : '') +
+          '<button class="s-insight-lnk primary" type="button" data-home>Back to Today</button></p></section></div>';
+    }
+    const pos = total - all.length + skipped + 1;
+    return '<div class="s-home">' + head +
+      '<section class="s-block s-block-wide" aria-label="' + (k === 'send' ? 'Sending profiles' : 'Deciding') + '">' +
+        '<div class="s-camp-list-head"><h2 class="s-block-h">' + (k === 'send' ? 'Send profiles' : 'Your decisions') + '</h2>' +
+          '<span class="s-block-say">' + pos + ' of ' + total + ', oldest first</span></div>' +
+        '<div class="t-dec-card">' + candCard(c, 0) + '</div>' +
+        '<p class="t-acts t-dec-acts">' + (left.length > 1 ? '<span class="t-dec-next">Then ' + esc(listSay(left.slice(1, 4).map((x) => x.name)) + (left.length > 4 ? ' and ' + plural(left.length - 4, 'other') : '')) + '</span>' : '') +
+          '<button class="b-ghost" type="button" data-run-skip="' + c.id + '">' + (left.length > 1 ? 'Skip for now' : 'Set it aside') + '</button></p>' +
+      '</section></div>';
+  }
+
   /* REQUISITIONS LIKELY TO MISS THEIR DATE, rule-based, each with its reason
      and the one move. The hiring manager's (Engy, 29 Oct). */
   function riskBlock(risky, act) {
@@ -8307,6 +8334,7 @@
     const reqStep = (q, attr) => add(q.title || 'Untitled draft', attr || 'data-req="' + q.id + '"');
     if (S.on === 'add') { const q = S.req && DB.reqById[S.req]; if (q) { reqs(); reqStep(q); } return { up: up, now: 'Add a candidate' }; }
     if (S.on === 'find') return { up: up, now: 'Find candidates' };
+    if (S.on === 'decide') return { up: up, now: S.q === 'send' ? 'Sending profiles' : 'Deciding' };
     if (S.on === 'newreq') { reqs(); const a = ACCOUNTS.filter((x) => x.id === S.account)[0]; return { up: up, now: 'New requisition' + (a ? ' for ' + a.name : '') }; }
     if (S.on === 'draft') { add('Find candidates', goAttr({ on: 'find' }).trim()); const l = S.list ? D.lists.filter((x) => x.id === S.list)[0] : DRAFT; return { up: up, now: l ? l.name : 'Shortlist' }; }
     if (S.cand && DB.byId[S.cand]) {
@@ -8360,6 +8388,7 @@
     byId('wbStage').innerHTML = homeCrumb((S.on === 'add' && isRec() ? addPage() : S.on === 'find' ? findPage()
       : S.on === 'newreq' && !isClient() && !isBU() ? newReqPage()
       : S.on === 'diary' && (isRec() || isHM()) ? diaryPage()
+      : S.on === 'decide' && isRec() ? decidePage()
       : S.on === 'draft' && (isRec() || isHR()) ? draftPage() : S.on === 'cands' && (isRec() || isHR()) && !S.cand ? candsPage() : S.cand ? candPage() : S.req ? reqPage() : S.asmt ? asmtPage() : S.acc ? accPage()
       : S.on === 'reqs' ? reqsPage() : S.on === 'calls' && isRec() ? callsPage()
       : S.on === 'asmts' ? asmtsPage() : S.on === 'templates' ? templatesPage()
@@ -8521,8 +8550,9 @@
 
   function start(k) {
     const d = decisions();
-    if (k === 'decide' && d[0]) return go({ req: d[0].req, q: d[0].stage });
-    if (k === 'send') { const c = d.filter((x) => x.stage === 'tech' && reqOf(x).tpl !== 'internal')[0]; return c ? go({ req: c.req, q: 'tech' }) : go({ on: 'reqs', q: 'mine' }); }
+    /* Both open the run from its start (Engy, 5 Nov). */
+    if (k === 'decide' && d.length) { RUN = null; return go({ on: 'decide' }); }
+    if (k === 'send') { RUN = null; return runList('send').length ? go({ on: 'decide', q: 'send' }) : go({ on: 'reqs', q: 'mine' }); }
     if (k === 'screen') { const l = toCall(); return l.length ? callAll(l.slice(0, runN(l.length)).map((x) => x.c.id)) : go({ on: 'calls' }); }
     if (k === 'risk') return go({ on: 'reqs', q: 'risk' });
     if (k === 'find') return findChat(null, '');
@@ -8708,6 +8738,7 @@
     }
     if ((el = at('[data-tell]'))) { tell([val('data-tell')]); return; }
     if ((el = at('[data-tell-sel]'))) { tell(Object.keys(SEL.tell)); return; }
+    if ((el = at('[data-tell-all]'))) { tell(val('data-tell-all').split(',')); return; }
     if ((el = at('[data-contact-sel]'))) {
       const list = Object.keys(SEL.sourced).map((id) => DB.byId[id]).filter((c) => c && !c.contactOk);
       const es = list.map((c) => { write(c, { contactOk: true }); return note(c, 'note', 'First contact approved by ' + me().name + ', with ' + (list.length - 1) + ' others.'); });
@@ -8997,6 +9028,8 @@
     if ((el = at('[data-diary-day]'))) { const v = val('data-diary-day'); go(Object.assign({}, S, { day: v === '0' ? null : v }), true); return; }
     if ((el = at('[data-nudge]'))) { nudge(DB.byId[el.getAttribute('data-nudge')]); return; }
     if ((el = at('[data-start]'))) { start(el.getAttribute('data-start')); return; }
+    if ((el = at('[data-run-skip]'))) { if (RUN) RUN.skip[el.getAttribute('data-run-skip')] = 1; paint(); return; }
+    if ((el = at('[data-run-again]'))) { if (RUN) RUN.skip = {}; paint(); return; }
     /* ── Finding through the chat, and the shortlist it brings back ── */
     if ((el = at('[data-fc]'))) { fcStep(el.getAttribute('data-fc')); return; }
     if ((el = at('[data-keep]'))) { if (DRAFT) { const i = Number(el.getAttribute('data-keep')); DRAFT.keep[i] = DRAFT.keep[i] === false; paint(); } return; }

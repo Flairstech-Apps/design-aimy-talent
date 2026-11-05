@@ -15,13 +15,11 @@ Don't serve it with `python -m http.server`. The cache stamp `?v=` lives inside 
 
 The recruiter's desk opens as **Omar Saeed**. The other three desks are described under "The rest of the requirements".
 
-- **Today** (`/`) is the briefing, with:
-  - The day in three sentences: decisions waiting on you and today's interviews, the requisition likely to miss its date, and what clients owe.
-  - Four Start tiles.
-  - The decisions waiting on you, each one press with Undo.
-  - Today's interviews.
-  - Candidates waiting on others past the usual time, with a Nudge on each.
-  - The requisitions likely to miss their date, each with its reason.
+- **Today** (`/`) is the briefing, ordered by urgency (5 Nov):
+  - The day, one fact a line: results waiting on your call, today's interviews, what clients owe, missed calls and callbacks.
+  - Four Start tiles. **Decide the oldest one** and **Send profiles** open a run (`?on=decide`, `?on=decide&q=send`): one candidate card at a time with its own buttons, "1 of 4", the next names under it, Skip for now, and an end that sends you back to Today. **Call the next one** starts the call run; **Find people** opens the chat.
+  - **Not told yet**, the one block with a deadline: the HR template shown once, a Send on each row, and Send the answer to all.
+  - **What AiMY noticed**: only what the briefing doesn't already say (first contact, screening, careers page, reports, what AiMY did), each opening in the chat.
 - **Requisitions** (`?on=reqs`) shows your requisitions as cards. Cuts: Open, At risk, Waiting on the client, Waiting on you, On hold, Closed. There's a find box that also matches candidate names.
 - **One requisition** (`?req=r2`) is Sales's campaign record turned into a requisition:
   - The record head, with the need, hiring manager, stages, success profile and notes.

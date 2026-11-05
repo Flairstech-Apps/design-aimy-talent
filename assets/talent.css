@@ -1645,3 +1645,16 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-st-ln { flex: 0 0 14px; height: 2px; background: var(--accent); }
 .t-st-ln.is-ahead { background: repeating-linear-gradient(90deg, var(--d500, #637280) 0 3px, transparent 3px 6px); }
 @media (prefers-reduced-motion: reduce) { .t-trk-step.is-now .t-trk-dot { animation: none; } }
+
+/* ══ DECIDING, ONE AT A TIME (5 Nov) ══════════════════════════════════════
+   Today's Decide and Send profiles open this run (talent.js decidePage): the
+   one card at a reading width, with Skip and the names still to come under
+   it, so the eye goes card, then buttons, then what is next. */
+.t-dec-card { max-width: 440px; margin-top: 12px; }
+.t-dec-card > .b-qcard { height: auto; }
+.t-dec-acts { max-width: 440px; justify-content: space-between; margin-top: 12px; }
+.t-dec-next { font-size: var(--fs-2xs); color: var(--ink-muted); }
+.t-dec-end .t-acts { margin-top: 16px; }
+/* The briefing's own 32px under it stacked on the grid's gap and the next
+   block's padding (88px); without it Today keeps one rhythm between blocks. */
+.s-home > .slv { margin-bottom: 0; }
