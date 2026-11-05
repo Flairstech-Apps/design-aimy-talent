@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shorter Candidate Cards</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+  /* AiMY's dark tokens (aimy-ds.css), so the mocks read as Talent. */
+  :root {
+    --bg: #0d1117; --card: #141b24; --raised: #1c2630; --line: rgba(255,255,255,0.07); --line2: rgba(255,255,255,0.12);
+    --d50: #eef2f6; --d100: #d8e0e8; --d200: #c8d2dc; --d300: #b0bcca; --d400: #8b9aaa; --d500: #637280; --d600: #4a5b6e;
+    --accent: #8b4ff4; --accent-rgb: 139,79,244; --accent-text: #b18cff; --brand: #3369ff; --ai: #61adf1;
+    --ok: #4ed6a1; --warn: #f7c95c; --warn-rgb: 247,201,92;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: 'Poppins', system-ui, sans-serif; color: var(--d100); font-size: 14px; line-height: 1.55; }
+  button { font: inherit; color: inherit; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 48px 24px 96px; }
+  h1 { font-size: 34px; line-height: 1.15; letter-spacing: -0.5px; color: var(--d50); margin: 6px 0 10px; }
+  h2 { font-size: 22px; line-height: 1.25; color: var(--d50); margin: 0 0 6px; letter-spacing: -0.2px; }
+  h3 { font-size: 15px; color: var(--d50); margin: 18px 0 6px; }
+  p { margin: 0 0 10px; }
+  a { color: var(--accent-text); }
+  b, strong { color: var(--d50); font-weight: 600; }
+  .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 1.6px; text-transform: uppercase; color: var(--accent-text); }
+  .lead { font-size: 16px; color: var(--d300); max-width: 80ch; }
+  .mute { color: var(--d400); font-size: 12.5px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
+  .pill { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--raised); color: var(--d300); border: 1px solid var(--line); }
+  section.it { margin-top: 60px; padding-top: 32px; border-top: 1px solid var(--line); }
+  .it-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; }
+  .it-n { font-size: 12px; font-weight: 700; color: var(--bg); background: var(--accent-text); border-radius: 6px; padding: 2px 8px; }
+  .it-n.rec { background: var(--ok); }
+  .h { font-size: 12px; font-weight: 600; color: var(--ok); margin-left: auto; }
+  .notes { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 12px; margin-top: 16px; }
+  @media (max-width: 900px) { .notes { grid-template-columns: 1fr; } }
+  .note { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; font-size: 13px; color: var(--d300); }
+  .note h4 { margin: 0 0 6px; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--d400); }
+  .note ul { margin: 0; padding-left: 18px; } .note li { margin: 3px 0; }
+  .refs a { display: block; margin: 4px 0; text-decoration: none; line-height: 1.4; }
+  .refs a:hover { text-decoration: underline; }
+  .refs .why { display: block; color: var(--d400); font-size: 11.5px; }
+  .stage { margin-top: 18px; padding: 20px; border-radius: 18px; background: radial-gradient(120% 120% at 0% 0%, rgba(51,105,255,0.08), transparent 60%), #0b0f14; border: 1px solid var(--line2); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; align-items: stretch; }
+  .grid.tiles { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+  .grid.rows { grid-template-columns: 1fr; gap: 8px; }
+  @media (max-width: 600px) { .grid.rows { grid-template-columns: 1fr; } }
+
+  /* Shared parts */
+  .card { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 14px; background: rgba(20,27,36,0.85); border: 1px solid var(--line); transition: border-color .15s ease; }
+  .card:hover { border-color: rgba(var(--accent-rgb),0.35); }
+  .tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; border: 1px solid var(--line2); color: var(--d200); white-space: nowrap; }
+  .tag.warn { border-color: rgba(var(--warn-rgb),0.45); color: var(--warn); background: rgba(var(--warn-rgb),0.08); }
+  .tag.info { border-color: rgba(97,173,241,0.45); color: var(--ai); }
+  .nm { font-size: 15px; font-weight: 600; color: var(--d50); line-height: 1.25; }
+  .role { font-size: 12.5px; color: var(--d300); }
+  .days { font-size: 11.5px; color: var(--d400); white-space: nowrap; }
+  .days.late { color: var(--warn); }
+  .say { display: flex; gap: 8px; font-size: 12.5px; color: var(--d200); line-height: 1.45; }
+  .say .mk { flex: none; width: 12px; height: 12px; margin-top: 3px; border-radius: 4px; background: linear-gradient(135deg, #3369ff, #8b4ff4); }
+  .say.one span { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .say.two span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .card:hover .say.one span, .card:hover .say.two span { -webkit-line-clamp: unset; }
+  .btn { min-height: 30px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line2); background: rgba(255,255,255,0.04); font-size: 12px; font-weight: 600; line-height: 1.25; color: var(--d200); cursor: pointer; text-align: center; white-space: nowrap; }
+  .btn.p { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .btn.sm { min-height: 26px; padding: 4px 10px; font-size: 11.5px; }
+  .lnk { border: 0; background: none; padding: 0; font-size: 12px; color: var(--d400); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(255,255,255,0.2); white-space: nowrap; }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .sp { flex: 1; min-width: 0; }
+  .av { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; }
+  .ell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* 1 · Two lines */
+  .c1 { gap: 6px; }
+  .c1 .top { display: flex; align-items: flex-start; gap: 10px; }
+  .c1 .bot { display: flex; align-items: center; gap: 8px; }
+
+  /* 2 · Strip */
+  .c2 { flex-direction: row; align-items: center; gap: 12px; }
+  .c2 .who { width: 250px; flex: none; min-width: 0; }
+  .c2 .mid { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .c2 .end { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+
+  /* 3 · AiMY headline */
+  .c3 .head { display: flex; align-items: baseline; gap: 8px; }
+  .c3 .nm { cursor: help; }
+  .c3 .foot { display: flex; align-items: center; gap: 8px; margin-top: auto; padding-top: 8px; border-top: 1px solid var(--line); }
+  .c3 .foot { flex-wrap: wrap; row-gap: 6px; }
+  .c3 .foot .right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .c3 .foot .lnk { font-size: 11.5px; }
+  .tip { position: absolute; z-index: 5; left: 14px; top: 40px; padding: 10px 12px; border-radius: 10px; background: var(--raised); border: 1px solid var(--line2); box-shadow: 0 14px 30px rgba(0,0,0,0.4); font-size: 12px; color: var(--d200); display: none; min-width: 220px; }
+  .c3 .head:hover + .tip, .c3 .tip:hover { display: block; }
+  .tip div { display: flex; gap: 8px; } .tip span:first-child { color: var(--d500); min-width: 64px; }
+
+  /* 4 · Tiles */
+  .c4 { align-items: center; text-align: center; gap: 6px; padding: 14px 12px; }
+  .c4 .av { width: 44px; height: 44px; font-size: 14px; }
+  .c4 .pop { position: absolute; z-index: 5; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%); width: 260px; padding: 12px; border-radius: 12px; background: var(--raised); border: 1px solid var(--line2); box-shadow: 0 14px 30px rgba(0,0,0,0.45); text-align: left; display: none; }
+  .c4:hover .pop { display: block; }
+  .c4 .btn.p { width: 100%; margin-top: 4px; }
+
+  /* 5 · Accordion */
+  .acc { display: flex; flex-direction: column; gap: 6px; }
+  .c5 { padding: 0; gap: 0; }
+  .c5 .bar { display: flex; align-items: center; gap: 12px; padding: 10px 14px; cursor: pointer; }
+  .c5 .chev { width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--line2); background: none; color: var(--d300); cursor: pointer; transition: transform .2s ease; flex: none; }
+  .c5.open .chev { transform: rotate(180deg); }
+  .c5 .body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .22s ease; }
+  .c5 .body > div { overflow: hidden; }
+  .c5 .body .in { padding: 0 14px 12px 60px; display: flex; flex-direction: column; gap: 6px; }
+  .c5.open .body { grid-template-rows: 1fr; }
+  .c5 .who { width: 30%; min-width: 0; }
+  .c5 .st { width: 26%; display: flex; align-items: center; gap: 8px; }
+
+  /* 6 · Chip line */
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chips span { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,0.05); color: var(--d300); white-space: nowrap; }
+  .verdict { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; }
+  .verdict .mk { flex: none; width: 12px; height: 12px; border-radius: 4px; background: linear-gradient(135deg, #3369ff, #8b4ff4); transform: translateY(2px); }
+  .verdict b { font-weight: 600; }
+  .verdict span { color: var(--d300); }
+  .c6 .foot { display: flex; align-items: center; gap: 10px; margin-top: auto; }
+  .c6 .foot .btn.p { margin-left: auto; }
+
+  /* 7 · Grouped list */
+  .grp { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-bottom: 12px; background: rgba(20,27,36,0.6); }
+  .grp-h { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--line); font-size: 13px; }
+  .grp-h b { font-size: 13.5px; }
+  .grp-h span { color: var(--d400); font-size: 12px; }
+  .gr { display: grid; grid-template-columns: minmax(150px, 1fr) 150px minmax(220px, 2fr) auto; gap: 14px; align-items: center; padding: 10px 14px; border-top: 1px solid var(--line); }
+  .gr:first-of-type { border-top: 0; }
+  .gr:hover { background: rgba(var(--accent-rgb),0.05); }
+  .grwrap { overflow-x: auto; } .grwrap .grp { min-width: 860px; }
+
+  table.cmpt { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 14px; }
+  table.cmpt th, table.cmpt td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.cmpt th { color: var(--d400); font-weight: 600; font-size: 11.5px; letter-spacing: 0.8px; text-transform: uppercase; }
+  table.cmpt td:first-child { color: var(--d50); font-weight: 600; white-space: nowrap; }
+  .tblwrap { overflow-x: auto; }
+  @media (prefers-reduced-motion: reduce) { .card, .c5 .body, .c5 .chev { transition: none; } }
+  @media (max-width: 600px) { .wrap { padding: 32px 16px 72px; } h1 { font-size: 28px; } .stage { padding: 14px; } .c2 { flex-wrap: wrap; } .c2 .who { width: 100%; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">AiMY Talent · Candidates · shorter cards</div>
+  <h1>Seven shorter candidate cards</h1>
+  <p class="lead">Today's card is about 330px tall and the two-zone card was still about 250px; both read as too long. Every direction below aims at <b>about half</b> today's height or less, measured on its heading. Each keeps what has to stay (the name, the stage and how long, AiMY's sentence, the verb, Not progressing) and moves the rest behind a hover or a press. Same six candidates from Omar Saeed's queue. The measured height is on each heading.</p>
+  <div class="meta">
+    <span class="pill">4 Nov 2026</span>
+    <span class="pill">Replaces mix D, which was reverted</span>
+    <span class="pill">References: Mobbin (16 screens)</span>
+  </div>
+
+  <section class="it">
+    <div class="it-head"><span class="it-n">1</span><h2>Two lines</h2><span class="h" data-h="1"></span></div>
+    <p class="lead">Line one: the name and role, the verb at the right. Line two: the stage and days, then AiMY's sentence clipped to one line; hover the card for all of it. Not progressing is a quiet link under the verb.</p>
+    <div class="stage"><div class="grid" data-it="1"></div></div>
+    <div class="notes">
+      <div class="note refs"><h4>Inspired by</h4>
+        <a href="https://mobbin.com/screens/01e5cb49-dd61-484d-a2c7-5ae3fcfe1d76" target="_blank">Maze · review applicants<span class="why">name, status and the action on one line</span></a>
+        <a href="https://mobbin.com/screens/16efc811-21d1-4117-9bb8-91e5c0997b7b" target="_blank">Wrangle · shared shortlist<span class="why">two lines a person, View at the right</span></a>
+      </div>
+      <div class="note"><h4>Works</h4><ul><li>The shortest card that still says why.</li><li>The verb is where the eye starts, top right.</li></ul></div>
+      <div class="note"><h4>Falls short</h4><ul><li>One line of AiMY usually cuts "I'd check…".</li><li>Facts (years, place, languages) only on the profile.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <div class="it-head"><span class="it-n rec">2 · Recommended</span><h2>The strip: one wide row a person</h2><span class="h" data-h="2"></span></div>
+    <p class="lead">One full-width card a row, laid out sideways: who on the left, AiMY's sentence in the middle (two lines, all of it on hover), the stage and the verb on the right. Width replaces height.</p>
+    <div class="stage"><div class="grid rows" data-it="2"></div></div>
+    <div class="notes">
+      <div class="note refs"><h4>Inspired by</h4>
+        <a href="https://mobbin.com/screens/5be3bc64-e7c7-4551-bb78-b841453b1469" target="_blank">Care.com · applicants<span class="why">person, note, then Message and "no thanks" at the right</span></a>
+        <a href="https://mobbin.com/screens/4059ef40-6ff8-49e8-ae7f-fd5a9e3abf50" target="_blank">Workable · candidates<span class="why">who on the left, job status on the right</span></a>
+        <a href="https://mobbin.com/screens/ac8e884f-c4c1-4b3c-8292-407a9b8fcd98" target="_blank">Upwork · talent<span class="why">wide rows, Invite at the right</span></a>
+      </div>
+      <div class="note"><h4>Works</h4><ul><li>AiMY gets two full lines and still the card is short.</li><li>Reads left to right: who, why, what now.</li></ul></div>
+      <div class="note"><h4>Falls short</h4><ul><li>One to a row: it reads like a list of cards.</li><li>On a phone it stacks back into a taller card.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <div class="it-head"><span class="it-n">3</span><h2>AiMY's sentence is the card</h2><span class="h" data-h="3"></span></div>
+    <p class="lead">No fact lines. The name and role, then AiMY's sentence as the body, in full. A single foot line: the stage and days on the left, the verb on the right, Not progressing as a link. Years, place and languages open on hovering the name.</p>
+    <div class="stage"><div class="grid" data-it="3"></div></div>
+    <div class="notes">
+      <div class="note refs"><h4>Inspired by</h4>
+        <a href="https://mobbin.com/screens/4d0e68be-1df5-478d-926a-615e8b600acd" target="_blank">Juicebox · profile shortlist<span class="why">the AI paragraph is the body of each card</span></a>
+        <a href="https://mobbin.com/screens/b6014a6f-93e2-4127-b6be-968e6a6a5fc6" target="_blank">Polywork · people cards<span class="why">name, a short paragraph, a line of tags</span></a>
+        <a href="https://mobbin.com/screens/da68e1dd-aaf2-4cbc-a8a9-e17411ca3fcb" target="_blank">Base44 · top matches<span class="why">paragraph, then one Contact at the foot</span></a>
+      </div>
+      <div class="note"><h4>Works</h4><ul><li>Keeps AiMY's whole sentence in its own voice, which you asked for.</li><li>Every part that must stay is still on the face.</li><li>Still ~190–215px: shorter, but not by half.</li><li>One foot line, so a row lines up on its verbs.</li></ul></div>
+      <div class="note"><h4>Falls short</h4><ul><li>The facts need a hover.</li><li>Cards with long sentences are a line taller.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <div class="it-head"><span class="it-n">4</span><h2>Tiles: a face, a name, a verb</h2><span class="h" data-h="4"></span></div>
+    <p class="lead">A small tile, five or six to a row: initials, name, role, stage and days, the verb. Everything else opens in a card over the tile on hover.</p>
+    <div class="stage" style="padding-top:150px"><div class="grid tiles" data-it="4"></div></div>
+    <div class="notes">
+      <div class="note refs"><h4>Inspired by</h4>
+        <a href="https://mobbin.com/screens/9d29b1e7-7fb3-482a-8d4c-88891da75e66" target="_blank">ClickUp · team tiles<span class="why">initials tile, name, status dot</span></a>
+        <a href="https://mobbin.com/screens/85e7842e-17c6-4dca-92eb-af34f54250af" target="_blank">Slack · people<span class="why">face tiles, detail in a panel</span></a>
+        <a href="https://mobbin.com/screens/edbdc844-5a99-4d6b-afeb-33b9a331abf4" target="_blank">Whop · user cards<span class="why">one Follow under each person</span></a>
+      </div>
+      <div class="note"><h4>Works</h4><ul><li>Most people per screen of any card.</li><li>Good for First contact: approve a batch by face and name.</li></ul></div>
+      <div class="note"><h4>Falls short</h4><ul><li>Says nothing about fit until hovered.</li><li>Not progressing only in the hover card.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <div class="it-head"><span class="it-n">5</span><h2>The accordion: a row that opens in place</h2><span class="h" data-h="5"></span></div>
+    <p class="lead">Each person is one slim bar: name and role, stage and days, the verb, and a chevron. Pressing the bar opens AiMY's sentence and the facts under it, inside the list. Press a row to try it.</p>
+    <div class="stage"><div class="acc" data-it="5"></div></div>
+    <div class="notes">
+      <div class="note refs"><h4>Inspired by</h4>
+        <a href="https://mobbin.com/screens/0ebb4550-77d0-448c-a0ba-4f9f48e2fc36" target="_blank">Xero · duplicate bills<span class="why">a summary row that expands into its details</span></a>
+        <a href="https://mobbin.com/screens/3976f619-6766-4cbd-9677-d0cdc43b6bc9" target="_blank">Babbel · lessons<span class="why">slim rows, a chevron each</span></a>
+      </div>
+      <div class="note"><h4>Works</h4><ul><li>About 56px a person closed.</li><li>Detail opens where you are; no hover, so it works on touch.</li></ul></div>
+      <div class="note"><h4>Falls short</h4><ul><li>A list, not cards; the page was set to cards on 29 Oct.</li><li>Open rows push the rest down.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <div class="it-head"><span class="it-n">6</span><h2>A chip line and a verdict</h2><span class="h" data-h="6"></span></div>
+    <p class="lead">The facts collapse into one row of chips with the stage first. AiMY speaks in a verdict of a few words, "Partly fits · check NetSuite and English", with the full sentence on hover. The verb and Not progressing share the foot.</p>
+    <div class="stage"><div class="grid" data-it="6"></div></div>
+    <div class="notes">
+      <div class="note refs"><h4>Inspired by</h4>
+        <a href="https://mobbin.com/screens/6600c66c-6cb3-4cd5-bb96-28362dae5288" target="_blank">Wellfound · candidates<span class="why">one line of facts under the name</span></a>
+        <a href="https://mobbin.com/screens/b6014a6f-93e2-4127-b6be-968e6a6a5fc6" target="_blank">Polywork · tags row<span class="why">facts as a row of small tags</span></a>
+        <a href="https://mobbin.com/screens/84e3ee01-fb0d-43a9-bb84-d72f79ef1cb2" target="_blank">Uxcel · screening<span class="why">a short verdict beside each person</span></a>
+      </div>
+      <div class="note"><h4>Works</h4><ul><li>Every fact stays on the face, in one row.</li><li>The verdict reads in a second.</li></ul></div>
+      <div class="note"><h4>Falls short</h4><ul><li>A verdict of a few words is less AiMY's voice.</li><li>Chips wrap to two rows on narrow cards.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <div class="it-head"><span class="it-n">7</span><h2>Grouped by requisition, one line each</h2><span class="h" data-h="7"></span></div>
+    <p class="lead">The requisition the cards repeat becomes a heading, and under it each person is one line: who, stage and days, AiMY's sentence in a line, the verb. Shorter because the shared parts are said once.</p>
+    <div class="stage"><div class="grwrap" data-it="7"></div></div>
+    <div class="notes">
+      <div class="note refs"><h4>Inspired by</h4>
+        <a href="https://mobbin.com/screens/16efc811-21d1-4117-9bb8-91e5c0997b7b" target="_blank">Wrangle · shortlist per role<span class="why">a role heading, then its people</span></a>
+        <a href="https://mobbin.com/screens/4059ef40-6ff8-49e8-ae7f-fd5a9e3abf50" target="_blank">Workable · candidates<span class="why">job status beside each person</span></a>
+      </div>
+      <div class="note"><h4>Works</h4><ul><li>About 52px a person; the role is said once.</li><li>Matches how a recruiter thinks: by requisition.</li></ul></div>
+      <div class="note"><h4>Falls short</h4><ul><li>A list, not cards.</li><li>The cut chips (waiting on you, with the client) cross the groups.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <h2>Side by side</h2>
+    <div class="tblwrap"><table class="cmpt" id="cmp">
+      <tr><th>Direction</th><th>Measured height</th><th>AiMY's sentence</th><th>Facts</th><th>Not progressing</th><th>Cards or list</th></tr>
+    </table></div>
+    <h3>The recommendation</h3>
+    <p class="mute" style="max-width:84ch">Direction 2, the strip. At about 80px a person it is a quarter of today's card, and it still shows everything that has to stay: who, two lines of AiMY's sentence, the stage and its days, the verb and Not progressing. One card to a row instead of four, yet more people per screen, because each is a quarter of the height. If the page must keep four to a row, direction 1 (two lines, ~127px) is next; direction 3 keeps AiMY's whole sentence but only gets to about two-thirds of today's height.</p>
+  </section>
+
+</div>
+<script>
+  /* The six candidates, as the Candidates page drew them on 4 Nov. */
+  const C = [
+    { name: 'Adham Fouad', role: 'Finance Associate at a logistics company', stage: 'Sourced', since: 4, usual: 3, returning: true, years: 4, place: 'Nasr City', langs: 'Arabic, English', req: 'Accounts Receivable Specialist', acc: 'Northwind Software',
+      shows: 'partly matches on accounts receivable and overseas collections, and lives close to the office', check: 'NetSuite and how fluent their English is', verdict: ['Partly fits', 'check NetSuite and English'], verb: 'Agreed to talk' },
+    { name: 'Karim Ibrahim', role: 'Helpdesk Analyst at a bank', stage: 'Applied', since: 3, usual: 2, years: 7, place: 'Mansoura', langs: 'Arabic, English', req: 'L3 Support Engineer', acc: 'Northwind Software',
+      shows: 'partly matches on reading stack traces', check: 'software support, SQL and scripting, and how fluent their English is', verdict: ['Partly fits', 'check support, SQL and English'], verb: 'Call Karim' },
+    { name: 'Mohamed Ibrahim', role: 'Back-office Analyst at a bank', stage: 'Managerial', since: 3, usual: 3, warnTag: true, years: 6, place: 'Nasr City', langs: 'Arabic, English', req: 'AI Business Analyst', acc: 'FlairsTech',
+      shows: 'looks strong on business analysis, writing requirements and working with AI or data teams', check: 'how fluent their English is', verdict: ['Strong', 'check English'], verb: 'Passed managerial' },
+    { name: 'Esraa Gamal', role: 'Back-office Analyst at a bank', stage: 'Sourced', since: 3, usual: 3, years: 6, place: '6th of October', langs: 'Arabic, English', req: 'AI Business Analyst', acc: 'FlairsTech',
+      shows: '', check: 'business analysis, writing requirements, working with AI or data teams and how fluent their English is', verdict: ['Not shown yet', 'check all four must-haves'], verb: 'Agreed to talk' },
+    { name: 'Ayman Shawky', role: 'Business Analyst at a software house', stage: 'HR', since: 3, usual: 3, warnTag: true, years: 8, place: 'Nasr City', langs: 'Arabic, English', req: 'AI Business Analyst', acc: 'FlairsTech',
+      shows: 'looks strong on writing requirements, working with AI or data teams and fluent English', check: 'business analysis', verdict: ['Strong', 'check business analysis'], verb: 'Passed HR' },
+    { name: 'Reem Adel', role: 'Accounting Assistant at a hospital group', stage: 'Applied', since: 3, usual: 2, years: 8, place: 'Heliopolis', langs: 'Arabic, English', req: 'Accounts Receivable Specialist', acc: 'Northwind Software',
+      shows: '', check: 'accounts receivable, overseas collections, NetSuite and how fluent their English is', verdict: ['Not shown yet', 'check all four must-haves'], verb: 'Call Reem' },
+  ];
+  const first = (n) => n.split(' ')[0];
+  const ini = (n) => n.split(' ').map((w) => w[0]).join('').slice(0, 2);
+  const HUE = ['#6d4bd8', '#2f6fe0', '#1f9d8a', '#c2569a', '#d0812b', '#4f8a3a'];
+  const av = (c, i) => '<span class="av" style="background:' + HUE[i % HUE.length] + '">' + ini(c.name) + '</span>';
+  const late = (c) => c.since > c.usual;
+  const tag = (c) => '<span class="tag' + (c.warnTag || late(c) ? ' warn' : '') + '">' + c.stage + '</span>';
+  const days = (c) => '<span class="days' + (late(c) ? ' late' : '') + '">' + c.since + ' days' + (late(c) ? ', usually ' + c.usual : '') + '</span>';
+  const said = (c) => (c.shows ? first(c.name) + ' ' + c.shows + '.' : first(c.name) + '’s CV doesn’t show the must-haves yet.') + ' I’d check ' + c.check + '.';
+  const say = (c, cls) => '<div class="say ' + (cls || '') + '" title="' + said(c).replace(/"/g, '') + '"><span class="mk"></span><span>' + said(c) + '</span></div>';
+  const ret = (c) => c.returning ? ' <span class="tag info" style="vertical-align:2px">Returning</span>' : '';
+  const out = '<button class="lnk">Not progressing</button>';
+  const R = {
+    1: (c) => '<article class="card c1"><div class="top"><div class="sp"><div class="nm ell">' + c.name + ret(c) + '</div><div class="role ell">' + c.role + '</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><button class="btn p sm">' + c.verb + '</button>' + out + '</div></div>' +
+      '<div class="bot">' + tag(c) + days(c) + '</div>' + say(c, 'one') + '</article>',
+    2: (c, i) => '<article class="card c2"><div class="who row">' + av(c, i) + '<div class="sp"><div class="nm ell">' + c.name + '</div><div class="role ell">' + c.role + '</div></div></div>' +
+      '<div class="mid">' + say(c, 'two') + '</div><div class="end"><div class="row">' + tag(c) + days(c) + '</div><div class="row">' + out + '<button class="btn p sm">' + c.verb + '</button></div></div></article>',
+    3: (c) => '<article class="card c3"><div class="head"><div class="sp"><div class="nm">' + c.name + ret(c) + '</div><div class="role">' + c.role + '</div></div></div>' +
+      '<div class="tip"><div><span>Experience</span><span>' + c.years + ' years</span></div><div><span>Lives in</span><span>' + c.place + '</span></div><div><span>Speaks</span><span>' + c.langs + '</span></div></div>' +
+      say(c) + '<div class="foot">' + tag(c) + '<span class="days' + (late(c) ? ' late' : '') + '" title="' + c.since + ' days at this stage' + (late(c) ? ', usually ' + c.usual : '') + '">' + c.since + 'd' + (late(c) ? ' · usu. ' + c.usual : '') + '</span><span class="right">' + out + '<button class="btn p sm">' + c.verb + '</button></span></div></article>',
+    4: (c, i) => '<article class="card c4">' + av(c, i) + '<div class="nm" style="font-size:14px">' + c.name + '</div><div class="role ell" style="max-width:100%;font-size:12px">' + c.role + '</div><div class="row" style="justify-content:center">' + tag(c) + days(c) + '</div>' +
+      '<button class="btn p sm">' + c.verb + '</button><div class="pop">' + say(c) + '<div class="role" style="margin-top:8px">' + c.years + ' yrs · ' + c.place + ' · ' + c.langs + '</div><div style="margin-top:8px">' + out + '</div></div></article>',
+    5: (c, i) => '<article class="card c5"><div class="bar" data-acc>' + av(c, i) + '<div class="who"><div class="nm ell" style="font-size:14px">' + c.name + '</div><div class="role ell" style="font-size:12px">' + c.role + '</div></div>' +
+      '<div class="st">' + tag(c) + days(c) + '</div><div class="sp ell" style="font-size:12px;color:var(--d400)">' + c.verdict.join(' · ') + '</div><button class="btn p sm">' + c.verb + '</button><button class="chev" aria-label="More">▾</button></div>' +
+      '<div class="body"><div><div class="in">' + say(c) + '<div class="role">' + c.years + ' yrs · ' + c.place + ' · ' + c.langs + ' · for ' + c.req + '</div><div>' + out + '</div></div></div></div></article>',
+    6: (c) => '<article class="card"><div><div class="nm">' + c.name + ret(c) + '</div><div class="role">' + c.role + '</div></div>' +
+      '<div class="chips">' + tag(c) + '<span class="' + (late(c) ? 'days late' : '') + '">' + c.since + 'd' + (late(c) ? ', usually ' + c.usual : '') + '</span><span>' + c.years + ' yrs</span><span>' + c.place + '</span><span>' + c.langs + '</span></div>' +
+      '<div class="verdict" title="' + said(c).replace(/"/g, '') + '"><span class="mk"></span><b>' + c.verdict[0] + '</b><span>· ' + c.verdict[1] + '</span></div>' +
+      '<div class="foot c6">' + out + '<button class="btn p sm" style="margin-left:auto">' + c.verb + '</button></div></article>',
+  };
+  document.querySelectorAll('[data-it]').forEach((el) => {
+    const k = el.dataset.it;
+    if (k === '7') {
+      const groups = {};
+      C.forEach((c, i) => { (groups[c.req] = groups[c.req] || { acc: c.acc, l: [] }).l.push([c, i]); });
+      el.innerHTML = Object.keys(groups).map((g) => '<div class="grp"><div class="grp-h"><b>' + g + '</b><span>' + groups[g].acc + ' · ' + groups[g].l.length + ' here</span></div>' +
+        groups[g].l.map(([c, i]) => '<div class="gr"><div class="row">' + av(c, i) + '<div class="sp"><div class="nm ell" style="font-size:14px">' + c.name + '</div><div class="role ell" style="font-size:12px">' + c.role + '</div></div></div>' +
+          '<div class="row">' + tag(c) + days(c) + '</div>' + say(c, 'one') + '<div class="row">' + out + '<button class="btn p sm">' + c.verb + '</button></div></div>').join('') + '</div>').join('');
+    } else el.innerHTML = C.map((c, i) => R[k](c, i)).join('');
+  });
+  document.addEventListener('click', (e) => { const b = e.target.closest('[data-acc]'); if (b && !e.target.closest('.btn.p')) b.closest('.c5').classList.toggle('open'); });
+  /* Measure each direction's tallest unit and say it on its heading. */
+  const H = { 1: '.c1', 2: '.c2', 3: '.c3', 4: '.c4', 5: '.c5', 6: '[data-it="6"] .card', 7: '.gr' };
+  const NAME = { 1: 'Two lines', 2: 'Strip', 3: 'AiMY’s sentence is the card', 4: 'Tiles', 5: 'Accordion', 6: 'Chip line + verdict', 7: 'Grouped list' };
+  const META = { 1: ['One line, full on hover', 'On the profile', 'Link under the verb', 'Cards'], 2: ['Two lines', 'On the profile', 'Link by the verb', 'Cards, one a row'],
+    3: ['<b>In full</b>', 'Hover the name', 'Link under the foot', 'Cards'], 4: ['Hover', 'Hover', 'In the hover card', 'Tiles'], 5: ['When opened', 'When opened', 'When opened', 'List'],
+    6: ['A verdict, full on hover', '<b>On the face</b>', 'In the foot', 'Cards'], 7: ['One line', 'On the profile', 'By the verb', 'List'] };
+  requestAnimationFrame(() => {
+    const rows = [];
+    Object.keys(H).forEach((k) => {
+      const hs = [...document.querySelectorAll(H[k])].map((x) => x.getBoundingClientRect().height);
+      const h = Math.round(Math.max(...hs));
+      document.querySelector('[data-h="' + k + '"]').textContent = '~' + h + 'px a person';
+      rows.push('<tr><td>' + k + ' · ' + NAME[k] + '</td><td>~' + h + 'px</td><td>' + META[k].join('</td><td>') + '</td></tr>');
+    });
+    document.getElementById('cmp').insertAdjacentHTML('beforeend', '<tr><td>Today</td><td>~330px</td><td>In full, in a box</td><td>Two lines</td><td>Beside the verb</td><td>Cards</td></tr>' + rows.join(''));
+  });
+</script>
+</body>
+</html>

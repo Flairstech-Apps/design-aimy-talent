@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Candidate Card Iterations</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+  /* AiMY's dark tokens (aimy-ds.css), so the mocks read as Talent. */
+  :root {
+    --bg: #0d1117; --card: #141b24; --raised: #1c2630; --line: rgba(255,255,255,0.07); --line2: rgba(255,255,255,0.12);
+    --d50: #eef2f6; --d100: #d8e0e8; --d200: #c8d2dc; --d300: #b0bcca; --d400: #8b9aaa; --d500: #637280; --d600: #4a5b6e;
+    --accent: #8b4ff4; --accent-rgb: 139,79,244; --accent-text: #b18cff; --brand: #3369ff; --ai: #61adf1;
+    --ok: #4ed6a1; --ok-rgb: 78,214,161; --warn: #f7c95c; --warn-rgb: 247,201,92; --err: #ff7282;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: 'Poppins', system-ui, sans-serif; color: var(--d100); font-size: 14px; line-height: 1.55; }
+  button { font: inherit; color: inherit; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 48px 24px 96px; }
+  h1 { font-size: 34px; line-height: 1.15; letter-spacing: -0.5px; color: var(--d50); margin: 6px 0 10px; }
+  h2 { font-size: 22px; line-height: 1.25; color: var(--d50); margin: 0 0 6px; letter-spacing: -0.2px; }
+  h3 { font-size: 15px; color: var(--d50); margin: 18px 0 6px; }
+  p { margin: 0 0 10px; }
+  a { color: var(--accent-text); }
+  b, strong { color: var(--d50); font-weight: 600; }
+  .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 1.6px; text-transform: uppercase; color: var(--accent-text); }
+  .lead { font-size: 16px; color: var(--d300); max-width: 80ch; }
+  .mute { color: var(--d400); font-size: 12.5px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
+  .pill { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--raised); color: var(--d300); border: 1px solid var(--line); }
+  section.it { margin-top: 60px; padding-top: 32px; border-top: 1px solid var(--line); }
+  .it-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; }
+  .it-n { font-size: 12px; font-weight: 700; color: var(--bg); background: var(--accent-text); border-radius: 6px; padding: 2px 8px; }
+  .it-n.rec { background: var(--ok); }
+  .notes { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 12px; margin-top: 16px; }
+  @media (max-width: 900px) { .notes { grid-template-columns: 1fr; } }
+  .note { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; font-size: 13px; color: var(--d300); }
+  .note h4 { margin: 0 0 6px; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--d400); }
+  .note ul { margin: 0; padding-left: 18px; } .note li { margin: 3px 0; }
+  .refs a { display: block; margin: 4px 0; text-decoration: none; line-height: 1.4; }
+  .refs a:hover { text-decoration: underline; }
+  .refs .why { display: block; color: var(--d400); font-size: 11.5px; }
+  .stage { margin-top: 18px; padding: 20px; border-radius: 18px; background: radial-gradient(120% 120% at 0% 0%, rgba(51,105,255,0.08), transparent 60%), #0b0f14; border: 1px solid var(--line2); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(255px, 1fr)); gap: 12px; align-items: stretch; }
+
+  /* Shared parts */
+  .card { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 14px; background: rgba(20,27,36,0.85); border: 1px solid var(--line); transition: border-color .15s ease, transform .15s ease; }
+  .card:hover { border-color: rgba(var(--accent-rgb),0.35); }
+  .tag { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; border: 1px solid var(--line2); color: var(--d200); }
+  .tag.warn { border-color: rgba(var(--warn-rgb),0.45); color: var(--warn); background: rgba(var(--warn-rgb),0.08); }
+  .tag.info { border-color: rgba(97,173,241,0.45); color: var(--ai); }
+  .src { font-size: 11.5px; color: var(--d400); }
+  .nm { font-size: 16px; font-weight: 600; color: var(--d50); line-height: 1.25; }
+  .role { font-size: 13px; color: var(--d200); }
+  .fact { font-size: 12px; color: var(--d300); }
+  .aimy { display: flex; gap: 8px; padding: 10px 12px; border-radius: 10px; background: rgba(var(--accent-rgb),0.10); border: 1px solid rgba(var(--accent-rgb),0.28); font-size: 12.5px; color: var(--d100); line-height: 1.45; }
+  .aimy .mk { flex: none; width: 14px; height: 14px; margin-top: 2px; border-radius: 4px; background: linear-gradient(135deg, #3369ff, #8b4ff4); }
+  .aimy small { display: block; margin-top: 3px; color: var(--d400); font-size: 10.5px; }
+  .ticks { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--d400); }
+  .ticks span { display: flex; gap: 3px; }
+  .ticks i { width: 12px; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.10); }
+  .ticks i.d { background: rgba(var(--accent-rgb),0.85); }
+  .ticks i.n { background: var(--tc, var(--accent)); box-shadow: 0 0 0 2px rgba(var(--accent-rgb),0.2); }
+  .now { font-size: 12px; color: var(--d300); }
+  .now.late { color: var(--warn); }
+  .acts { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 6px; }
+  .btn { min-height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line2); background: rgba(255,255,255,0.04); font-size: 12px; font-weight: 600; color: var(--d200); cursor: pointer; line-height: 1.25; padding-top: 6px; padding-bottom: 6px; text-align: center; }
+  .btn.p { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .btn.wide { flex: 1; }
+  .btn.ic { width: 30px; padding: 0; display: grid; place-items: center; }
+  .btn svg { width: 14px; height: 14px; }
+  .av { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .sp { flex: 1; min-width: 0; }
+
+  /* 1 · Decision first */
+  .c1 .top { display: flex; align-items: center; gap: 8px; }
+  .c1 .days { margin-left: auto; font-size: 11.5px; color: var(--d400); }
+  .c1 .days.late { color: var(--warn); }
+  .c1 .metaline { font-size: 12px; color: var(--d400); }
+  .c1 .say { font-size: 12.5px; color: var(--d200); line-height: 1.45; display: flex; gap: 8px; }
+  .c1 .say .mk { flex: none; width: 12px; height: 12px; margin-top: 3px; border-radius: 4px; background: linear-gradient(135deg, #3369ff, #8b4ff4); }
+  .c1 .more { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line2); background: none; color: var(--d300); cursor: pointer; }
+
+  /* 2 · Evidence */
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .ev { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 999px; font-size: 11px; line-height: 1.3; border: 1px solid var(--line2); color: var(--d300); }
+  .ev b { font-weight: 700; }
+  .ev.m { border-color: rgba(var(--accent-rgb),0.55); background: rgba(var(--accent-rgb),0.16); color: var(--d50); }
+  .ev.m b { color: var(--accent-text); }
+  .ev.p { border-style: dashed; border-color: rgba(var(--accent-rgb),0.55); color: var(--d100); }
+  .ev.n { color: var(--d400); }
+  .evsum { font-size: 11.5px; color: var(--d400); }
+
+  /* 3 · List rows */
+  .list { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .lr { display: grid; grid-template-columns: 34px minmax(160px, 1fr) 190px minmax(240px, 2fr) auto; gap: 14px; align-items: center; padding: 12px 14px; border-top: 1px solid var(--line); background: rgba(20,27,36,0.6); }
+  .lr:first-child { border-top: 0; }
+  .lr:hover { background: rgba(var(--accent-rgb),0.06); }
+  .lr .say { font-size: 12.5px; color: var(--d200); line-height: 1.45; }
+  .lr .say mark { background: rgba(var(--accent-rgb),0.2); color: var(--d50); padding: 0 3px; border-radius: 4px; }
+  .lr .say mark.q { background: none; color: var(--d300); border-bottom: 1px dashed var(--d500); border-radius: 0; padding: 0; }
+  .listwrap { overflow-x: auto; } .listwrap .list { min-width: 1000px; }
+  .lr .stg { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
+  .ticks { white-space: nowrap; }
+
+  /* 4 · Board */
+  .board { display: grid; grid-template-columns: repeat(4, minmax(220px, 1fr)); gap: 12px; overflow-x: auto; }
+  .col { display: flex; flex-direction: column; gap: 8px; min-width: 220px; }
+  .col-h { display: flex; align-items: center; gap: 8px; padding: 4px 2px 6px; font-size: 12px; font-weight: 600; color: var(--d200); }
+  .col-h i { width: 8px; height: 8px; border-radius: 50%; }
+  .col-h span { margin-left: auto; color: var(--d500); font-weight: 500; }
+  .kc { padding: 11px 12px; border-radius: 12px; background: rgba(20,27,36,0.9); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
+  .kc .nm { font-size: 13.5px; }
+  .kc .role { font-size: 12px; color: var(--d300); }
+  .kc .foot { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--d400); }
+  .kc .foot .btn { margin-left: auto; min-height: 26px; padding: 0 10px; font-size: 11px; }
+  .empty { padding: 14px; border-radius: 12px; border: 1px dashed var(--line2); font-size: 12px; color: var(--d500); text-align: center; }
+
+  /* 5 · Hover to reveal */
+  .c5 { gap: 10px; }
+  .c5 .reveal { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .22s ease; }
+  .c5 .reveal > div { overflow: hidden; display: flex; flex-direction: column; gap: 8px; }
+  .c5:hover .reveal, .c5.pin .reveal, .c5:focus-within .reveal { grid-template-rows: 1fr; }
+  .c5 .hint { font-size: 11px; color: var(--d500); }
+  .c5:hover .hint, .c5.pin .hint { display: none; }
+  .c5 .pinb { position: absolute; top: 10px; right: 10px; width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--line2); background: none; color: var(--d400); cursor: pointer; font-size: 12px; }
+  .c5.pin .pinb { color: var(--accent-text); border-color: rgba(var(--accent-rgb),0.5); }
+  .grid5 { align-items: start; }
+
+  /* 6 · The story card */
+  .trk { display: grid; grid-template-columns: repeat(var(--n), 1fr); margin-top: 2px; }
+  .trk i { position: relative; height: 14px; }
+  .trk i::before { content: ""; position: absolute; top: 6px; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.1); }
+  .trk i.d::before { background: var(--accent); }
+  .trk i::after { content: ""; position: absolute; top: 3px; left: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--card); border: 1.5px solid rgba(255,255,255,0.2); }
+  .trk i.d::after { background: var(--accent); border-color: var(--accent); }
+  .trk i.n::after { top: 1px; left: -1px; width: 11px; height: 11px; border: 2px solid var(--tc, var(--accent)); box-shadow: 0 0 0 4px rgba(var(--accent-rgb),0.15); }
+  .c6 .step { display: flex; align-items: baseline; gap: 6px; font-size: 12px; }
+  .c6 .step b { font-size: 13px; }
+  .c6 .step .nx { color: var(--d500); }
+  .c6 .lines { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 11.5px; }
+  .c6 .lines span:nth-child(odd) { color: var(--d500); }
+  .c6 .lines span:nth-child(even) { color: var(--d200); }
+
+  /* 7 · Quick contact */
+  .c7 .head { display: flex; gap: 10px; align-items: center; }
+  .c7 .av { width: 42px; height: 42px; font-size: 14px; }
+  .c7 .quick { display: flex; gap: 6px; }
+  .c7 .chipsm { display: flex; flex-wrap: wrap; gap: 5px; }
+  .c7 .chipsm span { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,0.05); color: var(--d300); }
+  .c7 .tel { font-size: 12.5px; color: var(--d100); font-variant-numeric: tabular-nums; }
+
+  table.cmpt { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 14px; }
+  table.cmpt th, table.cmpt td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.cmpt th { color: var(--d400); font-weight: 600; font-size: 11.5px; letter-spacing: 0.8px; text-transform: uppercase; }
+  table.cmpt td:first-child { color: var(--d50); font-weight: 600; white-space: nowrap; }
+  .tblwrap { overflow-x: auto; }
+  .refgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; margin-top: 14px; }
+  .ref { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font-size: 13px; color: var(--d300); }
+  .ref a { font-weight: 600; text-decoration: none; }
+  @media (prefers-reduced-motion: reduce) { .c5 .reveal, .card { transition: none; } }
+  @media (max-width: 600px) { .wrap { padding: 32px 16px 72px; } h1 { font-size: 28px; } .stage { padding: 14px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">AiMY Talent · Candidates · card iterations</div>
+  <h1>Seven ways to draw a candidate card</h1>
+  <p class="lead">Today's card stacks eight things in one column: the stage and source, the name and role, two lines of facts, an earlier application, AiMY's paragraph, the ticks, where they stand, and two buttons. Everything is there, and the one thing to do is at the bottom of a tall card. Each iteration below is drawn with the same six real candidates from Omar Saeed's queue (4 Nov), with what inspired it and where it falls short. Iteration 1 is the recommendation.</p>
+  <div class="meta">
+    <span class="pill">4 Nov 2026</span>
+    <span class="pill">Data: 6 candidates from the Candidates page, as the app draws them</span>
+    <span class="pill">References: Mobbin (20 screens)</span>
+  </div>
+
+  <section class="it">
+    <div class="eyebrow">Today</div>
+    <h2>Everything, in one column</h2>
+    <div class="stage"><div class="grid" data-it="0"></div></div>
+    <div class="notes">
+      <div class="note"><h4>What is right</h4><ul><li>AiMY's sentence says why they fit and what to check, in its own voice.</li><li>One verb per stage at the foot: Agreed to talk, Call, Passed.</li><li>The ticks show how far along they are.</li></ul></div>
+      <div class="note"><h4>What is not</h4><ul><li>The action sits at the bottom of a ~330px card.</li><li>Facts take two lines that say little to compare by.</li><li>Cards of unequal height in a row.</li></ul></div>
+      <div class="note"><h4>Must stay</h4><ul><li>AiMY's sentence, the stage, how long, the one verb, Not progressing.</li><li>Returning candidates flagged.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <div class="it-head"><span class="it-n rec">1 · Recommended</span><h2>Decision first: the stage and the verb frame the card</h2></div>
+    <p class="lead">The stage, its ticks and how long they've been there open the card; the name and one line of facts follow; AiMY's sentence stays, in its own voice, without the box around it; the stage's one verb fills the foot, with Not progressing and the rest behind ⋯. Every card is the same height.</p>
+    <div class="stage"><div class="grid" data-it="1"></div></div>
+    <div class="notes">
+      <div class="note refs"><h4>Inspired by</h4>
+        <a href="https://mobbin.com/screens/e11f8471-4c2a-448d-908b-fd041e80526b" target="_blank">Workable · candidate overview<span class="why">"Next up" leads, the one move on top</span></a>
+        <a href="https://mobbin.com/screens/5b29f26c-f52c-4bf9-83ed-1336e905b1b7" target="_blank">Braintrust · matched talent<span class="why">one row of facts, the action at the right</span></a>
+        <a href="https://mobbin.com/screens/b205c18b-7c06-4d04-92ad-bef55da7fab3" target="_blank">Care.com · applicants<span class="why">one primary verb, the "no" as a quiet link</span></a>
+      </div>
+      <div class="note"><h4>Works</h4><ul><li>Scan a row by stage and days, act without reading.</li><li>~40% shorter; equal heights.</li><li>Keeps every part that must stay.</li></ul></div>
+      <div class="note"><h4>Falls short</h4><ul><li>Not progressing is one press further away.</li><li>Location and languages merge into one grey line.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <div class="it-head"><span class="it-n">2</span><h2>The evidence: one chip per must-have</h2></div>
+    <p class="lead">The must-haves become chips: filled where the CV shows it, dashed where it partly does, grey where it doesn't say. AiMY keeps one sentence, the part about what to check. You compare people by the shape of their chips.</p>
+    <div class="stage"><div class="grid" data-it="2"></div></div>
+    <div class="notes">
+      <div class="note refs"><h4>Inspired by</h4>
+        <a href="https://mobbin.com/screens/43ceb1a1-05bb-48a2-96b2-d13dee47d299" target="_blank">Pin · candidate criteria<span class="why">each criterion checked against the profile</span></a>
+        <a href="https://mobbin.com/screens/93334d4c-b8f5-4e7a-b170-1c09fcc8371d" target="_blank">Wellfound · applicants<span class="why">"✓ 10 years of exp" matched requirement chip</span></a>
+        <a href="https://mobbin.com/screens/e11f8471-4c2a-448d-908b-fd041e80526b" target="_blank">Workable · how they match<span class="why">✓ met, ✕ not shown, per criterion</span></a>
+        <a href="https://mobbin.com/screens/5b29f26c-f52c-4bf9-83ed-1336e905b1b7" target="_blank">Braintrust · skill chips<span class="why">matched skills as tags on the card</span></a>
+      </div>
+      <div class="note"><h4>Works</h4><ul><li>Fit at a glance, and honest: "not known yet" is not "missing".</li><li>Talent drew these chips before (whyTags), so the parts exist.</li></ul></div>
+      <div class="note"><h4>Falls short</h4><ul><li>Long must-haves wrap into tall chip clouds.</li><li>Less of AiMY's voice, which was asked for on 4 Nov.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <div class="it-head"><span class="it-n">3</span><h2>The list: one row per person, AiMY's line highlighted</h2></div>
+    <p class="lead">A dense row: who, the stage with its ticks, AiMY's sentence with what they show highlighted and what to check underlined, the verb at the right. Twice as many people per screen; the cards stay as an option.</p>
+    <div class="stage"><div class="listwrap"><div class="list" data-it="3"></div></div></div>
+    <div class="notes">
+      <div class="note refs"><h4>Inspired by</h4>
+        <a href="https://mobbin.com/screens/dbab94c2-2f14-451f-be84-9325421c6073" target="_blank">Juicebox · PeopleGPT results<span class="why">AI summary with the matched words highlighted</span></a>
+        <a href="https://mobbin.com/screens/583e5fd8-6733-472f-be8f-dff9fca09b39" target="_blank">Juicebox · profiles list<span class="why">one row each, the shortlist button at the right</span></a>
+        <a href="https://mobbin.com/screens/59f3e7b4-9bd3-43b8-ba3a-a7a7b75dfd2c" target="_blank">Apollo · find people<span class="why">dense rows with one action column</span></a>
+      </div>
+      <div class="note"><h4>Works</h4><ul><li>Fastest to scan a long queue; highlights make the sentence skimmable.</li></ul></div>
+      <div class="note"><h4>Falls short</h4><ul><li>A table look; the Candidates page was set to cards only (29 Oct).</li><li>Needs ~1000px; narrower screens fall back to cards.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <div class="it-head"><span class="it-n">4</span><h2>The board: columns by who the next move waits on</h2></div>
+    <p class="lead">The page's own cuts as columns: waiting on you, first contact, with the client, waiting on others. Cards shrink to name, role, stage and days, and the verb. The column says what kind of work it is.</p>
+    <div class="stage"><div class="board" data-it="4"></div></div>
+    <div class="notes">
+      <div class="note refs"><h4>Inspired by</h4>
+        <a href="https://mobbin.com/screens/b3161d53-5e40-4301-9250-987886b8c665" target="_blank">Wrangle · pipeline board<span class="why">compact cards with quick icons, per stage</span></a>
+        <a href="https://mobbin.com/screens/0c03339a-adfd-4ceb-81c2-d55c869b320f" target="_blank">Juicebox · board by status<span class="why">Not contacted → Interested columns</span></a>
+        <a href="https://mobbin.com/screens/cdecb9b4-4248-4e6a-a543-c2362c46bf76" target="_blank">folk · recruitment pipeline<span class="why">initial avatars, three facts per card</span></a>
+        <a href="https://mobbin.com/screens/80dfe542-7c1b-4303-a449-b4f465d615fe" target="_blank">Homerun · candidates board<span class="why">"Review" status on each card</span></a>
+      </div>
+      <div class="note"><h4>Works</h4><ul><li>The cut chips become the layout; no filter needed.</li><li>Your column is your to-do.</li></ul></div>
+      <div class="note"><h4>Falls short</h4><ul><li>AiMY's sentence doesn't fit; it moves to hover or the profile.</li><li>Four columns need width; a phone shows one at a time.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <div class="it-head"><span class="it-n">5</span><h2>Hover to read: a short face, the reasoning on hover or pin</h2></div>
+    <p class="lead">At rest the card is short: who, stage and days, the verb. AiMY's sentence, the facts and the earlier application open on hover, and a press on the pin keeps them open. Hover a card to try it.</p>
+    <div class="stage"><div class="grid grid5" data-it="5"></div></div>
+    <div class="notes">
+      <div class="note refs"><h4>Inspired by</h4>
+        <a href="https://mobbin.com/screens/217f6b20-a73f-4dd5-a932-86813c26f73d" target="_blank">Wrangle · compact cards<span class="why">a short face, detail in the side panel</span></a>
+        <a href="https://mobbin.com/screens/373da34b-75cd-40c5-a3dc-73adf5daf138" target="_blank">Peerlist · people grid<span class="why">two lines and one button per card</span></a>
+      </div>
+      <div class="note"><h4>Works</h4><ul><li>Twice the cards per screen; detail is one hover away.</li><li>Matches the hover-or-pin rule used elsewhere in Talent.</li></ul></div>
+      <div class="note"><h4>Falls short</h4><ul><li>No hover on touch: a tap has to open it.</li><li>AiMY's voice is hidden by default.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <div class="it-head"><span class="it-n">6</span><h2>The story card: where they are, what's next, what happened last</h2></div>
+    <p class="lead">The candidate page's track, small: dots for the requisition's stages with the current one named and the next one beside it. Under it, the last touch and what is owed. Reads as a status, like an order card.</p>
+    <div class="stage"><div class="grid" data-it="6"></div></div>
+    <div class="notes">
+      <div class="note refs"><h4>Inspired by</h4>
+        <a href="https://mobbin.com/screens/e11f8471-4c2a-448d-908b-fd041e80526b" target="_blank">Workable · "Next up"<span class="why">the next scheduled step on the card</span></a>
+        <a href="https://mobbin.com/screens/bf5a8f82-2ba6-474c-8ec0-7854b4dac5ad" target="_blank">Lightfield · opportunity cards<span class="why">last interaction and next step as lines</span></a>
+        <a href="https://mobbin.com/screens/22e09ab9-e9e1-4568-8b58-a8f583d2241e" target="_blank">Notion · board cards<span class="why">labelled property lines</span></a>
+      </div>
+      <div class="note"><h4>Works</h4><ul><li>Same picture as the profile's track, so the two pages agree.</li><li>"Next: Phone screen" says what the verb leads to.</li></ul></div>
+      <div class="note"><h4>Falls short</h4><ul><li>No reasons for fit on the face.</li><li>12 dots get tight on narrow cards.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <div class="it-head"><span class="it-n">7</span><h2>Quick contact: the person first, the ways to reach them on the card</h2></div>
+    <p class="lead">For the screening stages, where the job is calling: initials, name and role, the number, and call / WhatsApp / email as icons on the card. Location and languages as chips; AiMY's sentence under them.</p>
+    <div class="stage"><div class="grid" data-it="7"></div></div>
+    <div class="notes">
+      <div class="note refs"><h4>Inspired by</h4>
+        <a href="https://mobbin.com/screens/b3161d53-5e40-4301-9250-987886b8c665" target="_blank">Wrangle · cards with contact icons<span class="why">LinkedIn, email, add, delete on each card</span></a>
+        <a href="https://mobbin.com/screens/dbab94c2-2f14-451f-be84-9325421c6073" target="_blank">Juicebox · contact icons by the name<span class="why">phone, email, LinkedIn beside the name</span></a>
+        <a href="https://mobbin.com/screens/85e7842e-17c6-4dca-92eb-af34f54250af" target="_blank">Slack · people<span class="why">the person first, Message and Huddle under</span></a>
+      </div>
+      <div class="note"><h4>Works</h4><ul><li>The call is one press from the list.</li><li>Shows when WhatsApp is off (no opt-in) before you try.</li></ul></div>
+      <div class="note"><h4>Falls short</h4><ul><li>Only right for the early stages; later stages want 1.</li><li>A phone number on every card is a lot of personal data on screen.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <h2>Side by side</h2>
+    <div class="tblwrap"><table class="cmpt">
+      <tr><th>Iteration</th><th>Height</th><th>Per screen</th><th>AiMY's voice</th><th>Fit at a glance</th><th>The verb</th><th>Best for</th></tr>
+      <tr><td>Today</td><td>~330px, uneven</td><td>8</td><td>Full</td><td>Read it</td><td>At the bottom</td><td>–</td></tr>
+      <tr><td>1 · Decision first</td><td>~210px, equal</td><td><b>12</b></td><td>Trimmed</td><td>Read it</td><td><b>Full-width foot</b></td><td>The Candidates page</td></tr>
+      <tr><td>2 · Evidence</td><td>~240px</td><td>10</td><td>One clause</td><td><b>Chips</b></td><td>Foot</td><td>Screening many</td></tr>
+      <tr><td>3 · List</td><td>~64px row</td><td><b>20+</b></td><td>Highlighted</td><td>Highlights</td><td>Right</td><td>Long queues</td></tr>
+      <tr><td>4 · Board</td><td>~110px</td><td>16</td><td>Hidden</td><td>No</td><td>Foot</td><td>Who-waits-on work</td></tr>
+      <tr><td>5 · Hover</td><td>~130px at rest</td><td>16</td><td>On hover</td><td>On hover</td><td>Foot</td><td>Dense grids</td></tr>
+      <tr><td>6 · Story</td><td>~200px</td><td>12</td><td>No</td><td>No</td><td>Foot</td><td>Pipeline status</td></tr>
+      <tr><td>7 · Quick contact</td><td>~260px</td><td>9</td><td>Full</td><td>Read it</td><td>Icons + foot</td><td>Calling days</td></tr>
+    </table></div>
+    <h3>The recommendation</h3>
+    <p class="mute" style="max-width:84ch">Iteration 1 as the card: it keeps every part that has to stay and moves the decision to where the eye starts. Two borrowings: iteration 2's chips as a hover on AiMY's sentence, so the evidence is one hover away without crowding the face; and iteration 7's call icon on the foot for Applied and Phone screen, where calling is the verb.</p>
+  </section>
+
+  <section class="it">
+    <h2>All references</h2>
+    <div class="refgrid" id="refs"></div>
+  </section>
+
+</div>
+<script>
+  /* Six candidates, as the Candidates page drew them on 4 Nov. ev: m shown,
+     p partly, n not known yet, one per must-have. */
+  const T = { northwind: ['Sourced','Applied','Assessment','Phone screen','HR interview','Technical interview','Profile sent','Client interview','Client technical','Offer','Accepted','Joined'],
+    internal: ['Sourced','Applied','Phone screen','HR interview','Technical interview','Managerial interview','Offer','Accepted','Joined'] };
+  const C = [
+    { name: 'Adham Fouad', role: 'Finance Associate at a logistics company', stage: 'Sourced', at: 0, tpl: 'northwind', since: 4, usual: 3, src: 'From the talent pool', returning: 'Applied before for General Accountant: not progressing, could not reach them',
+      years: 4, place: 'Nasr City', langs: 'Arabic, English', req: 'Accounts Receivable Specialist', cut: 'new',
+      shows: 'partly matches on accounts receivable and overseas collections, and lives close to the office', check: 'NetSuite and how fluent their English is',
+      must: ['2+ years in accounts receivable', 'Collections with overseas clients', 'NetSuite or a similar ERP', 'Fluent English'], ev: ['p','p','n','n'],
+      nowSay: 'Found, not yet in touch, 4 days.', verb: 'Agreed to talk', phone: '+20 11 7655 6573', wa: false, last: 'Found on 31 Oct', next: 'Phone screen' },
+    { name: 'Karim Ibrahim', role: 'Helpdesk Analyst at a bank', stage: 'Applied', at: 1, tpl: 'northwind', since: 3, usual: 2, src: 'Applied through the link',
+      years: 7, place: 'Mansoura', langs: 'Arabic, English', req: 'L3 Support Engineer', cut: 'me',
+      shows: 'partly matches on reading stack traces', check: 'software support, SQL and scripting, and how fluent their English is',
+      must: ['4+ years in software support, 2 at L3', 'Reads stack traces and logs', 'SQL and one scripting language', 'Fluent English'], ev: ['n','p','n','n'],
+      nowSay: 'Applied or agreed to talk, 3 days.', verb: 'Call Karim', call: true, phone: '+20 12 3430 2700', wa: false, last: 'Applied 1 Nov', next: 'Assessment' },
+    { name: 'Mohamed Ibrahim', role: 'Back-office Analyst at a bank', stage: 'Managerial interview', at: 5, tpl: 'internal', since: 3, usual: 3, src: 'Applied through the link', warnTag: true,
+      years: 6, place: 'Nasr City', langs: 'Arabic, English', req: 'AI Business Analyst', cut: 'me',
+      shows: 'looks strong on business analysis, writing requirements and working with AI or data teams', check: 'how fluent their English is',
+      must: ['3+ years as a business analyst', 'Writes requirements engineers build from', 'Has worked with AI or data teams', 'Fluent English'], ev: ['m','m','m','n'],
+      nowSay: 'Interviewed 3 days ago. The result is in: proceed.', verb: 'Passed the managerial interview', phone: '+20 10 9486 4934', wa: false, last: 'Interviewed 1 Nov', next: 'Offer' },
+    { name: 'Esraa Gamal', role: 'Back-office Analyst at a bank', stage: 'Sourced', at: 0, tpl: 'internal', since: 3, usual: 3, src: 'Added by the recruiter',
+      years: 6, place: '6th of October', langs: 'Arabic, English', req: 'AI Business Analyst', cut: 'new',
+      shows: '', check: 'business analysis, writing requirements, working with AI or data teams and how fluent their English is',
+      must: ['3+ years as a business analyst', 'Writes requirements engineers build from', 'Has worked with AI or data teams', 'Fluent English'], ev: ['n','n','n','p'],
+      nowSay: 'Found, not yet in touch, 3 days.', verb: 'Agreed to talk', phone: '+20 15 8460 8432', wa: false, last: 'Added 1 Nov', next: 'Applied' },
+    { name: 'Ayman Shawky', role: 'Business Analyst at a software house', stage: 'HR interview', at: 3, tpl: 'internal', since: 3, usual: 3, src: 'Found on the web', warnTag: true,
+      years: 8, place: 'Nasr City', langs: 'Arabic, English', req: 'AI Business Analyst', cut: 'others',
+      shows: 'looks strong on writing requirements, working with AI or data teams and fluent English', check: 'business analysis',
+      must: ['3+ years as a business analyst', 'Writes requirements engineers build from', 'Has worked with AI or data teams', 'Fluent English'], ev: ['n','m','m','m'],
+      nowSay: 'Interviewed yesterday. The interviewer has not sent the result.', verb: 'Passed the HR interview', phone: '+20 12 4652 9619', wa: false, last: 'Interviewed 3 Nov', next: 'Technical interview' },
+    { name: 'Reem Adel', role: 'Accounting Assistant at a hospital group', stage: 'Applied', at: 1, tpl: 'northwind', since: 3, usual: 2, src: 'Found on the web',
+      years: 8, place: 'Heliopolis', langs: 'Arabic, English', req: 'Accounts Receivable Specialist', cut: 'me',
+      shows: '', check: 'accounts receivable, overseas collections, NetSuite and how fluent their English is',
+      must: ['2+ years in accounts receivable', 'Collections with overseas clients', 'NetSuite or a similar ERP', 'Fluent English'], ev: ['n','n','n','p'],
+      nowSay: 'Applied or agreed to talk, 3 days.', verb: 'Call Reem', call: true, phone: '+20 15 8544 3035', wa: false, last: 'Found on the web 1 Nov', next: 'Assessment' },
+  ];
+  const first = (n) => n.split(' ')[0];
+  const ini = (n) => n.split(' ').map((w) => w[0]).join('').slice(0, 2);
+  const HUE = ['#6d4bd8', '#2f6fe0', '#1f9d8a', '#c2569a', '#d0812b', '#4f8a3a'];
+  const av = (c, i) => '<span class="av" style="background:' + HUE[i % HUE.length] + '">' + ini(c.name) + '</span>';
+  const late = (c) => c.since > c.usual;
+  const sayAimy = (c) => (c.shows ? first(c.name) + ' ' + c.shows + '.' : first(c.name) + '’s CV doesn’t show the must-haves yet.') + ' I’d check ' + c.check + '.';
+  const ticks = (c) => '<div class="ticks" title="' + c.stage + ', stage ' + (c.at + 1) + ' of ' + T[c.tpl].length + '"><span>' + T[c.tpl].map((_, i) => '<i class="' + (i < c.at ? 'd' : i === c.at ? 'n' : '') + '"' + (i === c.at && late(c) ? ' style="--tc:var(--warn)"' : '') + '></i>').join('') + '</span>' + (c.at + 1) + ' of ' + T[c.tpl].length + '</div>';
+  const tagOf = (c) => '<span class="tag' + (c.warnTag ? ' warn' : '') + '">' + c.stage + '</span>';
+  const ICON = {
+    phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>',
+    wa: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></svg>',
+    mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>',
+  };
+  const R = {
+    0: () => C.map((c, i) => '<article class="card"><div class="row" style="gap:6px;flex-wrap:wrap">' + tagOf(c) + (c.returning ? '<span class="tag info">Returning</span>' : '') + '<span class="src">' + c.src + '</span></div>' +
+      '<div class="nm">' + c.name + '</div><div class="role">' + c.role + '</div><div class="fact">' + c.years + ' years of experience · ' + c.place + '</div><div class="fact">' + c.langs + '</div>' +
+      (c.returning ? '<div class="fact">' + c.returning + '</div>' : '') +
+      '<div class="aimy"><span class="mk"></span><div>' + sayAimy(c) + '<small>the CV, against the must-haves</small></div></div>' + ticks(c) +
+      '<div class="now">' + c.nowSay + '</div><div class="acts"><button class="btn">Not progressing</button><button class="btn p">' + c.verb + '</button></div></article>').join(''),
+    1: () => C.map((c) => '<article class="card c1"><div class="top">' + tagOf(c) + (c.returning ? '<span class="tag info">Returning</span>' : '') + '<span class="days' + (late(c) ? ' late' : '') + '">' + c.since + ' days' + (late(c) ? ', usually ' + c.usual : '') + '</span></div>' + ticks(c) +
+      '<div><div class="nm">' + c.name + '</div><div class="role">' + c.role + '</div></div>' +
+      '<div class="metaline">' + c.years + ' yrs · ' + c.place + ' · ' + c.langs + '</div>' +
+      '<div class="say"><span class="mk"></span><span>' + sayAimy(c) + '</span></div>' +
+      '<div class="acts"><button class="btn p wide">' + c.verb + '</button><button class="more" title="Not progressing, and more" aria-label="More">⋯</button></div></article>').join(''),
+    2: () => C.map((c) => { const m = c.ev.filter((x) => x === 'm').length, p = c.ev.filter((x) => x === 'p').length;
+      return '<article class="card"><div class="row" style="gap:6px">' + tagOf(c) + '<span class="src" style="margin-left:auto">' + c.since + ' days</span></div><div><div class="nm">' + c.name + '</div><div class="role">' + c.role + '</div></div>' +
+        '<div class="chips">' + c.must.map((x, i) => '<span class="ev ' + c.ev[i] + '"><b>' + (c.ev[i] === 'm' ? '✓' : c.ev[i] === 'p' ? '◐' : '?') + '</b>' + x + '</span>').join('') + '</div>' +
+        '<div class="evsum">' + m + ' shown · ' + p + ' partly · ' + (4 - m - p) + ' not known yet, not missing</div>' +
+        '<div class="aimy"><span class="mk"></span><div>I’d check ' + c.check + '.</div></div>' +
+        '<div class="acts"><button class="btn">Not progressing</button><button class="btn p wide">' + c.verb + '</button></div></article>'; }).join(''),
+    3: () => C.map((c, i) => '<div class="lr">' + av(c, i) + '<div><div class="nm" style="font-size:14px">' + c.name + '</div><div class="role" style="font-size:12px;color:var(--d400)">' + c.role + '</div></div>' +
+      '<div class="stg">' + tagOf(c) + ticks(c) + '</div>' +
+      '<div class="say">' + (c.shows ? first(c.name) + ' ' + c.shows.replace(/(accounts receivable|overseas collections|reading stack traces|business analysis|writing requirements|working with AI or data teams|fluent English)/g, '<mark>$1</mark>') + '. ' : first(c.name) + '’s CV doesn’t show the must-haves yet. ') + 'I’d check <mark class="q">' + c.check + '</mark>.</div>' +
+      '<div class="row" style="gap:6px"><button class="btn">Not progressing</button><button class="btn p">' + c.verb + '</button></div></div>').join(''),
+    4: () => { const cols = [['me', 'Waiting on you', 'var(--accent)'], ['new', 'First contact', 'var(--ai)'], ['client', 'With the client', 'var(--warn)'], ['others', 'Waiting on others', 'var(--d400)']];
+      return cols.map((k) => { const l = C.filter((c) => c.cut === k[0]);
+        return '<div class="col"><div class="col-h"><i style="background:' + k[2] + '"></i>' + k[1] + '<span>' + l.length + '</span></div>' +
+          (l.length ? l.map((c, i) => '<div class="kc"><div class="row" style="gap:8px">' + av(c, C.indexOf(c)) + '<div class="sp"><div class="nm">' + c.name + '</div><div class="role">' + c.role + '</div></div></div>' +
+            '<div class="foot">' + tagOf(c) + ' ' + c.since + 'd<button class="btn p">' + c.verb.replace('Passed the ', 'Passed ') + '</button></div></div>').join('')
+            : '<div class="empty">Nobody with the client in this sample</div>') + '</div>'; }).join(''); },
+    5: () => C.map((c, i) => '<article class="card c5" tabindex="0"><button class="pinb" data-pin title="Keep it open" aria-label="Keep it open">📌</button><div class="row">' + av(c, i) + '<div class="sp"><div class="nm" style="font-size:14.5px">' + c.name + '</div><div class="role" style="font-size:12px">' + c.role + '</div></div></div>' +
+      '<div class="row" style="gap:8px">' + tagOf(c) + '<span class="src">' + c.since + ' days</span></div>' +
+      '<div class="reveal"><div><div class="aimy"><span class="mk"></span><div>' + sayAimy(c) + '</div></div><div class="fact">' + c.years + ' years · ' + c.place + ' · ' + c.langs + '</div>' + (c.returning ? '<div class="fact">' + c.returning + '</div>' : '') + ticks(c) + '</div></div>' +
+      '<div class="hint">Hover for why they fit</div>' +
+      '<div class="acts"><button class="btn">Not progressing</button><button class="btn p wide">' + c.verb + '</button></div></article>').join(''),
+    6: () => C.map((c) => '<article class="card c6"><div><div class="nm">' + c.name + '</div><div class="role">' + c.role + '</div></div>' +
+      '<div class="trk" style="--n:' + T[c.tpl].length + '">' + T[c.tpl].map((_, i) => '<i class="' + (i < c.at ? 'd' : i === c.at ? 'n' : '') + '"' + (i === c.at && late(c) ? ' style="--tc:var(--warn)"' : '') + '></i>').join('') + '</div>' +
+      '<div class="step"><b' + (late(c) ? ' style="color:var(--warn)"' : '') + '>' + c.stage + '</b><span class="src">' + c.since + ' days</span><span class="nx">→ ' + c.next + '</span></div>' +
+      '<div class="lines"><span>Last</span><span>' + c.last + '</span><span>Now</span><span>' + c.nowSay.replace(/\.$/, '') + '</span><span>For</span><span>' + c.req + '</span></div>' +
+      '<div class="acts"><button class="btn">Not progressing</button><button class="btn p wide">' + c.verb + '</button></div></article>').join(''),
+    7: () => C.map((c, i) => '<article class="card c7"><div class="head">' + av(c, i) + '<div class="sp"><div class="nm" style="font-size:15px">' + c.name + '</div><div class="role" style="font-size:12px">' + c.role + '</div></div>' + tagOf(c) + '</div>' +
+      '<div class="row" style="gap:8px"><span class="tel">' + c.phone + '</span><span class="quick" style="margin-left:auto"><button class="btn ic" title="Call">' + ICON.phone + '</button><button class="btn ic" title="WhatsApp: no opt-in yet" style="opacity:.4">' + ICON.wa + '</button><button class="btn ic" title="Email">' + ICON.mail + '</button></span></div>' +
+      '<div class="chipsm"><span>' + c.place + '</span><span>' + c.langs + '</span><span>' + c.years + ' years</span>' + (c.returning ? '<span style="color:var(--ai)">Returning</span>' : '') + '</div>' +
+      '<div class="aimy"><span class="mk"></span><div>' + sayAimy(c) + '</div></div>' +
+      '<div class="acts"><button class="btn">Not progressing</button><button class="btn p wide">' + (c.call ? '' : '') + c.verb + '</button></div></article>').join(''),
+  };
+  document.querySelectorAll('[data-it]').forEach((el) => { el.innerHTML = R[el.dataset.it](); });
+  document.addEventListener('click', (e) => { const p = e.target.closest('[data-pin]'); if (p) p.closest('.c5').classList.toggle('pin'); });
+  const REFS = [
+    ['Workable · candidate overview', 'e11f8471-4c2a-448d-908b-fd041e80526b', 'Next up; how they match, per criterion'],
+    ['Pin · criteria per candidate', '43ceb1a1-05bb-48a2-96b2-d13dee47d299', 'Each criterion checked on the profile'],
+    ['Pin · compact view', 'df5484d2-1528-41d6-ab83-2a791577e05b', 'Criteria lines with ✓, actions at the right'],
+    ['Juicebox · PeopleGPT', 'dbab94c2-2f14-451f-be84-9325421c6073', 'AI summary with highlights'],
+    ['Juicebox · profiles list', '583e5fd8-6733-472f-be8f-dff9fca09b39', 'Dense rows, shortlist at the right'],
+    ['Juicebox · board', '0c03339a-adfd-4ceb-81c2-d55c869b320f', 'Status columns of people'],
+    ['Wrangle · pipeline board', 'b3161d53-5e40-4301-9250-987886b8c665', 'Compact cards with contact icons'],
+    ['Wrangle · scored cards', '853cc0a2-8bdf-4111-ad05-d5c62068d9ef', 'Criteria rows on the card, Hide / Shortlist'],
+    ['Wrangle · drag between columns', '217f6b20-a73f-4dd5-a932-86813c26f73d', 'Board cards in motion'],
+    ['Braintrust · matched talent', '5b29f26c-f52c-4bf9-83ed-1336e905b1b7', 'Match chip, skills, one action'],
+    ['Upwork · invite talent', 'ac8e884f-c4c1-4b3c-8292-407a9b8fcd98', '"Has 15 relevant skills" line, skill chips'],
+    ['Wellfound · applicants', '93334d4c-b8f5-4e7a-b170-1c09fcc8371d', 'Matched requirement chip'],
+    ['Care.com · applicants', 'b205c18b-7c06-4d04-92ad-bef55da7fab3', 'One verb, the no as a quiet link'],
+    ['folk · recruitment pipeline', 'cdecb9b4-4248-4e6a-a543-c2362c46bf76', 'Initial avatars, three facts'],
+    ['Homerun · candidates board', '80dfe542-7c1b-4303-a449-b4f465d615fe', 'Status on each card'],
+    ['Lightfield · opportunities', 'bf5a8f82-2ba6-474c-8ec0-7854b4dac5ad', 'Last interaction lines'],
+    ['Notion · board', '22e09ab9-e9e1-4568-8b58-a8f583d2241e', 'Property lines on cards'],
+    ['Apollo · find people', '59f3e7b4-9bd3-43b8-ba3a-a7a7b75dfd2c', 'Dense people rows'],
+    ['Peerlist · people grid', '373da34b-75cd-40c5-a3dc-73adf5daf138', 'Two lines and one button'],
+    ['Slack · people', '85e7842e-17c6-4dca-92eb-af34f54250af', 'Person first, actions under'],
+  ];
+  document.getElementById('refs').innerHTML = REFS.map((r) => '<div class="ref"><a href="https://mobbin.com/screens/' + r[1] + '" target="_blank">' + r[0] + '</a><br>' + r[2] + '</div>').join('');
+</script>
+</body>
+</html>

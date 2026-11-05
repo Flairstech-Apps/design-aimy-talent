@@ -2545,6 +2545,77 @@
   /* The earlier application, said with what stopped it. */
   const beforeSay = (x) => 'Applied before for ' + reqOf(x).title + ': ' + lower(EXIT[x.exit].label) +
     (x.outWhy && x.exit === 'out' ? ', ' + lower(OUT_K[x.outWhy.why].label) : x.decline ? ', ' + lower(DECLINE_K[x.decline.why].label) : '');
+  /* ── THE STORY SO FAR, AS A TRACK (Engy, 4 Nov: iteration 1 of
+     deliverables/story-funnel-iterations.html, after AiMY Sales's "The
+     story so far") ── The candidate's whole path on their requisition's own
+     stages, not only the moments behind them: stages passed are filled and
+     dated, the one they are at is an open ring (amber when it is past its
+     usual time, said in words beside it), the ones ahead stay hollow. A
+     dashed mark shows where the decision passes to the client, or to the
+     hiring manager on FlairsTech's own roles. A way out branches off the
+     stage they left from. The client's desk sees it from Profile sent, the
+     part that is theirs. Dates are read back from the days each stage took. */
+  /* Longer in the stage than it usually takes: the one thing the track colours amber. */
+  const slowAt = (c) => !c.exit && c.stage !== 'joined' && c.stage !== 'accepted' && c.since > STAGE[c.stage].exp;
+  /* Where a way out happened, as the end of a sentence. */
+  const EXIT_AT = { sourced: 'before first contact', applied: 'at the application', sent: 'after the profile went', accepted: 'before day one' };
+  const exitAt = (c) => EXIT_AT[c.stage] || 'at the ' + lower(STAGE[c.stage].label);
+  const EXIT_TONE = { out: 'err', clientno: 'err', offerno: 'err', withdrew: 'neutral' };
+  /* Written out whole, so each class reads as itself (and the audit can pair it with its rule). */
+  const TONE_CLS = { neutral: 'tone-neutral', warn: 'tone-warn', ok: 'tone-ok', err: 'tone-err' };
+  function storyTrack(c) {
+    const q = reqOf(c), t = tplOf(q);
+    const cur = t.indexOf(c.stage);
+    if (cur < 0) return '';
+    const took = c.took || {};
+    const enter = {};
+    let d = c.exit ? -c.since - (took[c.stage] || 0) : -c.since;
+    enter[c.stage] = d;
+    for (let i = cur - 1; i >= 0; i--) { d -= took[t[i]] != null ? took[t[i]] : STAGE[t[i]].exp; enter[t[i]] = d; }
+    const from = isClient() ? Math.max(0, t.indexOf('sent')) : 0;
+    const shown = t.slice(from);
+    const late = slowAt(c);
+    const tone = c.stage === 'joined' || c.stage === 'accepted' ? 'ok' : late ? 'warn' : 'neutral';
+    const hi = isClient() ? -1 : t.indexOf('sent') >= 0 ? t.indexOf('sent') : t.indexOf('mgr');
+    const hiWho = t[hi] === 'sent' ? 'the client decides' : 'the hiring manager decides';
+    const name = (k) => JY_SHORT[k] || STAGE[k].label;
+    const steps = shown.map((k) => {
+      const i = t.indexOf(k);
+      const st = i < cur || (i === cur && c.exit) ? 'is-done' : i === cur ? 'is-now' : '';
+      const when = st === 'is-now' ? 'since ' + sayDay(enter[k]) + ' · ' + days(c.since)
+        : st === 'is-done' ? sayDay(enter[k]) : '';
+      const why = STAGE[k].label + (st === 'is-done' ? ', reached ' + sayDay(enter[k]) + (took[k] != null ? ', ' + days(took[k]) + ' in it' : '')
+        : st === 'is-now' ? ', now, ' + days(c.since) + (late ? ', usually ' + days(STAGE[k].exp) : '') : ', ahead');
+      return '<li class="t-trk-step ' + st + (i === hi ? ' is-hand' : '') + '"' + (st === 'is-now' ? ' aria-current="step"' : '') + ' title="' + esc(why) + '">' +
+        '<span class="t-trk-dot" aria-hidden="true"></span><span class="t-trk-k">' + esc(name(k)) + '</span>' +
+        (when ? '<span class="t-trk-t">' + esc(when) + '</span>' : '') +
+        (st === 'is-now' && late ? '<span class="t-trk-late">usually ' + days(STAGE[k].exp) + '</span>' : '') +
+        (i === hi ? '<span class="t-trk-split" aria-hidden="true"><span>' + esc(hiWho) + '</span></span>' : '') + '</li>';
+    }).join('');
+    return '<div class="t-trk-wrap"><ol class="t-trk ' + TONE_CLS[tone] + '" style="--n:' + shown.length + '" aria-label="' + esc('Their path on ' + q.title) + '">' + steps + '</ol>' +
+      (c.exit ? '<p class="t-trk-exit ' + TONE_CLS[EXIT_TONE[c.exit] || 'neutral'] + '"><span class="t-trk-branch" aria-hidden="true"></span><b>' + esc(EXIT[c.exit].label) + '</b> ' + esc(exitAt(c)) + ', ' + esc(sayDay(-c.since)) + '</p>' : '') +
+    '</div>';
+  }
+  /* THE CARD'S PROGRESS (Engy, 4 Nov: the steps of variation 6, from
+     deliverables/candidate-card-progress.html; the phases bar above them
+     came off on 5 Nov). The steps either side of where they are: the one
+     passed, the one they are at with its days (amber past its usual time),
+     and the next. A way out shows where it happened, in red. */
+  function stageProgress(c) {
+    const t = tplOf(reqOf(c)), cur = t.indexOf(c.stage);
+    if (cur < 0) return '';
+    const late = slowAt(c);
+    const name = (k) => JY_SHORT[k] || STAGE[k].label;
+    const prev = cur > 0 ? t[cur - 1] : null, nx = c.exit ? null : t[cur + 1];
+    const step = (cls, dot, label) => '<span class="t-st ' + cls + '"><span class="t-st-dot" aria-hidden="true">' + dot + '</span><span class="t-st-k">' + label + '</span></span>';
+    const steps = '<span class="t-steps">' +
+      (prev ? step('is-done', svg('check', 9), esc(name(prev))) : step('is-start', '', 'Start')) + '<span class="t-st-ln"></span>' +
+      (c.exit ? step('is-out', '', esc(EXIT[c.exit].label) + ' · ' + esc(name(c.stage)))
+        : step('is-now' + (late ? ' is-late' : ''), '', esc(name(c.stage)) + ' · ' + days(c.since) + (late ? ', usually ' + STAGE[c.stage].exp : ''))) +
+      (nx ? '<span class="t-st-ln is-ahead"></span>' + step('is-next', '', esc(name(nx))) : '') + '</span>';
+    return '<div class="t-prog" title="' + esc((c.exit ? EXIT[c.exit].label + ' ' + exitAt(c) : STAGE[c.stage].label) + ', stage ' + (cur + 1) + ' of ' + t.length) + '">' + steps + '</div>';
+  }
+
   /* One candidate, as the same card. */
   function candCard(c, i) {
     const q = reqOf(c);
@@ -2588,11 +2659,12 @@
       '<div class="tc-head">' + (pick1 ? selBox('sourced', c.id, c.name) : owedTell ? selBox('tell', c.id, c.name) : '') + stageTag(c) + (was ? tag('Returning', 'info') : '') + '<span class="b-kind">' + esc(c.source) + '</span></div>' +
       '<div class="b-qcard-top"><button class="tc-title s-card-title" type="button" data-cand="' + c.id + '">' + esc(c.name) + '</button></div>' +
       '<p class="tc-summary b-qcard-role">' + esc(c.at) + '</p>' +
+      /* Why they fit, in AiMY's words, first under the name (4 Nov). */
+      whySay(c) +
       '<p class="b-qcard-where">' + fact('job', plural(c.years, 'year') + ' of experience') + fact('pin', c.place) + '</p>' +
       '<p class="b-qcard-where">' + fact('lang', c.langs.join(', ')) + '</p>' +
       (was ? '<p class="b-qcard-where t-before">' + fact('hist', beforeSay(was)) + '</p>' : '') +
-      /* Why they fit, in AiMY's words, in place of the score (Engy, 29 Oct). */
-      whySay(c) +
+      (isClient() ? '' : stageProgress(c)) +
       '<p class="b-qcard-where t-cnow">' + fact('clock', say + (s && s.status === 'done' ? ' Assessment ' + scoreShort(asmtOf(s.asmt), s) + '.' : '')) + '</p>' +
       (c.stage === 'sent' || (isClient() && c.exit === 'clientno') ? sendout(c) : '') +
       /* AT THE SCREEN, THE CALL IS THE MOVE. Someone who applied or is due a
@@ -2837,12 +2909,23 @@
        talking to the recruiter about the person (Engy, 4 Nov): "Adham looks
        strong on…", "I'd check…". */
     const near = c.place && q.place && q.place.indexOf(c.place) >= 0;
-    const fit = met.length ? f + ' looks strong on <b>' + esc(and(met)) + '</b>' + (part.length ? ', and partly on ' + esc(and(part)) : '')
-      : part.length ? f + ' partly matches on ' + esc(and(part)) : f + '’s CV doesn’t show the must-haves yet';
+    const fit = met.length ? f + ' looks strong on <b>' + esc(and(met)) + '</b>' + (part.length ? ', and partly on <em>' + esc(and(part)) + '</em>' : '')
+      : part.length ? f + ' partly matches on <em>' + esc(and(part)) + '</em>' : f + '’s CV doesn’t show the must-haves yet';
     const check = unk.map((m) => fluent(m) ? 'how fluent their ' + fluent(m) + ' is' : short(m));
     const say = fit + (near ? (met.length || part.length ? ', and lives close to the office.' : ', but lives close to the office.') : '.') +
       (check.length ? ' I’d check ' + esc(and(check)) + '.' : '');
-    return aimyBlock({ text: say, from: 'the CV, against the must-haves' }).replace('class="b-aimy"', 'class="b-aimy t-why-say"');
+    /* AiMY'S INSIGHT, FIRST ON THE CARD (Engy, 4 Nov: "the most important is
+       the AiMY insights"; variation 4 of deliverables/candidate-card-progress
+       .html). A verdict in words, never a score (29 Oct): Strong where the CV
+       shows two or more must-haves, Partly fits where it shows some, Not
+       shown yet where it is silent. Then the sentence, the topics it found
+       tinted. No chip per must-have under it (Engy, 5 Nov): the sentence
+       already names them. */
+    const verdict = met.length >= 2 ? ['Strong', 'is-strong'] : met.length || part.length ? ['Partly fits', 'is-part'] : ['Not shown yet', 'is-none'];
+    return '<div class="t-ins">' +
+      '<div class="t-ins-h">' + mark(12) + '<span>AiMY · why they fit</span><span class="t-ins-v ' + verdict[1] + '">' + verdict[0] + '</span></div>' +
+      '<p class="t-ins-say">' + say + '</p>' +
+      '<span class="t-ins-from">the CV, against the must-haves</span></div>';
   }
   function whyTags(c, bare) {
     const must = reqOf(c).must || [];
@@ -4553,6 +4636,7 @@
         '<p class="s-lead-deck">' + esc(c.exit ? exitSay(c).charAt(0).toUpperCase() + exitSay(c).slice(1) + '.' +
             (c.told === false && !isClient() ? ' Not told yet; they hear by ' + sayDay(hearBy(c)) + '.' : c.told ? ' They have been told.' : '')
           : candSay(c)) + '</p>' +
+        storyTrack(c) +
         /* Message preview (component library): what they will read, before Send. */
         /* The same message as the lists, sent from inside it. */
         (c.exit && c.told === false && works ? msgPreview(c, true, true) : '') +

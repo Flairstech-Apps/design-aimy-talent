@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Story So Far Iterations</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+  /* AiMY's dark tokens (aimy-ds.css), so the mocks read as the product. */
+  :root {
+    --bg: #0d1117; --card: #141b24; --raised: #1c2630; --line: rgba(255,255,255,0.07); --line2: rgba(255,255,255,0.12);
+    --d50: #eef2f6; --d100: #d8e0e8; --d200: #c8d2dc; --d300: #b0bcca; --d400: #8b9aaa; --d500: #637280; --d600: #4a5b6e;
+    --accent: #8b4ff4; --accent-rgb: 139,79,244; --accent-text: #b18cff; --brand: #3369ff;
+    --ok: #4ed6a1; --ok-rgb: 78,214,161; --warn: #f7c95c; --warn-rgb: 247,201,92; --err: #ff7282; --err-rgb: 255,114,130;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: 'Poppins', system-ui, sans-serif; color: var(--d100); font-size: 14px; line-height: 1.55; }
+  button { font: inherit; color: inherit; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 48px 24px 96px; }
+  h1 { font-size: 34px; line-height: 1.15; letter-spacing: -0.5px; color: var(--d50); margin: 6px 0 10px; }
+  h2 { font-size: 22px; line-height: 1.25; color: var(--d50); margin: 0 0 6px; letter-spacing: -0.2px; }
+  h3 { font-size: 15px; color: var(--d50); margin: 18px 0 6px; }
+  p { margin: 0 0 10px; }
+  a { color: var(--accent-text); }
+  b, strong { color: var(--d50); font-weight: 600; }
+  .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 1.6px; text-transform: uppercase; color: var(--accent-text); }
+  .lead { font-size: 16px; color: var(--d300); max-width: 78ch; }
+  .mute { color: var(--d400); font-size: 12.5px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
+  .pill { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--raised); color: var(--d300); border: 1px solid var(--line); }
+
+  /* The scenario switch: every mock below redraws for the lead chosen. */
+  .switch { position: sticky; top: 0; z-index: 30; margin: 28px -24px 0; padding: 12px 24px; background: rgba(13,17,23,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .switch .lab { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--d500); margin-right: 4px; }
+  .switch button { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line2); background: rgba(255,255,255,0.03); font-size: 12.5px; color: var(--d200); cursor: pointer; }
+  .switch button[aria-pressed="true"] { border-color: rgba(var(--accent-rgb),0.6); background: rgba(var(--accent-rgb),0.18); color: var(--d50); }
+  .switch .sub { font-size: 12px; color: var(--d400); margin-left: 6px; }
+
+  section.it { margin-top: 56px; padding-top: 32px; border-top: 1px solid var(--line); }
+  .it-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; }
+  .it-n { font-size: 12px; font-weight: 700; color: var(--bg); background: var(--accent-text); border-radius: 6px; padding: 2px 8px; }
+  .it-n.rec { background: var(--ok); }
+  .cols { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; margin-top: 18px; }
+  @media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
+  .notes { display: grid; gap: 12px; align-content: start; }
+  .note { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; font-size: 13px; color: var(--d300); }
+  .note h4 { margin: 0 0 6px; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--d400); }
+  .note ul { margin: 0; padding-left: 18px; } .note li { margin: 3px 0; }
+  .refs a { display: block; margin: 4px 0; text-decoration: none; line-height: 1.4; }
+  .refs a:hover { text-decoration: underline; }
+  .refs .why { display: block; color: var(--d400); font-size: 11.5px; }
+
+  /* The block as Sales draws it: a title, its cite, the sentence, the picture. */
+  .blk { background: radial-gradient(120% 140% at 0% 0%, rgba(51,105,255,0.10), transparent 60%), var(--card); border: 1px solid var(--line2); border-radius: 16px; padding: 22px 24px 24px; overflow: hidden; }
+  .blk-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 20px; margin-bottom: 18px; }
+  .blk-h { font-size: 17px; font-weight: 600; color: var(--d50); margin: 0; }
+  .blk-cite { font-size: 12px; color: var(--d300); max-width: 46ch; text-align: right; }
+  @media (max-width: 640px) { .blk-cite { text-align: left; } }
+  .now { font-size: 16px; font-weight: 500; color: var(--d100); margin: 0 0 18px; max-width: 62ch; }
+  .t-ok { color: var(--ok); } .t-warn { color: var(--warn); } .t-err { color: var(--err); } .t-neutral { color: var(--d50); }
+  .task { display: flex; align-items: center; gap: 10px; margin-top: 16px; padding: 10px 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--line); font-size: 13px; }
+  .task .chip { margin-left: auto; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; background: rgba(255,255,255,0.06); color: var(--d200); white-space: nowrap; }
+  .task .chip.late { background: rgba(var(--warn-rgb),0.16); color: var(--warn); }
+  .task .mk { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--d400); flex: none; }
+  .hand { margin-top: 12px; font-size: 12.5px; color: var(--d400); }
+
+  /* 0 · Today, as Sales draws it */
+  .s0 { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 0; }
+  .s0 li { position: relative; display: flex; flex-direction: column; gap: 2px; padding-right: 22px; margin-right: 14px; }
+  .s0 li::after { content: ""; position: absolute; left: 14px; right: 4px; top: 5px; height: 2px; border-radius: 2px; background: var(--d400); }
+  .s0 li:last-child::after { display: none; }
+  .s0 .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--d200); border: 2px solid var(--card); box-shadow: 0 0 0 1px var(--line2); }
+  .s0 li.now .dot { background: var(--card); box-shadow: 0 0 0 2px var(--tone, var(--d200)), 0 0 0 6px rgba(var(--accent-rgb),0.14); }
+  .s0 .k { margin-top: 6px; font-size: 13px; font-weight: 700; color: var(--d100); white-space: nowrap; }
+  .s0 .t { font-size: 13px; color: var(--d400); white-space: nowrap; }
+
+  /* 1 · The track */
+  .trk { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); position: relative; }
+  .trk-step { position: relative; padding-top: 22px; min-width: 0; }
+  .trk-step::before { content: ""; position: absolute; top: 6px; left: 0; right: 0; height: 3px; background: rgba(255,255,255,0.08); }
+  .trk-step:first-child::before { left: 6px; }
+  .trk-step:last-child::before { right: auto; width: 6px; }
+  .trk-step.done::before { background: linear-gradient(90deg, var(--accent), rgba(var(--accent-rgb),0.7)); }
+  .trk-step.now::before { background: linear-gradient(90deg, rgba(var(--accent-rgb),0.7), rgba(255,255,255,0.08) 40%); }
+  .trk-dot { position: absolute; top: 0; left: 0; width: 15px; height: 15px; border-radius: 50%; background: var(--card); border: 2px solid rgba(255,255,255,0.18); }
+  .trk-step.done .trk-dot { background: var(--accent); border-color: var(--accent); }
+  .trk-step.now .trk-dot { background: var(--card); border-color: var(--tone, var(--accent)); box-shadow: 0 0 0 5px rgba(var(--tone-rgb, var(--accent-rgb)),0.18); animation: ring 2.4s ease-out infinite; }
+  @keyframes ring { 0% { box-shadow: 0 0 0 0 rgba(var(--tone-rgb, var(--accent-rgb)),0.35); } 70% { box-shadow: 0 0 0 9px rgba(var(--tone-rgb, var(--accent-rgb)),0); } 100% { box-shadow: 0 0 0 0 rgba(var(--tone-rgb, var(--accent-rgb)),0); } }
+  .trk-k { display: block; font-size: 12.5px; font-weight: 600; color: var(--d500); padding-right: 8px; line-height: 1.3; }
+  .trk-step.done .trk-k { color: var(--d200); } .trk-step.now .trk-k { color: var(--tone-c, var(--d50)); }
+  .trk-t { display: block; font-size: 11.5px; color: var(--d400); margin-top: 2px; padding-right: 8px; }
+  .trk-step.hand-off .trk-dot { border-style: dashed; }
+  /* A step the lead went past without stopping at: the line is travelled, the stop is not. */
+  .trk-step.skip::before { background: rgba(var(--accent-rgb),0.7); }
+  .trk-step.skip .trk-dot { top: 3px; left: 3px; width: 9px; height: 9px; background: var(--card); border: 2px solid rgba(var(--accent-rgb),0.6); }
+  .trk-step.skip .trk-k { color: var(--d500); font-weight: 500; }
+  .trk-split { position: absolute; top: -6px; bottom: -4px; width: 0; border-left: 1px dashed var(--d500); }
+  .trk-split span { position: absolute; top: -14px; left: 6px; font-size: 10.5px; color: var(--d400); white-space: nowrap; }
+  .trk-exit { margin-top: 14px; display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--d300); }
+  .trk-exit i { width: 22px; height: 14px; border-left: 2px solid var(--err); border-bottom: 2px solid var(--err); border-radius: 0 0 0 8px; transform: translateY(-4px); }
+  .trk-moments { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .mo { font-size: 11.5px; padding: 3px 9px; border-radius: 999px; background: rgba(255,255,255,0.04); border: 1px solid var(--line); color: var(--d300); }
+  .mo b { color: var(--d100); font-weight: 600; }
+  .wide { overflow-x: auto; overflow-y: hidden; padding-top: 16px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.16) transparent; } .wide > * { min-width: 600px; }
+  .wide::-webkit-scrollbar { height: 6px; } .wide::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(255,255,255,0.16); }
+
+  /* 2 · Chevrons */
+  .chev { display: flex; gap: 4px; }
+  .chev { min-width: 720px; }
+  .chev-s { flex: 1; min-width: 0; position: relative; height: 48px; display: grid; place-content: center; text-align: center; line-height: 1.2; padding: 0 12px 0 18px; font-size: 11.5px; font-weight: 600; color: var(--d400); background: rgba(255,255,255,0.05);
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%); }
+  .chev-s:first-child { clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%); border-radius: 10px 0 0 10px; }
+  .chev-s:last-child { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 12px 50%); border-radius: 0 10px 10px 0; }
+  .chev-s.done { background: rgba(var(--accent-rgb),0.30); color: var(--d100); }
+  .chev-s.skip { background: rgba(var(--accent-rgb),0.12); color: var(--d500); }
+  .chev-s.now { background: var(--tone, var(--accent)); color: #1a1205; }
+  .chev-s.now.n-neutral { color: #fff; }
+  .chev-s.exit { background: rgba(var(--err-rgb),0.22); color: var(--err); }
+  .chev-s small { display: block; margin-top: 2px; font-weight: 500; font-size: 10.5px; opacity: 0.8; }
+  .coach { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 640px) { .coach { grid-template-columns: 1fr; } }
+  .coach > div { padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--line); font-size: 13px; }
+  .coach h5 { margin: 0 0 6px; font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--d400); }
+  .coach ul { margin: 0; padding-left: 16px; color: var(--d200); }
+
+  /* 3 · Days in each step */
+  .days { display: flex; height: 46px; border-radius: 10px; overflow: hidden; gap: 2px; }
+  .days-s { position: relative; min-width: 34px; background: rgba(var(--accent-rgb),0.55); display: flex; flex-direction: column; justify-content: center; padding: 0 9px; overflow: hidden; }
+  .days-s:nth-child(even) { background: rgba(var(--accent-rgb),0.40); }
+  .days-s b { font-size: 12px; color: #fff; white-space: nowrap; }
+  .days-s span { font-size: 11px; color: rgba(255,255,255,0.8); white-space: nowrap; }
+  .days-s.now { background: repeating-linear-gradient(-45deg, rgba(var(--tone-rgb),0.92) 0 6px, rgba(var(--tone-rgb),0.74) 6px 12px); }
+  .days-s.now b, .days-s.now span { color: #1a1205; }
+  .days-s.now.n-neutral b, .days-s.now.n-neutral span { color: #fff; }
+  .days-s.stalled::after { content: ""; position: absolute; top: 0; bottom: 0; left: var(--usual); border-left: 2px dashed rgba(0,0,0,0.55); }
+  .days-key { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11.5px; color: var(--d400); }
+  .days-ahead { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .days-ahead span { font-size: 11.5px; padding: 3px 9px; border-radius: 999px; border: 1px dashed var(--line2); color: var(--d400); }
+  .flag { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; background: rgba(var(--warn-rgb),0.15); color: var(--warn); }
+
+  /* 4 · Vertical, with what comes next */
+  .vt { list-style: none; margin: 0; padding: 0; }
+  .vt li { position: relative; padding: 0 0 18px 34px; }
+  .vt li::before { content: ""; position: absolute; left: 8px; top: 20px; bottom: -2px; width: 2px; background: var(--accent); }
+  .vt li.next::before, .vt li.now::before { background: repeating-linear-gradient(180deg, var(--d600) 0 4px, transparent 4px 8px); }
+  .vt li:last-child::before { display: none; }
+  .vt .vd { position: absolute; left: 0; top: 2px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; }
+  .vt li.now .vd { background: var(--card); border: 2px solid var(--tone, var(--accent)); box-shadow: 0 0 0 5px rgba(var(--tone-rgb, var(--accent-rgb)),0.16); }
+  .vt li.next .vd { background: var(--card); border: 2px solid var(--d600); }
+  .vt .vk { font-size: 13px; font-weight: 600; color: var(--d200); }
+  .vt .vt-t { font-size: 12px; color: var(--d400); }
+  .vt li.next .vk { color: var(--d500); font-weight: 500; }
+  .vt li.now .vk { font-size: 18px; color: var(--d50); }
+  .vt .card { margin-top: 8px; padding: 12px 14px; border-radius: 12px; background: rgba(var(--tone-rgb, var(--accent-rgb)),0.08); border: 1px solid rgba(var(--tone-rgb, var(--accent-rgb)),0.28); font-size: 13px; color: var(--d200); max-width: 520px; }
+  .vt .usual { float: right; font-size: 11px; padding: 1px 8px; border-radius: 999px; background: rgba(255,255,255,0.05); color: var(--d400); }
+
+  /* 5 · Compact */
+  .cmp { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+  .cmp-state { font-size: 15px; font-weight: 600; }
+  .mini { display: flex; gap: 4px; align-items: center; }
+  .mini i { width: 22px; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.10); }
+  .mini i.done { background: var(--accent); }
+  .mini i.skip { background: rgba(var(--accent-rgb),0.35); }
+  .mini i.now { background: var(--tone, var(--accent)); box-shadow: 0 0 0 3px rgba(var(--tone-rgb, var(--accent-rgb)),0.2); }
+  .mini-n { font-size: 12px; color: var(--d400); }
+  .cmp-more { margin-left: auto; font-size: 12px; color: var(--accent-text); background: none; border: 0; cursor: pointer; padding: 0; }
+  .cmp-list { margin-top: 12px; display: none; }
+  .cmp.open + .cmp-list { display: block; }
+  .cmp-list .row { display: grid; grid-template-columns: 110px 1fr; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 12.5px; }
+  .cmp-list .row span:first-child { color: var(--d400); }
+  .peek { margin-top: 18px; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+  .peek > div { padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--line); }
+  .peek .nm { font-size: 13px; font-weight: 600; color: var(--d50); }
+  .peek .co { font-size: 11.5px; color: var(--d400); margin-bottom: 8px; }
+
+  /* 6 · Change log */
+  .log { list-style: none; margin: 0; padding: 0; }
+  .log li { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: start; padding: 10px 0; border-top: 1px solid var(--line); }
+  .log li:first-child { border-top: 0; }
+  .log .av { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 10.5px; font-weight: 700; background: rgba(var(--accent-rgb),0.22); color: var(--accent-text); }
+  .log .av.sys { background: rgba(255,255,255,0.06); color: var(--d400); }
+  .log .what { font-size: 13px; color: var(--d200); }
+  .log .chg { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 12px; }
+  .log .chg s { color: var(--d500); text-decoration: none; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line2); }
+  .log .chg em { font-style: normal; padding: 1px 8px; border-radius: 999px; background: rgba(var(--tone-rgb, var(--accent-rgb)),0.16); color: var(--tone-c, var(--d50)); border: 1px solid rgba(var(--tone-rgb, var(--accent-rgb)),0.35); }
+  .log .when { font-size: 11.5px; color: var(--d400); white-space: nowrap; }
+  .log li.top { background: linear-gradient(90deg, rgba(var(--tone-rgb, var(--accent-rgb)),0.08), transparent 70%); border-radius: 10px; padding-left: 8px; padding-right: 8px; }
+
+  /* 7 · Among everyone */
+  .fun { display: grid; gap: 6px; }
+  .fun-r { display: grid; grid-template-columns: 110px 1fr 56px; gap: 10px; align-items: center; font-size: 12.5px; }
+  .fun-r .nm { color: var(--d300); }
+  .fun-r .bar { height: 18px; border-radius: 5px; background: rgba(255,255,255,0.04); position: relative; overflow: visible; }
+  .fun-r .bar i { position: absolute; inset: 0 auto 0 0; border-radius: 5px; background: rgba(var(--accent-rgb),0.38); }
+  .fun-r .n { text-align: right; color: var(--d200); font-variant-numeric: tabular-nums; }
+  .fun-r.here .nm { color: var(--tone-c, var(--d50)); font-weight: 600; }
+  .fun-r.here .bar i { background: rgba(var(--tone-rgb, var(--accent-rgb)),0.6); }
+  .fun-r .you { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 14px; height: 14px; border-radius: 50%; background: var(--card); border: 3px solid var(--tone, var(--accent)); box-shadow: 0 0 0 4px rgba(var(--tone-rgb, var(--accent-rgb)),0.2); }
+  .fun-r .tag { position: absolute; top: 50%; transform: translateY(-50%); font-size: 11px; font-weight: 600; color: var(--tone-c, var(--d50)); white-space: nowrap; }
+  .fun-key { margin-top: 10px; font-size: 11.5px; color: var(--d400); }
+
+  table.cmpt { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 14px; }
+  table.cmpt th, table.cmpt td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.cmpt th { color: var(--d400); font-weight: 600; font-size: 11.5px; letter-spacing: 0.8px; text-transform: uppercase; }
+  table.cmpt td:first-child { color: var(--d50); font-weight: 600; white-space: nowrap; }
+  .tblwrap { overflow-x: auto; }
+  .refgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin-top: 14px; }
+  .ref { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font-size: 13px; color: var(--d300); }
+  .ref a { font-weight: 600; text-decoration: none; }
+  @media (prefers-reduced-motion: reduce) { .trk-step.now .trk-dot { animation: none; } }
+  @media (max-width: 600px) { .wrap { padding: 32px 16px 72px; } h1 { font-size: 28px; } .blk { padding: 18px 16px; } .switch { margin: 24px -16px 0; padding: 10px 16px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">AiMY Sales · contact page · "The story so far"</div>
+  <h1>Seven ways to draw where a lead stands</h1>
+  <p class="lead">Today the block draws the moments that already happened as a chain of dots: Already a contact, First called, Callback. It never shows the ladder those moments sit on, so it can't say how far the lead has come or how far it has to go. Each iteration below is a working mock drawn from Sales's own ladder (<code>LADDER</code> in bdr.js): Not called, No answer, Callback, Answered, Meeting set, Showed up, Interested, Handed over, plus the three exits. Use the switch to run every mock against three leads. Iteration 1 is the recommendation.</p>
+  <div class="meta">
+    <span class="pill">4 Nov 2026</span>
+    <span class="pill">The ladder and the story's data: Sales bdr.js, <code>LADDER</code> and <code>storyOf()</code></span>
+    <span class="pill">References: Mobbin (18 screens) + design systems</span>
+  </div>
+
+  <div class="switch" role="group" aria-label="Lead">
+    <span class="lab">Lead</span>
+    <button type="button" data-sc="callback" aria-pressed="true">Callback (your screenshot)</button>
+    <button type="button" data-sc="meeting" aria-pressed="false">Meeting set</button>
+    <button type="button" data-sc="declined" aria-pressed="false">Declined</button>
+    <span class="sub" id="scSay"></span>
+  </div>
+
+  <!-- ═══ TODAY ═══ -->
+  <section class="it">
+    <div class="eyebrow">Today</div>
+    <h2>The moments, without the ladder</h2>
+    <div class="cols">
+      <div class="blk" data-it="0"></div>
+      <div class="notes">
+        <div class="note"><h4>What works</h4><ul><li>The sentence says the state and when.</li><li>The open tip in the step's tone marks where it is now.</li><li>Every dot is a fact that happened, with a date and who.</li></ul></div>
+        <div class="note"><h4>What is missing</h4><ul><li>No sense of distance: is Callback early or late? The ladder isn't drawn.</li><li>Nothing about time: 8 days waiting on a callback looks the same as 1.</li><li>What happens next sits in a separate row below, apart from the picture.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 1 ═══ -->
+  <section class="it">
+    <div class="it-head"><span class="it-n rec">1 · Recommended</span><h2>The track: the whole ladder, with the moments on it</h2></div>
+    <p class="lead">All eight steps on one line, like an order tracker. Steps passed are filled, the current one is an open ring in its tone, steps ahead stay hollow. A dashed mark shows where the caller's part ends and the director takes over. The dates sit under the steps they belong to; moments that aren't steps (Already a contact, First called) become small chips under the track. An exit branches off the line.</p>
+    <div class="cols">
+      <div class="blk" data-it="1"></div>
+      <div class="notes">
+        <div class="note refs"><h4>Inspired by</h4>
+          <a href="https://mobbin.com/screens/c75ab520-4707-4e7b-9d65-7e5d7c888111" target="_blank">Walmart · order tracker<span class="why">filled past, current dot, hollow ahead</span></a>
+          <a href="https://mobbin.com/screens/784d1256-3e5e-46a1-a1af-1897a234d701" target="_blank">Amazon · order card<span class="why">four steps, the current one named above</span></a>
+          <a href="https://mobbin.com/screens/090173cd-511e-4466-ae39-2b0f98c60f5d" target="_blank">Zillow · lease steps<span class="why">labels under every step, the last ringed</span></a>
+          <a href="https://carbondesignsystem.com/components/progress-indicator/usage/" target="_blank">Carbon · progress indicator<span class="why">completed, current, not started, error</span></a>
+        </div>
+        <div class="note"><h4>Works</h4><ul><li>Answers "where, how far, how far to go" in one row.</li><li>Keeps Sales's own vocabulary: dots, the open tip, the tone.</li><li>The hand-off line says whose job each part is.</li></ul></div>
+        <div class="note"><h4>Falls short</h4><ul><li>Eight labels need about 640px; it scrolls on a phone.</li><li>Repeated no-answers fold into one step.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 2 ═══ -->
+  <section class="it">
+    <div class="it-head"><span class="it-n">2</span><h2>The path: chevrons, with coaching for the step</h2></div>
+    <p class="lead">Salesforce's Path. The ladder as chevrons, the current one filled in its tone with the days spent in it. Under it, the step's coaching: what to do now, and what moves the lead on. The moments become the chevrons' dates.</p>
+    <div class="cols">
+      <div class="blk" data-it="2"></div>
+      <div class="notes">
+        <div class="note refs"><h4>Inspired by</h4>
+          <a href="https://mobbin.com/screens/9351e3ba-d3a4-4515-9d71-b012a0d6b5f6" target="_blank">Salesforce · lead path<span class="why">chevrons, a check on what's done</span></a>
+          <a href="https://mobbin.com/screens/b1ba3b4e-6bc3-49b7-bae4-fa89632f1496" target="_blank">Pipedrive · deal stages<span class="why">days in each stage on the chevron</span></a>
+          <a href="https://mobbin.com/screens/b03fcca3-e1d1-45c9-a8d6-461e3e9062f7" target="_blank">Zoho CRM · migration steps<span class="why">chevrons with check and current</span></a>
+          <a href="https://spring-21.lightningdesignsystem.com/components/path" target="_blank">SLDS · Path<span class="why">stages plus a coaching panel for the step</span></a>
+        </div>
+        <div class="note"><h4>Works</h4><ul><li>The most recognised CRM pattern; nothing to learn.</li><li>Coaching turns the state into what to do.</li></ul></div>
+        <div class="note"><h4>Falls short</h4><ul><li>Heavy: a coloured bar dominates the page.</li><li>Loses who did what; only dates fit.</li><li>Looks clickable, though a step is moved by a call, not a press.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 3 ═══ -->
+  <section class="it">
+    <div class="it-head"><span class="it-n">3</span><h2>The days: each step as long as it took</h2></div>
+    <p class="lead">A bar whose segments are as wide as the days spent in each step, the current one striped and still growing. A dashed mark inside it shows the step's usual time, so a stalled lead shows itself. The steps still ahead are listed as chips.</p>
+    <div class="cols">
+      <div class="blk" data-it="3"></div>
+      <div class="notes">
+        <div class="note refs"><h4>Inspired by</h4>
+          <a href="https://mobbin.com/screens/b1ba3b4e-6bc3-49b7-bae4-fa89632f1496" target="_blank">Pipedrive · days per stage<span class="why">time is the stage's label</span></a>
+          <a href="https://knowledge.hubspot.com/properties/hubspots-default-deal-properties" target="_blank">HubSpot · time in current stage<span class="why">"stalled" at 20% past the usual</span></a>
+          <a href="https://mobbin.com/screens/8200a0a3-1620-4639-b432-703368d6099f" target="_blank">Pipedrive · contacts timeline<span class="why">activity laid along real time</span></a>
+        </div>
+        <div class="note"><h4>Works</h4><ul><li>Makes a stuck lead impossible to miss.</li><li>Same picture as the Reports page's ruler in Talent.</li></ul></div>
+        <div class="note"><h4>Falls short</h4><ul><li>Short steps get too narrow to label.</li><li>Needs a "usual" per step, which Sales doesn't keep yet (the mock uses sample norms).</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 4 ═══ -->
+  <section class="it">
+    <div class="it-head"><span class="it-n">4</span><h2>The timeline: what happened, now, and what comes next</h2></div>
+    <p class="lead">Vertical, like a delivery or application tracker. Done steps are compact; the current step is large, with the owed task inside it; the steps ahead are dotted, each with its usual time. Reads top to bottom on any width.</p>
+    <div class="cols">
+      <div class="blk" data-it="4"></div>
+      <div class="notes">
+        <div class="note refs"><h4>Inspired by</h4>
+          <a href="https://mobbin.com/screens/86231ec9-1c2b-4255-bfe0-8f30a3c32e4d" target="_blank">Hers · treatment timeline<span class="why">big current step, "avg 12 hrs" on what's next</span></a>
+          <a href="https://mobbin.com/screens/2a7de612-6f88-42d7-bce5-1d8fe2219314" target="_blank">Mercury · application timeline<span class="why">done, awaiting, ahead in one column</span></a>
+          <a href="https://mobbin.com/screens/b24bf79e-1acc-4d99-9f38-b81aa68daaf8" target="_blank">Stripe · task progress<span class="why">three states, vertical, beside the detail</span></a>
+          <a href="https://mobbin.com/screens/ea2fde3e-8b3e-4ef8-92d9-ea5dc9e51fda" target="_blank">Wise · transfer updates<span class="why">dated steps, then the actions</span></a>
+        </div>
+        <div class="note"><h4>Works</h4><ul><li>Joins the picture and the next task, now two rows apart.</li><li>Works at any width, phone included.</li></ul></div>
+        <div class="note"><h4>Falls short</h4><ul><li>Tall: eight steps take a column of the page.</li><li>The ladder's shape is less obvious than on a line.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 5 ═══ -->
+  <section class="it">
+    <div class="it-head"><span class="it-n">5</span><h2>The compact line: the state, eight ticks, and the moments behind a press</h2></div>
+    <p class="lead">For tight places: the contact's peek, a list row, a card. The state in its tone, eight small ticks for the ladder, "3 of 8", and the moments folded behind a press. Shown as the block and as cards.</p>
+    <div class="cols">
+      <div class="blk" data-it="5"></div>
+      <div class="notes">
+        <div class="note refs"><h4>Inspired by</h4>
+          <a href="https://mobbin.com/screens/56dbb1a0-5db6-410b-9277-94799de12045" target="_blank">Apple · order at a glance<span class="why">the state as a sentence, a thin bar under it</span></a>
+          <a href="https://mobbin.com/screens/ad7ff92e-fa8a-45fb-a3bc-5770c85e7472" target="_blank">Coinbase · application<span class="why">"50% complete" over the steps</span></a>
+          <a href="https://mobbin.com/screens/ddb355d6-c6db-41b5-80a6-99ded3595695" target="_blank">Mercor · processing steps<span class="why">three steps, one line each</span></a>
+        </div>
+        <div class="note"><h4>Works</h4><ul><li>Fits a row, a peek and a card with the same parts.</li><li>One line of ticks reads at a glance across a list.</li></ul></div>
+        <div class="note"><h4>Falls short</h4><ul><li>Too quiet for the contact page itself.</li><li>Ticks have no labels; hover or the press says which.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 6 ═══ -->
+  <section class="it">
+    <div class="it-head"><span class="it-n">6</span><h2>The change log: every move, who made it and from what</h2></div>
+    <p class="lead">The story as a record of changes, newest first: "Not called → Callback, by Engy, 27 Oct". Each line shows the step before and after as chips, so nothing about how the lead moved is left out, including moves back.</p>
+    <div class="cols">
+      <div class="blk" data-it="6"></div>
+      <div class="notes">
+        <div class="note refs"><h4>Inspired by</h4>
+          <a href="https://mobbin.com/screens/d76ba56f-98c3-463f-9e1d-bbe4831ee47a" target="_blank">Attio · record activity<span class="why">"Stage → Meeting", attribute by attribute</span></a>
+          <a href="https://mobbin.com/screens/b1ba3b4e-6bc3-49b7-bae4-fa89632f1496" target="_blank">Pipedrive · history<span class="why">"Stage: Qualified → Demo Scheduled"</span></a>
+          <a href="https://mobbin.com/screens/344a79cd-4663-471c-b710-dd920abd0718" target="_blank">HubSpot · logged call with outcome<span class="why">the call and what it changed</span></a>
+        </div>
+        <div class="note"><h4>Works</h4><ul><li>Honest about moves back and repeat no-answers.</li><li>Who did each move is always there.</li></ul></div>
+        <div class="note"><h4>Falls short</h4><ul><li>A log, not a picture: no sense of distance to the end.</li><li>Duplicates the touchpoints list lower on the page.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 7 ═══ -->
+  <section class="it">
+    <div class="it-head"><span class="it-n">7</span><h2>Among everyone: the campaign's funnel, with this lead on it</h2></div>
+    <p class="lead">The ladder as the campaign's funnel, one bar per step with how many leads are at it now, and this lead marked on its step: "one of 37 waiting on a callback". It places one lead against the rest, which a single lead's line cannot.</p>
+    <div class="cols">
+      <div class="blk" data-it="7"></div>
+      <div class="notes">
+        <div class="note refs"><h4>Inspired by</h4>
+          <a href="https://mobbin.com/screens/a8df8917-46aa-4226-a13b-facf6b7471a7" target="_blank">QuickBooks · customers funnel<span class="why">counts at each stage, left to right</span></a>
+          <a href="https://mobbin.com/screens/1e1e4b61-4674-4cff-b547-94929c73acc6" target="_blank">Zendesk Sell · pipeline flow<span class="why">where deals moved between stages</span></a>
+          <a href="https://mobbin.com/screens/0c03339a-adfd-4ceb-81c2-d55c869b320f" target="_blank">Juicebox · board by status<span class="why">each person as a card in a stage</span></a>
+        </div>
+        <div class="note"><h4>Works</h4><ul><li>Context a single line can't give: is this lead normal?</li><li>A door to the others at the same step.</li></ul></div>
+        <div class="note"><h4>Falls short</h4><ul><li>About the campaign, not the person: it belongs beside the story, not instead of it.</li><li>Counts in the mock are samples.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ COMPARISON ═══ -->
+  <section class="it">
+    <h2>Side by side</h2>
+    <div class="tblwrap"><table class="cmpt">
+      <tr><th>Iteration</th><th>Shows the ladder</th><th>Shows time</th><th>Next step in it</th><th>Width</th><th>Best for</th></tr>
+      <tr><td>Today</td><td>No</td><td>Dates only</td><td>No</td><td>Any</td><td>–</td></tr>
+      <tr><td>1 · Track</td><td><b>Yes, all 8</b></td><td>Dates</td><td>Below it</td><td>640px+</td><td>The contact page</td></tr>
+      <tr><td>2 · Path</td><td>Yes</td><td>Days in step</td><td>Coaching</td><td>720px+</td><td>A manager's view</td></tr>
+      <tr><td>3 · Days</td><td>Partly</td><td><b>Yes, to scale</b></td><td>No</td><td>Any</td><td>Spotting stuck leads</td></tr>
+      <tr><td>4 · Timeline</td><td>Yes</td><td>Usual per step</td><td><b>Inside it</b></td><td><b>Any</b></td><td>Phone, a narrow column</td></tr>
+      <tr><td>5 · Compact</td><td>As ticks</td><td>No</td><td>No</td><td>Any</td><td>Rows, peeks, cards</td></tr>
+      <tr><td>6 · Change log</td><td>No</td><td>Dates</td><td>No</td><td>Any</td><td>Audit, moves back</td></tr>
+      <tr><td>7 · Among everyone</td><td>Yes</td><td>No</td><td>No</td><td>Any</td><td>Beside the story</td></tr>
+    </table></div>
+    <h3>The recommendation</h3>
+    <p class="mute" style="max-width:80ch">Iteration 1 on the contact page: it keeps today's vocabulary and adds what is missing, the ladder and the hand-off. Borrow two things: from 3, flag a step stuck past its usual time on the current step's label ("8 days, usually 2"); from 4, draw the vertical version below 640px instead of scrolling. Iteration 5 is the same component for list rows and peeks, so the ladder looks the same everywhere it appears.</p>
+  </section>
+
+  <!-- ═══ REFERENCES ═══ -->
+  <section class="it">
+    <h2>All references</h2>
+    <div class="refgrid">
+      <div class="ref"><a href="https://mobbin.com/screens/9351e3ba-d3a4-4515-9d71-b012a0d6b5f6" target="_blank">Salesforce · lead path</a><br>Chevrons, done steps checked.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/bfca53c8-202b-48aa-954d-cb58efa99231" target="_blank">Salesforce · lead page</a><br>Path with "Mark Status as Complete".</div>
+      <div class="ref"><a href="https://mobbin.com/screens/b1ba3b4e-6bc3-49b7-bae4-fa89632f1496" target="_blank">Pipedrive · deal</a><br>Days per stage, stage history.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/8200a0a3-1620-4639-b432-703368d6099f" target="_blank">Pipedrive · contacts timeline</a><br>Touchpoints along months.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/d76ba56f-98c3-463f-9e1d-bbe4831ee47a" target="_blank">Attio · activity</a><br>Stage changes as before → after.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/344a79cd-4663-471c-b710-dd920abd0718" target="_blank">HubSpot · contact</a><br>Logged call with outcome; AI summary.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/a8df8917-46aa-4226-a13b-facf6b7471a7" target="_blank">QuickBooks · customers funnel</a><br>Counts per stage.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/1e1e4b61-4674-4cff-b547-94929c73acc6" target="_blank">Zendesk Sell · pipeline</a><br>Flow between stages.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/86231ec9-1c2b-4255-bfe0-8f30a3c32e4d" target="_blank">Hers · timeline</a><br>Current step large, average time ahead.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/2a7de612-6f88-42d7-bce5-1d8fe2219314" target="_blank">Mercury · application</a><br>Done, awaiting, ahead.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/b24bf79e-1acc-4d99-9f38-b81aa68daaf8" target="_blank">Stripe · task progress</a><br>Three-state vertical tracker.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/c75ab520-4707-4e7b-9d65-7e5d7c888111" target="_blank">Walmart · order</a><br>Horizontal tracker.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/784d1256-3e5e-46a1-a1af-1897a234d701" target="_blank">Amazon · order</a><br>Tracker with the actions under it.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/56dbb1a0-5db6-410b-9277-94799de12045" target="_blank">Apple · order</a><br>Sentence first, thin bar.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/090173cd-511e-4466-ae39-2b0f98c60f5d" target="_blank">Zillow · lease</a><br>Labelled steps, last ringed.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/ad7ff92e-fa8a-45fb-a3bc-5770c85e7472" target="_blank">Coinbase · application</a><br>Percentage over steps.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/ea2fde3e-8b3e-4ef8-92d9-ea5dc9e51fda" target="_blank">Wise · transfer</a><br>Dated updates.</div>
+      <div class="ref"><a href="https://mobbin.com/screens/0c03339a-adfd-4ceb-81c2-d55c869b320f" target="_blank">Juicebox · board</a><br>Candidates by status.</div>
+      <div class="ref"><a href="https://spring-21.lightningdesignsystem.com/components/path" target="_blank">SLDS · Path</a><br>Stages with coaching.</div>
+      <div class="ref"><a href="https://carbondesignsystem.com/components/progress-indicator/usage/" target="_blank">Carbon · progress indicator</a><br>Seven states incl. error.</div>
+      <div class="ref"><a href="https://knowledge.hubspot.com/properties/hubspots-default-deal-properties" target="_blank">HubSpot · deal properties</a><br>Time in current stage; stalled.</div>
+    </div>
+  </section>
+
+</div>
+<script>
+  /* Sales's ladder (bdr.js LADDER), its exits, and the three leads the switch
+     runs every mock against. `usual` days are sample norms for 3 and 4. */
+  const LADDER = [
+    { k: 'not-called', label: 'Not called', tone: 'neutral', usual: 3, say: 'nobody has called them yet', coach: ['Call within three days of the list landing.'] },
+    { k: 'no-answer', label: 'No answer', tone: 'neutral', usual: 4, say: 'called, nobody picked up', coach: ['Try a different hour; two more tries, then a note.'] },
+    { k: 'callback', label: 'Callback', tone: 'warn', usual: 2, say: 'they asked to be called back', coach: ['Call at the time they named.', 'Open with what they asked about.'] },
+    { k: 'answered', label: 'Answered', tone: 'neutral', usual: 3, say: 'you got them on the phone', coach: ['Book a meeting while they are warm.'] },
+    { k: 'meeting-set', label: 'Meeting set', tone: 'neutral', usual: 7, say: 'time in a diary', coach: ['Send the agenda the day before.', 'Confirm the morning of.'] },
+    { k: 'showed-up', label: 'Showed up', tone: 'neutral', usual: 3, say: 'they came to the meeting', coach: ['Write up what they need while it is fresh.'] },
+    { k: 'interested', label: 'Interested', tone: 'neutral', usual: 5, say: 'they want to go further', coach: ['Hand over to the director with the notes.'] },
+    { k: 'handed-over', label: 'Handed over', tone: 'ok', usual: 0, say: 'with the director', coach: [] },
+  ];
+  const TONE = { neutral: ['var(--accent)', '139,79,244', 'var(--d50)'], warn: ['var(--warn)', '247,201,92', 'var(--warn)'], ok: ['var(--ok)', '78,214,161', 'var(--ok)'], err: ['var(--err)', '255,114,130', 'var(--err)'] };
+  const SC = {
+    callback: {
+      say: 'Your screenshot: one touchpoint, a callback asked for on 27 Oct.',
+      cite: 'QA and test automation — Energy & utilities, DACH public & education and DACH telecom · 1 touchpoint',
+      at: 'callback', since: '27 Oct', daysIn: 8,
+      moments: [{ k: 'Already a contact', t: 'from the start', who: null }, { k: 'First called', t: '27 Oct', who: 'Engy' }],
+      moves: [{ from: 'not-called', to: 'callback', t: '27 Oct', who: 'Engy', step: 'callback' }],
+      days: { 'not-called': 0, callback: 8 },
+      task: { what: 'Call them back', when: 'was due 29 Oct', late: true },
+      peers: [412, 188, 37, 64, 21, 14, 9, 6],
+    },
+    meeting: {
+      say: 'Further along: found on a list, two tries, then a meeting booked.',
+      cite: 'QA and test automation — DACH telecom · 5 touchpoints, 4 calls',
+      at: 'meeting-set', since: '22 Oct', daysIn: 13,
+      moments: [{ k: 'Found on a list', t: '14 Oct', who: null }, { k: 'First called', t: '16 Oct', who: 'Engy' }],
+      moves: [{ from: 'not-called', to: 'no-answer', t: '16 Oct', who: 'Engy' }, { from: 'no-answer', to: 'answered', t: '21 Oct', who: 'Engy' }, { from: 'answered', to: 'meeting-set', t: '22 Oct', who: 'Engy' }],
+      days: { 'not-called': 2, 'no-answer': 5, answered: 1, 'meeting-set': 13 },
+      task: { what: 'Meeting with the QA lead', when: 'due 6 Nov', late: false },
+      peers: [412, 188, 37, 64, 21, 14, 9, 6],
+    },
+    declined: {
+      say: 'An exit: reached on the third try, and they said no.',
+      cite: 'QA and test automation — Energy & utilities · 3 touchpoints, 3 calls',
+      at: 'declined', since: '23 Oct', daysIn: 12, exitFrom: 'answered',
+      moments: [{ k: 'Already a contact', t: 'from the start', who: null }, { k: 'First called', t: '20 Oct', who: 'Engy' }],
+      moves: [{ from: 'not-called', to: 'no-answer', t: '20 Oct', who: 'Engy' }, { from: 'no-answer', to: 'answered', t: '23 Oct', who: 'Engy' }, { from: 'answered', to: 'declined', t: '23 Oct', who: 'Engy' }],
+      days: { 'not-called': 0, 'no-answer': 3, answered: 0 },
+      task: null,
+      peers: [412, 188, 37, 64, 21, 14, 9, 6],
+    },
+  };
+  const idx = (k) => LADDER.findIndex((x) => x.k === k);
+  const HAND = idx('interested');
+  /* done: stopped at; skip: went past without stopping (not-called always counts as stopped at). */
+  const stOf = (c, x, i) => i < c.at || (i === c.at && c.exit) ? (i === 0 || c.reached[x.k] ? 'done' : 'skip') : i === c.at ? 'now' : '';
+  let cur = 'callback';
+
+  function ctx() {
+    const s = SC[cur];
+    const exit = s.at === 'declined';
+    const at = exit ? idx(s.exitFrom) : idx(s.at);
+    const step = exit ? { label: 'Declined', tone: 'err', say: 'they said no' } : LADDER[at];
+    const tn = TONE[step.tone];
+    const reached = {};
+    s.moves.forEach((m) => { if (idx(m.to) >= 0) reached[m.to] = m; });
+    return { s, exit, at, step, tn, reached };
+  }
+  const toneVars = (tn) => '--tone:' + tn[0] + ';--tone-rgb:' + tn[1] + ';--tone-c:' + tn[2];
+  const head = (s) => '<div class="blk-head"><h3 class="blk-h">The story so far</h3><span class="blk-cite">' + s.cite + '</span></div>';
+  const nowLine = (c) => '<p class="now"><b class="t-' + c.step.tone + '">' + c.step.label + '</b> — ' + c.step.say + ', ' + c.s.since + '.</p>';
+  const task = (c) => c.s.task ? '<div class="task"><span class="mk"></span>' + c.s.task.what + '<span class="chip' + (c.s.task.late ? ' late' : '') + '">' + c.s.task.when + '</span></div>'
+    : '<div class="task" style="color:var(--d400)">That is where it ended. Nothing is owed.</div>';
+  const hand = (c) => c.exit || c.at >= LADDER.length - 1 ? '' : '<p class="hand">Your part ends at <b>Interested</b>; the director takes it from there.</p>';
+
+  const R = {
+    /* Today, as Sales draws it. */
+    0(c) {
+      /* As storyOf() builds it: where they came from, the first call, then
+         every move up the ladder and the exit. */
+      const steps = c.s.moments.map((m) => ({ k: m.k, t: m.t + (m.who ? ' · ' + m.who : '') }))
+        .concat(c.s.moves.map((m) => ({ k: m.to === 'declined' ? 'Declined' : LADDER[idx(m.to)].label, t: m.t })));
+      return head(c.s) + nowLine(c) + '<ol class="s0" style="' + toneVars(c.tn) + '">' + steps.map((x, i) => '<li class="' + (i === steps.length - 1 ? 'now' : '') + '"><span class="dot"></span><span class="k">' + x.k + '</span><span class="t">' + x.t + '</span></li>').join('') + '</ol>';
+    },
+    /* 1 · The track. */
+    1(c) {
+      const n = LADDER.length;
+      const steps = LADDER.map((x, i) => {
+        const st = stOf(c, x, i);
+        const m = c.reached[x.k];
+        const t = st === 'now' ? c.s.since + ' · ' + c.s.daysIn + ' days' : m ? m.t : i === 0 && c.s.moments[0].k === 'Found on a list' ? 'listed ' + c.s.moments[0].t : st === 'skip' ? 'went past' : '';
+        return '<div class="trk-step ' + st + (i > HAND ? ' hand-off' : '') + '"><span class="trk-dot"></span><span class="trk-k">' + x.label + '</span>' + (t ? '<span class="trk-t">' + t + '</span>' : '') + '</div>';
+      }).join('');
+      const split = '<span class="trk-split" style="left:calc(' + ((HAND + 1) / n * 100) + '% - 8px)"><span>the director’s</span></span>';
+      return head(c.s) + nowLine(c) +
+        '<div class="wide"><div><div class="trk" style="--n:' + n + ';' + toneVars(c.tn) + '">' + steps + split + '</div></div></div>' +
+        (c.exit ? '<div class="trk-exit"><i></i><b class="t-err">Declined</b> after Answered, ' + c.s.since + ', by Engy · they said no</div>' : '') +
+        '<div class="trk-moments">' + c.s.moments.map((m) => '<span class="mo"><b>' + m.k + '</b> · ' + m.t + (m.who ? ' · ' + m.who : '') + '</span>').join('') +
+          '</div>' +
+        task(c) + hand(c);
+    },
+    /* 2 · The path. */
+    2(c) {
+      const chev = LADDER.map((x, i) => {
+        const st0 = stOf(c, x, i), st = st0 === 'now' ? 'now n-' + x.tone : st0;
+        const m = c.reached[x.k];
+        const sub = i === c.at && !c.exit ? c.s.daysIn + ' days' : m ? m.t : '';
+        return '<div class="chev-s ' + st + '" title="' + x.label + '">' + (st === 'done' ? '✓ ' : '') + x.label + (sub ? '<small>' + sub + '</small>' : '') + '</div>';
+      }).join('') + (c.exit ? '<div class="chev-s exit">Declined<small>' + c.s.since + '</small></div>' : '');
+      const coach = c.exit ? '<div class="coach"><div><h5>How it ended</h5>They said no on the call of ' + c.s.since + '. The reason is on the call.</div><div><h5>What it feeds</h5><ul><li>The campaign’s decline reasons.</li><li>Nothing is owed.</li></ul></div></div>'
+        : '<div class="coach"><div><h5>Key to this step</h5><ul>' + c.step.coach.map((x) => '<li>' + x + '</li>').join('') + '</ul></div><div><h5>What moves it on</h5><ul><li>' + (LADDER[c.at + 1] ? 'Reaching <b>' + LADDER[c.at + 1].label + '</b>: ' + LADDER[c.at + 1].say + '.' : 'Nothing; it is with the director.') + '</li>' + (c.s.task ? '<li>' + c.s.task.what + ', ' + c.s.task.when + '.</li>' : '') + '</ul></div></div>';
+      return head(c.s) + nowLine(c) + '<div class="wide"><div><div class="chev" style="' + toneVars(c.tn) + '">' + chev + '</div></div></div>' + coach;
+    },
+    /* 3 · The days. */
+    3(c) {
+      const ks = Object.keys(c.s.days);
+      const total = ks.reduce((t, k) => t + Math.max(1, c.s.days[k]), 0);
+      const nowK = c.exit ? null : LADDER[c.at].k;
+      const segs = ks.map((k) => {
+        const d = c.s.days[k], w = Math.max(1, d) / total * 100, x = LADDER[idx(k)];
+        const now = k === nowK, stalled = now && x.usual && d > x.usual * 1.2;
+        return '<div class="days-s' + (now ? ' now n-' + x.tone : '') + (stalled ? ' stalled' : '') + '" style="flex:' + w + ' 1 0;' + (stalled ? '--usual:' + (x.usual / d * 100) + '%;' : '') + toneVars(TONE[x.tone]) + '" title="' + x.label + ': ' + d + ' days' + (x.usual ? ', usually ' + x.usual : '') + '"><b>' + x.label + '</b><span>' + d + (d === 1 ? ' day' : ' days') + (now ? ' so far' : '') + '</span></div>';
+      }).join('');
+      const xs = nowK ? LADDER[c.at] : null;
+      const stalled = xs && xs.usual && c.s.daysIn > xs.usual * 1.2;
+      const ahead = c.exit ? [] : LADDER.slice(c.at + 1);
+      return head(c.s) + nowLine(c) +
+        (stalled ? '<p style="margin:-8px 0 14px"><span class="flag">Stuck · ' + c.s.daysIn + ' days at ' + xs.label + ', usually ' + xs.usual + '</span></p>' : '') +
+        '<div class="days">' + segs + (c.exit ? '<div class="days-s now n-err" style="flex:8 1 0;' + toneVars(TONE.err) + '"><b>Declined</b><span>' + c.s.since + '</span></div>' : '') + '</div>' +
+        '<div class="days-key"><span>' + (c.s.moments[0].k === 'Found on a list' ? 'Found ' + c.s.moments[0].t : 'First called ' + c.s.moments[1].t) + '</span><span>Today, 4 Nov</span></div>' +
+        (ahead.length ? '<div class="days-ahead">' + ahead.map((x) => '<span>' + x.label + (x.usual ? ' · usually ' + x.usual + 'd' : '') + '</span>').join('') + '</div>' : '') +
+        '<p class="hand">The dashed line inside the current step is its usual time. Usual times are sample norms.</p>';
+    },
+    /* 4 · The timeline. */
+    4(c) {
+      const done = LADDER.slice(0, c.exit ? c.at + 1 : c.at).filter((x) => x.k === 'not-called' || c.reached[x.k]);
+      const li = done.map((x) => '<li><span class="vd">✓</span><span class="vk">' + x.label + '</span> <span class="vt-t">' + (c.reached[x.k] ? c.reached[x.k].t + ' · ' + c.reached[x.k].who : c.s.moments[0].k.toLowerCase() + ', ' + c.s.moments[0].t) + '</span></li>').join('');
+      const now = '<li class="now"><span class="vd"></span><span class="vk t-' + c.step.tone + '">' + c.step.label + '</span> <span class="vt-t">since ' + c.s.since + (c.exit ? '' : ' · ' + c.s.daysIn + ' days') + '</span>' +
+        '<div class="card">' + (c.exit ? 'They said no on the call. That is where it ended; nothing is owed.' : c.step.say.charAt(0).toUpperCase() + c.step.say.slice(1) + '. <b>' + (c.s.task ? c.s.task.what + '</b>, <span class="' + (c.s.task.late ? 't-warn' : '') + '">' + c.s.task.when + '</span>.' : '') + '</b>') + '</div></li>';
+      const ahead = c.exit ? '' : LADDER.slice(c.at + 1).map((x, i) => '<li class="next"><span class="vd"></span><span class="vk">' + x.label + '</span>' + (x.usual ? '<span class="usual">usually ' + x.usual + ' days</span>' : '') + (c.at + 1 + i === HAND ? '<div class="vt-t">Your part ends here; the director takes it on.</div>' : '') + '</li>').join('');
+      return head(c.s) + '<ol class="vt" style="' + toneVars(c.tn) + '">' + li + now + ahead + '</ol>';
+    },
+    /* 5 · Compact. */
+    5(c) {
+      const ticks = LADDER.map((x, i) => '<i class="' + stOf(c, x, i) + '" title="' + x.label + '"></i>').join('');
+      const rows = c.s.moments.map((m) => '<div class="row"><span>' + m.t + '</span><span>' + m.k + (m.who ? ' · ' + m.who : '') + '</span></div>').join('') +
+        c.s.moves.map((m) => '<div class="row"><span>' + m.t + '</span><span>' + (m.to === 'declined' ? 'Declined' : LADDER[idx(m.to)].label) + ' · ' + m.who + '</span></div>').join('');
+      const line = '<div class="cmp" style="' + toneVars(c.tn) + '"><span class="cmp-state t-' + c.step.tone + '">' + c.step.label + '</span><span class="mini">' + ticks + '</span><span class="mini-n">' + (c.at + 1) + ' of ' + LADDER.length + (c.exit ? ', then out' : '') + ' · ' + c.s.since + '</span><button class="cmp-more" type="button" data-more>' + (c.s.moves.length + c.s.moments.length) + ' moments</button></div><div class="cmp-list">' + rows + '</div>';
+      const card = (nm, co, l, a, tn) => '<div><div class="nm">' + nm + '</div><div class="co">' + co + '</div><div class="cmp" style="' + toneVars(TONE[tn]) + '"><span class="cmp-state t-' + tn + '" style="font-size:13px">' + l + '</span><span class="mini">' + LADDER.map((x, i) => '<i class="' + (i < a ? 'done' : i === a ? 'now' : '') + '"></i>').join('') + '</span></div></div>';
+      return head(c.s) + nowLine(c) + line + '<p class="hand" style="margin-top:18px">The same line on list cards (sample leads):</p><div class="peek" style="margin-top:8px">' + card('Lena Hartmann', 'Stadtwerke Kassel', 'Callback', 2, 'warn') + card('Jonas Weber', 'Telekom Austria', 'Meeting set', 4, 'neutral') + card('Mira Ostrowski', 'Uni Leipzig', 'Handed over', 7, 'ok') + '</div>';
+    },
+    /* 6 · Change log. */
+    6(c) {
+      const items = c.s.moves.slice().reverse().map((m, i) => {
+        const to = m.to === 'declined' ? { label: 'Declined', tone: 'err' } : LADDER[idx(m.to)];
+        return '<li class="' + (i === 0 ? 'top' : '') + '" style="' + toneVars(TONE[to.tone]) + '"><span class="av">' + m.who[0] + '</span><div><div class="what">' + m.who + ' logged a call</div><div class="chg"><s>' + LADDER[idx(m.from)].label + '</s>→<em>' + to.label + '</em></div></div><span class="when">' + m.t + '</span></li>';
+      }).join('') + c.s.moments.slice(0, 1).map((m) => '<li><span class="av sys">·</span><div><div class="what">' + m.k + '</div></div><span class="when">' + m.t + '</span></li>').join('');
+      return head(c.s) + nowLine(c) + '<ul class="log">' + items + '</ul>' + task(c);
+    },
+    /* 7 · Among everyone. */
+    7(c) {
+      const max = Math.max(...c.s.peers);
+      const here = c.exit ? -1 : c.at;
+      const rows = LADDER.map((x, i) => {
+        const n = c.s.peers[i], w = n / max * 100;
+        return '<div class="fun-r' + (i === here ? ' here' : '') + '" style="' + (i === here ? toneVars(c.tn) : '') + '"><span class="nm">' + x.label + '</span><span class="bar"><i style="width:' + w + '%"></i>' +
+          (i === here ? '<span class="you" style="left:' + Math.max(2, w) + '%"></span><span class="tag" style="left:calc(' + Math.max(2, w) + '% + 14px)">this lead</span>' : '') + '</span><span class="n">' + n + '</span></div>';
+      }).join('');
+      const say = c.exit ? 'This lead left at Answered, so it is no longer on the funnel; the exits would sit beside it as their own row.' : 'One of <b>' + c.s.peers[c.at] + '</b> leads on the campaign at <b>' + c.step.label + '</b> now' + (c.at === idx('callback') ? ', and the oldest of them by 3 days.' : '.');
+      return head(c.s) + nowLine(c) + '<p style="margin:-6px 0 14px;font-size:13px;color:var(--d300)">' + say + '</p><div class="fun">' + rows + '</div><p class="fun-key">Leads on “QA and test automation” at each step now. Sample counts.</p>';
+    },
+  };
+  function paint() {
+    const c = ctx();
+    document.getElementById('scSay').textContent = c.s.say;
+    document.querySelectorAll('[data-it]').forEach((el) => { el.innerHTML = R[el.dataset.it](c); });
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-sc]');
+    if (b) { cur = b.dataset.sc; document.querySelectorAll('[data-sc]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); paint(); return; }
+    const m = e.target.closest('[data-more]');
+    if (m) { m.closest('.cmp').classList.toggle('open'); }
+  });
+  paint();
+</script>
+</body>
+</html>

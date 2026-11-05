@@ -1161,8 +1161,6 @@ body.is-portal .aimy-overlay { display: none !important; }
 
 /* AiMY's reason, as a sentence, where the labels were on the card and in
    the CV on hover: the card's own AiMY note, not grown to fill the card. */
-.b-qcard > .b-aimy.t-why-say { flex: none; margin: 12px 14px 0; }
-.t-cv .b-aimy.t-why-say { flex: none; margin: 0; }
 
 /* ══ WHAT AIMY NOTICED (Today, 29 Oct) ════════════════════════════════════
    Sales's insight block (sales.css .s-insight), small and two to a row: the
@@ -1542,3 +1540,85 @@ button.snav-section-head:hover .snav-chevron { color: var(--d200); transform: tr
    declares them on :root. */
 :root { --qa-accent-rgb: var(--accent-rgb); --wash-6: rgba(255, 255, 255, 0.07); }
 :root[data-theme="light"] { --wash-6: rgba(16, 24, 40, 0.09); }
+
+/* ══ THE STORY SO FAR, AS A TRACK (4 Nov) ═══════════════════════════════════
+   The candidate's path on their requisition's stages (talent.js storyTrack):
+   passed is filled and joined by a line in the accent, the stage they are at
+   is an open ring in its tone, ahead is hollow. The dashed mark is where the
+   decision passes to the client. Below 640px it stands up as a list, so it
+   never scrolls sideways. */
+.t-trk-wrap { margin-top: 18px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; }
+.t-trk { --tone: var(--accent); --tone-rgb: var(--accent-rgb); display: grid; grid-template-columns: repeat(var(--n), minmax(72px, 1fr)); margin: 0; padding: 18px 0 4px; list-style: none; }
+.t-trk.tone-warn { --tone: var(--warn); --tone-rgb: var(--warn-rgb); }
+.t-trk.tone-ok { --tone: var(--ok); --tone-rgb: var(--ok-rgb); }
+.t-trk-step { position: relative; display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 22px 6px 0 0; }
+.t-trk-step::before { content: ""; position: absolute; top: 6px; left: 0; right: 0; height: 3px; background: rgba(255, 255, 255, 0.08); }
+:root[data-theme="light"] .t-trk-step::before { background: rgba(16, 24, 40, 0.1); }
+.t-trk-step:first-child::before { left: 6px; }
+.t-trk-step:last-child::before { right: auto; width: 6px; }
+.t-trk-step.is-done::before { background: var(--accent); }
+.t-trk-step.is-now::before { background: linear-gradient(90deg, rgba(var(--accent-rgb), 0.7), transparent 45%); }
+.t-trk-dot { position: absolute; top: 0; left: 0; width: 15px; height: 15px; border-radius: 50%; background: var(--card-bg); border: 2px solid rgba(255, 255, 255, 0.18); }
+:root[data-theme="light"] .t-trk-dot { border-color: rgba(16, 24, 40, 0.2); }
+.t-trk-step.is-done .t-trk-dot { background: var(--accent); border-color: var(--accent); }
+.t-trk-step.is-now .t-trk-dot { border-color: var(--tone); box-shadow: 0 0 0 5px rgba(var(--tone-rgb), 0.18); animation: t-trk-ring 2.4s var(--ease-out) infinite; }
+@keyframes t-trk-ring { 0% { box-shadow: 0 0 0 0 rgba(var(--tone-rgb), 0.35); } 70% { box-shadow: 0 0 0 9px rgba(var(--tone-rgb), 0); } 100% { box-shadow: 0 0 0 0 rgba(var(--tone-rgb), 0); } }
+.t-trk-k { font-size: 11.5px; font-weight: var(--fw-semibold); line-height: 1.3; color: var(--ink-muted); overflow-wrap: anywhere; }
+.t-trk-step.is-done .t-trk-k { color: var(--d100); }
+.t-trk-step.is-now .t-trk-k { color: var(--d50); }
+.t-trk.tone-warn .t-trk-step.is-now .t-trk-k { color: var(--warn-text, var(--warn)); }
+.t-trk.tone-ok .t-trk-step.is-now .t-trk-k { color: var(--ok-text, var(--ok)); }
+.t-trk-t { font-size: 11px; line-height: 1.35; color: var(--ink-muted); }
+.t-trk-late { align-self: flex-start; margin-top: 3px; padding: 1px 7px; border-radius: 999px; background: rgba(var(--warn-rgb), 0.14); color: var(--warn-text, var(--warn)); font-size: 10.5px; font-weight: var(--fw-semibold); white-space: nowrap; }
+/* Where the decision passes on: a dashed rule before the stage, named above it. */
+.t-trk-split { position: absolute; top: -18px; bottom: 0; left: -6px; border-left: 1px dashed var(--d500, #637280); }
+.t-trk-split span { position: absolute; top: -1px; left: 6px; color: var(--ink-muted); font-size: 10.5px; white-space: nowrap; }
+.t-trk-exit { display: flex; align-items: center; gap: 8px; margin: 14px 0 0; color: var(--d100); font-size: var(--fs-xs); }
+.t-trk-branch { width: 22px; height: 14px; border-left: 2px solid currentColor; border-bottom: 2px solid currentColor; border-radius: 0 0 0 8px; transform: translateY(-4px); color: var(--ink-muted); }
+.t-trk-exit.tone-err .t-trk-branch, .t-trk-exit.tone-err b { color: var(--err-text, var(--err)); }
+@media (max-width: 640px) {
+  .t-trk { grid-template-columns: 1fr; padding-top: 0; }
+  .t-trk-wrap { overflow: visible; }
+  .t-trk-step { padding: 0 0 14px 28px; }
+  .t-trk-step::before, .t-trk-step:first-child::before, .t-trk-step:last-child::before { top: 15px; bottom: -2px; left: 6px; right: auto; width: 3px; height: auto; }
+  .t-trk-step:last-child::before { display: none; }
+  .t-trk-step.is-now::before { background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.7), transparent 60%); }
+  .t-trk-step.is-hand { margin-top: 18px; }
+  .t-trk-split { top: -14px; bottom: auto; left: 0; right: 0; border-left: 0; border-top: 1px dashed var(--d500, #637280); }
+  .t-trk-split span { top: -9px; left: 28px; padding: 0 6px; background: var(--card-bg); }
+}
+
+/* ══ AiMY'S INSIGHT, FIRST ON THE CARD (4 Nov) ═══════════════════════════════
+   Under the name, the card's centre: a header with the verdict in words, the
+   sentence with what the CV shows tinted, and a chip per must-have (shown,
+   partly, or not known yet in grey, which is not a no). */
+.t-ins { flex: none; display: flex; flex-direction: column; gap: 8px; margin: 10px 14px 4px; padding: 12px 12px 10px; border-radius: 12px; border: 1px solid rgba(var(--accent-rgb), 0.35); background: linear-gradient(160deg, rgba(var(--accent-rgb), 0.18), rgba(51, 105, 255, 0.08)); }
+:root[data-theme="light"] .t-ins { background: linear-gradient(160deg, rgba(var(--accent-rgb), 0.10), rgba(51, 105, 255, 0.05)); }
+.t-ins-h { display: flex; align-items: center; gap: 6px; color: var(--accent-text, var(--accent)); font-size: 10.5px; font-weight: var(--fw-bold); letter-spacing: 0.06em; text-transform: uppercase; }
+.t-ins-h svg { flex: none; }
+.t-ins-v { margin-left: auto; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: var(--fw-semibold); letter-spacing: 0; text-transform: none; white-space: nowrap; }
+.t-ins-v.is-strong { background: var(--ok); color: #0c2a1f; }
+.t-ins-v.is-part { background: var(--warn); color: #2a1f04; }
+.t-ins-v.is-none { background: rgba(255, 255, 255, 0.12); color: var(--d100); }
+:root[data-theme="light"] .t-ins-v.is-none { background: rgba(16, 24, 40, 0.08); }
+.t-ins-say { margin: 0; color: var(--d50); font-size: var(--fs-sm); line-height: 1.45; }
+.t-ins-say b, .t-ins-say em { color: var(--accent-text, var(--accent)); font-style: normal; font-weight: var(--fw-semibold); }
+.t-ins-from { color: var(--ink-muted); font-size: 10.5px; }
+
+/* ══ THE CARD'S PROGRESS: THE STEPS EITHER SIDE (4 Nov) ═══════════════════ */
+.t-prog { display: flex; flex-direction: column; gap: 8px; margin: 10px 14px 0; }
+.t-steps { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.t-st { display: inline-flex; align-items: center; gap: 5px; min-width: 0; font-size: 11.5px; color: var(--ink-muted); }
+.t-st-k { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.t-st-dot { flex: none; display: grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; border: 1.5px dashed var(--d500, #637280); color: #fff; }
+.t-st.is-done .t-st-dot { border: 0; background: var(--accent); }
+.t-st.is-now .t-st-dot { border: 2px solid var(--accent); box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.18); }
+.t-st.is-now .t-st-k { color: var(--d50); font-weight: var(--fw-semibold); }
+.t-st.is-late .t-st-dot { border-color: var(--warn); box-shadow: 0 0 0 3px rgba(var(--warn-rgb), 0.18); }
+.t-st.is-late .t-st-k { color: var(--warn-text, var(--warn)); }
+.t-st.is-out .t-st-dot { border: 2px solid var(--err-text, var(--err)); }
+.t-st.is-out .t-st-k { color: var(--err-text, var(--err)); font-weight: var(--fw-semibold); }
+.t-st.is-now, .t-st.is-out, .t-st.is-late { flex: 0 1 auto; }
+.t-st-ln { flex: 0 0 14px; height: 2px; background: var(--accent); }
+.t-st-ln.is-ahead { background: repeating-linear-gradient(90deg, var(--d500, #637280) 0 3px, transparent 3px 6px); }
+@media (prefers-reduced-motion: reduce) { .t-trk-step.is-now .t-trk-dot { animation: none; } }

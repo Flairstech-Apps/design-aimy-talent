@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Candidate Card Mixes</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+  /* AiMY's dark tokens (aimy-ds.css), so the mocks read as Talent. */
+  :root {
+    --bg: #0d1117; --card: #141b24; --raised: #1c2630; --line: rgba(255,255,255,0.07); --line2: rgba(255,255,255,0.12);
+    --d50: #eef2f6; --d100: #d8e0e8; --d200: #c8d2dc; --d300: #b0bcca; --d400: #8b9aaa; --d500: #637280; --d600: #4a5b6e;
+    --accent: #8b4ff4; --accent-rgb: 139,79,244; --accent-text: #b18cff; --brand: #3369ff; --ai: #61adf1;
+    --ok: #4ed6a1; --ok-rgb: 78,214,161; --warn: #f7c95c; --warn-rgb: 247,201,92; --err: #ff7282;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: 'Poppins', system-ui, sans-serif; color: var(--d100); font-size: 14px; line-height: 1.55; }
+  button { font: inherit; color: inherit; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 48px 24px 96px; }
+  h1 { font-size: 34px; line-height: 1.15; letter-spacing: -0.5px; color: var(--d50); margin: 6px 0 10px; }
+  h2 { font-size: 22px; line-height: 1.25; color: var(--d50); margin: 0 0 6px; letter-spacing: -0.2px; }
+  h3 { font-size: 15px; color: var(--d50); margin: 18px 0 6px; }
+  p { margin: 0 0 10px; }
+  a { color: var(--accent-text); }
+  b, strong { color: var(--d50); font-weight: 600; }
+  .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 1.6px; text-transform: uppercase; color: var(--accent-text); }
+  .lead { font-size: 16px; color: var(--d300); max-width: 80ch; }
+  .mute { color: var(--d400); font-size: 12.5px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
+  .pill { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--raised); color: var(--d300); border: 1px solid var(--line); }
+  section.it { margin-top: 60px; padding-top: 32px; border-top: 1px solid var(--line); }
+  .it-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; }
+  .it-n { font-size: 12px; font-weight: 700; color: var(--bg); background: var(--accent-text); border-radius: 6px; padding: 2px 8px; }
+  .it-n.rec { background: var(--ok); }
+  .notes { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 16px; }
+  @media (max-width: 900px) { .notes { grid-template-columns: 1fr; } }
+  .note { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; font-size: 13px; color: var(--d300); }
+  .note h4 { margin: 0 0 6px; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--d400); }
+  .note ul { margin: 0; padding-left: 18px; } .note li { margin: 3px 0; }
+  .stage { margin-top: 18px; padding: 20px; border-radius: 18px; background: radial-gradient(120% 120% at 0% 0%, rgba(51,105,255,0.08), transparent 60%), #0b0f14; border: 1px solid var(--line2); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; align-items: stretch; }
+  .grid.wide2 { grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); }
+
+  /* Shared parts */
+  .card { position: relative; display: flex; flex-direction: column; gap: 9px; padding: 14px; border-radius: 14px; background: rgba(20,27,36,0.85); border: 1px solid var(--line); overflow: hidden; transition: border-color .15s ease; }
+  .card:hover { border-color: rgba(var(--accent-rgb),0.35); }
+  .tag { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; border: 1px solid var(--line2); color: var(--d200); white-space: nowrap; }
+  .tag.warn { border-color: rgba(var(--warn-rgb),0.45); color: var(--warn); background: rgba(var(--warn-rgb),0.08); }
+  .tag.info { border-color: rgba(97,173,241,0.45); color: var(--ai); }
+  .src { font-size: 11.5px; color: var(--d400); }
+  .nm { font-size: 16px; font-weight: 600; color: var(--d50); line-height: 1.25; }
+  .role { font-size: 13px; color: var(--d200); }
+  .metaline { font-size: 12px; color: var(--d400); }
+  .say { display: flex; gap: 8px; font-size: 12.5px; color: var(--d200); line-height: 1.45; }
+  .say .mk { flex: none; width: 12px; height: 12px; margin-top: 3px; border-radius: 4px; background: linear-gradient(135deg, #3369ff, #8b4ff4); }
+  .acts { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 4px; }
+  .btn { min-height: 30px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line2); background: rgba(255,255,255,0.04); font-size: 12px; font-weight: 600; line-height: 1.25; color: var(--d200); cursor: pointer; text-align: center; }
+  .btn.p { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .btn.wide { flex: 1; }
+  .btn .to { opacity: .75; font-weight: 500; }
+  .more { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line2); background: none; color: var(--d300); cursor: pointer; flex: none; }
+  .days { font-size: 11.5px; color: var(--d400); white-space: nowrap; }
+  .days.late, .late { color: var(--warn); }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .sp { flex: 1; min-width: 0; }
+  .av { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; }
+
+  /* The track, small: dots on a line, passed filled, current ringed. */
+  .trk { display: grid; grid-template-columns: repeat(var(--n), 1fr); }
+  .trk i { position: relative; height: 14px; }
+  .trk i::before { content: ""; position: absolute; top: 6px; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.1); }
+  .trk i:last-child::before { right: auto; width: 6px; }
+  .trk i.d::before { background: var(--accent); }
+  .trk i::after { content: ""; position: absolute; top: 3px; left: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--card); border: 1.5px solid rgba(255,255,255,0.2); }
+  .trk i.d::after { background: var(--accent); border-color: var(--accent); }
+  .trk i.n::after { top: 1px; left: -1px; width: 11px; height: 11px; border: 2px solid var(--tc, var(--accent)); box-shadow: 0 0 0 4px rgba(var(--tcr, var(--accent-rgb)),0.16); }
+  .trk i.hand::before { background-image: linear-gradient(90deg, transparent 0 50%, transparent 50%); }
+  .trk i.hand { border-left: 1px dashed var(--d500); margin-left: -1px; }
+  .trklab { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--d500); margin-top: 3px; }
+  .trklab b { color: var(--d100); font-weight: 600; }
+
+  /* A: track header */
+  .ca .stepline { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; font-size: 12px; }
+  .ca .stepline b { font-size: 13px; }
+  .ca .stepline .nx { color: var(--d500); }
+
+  /* B: progress edge */
+  .cb { padding-top: 18px; }
+  .cb .edge { position: absolute; top: 0; left: 0; right: 0; display: flex; gap: 2px; height: 5px; }
+  .cb .edge i { flex: 1; background: rgba(255,255,255,0.08); }
+  .cb .edge i.d { background: rgba(var(--accent-rgb),0.85); }
+  .cb .edge i.n { background: var(--tc, var(--accent)); }
+  .cb .head { display: flex; align-items: center; gap: 8px; }
+  .cb .head .of { margin-left: auto; font-size: 11px; color: var(--d500); }
+
+  /* C: the verb names where it leads */
+  .cc .btn.p { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 7px 12px; border-radius: 12px; }
+  .cc .btn.p small { font-size: 10.5px; font-weight: 500; opacity: .8; }
+  .cc .last { font-size: 11.5px; color: var(--d400); }
+
+  /* D: two zones */
+  .cd { padding: 0; gap: 0; }
+  .cd .who { padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 8px; }
+  .cd .where { margin-top: auto; padding: 12px 14px 14px; background: rgba(var(--accent-rgb),0.07); border-top: 1px solid rgba(var(--accent-rgb),0.2); display: flex; flex-direction: column; gap: 8px; }
+  .cd .where.warn { background: rgba(var(--warn-rgb),0.06); border-top-color: rgba(var(--warn-rgb),0.22); }
+  .cd .where .st { display: flex; align-items: baseline; gap: 6px; font-size: 12px; white-space: nowrap; }
+  .cd .where .st b { font-size: 13px; }
+  .cd .where .nowsay { font-size: 12px; line-height: 1.45; color: var(--d300); min-height: 2.9em; }
+
+  /* E: the now sentence leads */
+  .ce .now { font-size: 14px; font-weight: 600; color: var(--d50); line-height: 1.35; }
+  .ce .waits { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+  .ce .waits i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .ce .w-me { color: var(--accent-text); background: rgba(var(--accent-rgb),0.14); }
+  .ce .w-new { color: var(--ai); background: rgba(97,173,241,0.12); }
+  .ce .w-others { color: var(--d300); background: rgba(255,255,255,0.06); }
+  .ce hr { border: 0; border-top: 1px solid var(--line); margin: 2px 0; width: 100%; }
+
+  /* F: labelled track, facts as chips */
+  .cf .facts { display: flex; flex-wrap: wrap; gap: 5px; }
+  .cf .facts span { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,0.05); color: var(--d300); }
+  .cf .say span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .cf:hover .say span { -webkit-line-clamp: unset; }
+
+  /* G: split, with last / now / next */
+  .cg { flex-direction: row; gap: 14px; }
+  .cg .l { flex: 1.25; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+  .cg .r { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; padding-left: 14px; border-left: 1px solid var(--line); }
+  .cg .vt { list-style: none; margin: 0 0 10px; padding: 0; }
+  .cg .vt li { position: relative; padding: 0 0 10px 18px; font-size: 11.5px; color: var(--d300); line-height: 1.35; }
+  .cg .vt li::before { content: ""; position: absolute; left: 4px; top: 12px; bottom: -2px; width: 2px; background: var(--accent); }
+  .cg .vt li.n::before { background: repeating-linear-gradient(180deg, var(--d600) 0 3px, transparent 3px 6px); }
+  .cg .vt li:last-child::before { display: none; }
+  .cg .vt li::after { content: ""; position: absolute; left: 0; top: 3px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .cg .vt li.now::after { background: var(--card); border: 2px solid var(--tc, var(--accent)); width: 10px; height: 10px; left: -1px; top: 2px; }
+  .cg .vt li.n::after { background: var(--card); border: 1.5px solid var(--d500); }
+  .cg .vt b { display: block; font-size: 10px; letter-spacing: .8px; text-transform: uppercase; color: var(--d500); font-weight: 600; }
+  .cg .vt li.now span { color: var(--d50); font-weight: 600; }
+  @media (max-width: 640px) { .cg { flex-direction: column; } .cg .r { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); padding-top: 10px; } }
+
+  table.cmpt { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 14px; }
+  table.cmpt th, table.cmpt td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.cmpt th { color: var(--d400); font-weight: 600; font-size: 11.5px; letter-spacing: 0.8px; text-transform: uppercase; }
+  table.cmpt td:first-child { color: var(--d50); font-weight: 600; white-space: nowrap; }
+  .tblwrap { overflow-x: auto; }
+  @media (prefers-reduced-motion: reduce) { .card { transition: none; } }
+  @media (max-width: 600px) { .wrap { padding: 32px 16px 72px; } h1 { font-size: 28px; } .stage { padding: 14px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">AiMY Talent · Candidates · card mixes</div>
+  <h1>Decision first, with the story in it</h1>
+  <p class="lead">Seven ways to join the two cards you picked from the last sheet: <b>1 · Decision first</b> (the stage and the verb frame the card, equal heights, AiMY's sentence kept) and <b>6 · The story card</b> (the requisition's stages as a small track, the current one named with what comes next, and the last touch). Each is drawn with the same six candidates from Omar Saeed's queue. Mix A is the closest join; mix D is the recommendation.</p>
+  <div class="meta">
+    <span class="pill">4 Nov 2026</span>
+    <span class="pill">From deliverables/candidate-card-iterations.html, iterations 1 and 6</span>
+    <span class="pill">Data: 6 candidates from the Candidates page</span>
+  </div>
+
+  <section class="it">
+    <div class="it-head"><span class="it-n">A</span><h2>The track as the header</h2></div>
+    <p class="lead">Decision first, with its ticks replaced by the story's dots, and one line under them: the stage, its days, and what comes next. Then who, AiMY's sentence and the verb.</p>
+    <div class="stage"><div class="grid" data-it="a"></div></div>
+    <div class="notes">
+      <div class="note"><h4>From 1</h4><ul><li>Stage first, verb full-width at the foot, ⋯ for the rest.</li><li>Equal heights.</li></ul></div>
+      <div class="note"><h4>From 6</h4><ul><li>The dots and "→ next stage".</li></ul></div>
+      <div class="note"><h4>Watch</h4><ul><li>The stage is said twice: in the tag and the step line, so the tag goes.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <div class="it-head"><span class="it-n">B</span><h2>The track as the card's top edge</h2></div>
+    <p class="lead">The stages become the card's own top border, filled as far as they have got, the current segment in its tone. The head line names the stage and its days with "4 of 12"; the rest of the card is decision first.</p>
+    <div class="stage"><div class="grid" data-it="b"></div></div>
+    <div class="notes">
+      <div class="note"><h4>From 1</h4><ul><li>The whole layout.</li></ul></div>
+      <div class="note"><h4>From 6</h4><ul><li>The track, as an edge: zero extra height.</li></ul></div>
+      <div class="note"><h4>Watch</h4><ul><li>A 5px edge is easy to miss; it reads as decoration until learned.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <div class="it-head"><span class="it-n">C</span><h2>The verb says where it leads</h2></div>
+    <p class="lead">The story's "what comes next" moves into the button itself: <i>Agreed to talk</i> with <i>moves them to Applied</i> under it. The track sits at the top; the last touch sits over the foot.</p>
+    <div class="stage"><div class="grid" data-it="c"></div></div>
+    <div class="notes">
+      <div class="note"><h4>From 1</h4><ul><li>The verb owns the foot.</li></ul></div>
+      <div class="note"><h4>From 6</h4><ul><li>Next stage and last touch.</li></ul></div>
+      <div class="note"><h4>Watch</h4><ul><li>A two-line button is taller; long verbs wrap.</li><li>"Call" doesn't move anyone by itself; it says what the call can lead to.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <div class="it-head"><span class="it-n rec">D · Recommended</span><h2>Two zones: who they are, then where they are</h2></div>
+    <p class="lead">The card splits in two. The top is the person: name, role, one line of facts, AiMY's sentence. The bottom is a tinted status panel: the track, the stage with its days and what's next, the sentence of where they stand, and the verb. Amber when they've been in the stage longer than usual.</p>
+    <div class="stage"><div class="grid" data-it="d"></div></div>
+    <div class="notes">
+      <div class="note"><h4>From 1</h4><ul><li>The decision zone is fixed at the foot of every card, at one height, so a row lines up.</li><li>Verb full-width, ⋯ for Not progressing.</li></ul></div>
+      <div class="note"><h4>From 6</h4><ul><li>The track, "→ next", and where they stand, all in the status zone.</li></ul></div>
+      <div class="note"><h4>Why this one</h4><ul><li>Two questions, two places: "should we?" above, "what now?" below.</li><li>The tint carries the late state without another badge.</li><li>The zone is the same component the profile's track uses.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <div class="it-head"><span class="it-n">E</span><h2>Where they stand leads</h2></div>
+    <p class="lead">The story's sentence ("Interviewed yesterday. The interviewer has not sent the result.") becomes the headline under the name, with a chip for who it waits on. The track and AiMY's sentence follow; the verb closes.</p>
+    <div class="stage"><div class="grid" data-it="e"></div></div>
+    <div class="notes">
+      <div class="note"><h4>From 1</h4><ul><li>Verb at the foot, equal heights.</li></ul></div>
+      <div class="note"><h4>From 6</h4><ul><li>The status sentence, promoted.</li><li>The track.</li></ul></div>
+      <div class="note"><h4>Watch</h4><ul><li>Two bold lines (name and status) compete.</li><li>The "waits on" chip repeats the page's cut chips.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <div class="it-head"><span class="it-n">F</span><h2>Compact: a labelled track, facts as chips</h2></div>
+    <p class="lead">The shortest card. The track names only where they are and where they go next, under its ends. Facts are chips, AiMY's sentence is held to two lines and opens in full on hover.</p>
+    <div class="stage"><div class="grid" data-it="f"></div></div>
+    <div class="notes">
+      <div class="note"><h4>From 1</h4><ul><li>Verb and ⋯ at the foot.</li></ul></div>
+      <div class="note"><h4>From 6</h4><ul><li>The track, labelled now → next.</li></ul></div>
+      <div class="note"><h4>Watch</h4><ul><li>Two lines of AiMY can cut "I'd check…", the useful half.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <div class="it-head"><span class="it-n">G</span><h2>Side by side: the person left, the story right</h2></div>
+    <p class="lead">A wider card in two columns. Left: who, AiMY's sentence and the verb. Right: a small vertical story of last, now and next, the same three moments the story card had, stacked.</p>
+    <div class="stage"><div class="grid wide2" data-it="g"></div></div>
+    <div class="notes">
+      <div class="note"><h4>From 1</h4><ul><li>Verb under the person, ⋯ beside it.</li></ul></div>
+      <div class="note"><h4>From 6</h4><ul><li>Last, now and next as a little timeline.</li></ul></div>
+      <div class="note"><h4>Watch</h4><ul><li>Needs ~400px a card: two or three to a row, not four.</li><li>Loses the whole-path view; only three moments.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="it">
+    <h2>Side by side</h2>
+    <div class="tblwrap"><table class="cmpt">
+      <tr><th>Mix</th><th>Where the story sits</th><th>What comes next</th><th>Late shows as</th><th>Height</th><th>Per row at 1200px</th></tr>
+      <tr><td>A · Track header</td><td>Top, dots + line</td><td>"→ next" in the line</td><td>Amber ring, amber days</td><td>~230px</td><td>4</td></tr>
+      <tr><td>B · Top edge</td><td>Card border</td><td>No</td><td>Amber segment</td><td>~210px</td><td>4</td></tr>
+      <tr><td>C · Verb leads</td><td>Top dots</td><td><b>In the button</b></td><td>Amber days</td><td>~245px</td><td>4</td></tr>
+      <tr><td>D · Two zones</td><td><b>Bottom panel</b></td><td>"→ next" in the panel</td><td><b>Panel tint</b></td><td>~250px</td><td>4</td></tr>
+      <tr><td>E · Status leads</td><td>Under the name</td><td>No</td><td>Amber ring</td><td>~250px</td><td>4</td></tr>
+      <tr><td>F · Compact</td><td>Labelled ends</td><td>Under the track</td><td>Amber ring</td><td><b>~200px</b></td><td>4</td></tr>
+      <tr><td>G · Side by side</td><td>Right column</td><td>Its own row</td><td>Amber ring</td><td>~220px</td><td>2–3</td></tr>
+    </table></div>
+    <h3>The recommendation</h3>
+    <p class="mute" style="max-width:84ch">Mix D. It keeps decision first's promise (the verb in the same place on every card, every card the same height) and gives the story card a home of its own instead of squeezing it into the header. From C, borrow the verb's "→ next" only where a press moves the stage (Agreed to talk, Passed); a Call button keeps its one word. On the candidate page, the same status panel can sit above the full track, so card and page match.</p>
+  </section>
+
+</div>
+<script>
+  /* The six candidates, as the Candidates page drew them on 4 Nov. */
+  const T = { northwind: ['Sourced','Applied','Assessment','Phone screen','HR interview','Technical interview','Profile sent','Client interview','Client technical','Offer','Accepted','Joined'],
+    internal: ['Sourced','Applied','Phone screen','HR interview','Technical interview','Managerial interview','Offer','Accepted','Joined'] };
+  const C = [
+    { name: 'Adham Fouad', role: 'Finance Associate at a logistics company', at: 0, tpl: 'northwind', since: 4, usual: 3, returning: true,
+      years: 4, place: 'Nasr City', langs: 'Arabic, English', waits: 'new', waitSay: 'First contact',
+      shows: 'partly matches on accounts receivable and overseas collections, and lives close to the office', check: 'NetSuite and how fluent their English is',
+      nowSay: 'Found, not yet in touch.', verb: 'Agreed to talk', moves: true, last: 'Found 31 Oct, from the talent pool' },
+    { name: 'Karim Ibrahim', role: 'Helpdesk Analyst at a bank', at: 1, tpl: 'northwind', since: 3, usual: 2,
+      years: 7, place: 'Mansoura', langs: 'Arabic, English', waits: 'me', waitSay: 'Waiting on you',
+      shows: 'partly matches on reading stack traces', check: 'software support, SQL and scripting, and how fluent their English is',
+      nowSay: 'Applied, no call yet.', verb: 'Call Karim', call: true, last: 'Applied 1 Nov, through the link' },
+    { name: 'Mohamed Ibrahim', role: 'Back-office Analyst at a bank', at: 5, tpl: 'internal', since: 3, usual: 3,
+      years: 6, place: 'Nasr City', langs: 'Arabic, English', waits: 'me', waitSay: 'Your call',
+      shows: 'looks strong on business analysis, writing requirements and working with AI or data teams', check: 'how fluent their English is',
+      nowSay: 'Interviewed 3 days ago. The result is in: proceed.', verb: 'Passed the managerial interview', moves: true, last: 'Interviewed 1 Nov' },
+    { name: 'Esraa Gamal', role: 'Back-office Analyst at a bank', at: 0, tpl: 'internal', since: 3, usual: 3,
+      years: 6, place: '6th of October', langs: 'Arabic, English', waits: 'new', waitSay: 'First contact',
+      shows: '', check: 'business analysis, writing requirements, working with AI or data teams and how fluent their English is',
+      nowSay: 'Found, not yet in touch.', verb: 'Agreed to talk', moves: true, last: 'Added 1 Nov by Omar' },
+    { name: 'Ayman Shawky', role: 'Business Analyst at a software house', at: 3, tpl: 'internal', since: 3, usual: 3,
+      years: 8, place: 'Nasr City', langs: 'Arabic, English', waits: 'others', waitSay: 'Waiting on the interviewer',
+      shows: 'looks strong on writing requirements, working with AI or data teams and fluent English', check: 'business analysis',
+      nowSay: 'Interviewed yesterday. The interviewer has not sent the result.', verb: 'Passed the HR interview', moves: true, last: 'Interviewed 3 Nov' },
+    { name: 'Reem Adel', role: 'Accounting Assistant at a hospital group', at: 1, tpl: 'northwind', since: 3, usual: 2,
+      years: 8, place: 'Heliopolis', langs: 'Arabic, English', waits: 'me', waitSay: 'Waiting on you',
+      shows: '', check: 'accounts receivable, overseas collections, NetSuite and how fluent their English is',
+      nowSay: 'Applied, no call yet.', verb: 'Call Reem', call: true, last: 'Found on the web 1 Nov' },
+  ];
+  const first = (n) => n.split(' ')[0];
+  const ini = (n) => n.split(' ').map((w) => w[0]).join('').slice(0, 2);
+  const HUE = ['#6d4bd8', '#2f6fe0', '#1f9d8a', '#c2569a', '#d0812b', '#4f8a3a'];
+  const av = (c, i) => '<span class="av" style="background:' + HUE[i % HUE.length] + '">' + ini(c.name) + '</span>';
+  const late = (c) => c.since > c.usual;
+  /* Short names on a card, as on the profile's track. */
+  const SHORT = { 'HR interview': 'HR', 'Technical interview': 'Technical', 'Managerial interview': 'Managerial', 'Client technical': 'Client tech' };
+  const stg = (c) => SHORT[T[c.tpl][c.at]] || T[c.tpl][c.at], nxt = (c) => SHORT[T[c.tpl][c.at + 1]] || T[c.tpl][c.at + 1];
+  const tone = (c) => late(c) ? ' style="--tc:var(--warn);--tcr:var(--warn-rgb)"' : '';
+  const daysSay = (c) => '<span class="days' + (late(c) ? ' late' : '') + '">' + c.since + ' days' + (late(c) ? ', usually ' + c.usual : '') + '</span>';
+  const ai = (c) => '<div class="say"><span class="mk"></span><span>' + (c.shows ? first(c.name) + ' ' + c.shows + '.' : first(c.name) + '’s CV doesn’t show the must-haves yet.') + ' I’d check ' + c.check + '.</span></div>';
+  const meta = (c) => '<div class="metaline">' + c.years + ' yrs · ' + c.place + ' · ' + c.langs + '</div>';
+  const who = (c) => '<div><div class="nm">' + c.name + (c.returning ? ' <span class="tag info" style="vertical-align:2px">Returning</span>' : '') + '</div><div class="role">' + c.role + '</div></div>';
+  const trk = (c) => '<div class="trk" style="--n:' + T[c.tpl].length + '" title="' + stg(c) + ', stage ' + (c.at + 1) + ' of ' + T[c.tpl].length + '">' + T[c.tpl].map((_, i) => '<i class="' + (i < c.at ? 'd' : i === c.at ? 'n' : '') + '"' + (i === c.at ? tone(c) : '') + '></i>').join('') + '</div>';
+  const foot = (c, label) => '<div class="acts"><button class="btn p wide">' + (label || c.verb) + '</button><button class="more" title="Not progressing, and more" aria-label="More">⋯</button></div>';
+  const R = {
+    a: (c) => '<article class="card ca">' + trk(c) +
+      '<div class="stepline"><b' + (late(c) ? ' class="late"' : '') + '>' + stg(c) + '</b>' + daysSay(c) + '<span class="nx">→ ' + nxt(c) + '</span></div>' +
+      who(c) + meta(c) + ai(c) + foot(c) + '</article>',
+    b: (c) => '<article class="card cb"><span class="edge">' + T[c.tpl].map((_, i) => '<i class="' + (i < c.at ? 'd' : i === c.at ? 'n' : '') + '"' + (i === c.at ? tone(c) : '') + '></i>').join('') + '</span>' +
+      '<div class="head"><span class="tag' + (late(c) ? ' warn' : '') + '">' + stg(c) + '</span>' + daysSay(c) + '<span class="of">' + (c.at + 1) + ' of ' + T[c.tpl].length + '</span></div>' +
+      who(c) + meta(c) + ai(c) + foot(c) + '</article>',
+    c: (c) => '<article class="card cc">' + trk(c) + '<div class="row"><span class="tag' + (late(c) ? ' warn' : '') + '">' + stg(c) + '</span>' + daysSay(c) + '</div>' +
+      who(c) + ai(c) + '<div class="last">Last: ' + c.last + '</div>' +
+      '<div class="acts"><button class="btn p wide">' + c.verb + '<small>' + (c.moves ? 'moves them to ' + nxt(c) : 'log it, and it can move them to ' + nxt(c)) + '</small></button><button class="more" aria-label="More">⋯</button></div></article>',
+    d: (c) => '<article class="card cd"><div class="who">' + who(c) + meta(c) + ai(c) + '</div>' +
+      '<div class="where' + (late(c) ? ' warn' : '') + '">' + trk(c) +
+        '<div class="st"><b' + (late(c) ? ' class="late"' : '') + '>' + stg(c) + '</b>' + daysSay(c) + '<span class="src" style="margin-left:auto">→ ' + nxt(c) + '</span></div>' +
+        '<div class="nowsay">' + c.nowSay + '</div>' + foot(c) + '</div></article>',
+    e: (c) => '<article class="card ce">' + who(c) + '<div class="now">' + c.nowSay + '</div>' +
+      '<div class="row"><span class="waits w-' + c.waits + '"><i></i>' + c.waitSay + '</span>' + daysSay(c) + '</div>' + trk(c) + '<hr>' + ai(c) + foot(c) + '</article>',
+    f: (c) => '<article class="card cf">' + who(c) + '<div>' + trk(c) + '<div class="trklab"><b' + (late(c) ? ' class="late"' : '') + '>' + stg(c) + ' · ' + c.since + 'd</b><span>next: ' + nxt(c) + '</span></div></div>' +
+      '<div class="facts"><span>' + c.years + ' yrs</span><span>' + c.place + '</span><span>' + c.langs + '</span></div>' + ai(c) + foot(c) + '</article>',
+    g: (c, i) => '<article class="card cg"><div class="l"><div class="row">' + av(c, i) + who(c) + '</div>' + meta(c) + ai(c) + foot(c) + '</div>' +
+      '<div class="r"><ul class="vt"><li><b>Last</b><span>' + c.last + '</span></li><li class="now"' + tone(c) + '><b>Now</b><span' + (late(c) ? ' class="late"' : '') + '>' + stg(c) + ', ' + c.since + ' days</span></li><li class="n"><b>Next</b><span>' + nxt(c) + '</span></li></ul>' +
+        '<div class="src">Stage ' + (c.at + 1) + ' of ' + T[c.tpl].length + (late(c) ? ' · usually ' + c.usual + ' days' : '') + '</div></div></article>',
+  };
+  document.querySelectorAll('[data-it]').forEach((el) => { el.innerHTML = C.map((c, i) => R[el.dataset.it](c, i)).join(''); });
+</script>
+</body>
+</html>
