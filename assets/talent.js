@@ -2846,7 +2846,7 @@
   const initials = (name) => name.split(' ').map((w) => w[0]).join('').slice(0, 2);
   function rcard(o) {
     return '<section class="rc s-block-wide" aria-label="' + esc(o.label || o.cap) + '">' +
-      (o.amber ? '<div class="eyebrow amber">' : '<div class="eyebrow">') + svg(o.ico, 14) + ' ' + esc(o.cap) + '</div>' +
+      (o.bare ? '' : (o.amber ? '<div class="eyebrow amber">' : '<div class="eyebrow">') + svg(o.ico, 14) + ' ' + esc(o.cap) + '</div>') +
       (o.cards || ['<div class="card">' + o.body + '</div>']).join('') + '</section>';
   }
   const shortAcc = (a) => a.name.split(' ')[0];
@@ -3049,9 +3049,11 @@
     const last = v.reduce((d, x) => (x.seen[0] && (d == null || x.seen[0].day > d) ? x.seen[0].day : d), null);
     /* Why they fit, as the card says it, then each must-have with the line
        of the CV it rests on (Workable, Pin). No score, no lane. */
-    return rcard({ cap: 'Why they fit', ico: 'listc', label: 'Why they fit',
+    /* Led by AiMY's read, the card's own words (5 Nov), not a row of tags
+       that the list under it already names. */
+    return rcard({ cap: 'Why they fit', ico: 'listc', label: 'Why they fit', bare: true,
       body: rcHead('Why ' + esc(first(c.name)) + ' fits', esc(q.title) + ' · ' + esc(accOf(q).name)) +
-        '<div style="margin-top:12px">' + whyTags(c, true) + '</div>' +
+        whySay(c) +
         '<div class="row between" style="margin-top:8px;flex-wrap:wrap;gap:6px"><span class="sub">each quoted from the CV · ' + (conf ? conf + ' confirmed in interview' : 'none confirmed in interview yet') + '</span>' +
           (diff ? rcChip(diff + (diff === 1 ? ' differs' : ' differ') + ' in interview', 'err') : '') + '</div>' +
         '<div style="margin-top:12px">' + q.must.map((m, i) => {
@@ -5174,6 +5176,9 @@
      unknown, and it comes with one way to find out. */
   const EVW = { m: 'Meets', p: 'Partly', n: 'Not known' };
   const profileLink = (c) => 'talent.flairstech.com/me/' + c.pid;
+  const CAND_MQ = window.matchMedia ? window.matchMedia('(max-width: 1180px)') : null;
+  const candNarrow = () => !!(CAND_MQ && CAND_MQ.matches);
+  if (CAND_MQ && CAND_MQ.addEventListener) CAND_MQ.addEventListener('change', () => { if (S.cand) paint(); });
   function candPage() {
     const c = DB.byId[S.cand];
     if (!c || !sees(c)) return '<div class="s-home"><section class="s-block s-block-wide"><p class="s-none">This candidate has not been sent to you.</p></section></div>';
@@ -5204,32 +5209,47 @@
           (isClient() || !before(c) ? '' : tag('Returning', 'info')) +
           (isClient() ? '' : '<span class="b-kind">' + esc(c.source) + ', ' + esc(sayWhen(c.applied != null ? c.applied : -3)) + '</span>') + '</div>' +
           (isClient() || !before(c) ? '' : '<p class="b-cmeta-p t-before">' + fact('hist', beforeSay(before(c))) + '</p>') +
-        '<div class="b-cmeta">' +
-          part('Now', p(esc(c.at)) + p(esc(plural(c.years, 'year')) + ' of experience')) +
-          (isClient() ? '' : part('Reach them', p('<b>' + esc(c.phone || 'No phone yet') + '</b>') + p(esc(c.email || '')) +
-            p(esc(c.dnc ? 'Asked not to be called again.' : c.badNumber ? 'This number did not work.' : c.callback != null && c.callback <= 0 ? 'Asked to be called back today' + (c.cbWin ? ', ' + winSay(c.cbWin) : '') + '.' : plural(calls.length, 'call') + ' so far.')) +
-            (works ? p((c.wa ? '<button class="t-inline-link" type="button"' + goAttr({ on: 'calls', th: c.id }) + '>WhatsApp' + (msgsOf(c.id).length ? ' (' + msgsOf(c.id).length + ')' : '') + '</button> · ' : '') +
-              '<button class="t-inline-link" type="button"' + goAttr({ on: 'calls', lg: c.id }) + '>Log a call from elsewhere</button>') : ''))) +
-          part('Languages and skills', p(esc(c.langs.join(', '))) + p(esc((c.skills || []).join(', ')))) +
-          (isClient() ? '' : part('Said on calls', c.notice || c.salary ? (c.notice ? p(esc(c.notice.charAt(0).toUpperCase() + c.notice.slice(1))) : '') +
-            (c.salary ? p('Expects ' + esc(c.salary)) : '') : '<p class="b-cmeta-p b-draft-none">Nothing yet. The phone screen asks.</p>')) +
-        '</div>' +
-        '<div class="b-cmeta b-said">' +
-          '<div class="b-cmeta-part"><div class="b-draft-caprow"><span class="b-cmeta-cap">Summary</span></div><div class="b-cmeta-say">' + p(esc(c.summary || '')) + '</div></div>' +
-          (works ? '<div class="b-cmeta-part"><div class="b-draft-caprow"><span class="b-cmeta-cap">Their own profile</span>' +
+      '</section>' +
+      /* THE WORK LEFT, ABOUT THEM RIGHT (Engy, 5 Nov). The decision was a
+         screen down, under eight blocks of reference. Now the left column
+         is the work, from where they are and the move; the right column is
+         who they are and how to reach them, and stays in view. The profile
+         link and consent fold away there, so the column stays short. */
+      '<div class="t-cand-grid s-block-wide">' +
+      /* Too narrow for two columns, About them folds to one line under the
+         name (the phone number), so the decision is still near the top. */
+      '<aside class="t-cand-about" aria-label="About them">' + (candNarrow() ? '<details class="t-cand-fold"><summary class="t-cand-more-sum">About them' + (c.phone && !isClient() ? ' · ' + esc(c.phone) : '') + '</summary><div class="t-cand-fold-in">' : '') +
+        (isClient() ? '' : part('Reach them', p('<b>' + esc(c.phone || 'No phone yet') + '</b>') + p(esc(c.email || '')) +
+          p(esc(c.dnc ? 'Asked not to be called again.' : c.badNumber ? 'This number did not work.' : c.callback != null && c.callback <= 0 ? 'Asked to be called back today' + (c.cbWin ? ', ' + winSay(c.cbWin) : '') + '.' : plural(calls.length, 'call') + ' so far.')) +
+          /* Call is beside the decision, in Where they are; not twice. */
+          (works ? '<div class="t-cand-acts">' +
+            (c.wa ? '<button class="b-ghost" type="button"' + goAttr({ on: 'calls', th: c.id }) + '>' + svg('msg', 14) + 'WhatsApp' + (msgsOf(c.id).length ? ' (' + msgsOf(c.id).length + ')' : '') + '</button>' : '') +
+            (isRec() ? '<button class="b-ghost" type="button" data-draft-chat="' + c.id + '">Write with AiMY</button>' : '') +
+            (isRec() && needsBook(c) ? '<button class="b-ghost" type="button" data-book-chat="' + c.id + '">Book the interview</button>' : '') +
+            '<button class="b-ghost" type="button"' + goAttr({ on: 'calls', lg: c.id }) + '>Log a call from elsewhere</button></div>' : ''))) +
+        part('Now', p(esc(c.at)) + p(esc(plural(c.years, 'year')) + ' of experience')) +
+        (isClient() ? '' : part('Said on calls', c.notice || c.salary ? (c.notice ? p(esc(c.notice.charAt(0).toUpperCase() + c.notice.slice(1))) : '') +
+          (c.salary ? p('Expects ' + esc(c.salary)) : '') : '<p class="b-cmeta-p b-draft-none">Nothing yet. The phone screen asks.</p>')) +
+        part('Languages and skills', p(esc(c.langs.join(', '))) + p(esc((c.skills || []).join(', ')))) +
+        part('Summary', p(esc(c.summary || ''))) +
+        (works ? '<details class="t-cand-more"><summary class="t-cand-more-sum">Their profile and consent</summary>' +
+          '<div class="b-cmeta-part"><div class="b-draft-caprow"><span class="b-cmeta-cap">Their own profile</span>' +
             '<button class="b-draft-ai" type="button" data-copy="' + esc('https://' + profileLink(c)) + '">Copy the link</button></div>' +
             '<div class="b-cmeta-say">' + p('<b class="t-link-text">' + esc(profileLink(c)) + '</b>') +
-            p('They open it with a one-time code sent to their phone, see where they stand, update their details and take any test sent to them. <button class="t-inline-link" type="button"' + goAttr({ me: c.pid }) + '>See what they see</button>') + '</div></div>' : '') +
-          (works ? '<div class="b-cmeta-part"><div class="b-draft-caprow"><span class="b-cmeta-cap">Consent</span></div><div class="b-cmeta-say">' + consentList(c) + '</div></div>' : '') +
-        '</div>' +
-      '</section>' +
+            p('They open it with a one-time code sent to their phone, see where they stand, update their details and take any test sent to them. <button class="t-inline-link" type="button"' + goAttr({ me: c.pid }) + '>See what they see</button>') + '</div></div>' +
+          '<div class="b-cmeta-part"><div class="b-draft-caprow"><span class="b-cmeta-cap">Consent</span></div><div class="b-cmeta-say">' + consentList(c) + '</div></div>' +
+        '</details>' : '') +
+      (candNarrow() ? '</div></details>' : '') + '</aside>' +
+      '<div class="t-cand-work">' +
       '<section class="s-insight is-lead s-block-wide" aria-label="Where they are">' +
         '<div class="s-lead-mark"><svg class="s-insight-mark" viewBox="0 0 18 20" width="14" height="14" aria-hidden="true"><use href="#aimy-logo-small"/></svg>' +
           '<span class="work-state ws-detected">Read off the record</span></div>' +
         '<p class="s-lead-deck">' + esc(c.exit ? exitSay(c).charAt(0).toUpperCase() + exitSay(c).slice(1) + '.' +
             (c.told === false && !isClient() ? ' Not told yet; they hear by ' + sayDay(hearBy(c)) + '.' : c.told ? ' They have been told.' : '')
           : candSay(c)) + '</p>' +
-        storyTrack(c) +
+        /* The move straight under the sentence that is its reason, the path
+           after it (5 Nov): on a phone the path runs down the screen and
+           pushed the buttons a screen away. */
         /* Message preview (component library): what they will read, before Send. */
         /* The same message as the lists, sent from inside it. */
         (c.exit && c.told === false && works ? msgPreview(c, true, true) : '') +
@@ -5239,6 +5259,7 @@
           (nx && !early && (w === 'me' || w === 'client' || w === 'candidate') && c.stage !== 'offer' ? '<button class="s-insight-lnk primary" type="button" data-move="' + c.id + '|' + nx + '">' + esc(goSay(c)) + '</button>' : '') +
           exitBtn(c, outK) +
         '</div>') +
+        storyTrack(c) +
       '</section>' +
       ivTodayBlock(c) +
       (works && /^Found on/.test(c.source) && c.stage === 'sourced' ? trustCard([c], first(c.name) + ', a web prospect', c) : '') +
@@ -5249,9 +5270,7 @@
       ivBlock(c) +
       (isClient() ? '' : offerBlock(c)) +
       (isClient() ? '' : historyBlock(c)) +
-      (isClient() || !calls.length ? '' : '<section class="s-block s-block-wide" aria-label="Calls with them">' +
-        '<div class="s-camp-list-head"><h2 class="s-block-h">Calls with them</h2><span class="s-block-say">' + plural(calls.length, 'call') + ' · newest first</span></div>' +
-        '<div class="b-log">' + logDays(calls, (t, i) => callRow(t, i, false)) + '</div></section>') +
+      '</div></div>' +
     '</div>';
   }
 
@@ -5457,14 +5476,36 @@
   /* ── The history, and a line to add to it ── in the research cards'
      language: a .card titled "History · Person", each day a .divider, each
      entry a .crit row led by its icon, who and when in the .sub line. */
+  /* ONE HISTORY, IN TABS (Engy, 5 Nov). History, Calls with them and the
+     interviews each told the same events. Now one place: All, Calls (the
+     call log's own rows, so a message they left still plays), WhatsApp (the
+     thread's messages, both ways), Interviews (and tests) and Notes. */
+  let HIST_TAB = 'all', HIST_FOR = null;
+  const HIST_TABS = [['all', 'All'], ['calls', 'Calls'], ['wa', 'WhatsApp'], ['iv', 'Interviews'], ['note', 'Notes']];
   function historyBlock(c) {
-    const h = historyOf(c);
-    const ICO = { apply: 'user', call: 'phone', asmt: 'goal', iv: 'users', offer: 'job', move: 'go', out: 'go', note: 'req', msg: 'msg' };
-    const TONE = { apply: 'brand', call: 'brand', asmt: 'acc', iv: 'acc', offer: 'ok', move: 'ok', out: 'err', note: 'mute', msg: 'brand' };
+    if (HIST_FOR !== c.id) { HIST_FOR = c.id; HIST_TAB = 'all'; }
+    const calls = callsOf(c.id), ms = msgsOf(c.id).slice().reverse();
+    /* A WhatsApp send is in the thread itself, so its note does not show twice. */
+    const all = historyOf(c).filter((x) => !(x.kind === 'msg' && /^On WhatsApp /.test(x.text)))
+      .concat(ms.map((m) => ({ day: m.day, time: m.time, kind: 'wa', text: (m.dir === 'in' ? first(c.name) + ' wrote' + (m.added ? ' (added by hand)' : '') : 'You wrote' + (m.own ? ' from your WhatsApp' : '')) + ': “' + m.text + '”' })))
+      .sort((a, b) => b.day - a.day || String(b.time).localeCompare(String(a.time)));
+    const pick = { all: all, iv: all.filter((x) => x.kind === 'iv' || x.kind === 'asmt'), note: all.filter((x) => x.kind === 'note') };
+    const n = { all: all.length, calls: calls.length, wa: ms.length, iv: pick.iv.length, note: pick.note.length };
+    const tab = HIST_TAB;
+    const h = tab === 'calls' || tab === 'wa' ? [] : pick[tab];
+    const ICO = { apply: 'user', call: 'phone', asmt: 'goal', iv: 'users', offer: 'job', move: 'go', out: 'go', note: 'req', msg: 'msg', wa: 'msg' };
+    const TONE = { apply: 'brand', call: 'brand', asmt: 'acc', iv: 'acc', offer: 'ok', move: 'ok', out: 'err', note: 'mute', msg: 'brand', wa: 'brand' };
     let day = null;
     const sug = c.histSug ? DB.events.filter((e) => e.id === c.histSug)[0] : null;
-    return rcard({ cap: 'Candidates and history', ico: 'hist', label: 'History',
-      body: rcHead('History · ' + esc(c.name), 'Everything, newest first', rcChip(plural(h.length, 'entry', 'entries'))) +
+    const tabs = '<div class="b-cuts t-hist-tabs" role="group" aria-label="What to show">' + HIST_TABS.map((x) =>
+      '<button class="filter-chip' + (tab === x[0] ? ' active' : '') + '" type="button" data-hist-tab="' + x[0] + '" aria-pressed="' + (tab === x[0]) + '">' + esc(x[1]) + '<span class="b-cut-n">' + n[x[0]] + '</span></button>').join('') + '</div>';
+    const rows = tab === 'calls' ? (calls.length ? '<div class="b-log">' + logDays(calls, (t, i) => callRow(t, i, false)) + '</div>' : '<p class="b-vfoot">No calls yet.</p>')
+      : tab === 'wa' ? (ms.length ? '<div class="t-wa">' + ms.slice().reverse().map((m) => '<div class="t-wa-m ' + (m.dir === 'out' ? 'is-out' : 'is-in') + '"><p class="t-wa-text">' + esc(m.text) + '</p>' +
+          '<span class="t-wa-t">' + esc((m.dir === 'out' ? 'You' : first(c.name)) + ' · ' + dayLabel(m.day) + ', ' + m.time) + '</span></div>').join('') + '</div>' : '<p class="b-vfoot">' + (c.wa ? 'Nothing on WhatsApp yet.' : 'No WhatsApp opt-in.') + '</p>') +
+        (c.wa ? '<p class="t-acts"><button class="s-inline-btn" type="button"' + goAttr({ on: 'calls', th: c.id }) + '>Open the thread</button></p>' : '')
+      : null;
+    return rcard({ cap: 'History', ico: 'hist', label: 'History', bare: true,
+      body: rcHead('History · ' + esc(c.name), 'newest first', '') + tabs +
       ((isRec() || isHR() || isHM()) ? '<div class="t-addnote"><input class="dial-input" id="histNote" type="text" autocomplete="off" spellcheck="false" ' +
           'placeholder="Add something that happened, like: interviewed by the client on Teams, they said yes" aria-label="Add to their history">' +
         rcBtn('Add', 'data-hist-add="' + c.id + '"', 'primary') + '</div>' : '') +
@@ -5472,13 +5513,13 @@
         (sug.read === 'yes' && nextOf(c) ? rcBtn('Move them to ' + lower(STAGE[nextOf(c)].label), 'data-move="' + c.id + '|' + nextOf(c) + '"', 'psmall')
           : sug.read === 'no' ? rcBtn('Mark as not progressing', 'data-out="' + c.id + '|out"', 'psmall') : '') +
         rcBtn('Leave it', 'data-sug-no="' + c.id + '"', 'small')) : '') +
-      '<div style="margin-top:4px">' + h.map((x) => {
+      (rows != null ? rows : !h.length ? '<p class="b-vfoot">Nothing here yet.</p>' : '<div style="margin-top:4px">' + h.map((x) => {
         const head = x.day !== day ? '<div class="divider">' + esc(dayLabel(x.day)) + '</div>' : '';
         day = x.day;
         const meta = [x.time, x.by && DESKS[x.by] ? DESKS[x.by].name : null].filter(Boolean).join(' · ');
         return head + '<div class="crit" style="border-top:0;padding:8px 0"><span class="' + (RC_ICO[TONE[x.kind]] || 'ico mute') + '">' + svg(ICO[x.kind] || 'req', 18) + '</span>' +
           '<div><b>' + esc(x.text) + '</b>' + (meta ? rcSay(esc(meta)) : '') + '</div><span></span></div>';
-      }).join('') + '</div>' });
+      }).join('') + '</div>') });
   }
   /* A note says someone passed or did not, in plain words. */
   const readNote = (t) => /\b(not|didn'?t|did not|no)\b.{0,20}\b(pass|proceed|fit|good)|\bsaid no\b|\brejected\b|\bnot a fit\b/i.test(t) ? 'no'
@@ -9585,6 +9626,7 @@
     if ((el = at('[data-nudge]'))) { nudge(DB.byId[el.getAttribute('data-nudge')]); return; }
     if ((el = at('[data-start]'))) { start(el.getAttribute('data-start')); return; }
     /* ── Interactions: WhatsApp and calls made elsewhere ── */
+    if ((el = at('[data-hist-tab]'))) { HIST_TAB = val('data-hist-tab'); paint(); return; }
     if ((el = at('[data-book-chat]'))) { bookChat(DB.byId[val('data-book-chat')] || null, null, !!el.closest('#overlayThread')); return; }
     if ((el = at('[data-draft-chat]'))) { draftChat(DB.byId[val('data-draft-chat')], ''); return; }
     if ((el = at('[data-bk-slot]'))) { const p = val('data-bk-slot').split('|'), t = turnById(p[0]); if (t && !t.done) { t.d = Number(p[1]); t.t = p[2]; saveChats(); paintThread(); } return; }

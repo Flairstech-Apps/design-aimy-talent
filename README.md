@@ -35,12 +35,9 @@ The recruiter's desk opens as **Omar Saeed**. The other three desks are describe
   - **AiMY Connect is optional.** The HR Manager chooses on the Templates page, for the whole company: "WhatsApp through AiMY Connect" or "Each recruiter's own WhatsApp". Without Connect, Open in WhatsApp opens the recruiter's own app with the message written and logs it, Add their reply pastes a reply in by hand, and everything Talent sends by itself (the message after a missed call, answers, invites) goes by email. The prototype panel switches it too.
   - **Log a call from elsewhere** (`?on=calls&lg=`, also on the candidate page) records a call on the recruiter's mobile, a WhatsApp call or Teams outside AiMY: who, the channel, when, what happened and a note. A recording is optional and needs a tick that they agreed to it; AiMY transcribes it, picks the outcome it heard and keeps notice and salary. The log has the same effects and Undo as a call in AiMY.
   - **Teams calls** from the call panel say that Teams tells them it is recording; when the call ends the recording and transcript come back and AiMY reads them, so History shows "Teams sent the recording back".
-- **One candidate** (`?cand=k20`) is Sales's contact record turned into a candidate:
-  - Who they are and their phone number.
-  - What they said on calls (notice period and salary).
-  - Their evidence against the success profile.
-  - A Call button, plus their next move and exit.
-  - Every call with them.
+- **One candidate** (`?cand=k20`) is Sales's contact record turned into a candidate, in two columns (5 Nov):
+  - **The work, on the left:** where they are, with AiMY's sentence, then the move, Call and the exit, then their path; why they fit, led by AiMY's read as on the card, each must-have against the CV and the interviews; the assessment, interviews and offer; and one **History** in tabs (All, Calls with the call log's own rows, WhatsApp both ways, Interviews and tests, Notes) with a line to add to it.
+  - **About them, on the right, in view as the page scrolls:** how to reach them (WhatsApp, Write with AiMY, Book the interview when one is due, Log a call from elsewhere), what they do now, what they said on calls, languages and skills, the summary, and their profile link and consent folded away. Too narrow for two columns, it folds to one line under the name with their number.
 
 The rail shows what's waiting on you, plus three doors: the next interview, your calls (to call, missed, callbacks due), and your days to send profiles against the team's. The bell lists missed calls, results that are in, and answers that are owed. The composer finds: Enter takes you to the requisitions matching what you typed.
 

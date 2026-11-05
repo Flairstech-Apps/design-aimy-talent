@@ -1711,3 +1711,29 @@ body.is-portal .aimy-overlay { display: none !important; }
    phone instead of growing past the edge (5 Nov). */
 #overlayThread .chat-msg > .msg-bubble { min-width: 0; }
 #overlayThread .s-callsum-val { min-width: 0; overflow-wrap: anywhere; }
+
+/* ══ THE CANDIDATE PAGE: THE WORK LEFT, ABOUT THEM RIGHT (5 Nov) ═════════
+   The work column holds the page's blocks as before; About them sits beside
+   it and stays in view while the work scrolls. Below the width where both
+   fit, About them comes first, under the name, and scrolls with the page. */
+.t-cand-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 32px; align-items: start; }
+.t-cand-work { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; gap: 32px; min-width: 0; }
+.t-cand-work > * { margin: 0; }
+.t-cand-about { grid-column: 2; grid-row: 1; position: sticky; top: 16px; display: flex; flex-direction: column; gap: 16px; padding: 16px; border: 1px solid var(--card-border); border-radius: var(--r-lg); background: var(--card-bg); }
+.t-cand-about .b-cmeta-part { margin: 0; }
+.t-cand-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.t-cand-more { border-top: 1px solid var(--card-border); padding-top: 12px; }
+.t-cand-more-sum { cursor: pointer; font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--d50); }
+.t-cand-more[open] .t-cand-more-sum { margin-bottom: 12px; }
+.t-cand-more .b-cmeta-part + .b-cmeta-part { margin-top: 12px; }
+.t-hist-tabs { margin: 12px 0 8px; }
+/* AiMY's read inside a record card sits on the card's own edges. */
+.rc .t-ins { margin: 12px 0 0; }
+@media (max-width: 1180px) {
+  .t-cand-grid { grid-template-columns: minmax(0, 1fr); }
+  .t-cand-work, .t-cand-about { grid-column: 1; grid-row: auto; }
+  .t-cand-about { position: static; }
+}
+/* About them, folded on a narrow screen. */
+.t-cand-fold-in { display: flex; flex-direction: column; gap: 16px; margin-top: 12px; }
+.t-cand-fold > summary { list-style-position: inside; }
