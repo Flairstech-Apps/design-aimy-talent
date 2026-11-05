@@ -6719,8 +6719,10 @@
     const list = DB.asmts;
     return '<div class="s-home">' +
       '<section class="s-block s-block-wide" aria-label="Assessments">' +
+        /* Distilled 5 Nov: what the page is, a sentence under its title as
+           on Candidates, not a box. */
         '<div class="s-camp-list-head">' + switcher('asmts') + '<span class="b-draft-acts"><button class="b-ghost" type="button" data-asmt-new>New assessment</button></span></div>' +
-        aimyBlock({ text: 'Tests a candidate takes from a link before the phone screen. AiMY scores them; a person decides.', from: 'how assessments work' }, false) +
+        '<p class="b-tocall">Taken from a link before the phone screen. AiMY scores them; a person decides.</p>' +
         '<div class="b-grid">' + list.map((a, i) => {
           const r = resultsOf(a), rates = qRates(a);
           const worst = rates.reduce((w, x, k) => (x != null && (w == null || x < rates[w]) ? k : w), null);
@@ -6729,14 +6731,18 @@
           return '<div class="b-slot"><article class="type-card s-card b-qcard" data-open="asmt:' + a.id + '" style="--i:' + Math.min(i, 8) + '">' +
             '<div class="tc-head">' + tag(ASMT_KIND[a.kind]) + '<span class="b-kind">' + a.mins + ' minutes</span></div>' +
             '<button class="tc-title s-card-title" type="button" data-asmt="' + a.id + '">' + esc(a.title) + '</button>' +
-            '<p class="tc-summary b-qcard-what b-fact">' + svg('goal') + '<span>' + plural(a.questions.length, 'question') + ' · pass ' + esc(passSayOf(a)) + '</span></p>' +
+            /* Distilled 5 Nov, as the other cards: one facts line (with how it
+               is taken, from the old foot), one line naming the checks it
+               fails rather than chips (the time was said twice), usage at
+               sentence size, AiMY's note without its source line, and no
+               Open it: the card opens itself. */
+            '<p class="b-qcard-where t-req-facts">' + fact('goal', plural(a.questions.length, 'question') + ' · pass ' + passSayOf(a)) + fact(a.kind === 'live' ? 'mic' : 'doc', a.kind === 'live' ? 'Spoken, then transcribed' : 'Written') + '</p>' +
             (function () { const ck = asmtChecks(a), ok = ck.filter((x) => x.ok).length;
-              return '<p class="b-qcard-where t-checks">' + ck.filter((x) => x.k === 'length' || x.k === 'phone').map((x) => '<span class="t-check-say' + (x.ok ? '' : ' is-warn') + '">' + esc(x.label) + '</span>').join('') +
-                '<span class="t-check-say' + (ok === ck.length ? '' : ' is-warn') + '">' + ok + ' of ' + ck.length + ' checks</span></p>'; })() +
-            '<div class="b-qcard-why"><b>' + r.length + '</b> taken' + (avg != null ? ', average ' + (a.lang ? cefrOf(avg) : avg + '%') : '') + ' · on ' + plural(used, 'open requisition') +
-              (r.some(needsPerson) ? ' · <b>' + r.filter(needsPerson).length + '</b> waiting on a person' : '') + '</div>' +
-            (worst != null && rates[worst] < 40 ? aimyBlock({ text: 'Only <b>' + rates[worst] + '%</b> get Q' + (worst + 1) + ' right. Worth rewording.', from: 'every result' }) : '') +
-            '<div class="tc-gov b-qcard-foot"><span class="b-kind">' + (a.kind === 'live' ? 'Spoken, then transcribed' : 'Written') + '</span><button class="s-insight-lnk primary" type="button" data-asmt="' + a.id + '">Open it</button></div>' +
+              const fails = ck.filter((x) => !x.ok).map((x) => x.k === 'length' ? 'longer than 15 minutes' : lower(x.label));
+              return '<p class="b-qcard-where t-asmt-checks' + (fails.length ? ' is-warn' : '') + '">' + fact('listc', fails.length ? ok + ' of ' + ck.length + ' checks · ' + listSay(fails) : 'All ' + ck.length + ' checks pass') + '</p>'; })() +
+            '<p class="t-req-prog"><b>' + r.length + '</b> taken' + (avg != null ? ', average ' + (a.lang ? cefrOf(avg) : avg + '%') : '') + ', on ' + plural(used, 'open requisition') + '.' +
+              (r.some(needsPerson) ? ' <b>' + r.filter(needsPerson).length + '</b> waiting on a person.' : '') + '</p>' +
+            (worst != null && rates[worst] < 40 ? aimyBlock({ text: 'Only <b>' + rates[worst] + '%</b> get Q' + (worst + 1) + ' right. Worth rewording.' }, true) : '') +
           '</article></div>';
         }).join('') + '</div>' +
       '</section></div>';
@@ -9874,7 +9880,7 @@
     if ((el = at('[data-go]'))) { go(JSON.parse(el.getAttribute('data-go'))); return; }
     /* The whole card is a door, written as the trailing fallback so any
        control inside it wins (Sales's rule). */
-    if ((el = at('[data-open]'))) { const p = el.getAttribute('data-open').split(':'); if (p[0] === 'req') go({ req: p[1] }); else if (p[0] === 'cand') go({ cand: p[1] }); return; }
+    if ((el = at('[data-open]'))) { const p = el.getAttribute('data-open').split(':'); if (p[0] === 'req') go({ req: p[1] }); else if (p[0] === 'cand') go({ cand: p[1] }); else if (p[0] === 'asmt') go({ asmt: p[1] }); return; }
     /* A click outside the bell, the dialer or an open menu closes it. */
     if (!at('#ntfPanel') && !at('#ntfBell')) { const p = byId('ntfPanel'); if (!p.hidden) { p.hidden = true; byId('ntfBell').setAttribute('aria-expanded', 'false'); } }
     if (!at('#dialAnchor')) closeDial();
