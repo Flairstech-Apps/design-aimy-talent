@@ -2784,8 +2784,13 @@
     if (owedTell) special = foot('<span class="b-kind">' + (c.since >= TELL_DAYS ? 'Past the ' + TELL_DAYS + '-day limit' : 'Tell them by ' + esc(sayDay(TELL_DAYS - c.since))) + '</span>',
       '<button class="s-insight-lnk primary" type="button" data-tell="' + c.id + '">Send the answer</button>');
     const pick1 = !c.exit && c.stage === 'sourced' && !c.contactOk && (isRec() || isHR());
+    /* One Tag per card, the fit (Engy, 6 Nov): the stage line already names
+       the stage and "Applied before" already says they are returning, so
+       neither repeats as a Tag. The client, who has no stage line, keeps
+       the stage Tag. */
+    const prog = isClient() ? '' : stageProgress(c);
     return '<article class="type-card s-card b-qcard" data-open="cand:' + c.id + '" style="--i:' + Math.min(i, 8) + '">' +
-      '<div class="tc-head">' + (pick1 ? selBox('sourced', c.id, c.name) : owedTell ? selBox('tell', c.id, c.name) : '') + stageTag(c) + (was ? tag('Returning', 'info') : '') + '<span class="b-kind">' + esc(c.source) + '</span></div>' +
+      '<div class="tc-head">' + (pick1 ? selBox('sourced', c.id, c.name) : owedTell ? selBox('tell', c.id, c.name) : '') + (prog ? '' : stageTag(c)) + '<span class="b-kind">' + esc(c.source) + '</span></div>' +
       '<div class="b-qcard-top"><button class="tc-title s-card-title" type="button" data-cand="' + c.id + '">' + esc(c.name) + '</button>' + (isClient() ? '' : whySay(c, false, true)) + '</div>' +
       '<p class="tc-summary b-qcard-role">' + esc(c.at) + '</p>' +
       /* Who they are stays together under the name (Engy, 5 Nov), then
@@ -2793,7 +2798,7 @@
       '<p class="b-qcard-where">' + fact('job', plural(c.years, 'year')) + fact('pin', c.place) + fact('lang', c.langs.join(', ')) + '</p>' +
       whySay(c) +
       (was ? '<p class="b-qcard-where t-before">' + fact('hist', beforeSay(was)) + '</p>' : '') +
-      (isClient() ? '' : stageProgress(c)) +
+      prog +
       /* The days in the stage are said here once, so the steps above carry
          names only; past its usual time, the line says that too. */
       '<p class="b-qcard-where t-cnow">' + fact('clock', say + (slowAt(c) ? ' Usually ' + days(STAGE[c.stage].exp) + '.' : '') +
