@@ -1411,11 +1411,11 @@
      by email, the candidate the way they opted in to (5 Nov). */
   const nudgeTo = (c) => {
     const w = waitsOn(c), q = reqOf(c), v = ivNow(c);
-    return w === 'client' ? accOf(q).name : w === 'hm' ? first(hmOf(q).name) : w === 'candidate' ? first(c.name) : v ? first(v.by.split(',')[0]) : 'the interviewer';
+    return w === 'client' ? (accOf(q).id === 'northwind' ? first(DESKS.jana.name) : accOf(q).name) : w === 'hm' ? first(hmOf(q).name) : w === 'candidate' ? first(c.name) : v ? first(v.by.split(',')[0]) : 'the interviewer';
   };
   const nudgeSay = (c) => {
     const w = waitsOn(c);
-    return w === 'client' ? 'Nudge the client' : w === 'candidate' ? 'Nudge ' + first(c.name) : 'Nudge ' + nudgeTo(c) + ' on Teams';
+    return w === 'client' ? 'Nudge ' + nudgeTo(c) : w === 'candidate' ? 'Nudge ' + first(c.name) : 'Nudge ' + nudgeTo(c) + ' on Teams';
   };
   const waitWho = (c) => {
     const w = waitsOn(c), q = reqOf(c);
@@ -1659,6 +1659,20 @@
       const cv = c.ev[i];
       const state = !best ? 'unproven' : best.r === 'm' ? 'verified' : cv === 'm' ? 'differs' : best.r === 'p' ? 'partly' : 'notshown';
       return { must: m, cv: cv, seen: seen, state: state };
+    });
+  }
+
+  /* WHAT EACH MUST-HAVE STANDS ON NOW (5 Nov): the CV's reading, overruled
+     by the deepest interview that rated it, and capped by their years where
+     the must-have asks for more ("2+ years" is not met by one). The card's
+     read and the write-up both say this, so they cannot disagree. */
+  const yearsAsked = (m) => { const x = /^(\d+)\+ years?/.exec(m); return x ? Number(x[1]) : 0; };
+  function evNow(c) {
+    const q = reqOf(c), v = verified(c);
+    return q.must.map((m, i) => {
+      let e = v[i].state === 'verified' ? 'm' : v[i].state === 'unproven' ? c.ev[i] : 'p';
+      if (yearsAsked(m) > c.years && e === 'm') e = 'p';
+      return e;
     });
   }
 
@@ -2687,7 +2701,8 @@
     for (let i = cur - 1; i >= 0; i--) { d -= took[t[i]] != null ? took[t[i]] : STAGE[t[i]].exp; enter[t[i]] = d; }
     const from = isClient() ? Math.max(0, t.indexOf('sent')) : 0;
     const shown = t.slice(from);
-    const late = slowAt(c);
+    /* The client is never shown their own lateness (5 Nov). */
+    const late = !isClient() && slowAt(c);
     const tone = c.stage === 'joined' || c.stage === 'accepted' ? 'ok' : late ? 'warn' : 'neutral';
     const hi = isClient() ? -1 : t.indexOf('sent') >= 0 ? t.indexOf('sent') : t.indexOf('mgr');
     const hiWho = t[hi] === 'sent' ? 'the client decides' : 'the hiring manager decides';
@@ -2781,7 +2796,9 @@
       /* The days in the stage are said here once, so the steps above carry
          names only; past its usual time, the line says that too. */
       '<p class="b-qcard-where t-cnow">' + fact('clock', say + (slowAt(c) ? ' Usually ' + days(STAGE[c.stage].exp) + '.' : '') +
-        (s && s.status === 'done' ? ' Assessment ' + scoreShort(asmtOf(s.asmt), s) + '.' : '')) + '</p>' +
+        (s && s.status === 'done' ? ' Assessment ' + scoreShort(asmtOf(s.asmt), s) + '.' : '')) +
+        /* A client past the usual time is nudged from here (5 Nov). */
+        (c.stage === 'sent' && !c.exit && slowAt(c) && (isRec() || isHR()) ? (c.nudged == null ? ' <button class="s-inline-btn" type="button" data-nudge="' + c.id + '">' + esc(nudgeSay(c)) + '</button>' : ' <span class="b-kind">Nudged ' + esc(sayWhen(c.nudged)) + '</span>') : '') + '</p>' +
       (c.stage === 'sent' || (isClient() && c.exit === 'clientno') ? sendout(c) : '') +
       /* AT THE SCREEN, THE CALL IS THE MOVE. Someone who applied or is due a
          phone screen moves forward by being called and the call being
@@ -2913,16 +2930,46 @@
      recruiter edits it, and Approve and send is the send, with Undo. */
   let WRITING = null;
   const writeOpen = (c) => !!WRITING && WRITING.id === c.id;
+  /* In parts (5 Nov): one line on who they are, each must-have they meet
+     with what it stands on, what is still open, and when they can start.
+     Never salary, margin or an internal note. */
   function writeUp(c) {
-    const q = reqOf(c);
-    const conf = verified(c).filter((x) => x.state === 'verified').map((x) => x.must);
-    /* Silent in the CV but confirmed in an interview is known. */
-    const met = q.must.filter((m, i) => c.ev[i] === 'm'), unk = q.must.filter((m, i) => c.ev[i] === 'n' && conf.indexOf(m) < 0);
-    return first(c.name) + ': ' + c.at + ', ' + plural(c.years, 'year') + ' of experience; speaks ' + c.langs.join(', ') + '. ' +
-      'Meets ' + met.length + ' of ' + q.must.length + ' must-haves' + (met.length ? ': ' + met.join('; ') : '') + '. ' +
-      (conf.length ? 'Confirmed in interview: ' + conf.join('; ') + '. ' : '') +
-      (unk.length ? 'Not known yet: ' + unk.join('; ') + '. ' : '') +
-      (c.notice ? 'Notice: ' + c.notice + '.' : '');
+    const q = reqOf(c), v = verified(c), ev = evNow(c);
+    const on = (m, i) => v[i].state === 'verified' ? 'confirmed in the ' + lower(STAGE[v[i].seen[0].stage].label) : 'on the CV: ' + cvSays(c, m);
+    const open = (m, i) => yearsAsked(m) > c.years ? plural(c.years, 'year') + ' so far, not ' + yearsAsked(m) + '+'
+      : v[i].state === 'differs' ? 'the CV says so; the interview found less' : v[i].state === 'partly' || v[i].state === 'notshown' ? 'partly shown in interview'
+      : c.ev[i] === 'p' ? 'partly on the CV' : 'not known yet; the CV is silent';
+    const met = q.must.map((m, i) => ev[i] === 'm' ? '- ' + m + ': ' + on(m, i) : null).filter(Boolean);
+    const gap = q.must.map((m, i) => ev[i] !== 'm' ? '- ' + m + ': ' + open(m, i) : null).filter(Boolean);
+    return c.name + ', ' + c.at + ', ' + plural(c.years, 'year') + '. Meets ' + met.length + ' of ' + q.must.length + ' must-haves.\n\n' +
+      (met.length ? 'Why they fit\n' + met.join('\n') + '\n\n' : '') +
+      (gap.length ? 'Still open\n' + gap.join('\n') + '\n\n' : '') +
+      'Speaks ' + c.langs.join(', ') + ' · ' + c.place + (c.notice ? ' · ' + c.notice.charAt(0).toUpperCase() + c.notice.slice(1) : '');
+  }
+  /* THE WRITE-UP, IN THE CHAT (Engy, 5 Nov; the UX plan). AiMY drafts it;
+     it is changed in place or by saying so ("shorter", or a line to add);
+     Approve and send records the sendout and lands where it lives: their
+     page, or the run it was started from. */
+  function wuChat(c, back) {
+    aiTurn({ kind: 'wu', cand: c.id, text: writeUp(c), back: back || null }, 'A write-up for ' + accOf(reqOf(c)).name + ' · ' + c.name, null, true);
+  }
+  function wuTurnHtml(t) {
+    const c = DB.byId[t.cand];
+    if (!c) return 'They are no longer on file.';
+    const a = accOf(reqOf(c));
+    return '<p>The write-up ' + esc(a.name) + ' reads with <b>' + esc(c.name) + '</b>’s profile, from the CV, ' + plural(ivsOf(c).filter((v) => v.status === 'done').length, 'interview') +
+        ' and the success profile. Salary, margin and internal notes are left out. Change it here, or tell me (“shorter”, or a line to add).</p>' +
+      '<textarea class="input t-dr-in" rows="12" data-dr-text="' + t.id + '" aria-label="The write-up ' + esc(a.name) + ' reads">' + esc(t.text) + '</textarea>' +
+      '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-wu-go="' + t.id + '">Approve and send to ' + esc(a.name) + '</button><button class="btn btn-ghost btn-sm" type="button" data-turn-leave="' + t.id + '">Leave it</button></p>';
+  }
+  function wuGo(t) {
+    const c = DB.byId[t.cand];
+    if (!c || t.done) return;
+    const text = String(t.text || '').trim();
+    if (!text) { toast('The client needs a line or two about them.'); return; }
+    doneTurn(t, 'Sent ' + esc(c.name) + '’s profile to ' + esc(accOf(reqOf(c)).name) + ', with the write-up you approved.', [{ label: 'Open ' + first(c.name), go: { cand: c.id } }]);
+    go(t.back || { cand: c.id });
+    move(c, 'sent', { writeup: { text: text, by: DESK, day: 0 } });
   }
   /* The write-up that went with a profile. One sent before this record was
      kept is the draft as AiMY would have written it, approved by the
@@ -2958,17 +3005,18 @@
       body: rcHead('Profile sent · ' + esc(c.name), 'to ' + esc(a.name) + ' · ' + esc(q.title), pill) +
         '<div class="tl">' +
           ev('ok', 'Sent ' + esc(sayDay(c.sentDay)), sentSay) +
-          (c.openDay != null ? ev('ok', 'Opened by the client ' + esc(sayDay(c.openDay)), esc(who)) : ev('wait', 'Not opened yet', 'sent ' + esc(sayWhen(c.sentDay)))) +
+          (c.openDay != null ? ev('ok', (isClient() ? 'Opened ' : 'Opened by the client ') + esc(sayDay(c.openDay)), esc(who)) : ev('wait', 'Not opened yet', 'sent ' + esc(sayWhen(c.sentDay)))) +
           (passed ? ev('err', 'Declined ' + esc(sayDay(c.decideDay != null ? c.decideDay : 0)), c.decline && c.decline.note ? '“' + esc(c.decline.note) + '”' : esc(lower(DECLINE_K[c.decline ? c.decline.why : 'other'].label)))
             : met ? ev('ok', 'Wants to meet · ' + esc(sayDay(c.decideDay)), 'the client interview is next')
-            : c.openDay != null ? ev('wait', 'Decision', 'waiting ' + days(-c.openDay)) : '') +
+            : c.openDay != null ? ev('wait', isClient() ? 'Your answer' : 'Decision', 'waiting ' + days(-c.openDay)) : '') +
+          (!isClient() && c.nudged != null && !passed && !met ? ev('wait', 'Nudged ' + esc(sayDay(c.nudged)), 'by email' + (a.id === 'northwind' ? ', and in ' + esc(first(DESKS.jana.name)) + '’s bell' : '')) : '') +
         '</div>' +
+        (!isClient() && !passed && !met && !c.exit && c.stage === 'sent' && c.nudged == null && c.since >= STAGE.sent.exp && (isRec() || isHR()) ? '<div class="row" style="margin-top:12px;gap:8px">' + rcBtn(nudgeSay(c), 'data-nudge="' + c.id + '"', 'small', 'mail') + '<span class="sub">' + days(c.since) + ' with them; usually ' + days(STAGE.sent.exp) + '</span></div>' : '') +
         (wu ? '<div style="margin-top:12px">' + rcCaps(isClient() ? 'What we wrote' : 'The write-up · what the client read') + rcQuote(esc(wu.text)) + '</div>' : '') +
-        (passOpen(c) ? passPicker(c, true) : pick) +
+        (passOpen(c) && !isClient() ? passPicker(c, true) : pick) +
         (passed && c.decline ? rcAimy('This is the ' + nth(Math.max(1, n)) + ' ' + esc(shortAcc(a)) + ' decline this month for ' + esc(DECLINE_K[c.decline.why].say) + '. It now counts in ' + esc(shortAcc(a)) + '’s success profile as a learning signal.',
           'Reason codes · not free text · feeds matching for this account only') : '') +
-        (isClient() && !c.exit && c.stage === 'sent' && !passOpen(c) ? '<div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">' +
-          rcBtn('Invite to interview', 'data-move="' + c.id + '|client"', 'primary', 'cal') + rcBtn('Decline with a reason', 'data-pass-open="' + c.id + '"') + '</div>' : '') });
+        '' });
   }
 
   /* ── 3. EVIDENCE PER CRITERION, AGAINST THE SUCCESS PROFILE (scoring-
@@ -2997,7 +3045,7 @@
     /* Mid-sentence, a must-have keeps its capital when it starts with a
        name (German, NetSuite, SQL); otherwise it goes lower case. */
     const mid = (m) => /^(German|English|Arabic|French|Spanish|Italian)\b|^[A-Z][a-z]+[A-Z]|^[A-Z][A-Z0-9]/.test(m) ? m : m.charAt(0).toLowerCase() + m.slice(1);
-    const of = (k) => must.filter((m, i) => c.ev[i] === k).map(mid);
+    const ev = evNow(c), of = (k) => must.filter((m, i) => ev[i] === k).map(mid);
     /* A list whose items carry their own commas is joined with semicolons;
        one whose items carry their own "and" takes a comma before its last. */
     const and = (l) => l.length < 2 ? l[0] : l.some((x) => x.indexOf(',') >= 0) ? l.slice(0, -1).join('; ') + '; and ' + l[l.length - 1]
@@ -5049,6 +5097,18 @@
     }, c.wa ? 'It is on their thread and their history.' : 'It is on their history.');
   }
   /* A sentence typed while a draft is open changes the draft. */
+  function wuCorrect(text) {
+    const ch = chatNow(), last = ch && ch.turns[ch.turns.length - 1];
+    if (!last || last.kind !== 'wu' || last.done) return false;
+    if (/\b(book|schedule|called|spoke|find|search|what|which|how|why|who)\b/i.test(text)) return false;
+    const body = /\b(short|shorter|brief|less)\b/i.test(text)
+      ? last.text.split('\n').map((l) => l.replace(/^(- [^:]+):.*$/, '$1')).join('\n')
+      : last.text + '\n\n' + text.replace(/^(add|mention|say|include)( that)?\s*/i, '').replace(/^./, (x) => x.toUpperCase()).replace(/([^.?!])$/, '$1.');
+    doneTurn(last, 'Rewritten below.');
+    ch.turns.push({ who: 'you', html: esc(text) });
+    aiTurn({ kind: 'wu', cand: last.cand, text: body, back: last.back }, '', null);
+    return true;
+  }
   function draftCorrect(text) {
     const ch = chatNow(), last = ch && ch.turns[ch.turns.length - 1];
     if (!last || last.kind !== 'draft' || last.done) return false;
@@ -5259,13 +5319,16 @@
           '<span class="work-state ws-detected">Read off the record</span></div>' +
         '<p class="s-lead-deck">' + esc(c.exit ? exitSay(c).charAt(0).toUpperCase() + exitSay(c).slice(1) + '.' +
             (c.told === false && !isClient() ? ' Not told yet; they hear by ' + sayDay(hearBy(c)) + '.' : c.told ? ' They have been told.' : '')
-          : candSay(c)) + '</p>' +
+          : isClient() && c.stage === 'sent' ? 'Waiting on your answer since ' + sayDay(c.sentDay != null ? c.sentDay : -c.since) + '.' : candSay(c)) + '</p>' +
         /* The move straight under the sentence that is its reason, the path
            after it (5 Nov): on a phone the path runs down the screen and
            pushed the buttons a screen away. */
         /* Message preview (component library): what they will read, before Send. */
         /* The same message as the lists, sent from inside it. */
         (c.exit && c.told === false && works ? msgPreview(c, true, true) : '') +
+        /* The client's decision, in the words of their Today (5 Nov). */
+        (isClient() && !c.exit && c.stage === 'sent' ? (passOpen(c) ? passPicker(c) : '<div class="s-lead-acts"><button class="s-insight-lnk primary" type="button" data-move="' + c.id + '|client">Meet them</button>' +
+          '<button class="b-ghost" type="button" data-pass-open="' + c.id + '">Pass</button></div>') : '') +
         /* With a sendout, the reasons open inside its card instead. */
         (c.exit || !works ? '' : passOpen(c) && c.sentDay == null ? passPicker(c) : outPicking(c) ? outPicker(c) : writeOpen(c) ? writeBox(c) : '<div class="s-lead-acts">' +
           (isRec() && canCall(c) ? '<button class="s-insight-lnk' + (early ? ' primary' : '') + '" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call ' + esc(first(c.name)) + '</button>' : '') +
@@ -7962,7 +8025,7 @@
                 '<div class="sub">' + esc(c.at) + ', ' + plural(c.years, 'year') + ' · ' + esc(c.langs.join(', ')) + (v.length ? ' · ' + esc(v[0]) + ' (verified in interview)' : '') + (c.notice ? ' · ' + esc(c.notice) : '') + '</div></div></div>' +
               rcChip(met + ' of ' + all + ' met', met === all ? 'ok' : 'warn') + '</div>' +
             (wuOf(c) ? '<div style="margin-top:10px">' + rcQuote(esc(wuOf(c).text)) + '</div>' : '') +
-            (passOpen(c) ? passPicker(c, true) : '<div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">' + rcBtn('Invite to interview', 'data-move="' + c.id + '|client"', 'primary', 'cal') + rcBtn('Decline with a reason', 'data-pass-open="' + c.id + '"') + '</div>') +
+            (passOpen(c) ? passPicker(c, true) : '<div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">' + rcBtn('Meet them', 'data-move="' + c.id + '|client"', 'primary', 'cal') + rcBtn('Pass', 'data-pass-open="' + c.id + '"') + '</div>') +
             rcNote('lock', 'Each person on your team decides on their own; nobody’s rating shows to the others until they have given theirs.') +
           '</div>';
         }).join('') +
@@ -8225,7 +8288,7 @@
     ? '<div class="msg-avatar user-av">' + esc(me().name.split(' ').map((w) => w[0]).join('').slice(0, 2)) + '</div>'
     : '<div class="msg-avatar aimy-av">' + mark(14) + '</div>';
   const turnBody = (t) => t.html || (t.kind === 'brief' ? briefHtml(t) : t.kind === 'readback' ? readbackHtml(t)
-    : t.kind === 'book' ? bookTurnHtml(t) : t.kind === 'draft' ? draftTurnHtml(t) : t.kind === 'logsay' ? logSayHtml(t) : '');
+    : t.kind === 'book' ? bookTurnHtml(t) : t.kind === 'wu' ? wuTurnHtml(t) : t.kind === 'draft' ? draftTurnHtml(t) : t.kind === 'logsay' ? logSayHtml(t) : '');
   const turnHtml = (t) => t.who === 'you'
     ? '<div class="chat-msg user">' + msgAvatar('you') + '<div class="msg-bubble">' + t.html + '</div></div>'
     : '<div class="chat-msg aimy">' + msgAvatar('aimy') + '<div class="msg-bubble">' + turnBody(t) +
@@ -8300,7 +8363,7 @@
     const t = String(text || '').trim();
     if (!t || THINK) return;
     if (PENDING) { byId('overlayInput').value = ''; callCorrect(t); return; }
-    if (draftCorrect(t)) { byId('overlayInput').value = ''; return; }
+    if (draftCorrect(t) || wuCorrect(t)) { byId('overlayInput').value = ''; return; }
     const bar = document.querySelector('.overlay-input-bar');
     byId('overlayInput').value = '';
     THINK = t;
@@ -9180,10 +9243,14 @@
   function nudge(c) {
     if (c.nudged != null) return;
     write(c, { nudged: 0 });
+    const w = waitsOn(c), v = ivNow(c), q = reqOf(c);
+    /* A client is nudged by email, and on Northwind's desk it is in Jana's bell too. */
+    const n = w === 'client' && accOf(q).id === 'northwind' ? tellDesk('jana', { sev: 'p1', type: 'A profile waits on you', cta: 'Open ' + first(c.name), go: { cand: c.id },
+      body: c.name + ' for ' + q.title + ', sent ' + sayDay(c.sentDay != null ? c.sentDay : -c.since) + '. Meet them, or pass with a reason.' }) : null;
     paint();
-    const w = waitsOn(c), v = ivNow(c);
-    toast(nudgeSay(c).replace('Nudge', 'Nudged'), () => { write(c, { nudged: null }); paint(); },
-      w === 'client' || w === 'candidate' ? 'About ' + c.name + '. Logged on the requisition.'
+    toast(nudgeSay(c).replace('Nudge', 'Nudged'), () => { write(c, { nudged: null }); untell(n); paint(); },
+      w === 'client' ? '“Hi ' + nudgeTo(c) + ', a reminder about ' + c.name + '’s profile for ' + q.title + ', sent ' + sayDay(c.sentDay != null ? c.sentDay : -c.since) + '. Meet them, or pass with a reason.” By email.'
+      : w === 'candidate' ? 'About ' + c.name + '. Logged on the requisition.'
         : '“Hi ' + nudgeTo(c) + ', ' + first(c.name) + '’s ' + lower(STAGE[c.stage].label) + (v ? ' was ' + sayWhen(v.day) : ' result is still owed') + '. Your result takes about two minutes: the debrief link is here.”');
   }
 
@@ -9644,12 +9711,7 @@
     if ((el = at('[data-move]'))) {
       const p = el.getAttribute('data-move').split('|'), c = DB.byId[p[0]];
       /* A profile goes to a client with its write-up, read and approved first. */
-      if (p[1] === 'sent' && !isClient()) {
-        if (!el.closest('#wbStage')) go({ cand: c.id });
-        WRITING = { id: c.id, text: writeUp(c) }; PASSING = null;
-        paint();
-        return;
-      }
+      if (p[1] === 'sent' && !isClient()) { wuChat(c, S.on === 'decide' ? { on: 'decide', q: S.q } : null); return; }
       move(c, p[1]); return;
     }
     if ((el = at('[data-wu-send]'))) {
@@ -9675,10 +9737,11 @@
     if ((el = at('[data-bk-slot]'))) { const p = val('data-bk-slot').split('|'), t = turnById(p[0]); if (t && !t.done) { t.d = Number(p[1]); t.t = p[2]; saveChats(); paintThread(); } return; }
     if ((el = at('[data-bk-mode]'))) { const p = val('data-bk-mode').split('|'), t = turnById(p[0]); if (t && !t.done) { t.mode = p[1]; saveChats(); paintThread(); } return; }
     if ((el = at('[data-bk-go]'))) { const t = turnById(val('data-bk-go')); if (t) bookGo(t); return; }
+    if ((el = at('[data-wu-go]'))) { const t = turnById(val('data-wu-go')); if (t) wuGo(t); return; }
     if ((el = at('[data-dr-go]'))) { const t = turnById(val('data-dr-go')); if (t) draftGo(t); return; }
     if ((el = at('[data-lg-o]'))) { const p = val('data-lg-o').split('|'), t = turnById(p[0]); if (t && !t.done) { t.lit = t.lit === p[1] ? null : p[1]; saveChats(); paintThread(); } return; }
     if ((el = at('[data-lg-go]'))) { const t = turnById(val('data-lg-go')); if (t) logSayGo(t); return; }
-    if ((el = at('[data-turn-leave]'))) { const t = turnById(val('data-turn-leave')); if (t && !t.done) { doneTurn(t, 'Left it. Nothing was ' + (t.kind === 'book' ? 'booked or sent.' : t.kind === 'draft' ? 'sent.' : 'logged.')); paintThread(); } return; }
+    if ((el = at('[data-turn-leave]'))) { const t = turnById(val('data-turn-leave')); if (t && !t.done) { doneTurn(t, 'Left it. Nothing was ' + (t.kind === 'book' ? 'booked or sent.' : t.kind === 'draft' || t.kind === 'wu' ? 'sent.' : 'logged.')); paintThread(); } return; }
     if ((el = at('[data-connect]'))) { setConnect(val('data-connect') === 'on'); return; }
     if ((el = at('[data-wa-open]'))) { openWa(DB.byId[val('data-wa-open')]); return; }
     if ((el = at('[data-wa-addgo]'))) { addWaReply(DB.byId[val('data-wa-addgo')]); return; }
