@@ -2409,10 +2409,7 @@
     const clear = '<button class="t-inline-link" type="button" data-cfclear>Show everyone</button>';
     return '<div class="s-home">' +
       '<section class="s-block s-block-wide">' +
-        '<div class="s-camp-list-head">' + switcher('cands') +
-          /* Finding people starts here (5 Nov): it had no way in from the navigation. */
-          ((isRec() || isHR()) ? '<span class="b-draft-acts"><button class="b-ghost" type="button"' + goAttr({ on: 'find' }) + '>Saved searches and shortlists</button>' +
-            '<button class="s-insight-lnk primary" type="button" data-start="find">' + mark(12) + 'Find people</button></span>' : '') + '</div>' +
+        '<div class="s-camp-list-head">' + switcher('cands') + '</div>' +
         '<p class="b-tocall"><b>' + n('me') + '</b> waiting on you, ' + (rqQ ? 'on ' + esc(rqQ.title) + ' for ' + esc(accOf(rqQ).name) : 'across ' + plural(myOpen().length, 'open requisition')) + '</p>' +
         '<div class="t-cfilters">' +
           '<label class="b-find">' + svg('find', 14) +
@@ -2438,8 +2435,7 @@
             : '<p class="t-acts"><button class="b-ghost" type="button" data-sel-all="tell">Select all ' + owed.length + '</button></p>') : '') +
         (cut === 'new' && list.length ? trustCard(list.filter((c) => /^Found on/.test(c.source) && !c.contactOk)) : '') +
         (cut === 'new' && list.length ? (selN('sourced') ? batchBar('sourced', '<button class="s-insight-lnk primary" type="button" data-contact-sel>Approve first contact for ' + plural(selN('sourced'), 'person', 'people') + '</button>')
-            : '<p class="t-acts"><button class="s-insight-lnk primary" type="button" data-contact-all="' + list.filter((c) => !c.contactOk).map((c) => c.id).join(',') + '">Approve first contact for all ' + list.filter((c) => !c.contactOk).length + '</button>' +
-              '<button class="b-ghost" type="button" data-sel-all="sourced">Select some</button></p>') : '') +
+            : '<p class="t-acts"><button class="b-ghost" type="button" data-sel-all="sourced">Select all ' + list.length + '</button></p>') : '') +
         (list.length ? '<div class="b-grid">' + list.slice(from, to).map((c, i) => '<div class="b-slot" style="--i:' + i + '">' + candCard(c, i) + '</div>').join('') + '</div>' +
           '<div class="b-pager"><span class="b-vfoot">' + (from + 1) + '–' + to + ' of ' + plural(list.length, 'candidate') + ' · page ' + (page + 1) + ' of ' + pages + '</span>' +
             '<span class="b-pager-go">' + (page > 0 ? '<button class="s-inline-btn" type="button"' + keep({ q: S.q, p: page > 1 ? String(page - 1) : undefined }) + '>Previous ' + per + '</button>' : '') +
@@ -3271,19 +3267,8 @@
      contact cut and on a prospect's own page. */
   function trustCard(list, who, c) {
     const n = list.length;
-    /* Said as it stands on the day (5 Nov): the grace period's date had passed. */
-    const graceGone = TODAY >= new Date(2026, 10, 1);
-    const law = '<div class="errbox">' + svg('tri', 14) + '<span><b>Egypt Law 151/2020:</b> the grace period ' + (graceGone ? 'ended on 1 Nov 2026' : 'ends around 1 Nov 2026') + '. Licence, data protection officer and transfer permit are with legal.</span></div>';
-    /* On the First contact list the rules are one line, opened when wanted;
-       the recording rules belong to interviews, not here. */
-    if (!c) return '<details class="t-trust s-block-wide"><summary class="t-trust-sum">' + svg('shield', 14) +
-        '<span>First contact goes by email with a privacy notice. WhatsApp needs their own opt-in, and nothing is taken from LinkedIn.</span><span class="t-trust-more">The rules</span></summary>' +
-      '<div class="t-trust-in">' + law + '<div class="card" style="margin-top:12px">' +
-        '<div class="gate" style="border-top:0"><span class="ico ok">' + svg('mail', 18) + '</span><div><b>Email with a privacy notice</b><div class="sub">Says where we found them; one click to object and be deleted</div></div>' + rcChip('Allowed', 'ok') + '</div>' +
-        rcGate('msg', 'err', 'WhatsApp', 'Needs their opt-in to FlairsTech first. Bought numbers don’t count', rcChip('Blocked', 'err', 'ban')) +
-        rcGate('globe', 'err', 'Scrape LinkedIn', 'Against LinkedIn’s user agreement', rcChip('Never', 'err', 'ban')) + '</div></div></details>';
     return rcard({ cap: 'Trust and law', ico: 'shield', amber: true, label: 'Trust and law', cards: [
-      law,
+      '<div class="errbox">' + svg('tri', 14) + '<span><b>Egypt Law 151/2020:</b> the grace period ends around 1 Nov 2026. Licence, data protection officer and transfer permit are with legal.</span></div>',
       '<div class="card" style="margin-top:12px"><h4>First contact · ' + esc(who || plural(n, 'web prospect')) + '</h4>' +
         '<div class="gate" style="border-top:0;margin-top:6px"><span class="ico ok">' + svg('mail', 18) + '</span><div><b>Email with a privacy notice</b><div class="sub">Says where we found them; one click to object and be deleted</div></div>' + rcChip('Allowed', 'ok') + '</div>' +
         rcGate('msg', 'err', 'WhatsApp', 'Needs their opt-in to FlairsTech first. Bought numbers don’t count', rcChip('Blocked', 'err', 'ban')) +
@@ -9445,14 +9430,6 @@
       byId('addTo' + c0.id).hidden = true;
       paint();
       toast('Added ' + first(c.name) + ' to ' + q.title, () => { unmake('events', e); dropCand(c); paint(); }, 'Same person, another application. Both show on their profile.');
-      return;
-    }
-    if ((el = at('[data-contact-all]'))) {
-      const list = val('data-contact-all').split(',').map((id) => DB.byId[id]).filter((c) => c && !c.contactOk);
-      const es = list.map((c) => { write(c, { contactOk: true }); return note(c, 'note', 'First contact approved by ' + me().name + '.'); });
-      paint();
-      toast('First contact approved for ' + plural(list.length, 'person', 'people'), () => { list.forEach((c) => write(c, { contactOk: false })); es.forEach((e) => unmake('events', e)); paint(); },
-        'AiMY sends each one short message by email with a privacy notice, naming the role. Nothing about pay.');
       return;
     }
     if ((el = at('[data-contact-ok]'))) {

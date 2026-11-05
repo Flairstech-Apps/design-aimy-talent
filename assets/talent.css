@@ -1764,13 +1764,5 @@ body.is-portal .aimy-overlay { display: none !important; }
 }
 
 /* ══ FIND PEOPLE (5 Nov) ══════════════════════════════════════════════════
-   First contact's rules on one line, opened when wanted; and the count of
-   people a search left out because they met none of it. */
-.t-trust { border: 1px solid var(--card-border); border-radius: var(--r-lg); padding: 12px 16px; background: var(--card-bg); }
-.t-trust-sum { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: var(--fs-xs); color: var(--d50); list-style: none; }
-.t-trust-sum::-webkit-details-marker { display: none; }
-.t-trust-sum > svg { flex: none; color: var(--ok-text, var(--ok)); }
-.t-trust-more { margin-left: auto; flex: none; color: var(--accent-text, var(--accent)); font-weight: var(--fw-semibold); }
-.t-trust[open] .t-trust-more { visibility: hidden; }
-.t-trust-in { margin-top: 12px; }
+   The count of people a search left out because they met none of it. */
 .t-find-out { margin: 10px 0 0; }
