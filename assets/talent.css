@@ -1740,30 +1740,9 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-cand-fold-in { display: flex; flex-direction: column; gap: 16px; margin-top: 12px; }
 .t-cand-fold > summary { list-style-position: inside; }
 
-/* ══ THE RAIL NEVER LEAVES THE SCREEN (Engy, 5 Nov) ═══════════════════════
-   Below 1080 Sales's rail became a drawer, off the screen until its button
-   was pressed, so on a laptop-width window the product had no navigation in
-   view. From phone width up it now stays as a slim column instead: each
-   page's icon with its count (the name stays for screen readers and shows
-   as a tooltip), and the diary door as its next time, since the diary has
-   no tab of its own. The menu button still opens the full rail over the
-   page. A phone keeps the drawer. */
-@media (min-width: 641px) and (max-width: 1079.98px) {
-  :root { --rail-w: 76px; }
-  .app-rail:not(.is-open) {
-    position: static; transform: none; visibility: visible;
-    width: var(--rail-w); padding: 12px 8px; overflow-x: hidden;
-    background: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none;
-    border-right: 1px solid var(--hairline);
-  }
-  .app-rail:not(.is-open) .snav-tab-link { flex-direction: column; justify-content: center; gap: 4px; padding: 10px 0; }
-  .app-rail:not(.is-open) .snav-tab-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .app-rail:not(.is-open) .snav-tab-n { font-size: var(--fs-2xs); line-height: 1; }
-  .app-rail:not(.is-open) .snav-tab-read { display: none; }
-  .app-rail:not(.is-open) .rail-doors .b-door { padding: 10px 4px; align-items: center; text-align: center; }
-  .app-rail:not(.is-open) .rail-doors .b-door-fig { font-size: var(--fs-sm); justify-content: center; }
-  .app-rail:not(.is-open) .rail-doors .b-door-who, .app-rail:not(.is-open) .rail-doors .b-door-go { display: none; }
-}
+/* THE RAIL, AS SALES (Engy, 6 Nov): below full width it leaves the screen
+   and the menu button brings it over the page. The slim column of 5 Nov
+   is gone. */
 
 /* ══ FIND PEOPLE (5 Nov) ══════════════════════════════════════════════════
    The count of people a search left out because they met none of it. */
@@ -1917,3 +1896,6 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-trk.is-plan .t-trk-step::before { background: rgba(var(--accent-rgb), 0.3); }
 .t-trk.is-plan .t-trk-dot { border-color: rgba(var(--accent-rgb), 0.6); }
 .t-trk.is-plan .t-trk-k { color: var(--d100); }
+
+/* The editor's closing note runs the full width of the page (6 Nov). */
+.t-edit-note .b-aimy { margin: 10px 0 14px; max-width: none; }

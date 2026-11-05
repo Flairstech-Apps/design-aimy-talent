@@ -9074,12 +9074,12 @@
             '<p class="t-error-msg">Add at least one must-have. Candidates are read against these.</p></div></div>' +
         '</div>' +
       '</section>' +
-      aimyBlock({ text: isDraft ? (q.from ? esc(q.from.say) + ' ' : '') + (q.approval && !q.approval.back ? '' : (function () {
+      '<div class="s-block-wide t-edit-note">' + aimyBlock({ text: isDraft ? (q.from ? esc(q.from.say) + ' ' : '') + (q.approval && !q.approval.back ? '' : (function () {
           const v = reqFromBuf(q, f), ex = reqExceptions(v).filter((r) => r.who !== DESK);
           return ex.length ? 'Opening it sends it to ' + esc(namesOf(ex.map((r) => r.who).filter((x, i, a) => a.indexOf(x) === i))) + ' first, because of ' + esc(ex.map((r) => r.say(v)).join(', and ')) + '. '
             : 'Opens straight away: ' + esc(passSay(v)) + '. ';
         })()) + 'Nothing goes live until it opens, and it stays off the careers page until somebody publishes it.'
-        : 'Saving changes the requisition for everyone on it. Candidates are re-read against a changed success profile.', from: q.from && q.from.kind === 'brief' ? 'your briefing, and how requisitions work' : 'how requisitions work' }) +
+        : 'Saving changes the requisition for everyone on it. Candidates are re-read against a changed success profile.', from: q.from && q.from.kind === 'brief' ? 'your briefing, and how requisitions work' : 'how requisitions work' }) + '</div>' +
     '</div>';
   }
   /* The editor's buffer, back onto the requisition. */
