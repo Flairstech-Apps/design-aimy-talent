@@ -2056,7 +2056,7 @@
   }
   function sideNav(reads) {
     const tabs = tabsFor(), on = S.on || '';
-    const here = on && tabs.some((t) => t.k === on) ? on : S.cand ? 'cands' : S.req || S.acc ? 'reqs' : S.asmt ? 'asmts' : on ? null : '';
+    const here = on && tabs.some((t) => t.k === on) ? on : S.cand || on === 'find' || on === 'draft' || on === 'add' ? 'cands' : S.req || S.acc ? 'reqs' : S.asmt ? 'asmts' : on ? null : '';
     return '<div class="snav-tabs"><ul>' + tabs.map((t) => {
       const cur = t.k === here, r = reads[t.k];
       return '<li class="' + (cur ? 'snav-tab is-on' : 'snav-tab') + '">' +
@@ -2409,7 +2409,10 @@
     const clear = '<button class="t-inline-link" type="button" data-cfclear>Show everyone</button>';
     return '<div class="s-home">' +
       '<section class="s-block s-block-wide">' +
-        '<div class="s-camp-list-head">' + switcher('cands') + '</div>' +
+        '<div class="s-camp-list-head">' + switcher('cands') +
+          /* Finding people starts here (5 Nov): it had no way in from the navigation. */
+          ((isRec() || isHR()) ? '<span class="b-draft-acts"><button class="b-ghost" type="button"' + goAttr({ on: 'find' }) + '>Saved searches and shortlists</button>' +
+            '<button class="s-insight-lnk primary" type="button" data-start="find">' + mark(12) + 'Find people</button></span>' : '') + '</div>' +
         '<p class="b-tocall"><b>' + n('me') + '</b> waiting on you, ' + (rqQ ? 'on ' + esc(rqQ.title) + ' for ' + esc(accOf(rqQ).name) : 'across ' + plural(myOpen().length, 'open requisition')) + '</p>' +
         '<div class="t-cfilters">' +
           '<label class="b-find">' + svg('find', 14) +
@@ -2435,7 +2438,8 @@
             : '<p class="t-acts"><button class="b-ghost" type="button" data-sel-all="tell">Select all ' + owed.length + '</button></p>') : '') +
         (cut === 'new' && list.length ? trustCard(list.filter((c) => /^Found on/.test(c.source) && !c.contactOk)) : '') +
         (cut === 'new' && list.length ? (selN('sourced') ? batchBar('sourced', '<button class="s-insight-lnk primary" type="button" data-contact-sel>Approve first contact for ' + plural(selN('sourced'), 'person', 'people') + '</button>')
-            : '<p class="t-acts"><button class="b-ghost" type="button" data-sel-all="sourced">Select all ' + list.length + '</button></p>') : '') +
+            : '<p class="t-acts"><button class="s-insight-lnk primary" type="button" data-contact-all="' + list.filter((c) => !c.contactOk).map((c) => c.id).join(',') + '">Approve first contact for all ' + list.filter((c) => !c.contactOk).length + '</button>' +
+              '<button class="b-ghost" type="button" data-sel-all="sourced">Select some</button></p>') : '') +
         (list.length ? '<div class="b-grid">' + list.slice(from, to).map((c, i) => '<div class="b-slot" style="--i:' + i + '">' + candCard(c, i) + '</div>').join('') + '</div>' +
           '<div class="b-pager"><span class="b-vfoot">' + (from + 1) + '–' + to + ' of ' + plural(list.length, 'candidate') + ' · page ' + (page + 1) + ' of ' + pages + '</span>' +
             '<span class="b-pager-go">' + (page > 0 ? '<button class="s-inline-btn" type="button"' + keep({ q: S.q, p: page > 1 ? String(page - 1) : undefined }) + '>Previous ' + per + '</button>' : '') +
@@ -3267,8 +3271,19 @@
      contact cut and on a prospect's own page. */
   function trustCard(list, who, c) {
     const n = list.length;
+    /* Said as it stands on the day (5 Nov): the grace period's date had passed. */
+    const graceGone = TODAY >= new Date(2026, 10, 1);
+    const law = '<div class="errbox">' + svg('tri', 14) + '<span><b>Egypt Law 151/2020:</b> the grace period ' + (graceGone ? 'ended on 1 Nov 2026' : 'ends around 1 Nov 2026') + '. Licence, data protection officer and transfer permit are with legal.</span></div>';
+    /* On the First contact list the rules are one line, opened when wanted;
+       the recording rules belong to interviews, not here. */
+    if (!c) return '<details class="t-trust s-block-wide"><summary class="t-trust-sum">' + svg('shield', 14) +
+        '<span>First contact goes by email with a privacy notice. WhatsApp needs their own opt-in, and nothing is taken from LinkedIn.</span><span class="t-trust-more">The rules</span></summary>' +
+      '<div class="t-trust-in">' + law + '<div class="card" style="margin-top:12px">' +
+        '<div class="gate" style="border-top:0"><span class="ico ok">' + svg('mail', 18) + '</span><div><b>Email with a privacy notice</b><div class="sub">Says where we found them; one click to object and be deleted</div></div>' + rcChip('Allowed', 'ok') + '</div>' +
+        rcGate('msg', 'err', 'WhatsApp', 'Needs their opt-in to FlairsTech first. Bought numbers don’t count', rcChip('Blocked', 'err', 'ban')) +
+        rcGate('globe', 'err', 'Scrape LinkedIn', 'Against LinkedIn’s user agreement', rcChip('Never', 'err', 'ban')) + '</div></div></details>';
     return rcard({ cap: 'Trust and law', ico: 'shield', amber: true, label: 'Trust and law', cards: [
-      '<div class="errbox">' + svg('tri', 14) + '<span><b>Egypt Law 151/2020:</b> the grace period ends around 1 Nov 2026. Licence, data protection officer and transfer permit are with legal.</span></div>',
+      law,
       '<div class="card" style="margin-top:12px"><h4>First contact · ' + esc(who || plural(n, 'web prospect')) + '</h4>' +
         '<div class="gate" style="border-top:0;margin-top:6px"><span class="ico ok">' + svg('mail', 18) + '</span><div><b>Email with a privacy notice</b><div class="sub">Says where we found them; one click to object and be deleted</div></div>' + rcChip('Allowed', 'ok') + '</div>' +
         rcGate('msg', 'err', 'WhatsApp', 'Needs their opt-in to FlairsTech first. Bought numbers don’t count', rcChip('Blocked', 'err', 'ban')) +
@@ -5760,7 +5775,8 @@
       if (/german/.test(t)) return p.langs.indexOf('German') >= 0 ? 'm' : 'n';
       if (/english/.test(t) && !yr) return p.langs.indexOf('English') >= 0 ? 'm' : 'n';
       const hit = p.skills.some((s) => t.indexOf(s.toLowerCase().split(' ')[0]) >= 0);
-      if (yr) return p.years >= Number(yr[1]) ? (hit || /support|account|operation|analyst/.test(t) ? 'm' : 'p') : 'p';
+      /* "3+ years of experience", with no field named, is met by the years alone (5 Nov). */
+      if (yr) return p.years >= Number(yr[1]) ? (hit || /support|account|operation|analyst/.test(t) || /years? of experience$/.test(t) ? 'm' : 'p') : 'p';
       return hit ? 'm' : 'n';
     });
   }
@@ -6117,14 +6133,15 @@
     { k: 'pool', label: 'Our talent pool', say: 'People who applied before', tag: 'Talent pool' },
     { k: 'web', label: 'The public web', say: 'GitHub, portfolios and company pages, never LinkedIn scraping', tag: 'Prospect' },
     { k: 'apollo', label: 'Apollo', say: 'Adds a work email to people found', tag: 'Apollo', enrich: true },
-    { k: 'signal', label: 'SignalHire', say: 'Parked, decision D10', parked: true },
+    { k: 'signal', label: 'SignalHire', say: 'Not in use yet', parked: true },
   ];
   const WEB_PAGES = [['Public GitHub profile', 'github.com/'], ['Portfolio', 'behance.net/'], ['Company team page', 'team page, '], ['Conference speaker page', 'speaker, ']];
   const KEYS_TO_MUST = [
     [/german/i, 'German at C1 or above'], [/english/i, 'Fluent English'], [/\bsql\b/i, 'SQL to read logs and data'],
     [/zendesk|freshdesk|ticket/i, 'Ticketing tools (Zendesk or Freshdesk)'], [/support|helpdesk|customer/i, 'Software support experience'],
     [/netsuite|erp|oracle/i, 'NetSuite or a similar ERP'], [/receivable|collection/i, 'Accounts receivable and collections'],
-    [/excel/i, 'Advanced Excel'], [/reconcil/i, 'Bank reconciliations'], [/process|operation/i, 'Process documentation'],
+    [/excel/i, 'Advanced Excel'], [/reconcil/i, 'Bank reconciliations'], [/month.?end|closing the books/i, 'Month-end close'], [/ledger/i, 'General ledger work'],
+    [/process|operation/i, 'Process documentation'],
     [/jira/i, 'Jira'], [/api/i, 'REST APIs'],
   ];
   let FIND = { q: '', req: null, src: { pool: true, web: true, apollo: true, signal: false }, step: 'ask', i: 0, res: [], done: {}, tab: 'pool', why: {},
@@ -6205,9 +6222,13 @@
      chat, so both bring back the same people for the same ask. */
   function gatherFind(crit) {
     let h = 7;
-    (FIND.q + '|' + (FIND.req || '')).split('').forEach((ch) => { h = (h * 33 + ch.charCodeAt(0)) >>> 0; });
+    (FIND.q + '|' + (FIND.req || '') + '|' + (FIND.mode === 'like' ? FIND.like : '')).split('').forEach((ch) => { h = (h * 33 + ch.charCodeAt(0)) >>> 0; });
     const r = rng(h);
-    const fam = FIND.req ? DB.reqById[FIND.req].fam : famOf(FIND.q);
+    /* The role's family decides whose pool is searched (5 Nov): like the
+       person who left, it is their role's, never the default an empty text
+       box gives, which sent an accountant search to support people. */
+    const lp = FIND.mode === 'like' ? pastOf(FIND.like) : null;
+    const fam = FIND.req ? DB.reqById[FIND.req].fam : lp ? famOf(lp.title) : famOf(FIND.q + ' ' + crit.join(' '));
     const res = [];
     const fromPerson = (p, src, extra) => {
       if (D.gone.some((g) => g.name === p.name)) return;
@@ -6247,10 +6268,13 @@
       }
     };
     if (FIND.src.web) make1(between(r, 5, 8));
-    /* The pool first, then the web, each strongest first: one list. */
-    res.sort((a, b) => (a.src === 'pool' ? 0 : 1) - (b.src === 'pool' ? 0 : 1) || b.score - a.score);
-    res.forEach((x, i) => { x.i = i; });
-    return res;
+    /* Anyone meeting none of it is left out and counted, not listed under
+       "who fits" (5 Nov). The pool first, then the web, each strongest first. */
+    FIND.out = { pool: res.filter((x) => x.src === 'pool' && x.score <= 0).length, web: res.filter((x) => x.src !== 'pool' && x.score <= 0).length };
+    const kept = res.filter((x) => x.score > 0);
+    kept.sort((a, b) => (a.src === 'pool' ? 0 : 1) - (b.src === 'pool' ? 0 : 1) || b.score - a.score);
+    kept.forEach((x, i) => { x.i = i; });
+    return kept;
   }
 
   /* ══ FINDING THROUGH THE CHAT (Sales B8) ══════════════════════════════════
@@ -6266,52 +6290,70 @@
     saveChats();
     paintThread();
   }
+  /* WHO FIRST (Engy, 5 Nov). It asked pool or web before anything, and a
+     brief typed there read as "Nothing matches". Now: who (a requisition,
+     someone who left, or typed), read back as criteria, then Find them,
+     the pool first and the web after, with Only the pool or Only the web
+     beside it for when that matters. */
   function findChat(reqId, text) {
     CHAT_AT = null;
-    FC = { req: reqId || null, q: text || '', src: null };
+    FC = { req: reqId || null, q: text || '', like: null, src: 'both', waiting: false };
     peekHide();
     if (!canvasShown()) openCanvas();
     if (!chatNow() || !chatNow().title) chatFor().title = text || 'Find people';
     if (text) fcSay('you', text);
-    fcSay('aimy', 'From your talent pool, the public web, or both? The pool comes first either way; SignalHire stays parked and nothing is scraped from LinkedIn.', [
-      { label: 'Both, pool first', data: 'fc="both"', primary: true }, { label: 'Only the pool', data: 'fc="pool"' }, { label: 'Only the public web', data: 'fc="web"' }]);
+    if (fcCrit().length) { fcRead(); return; }
+    fcAskWho();
+  }
+  function fcAskWho() {
+    const open = DB.reqs.filter(isOpen).filter((q) => isHR() || q.rec === DESK);
+    FC.waiting = true;
+    fcSay('aimy', 'Who are you looking for? Pick a requisition or someone who left, or type what you need, like “accountants with month-end close, 3 years”.',
+      open.slice(0, 4).map((q) => ({ label: q.title + ' · ' + accOf(q).name, data: 'fc="req:' + q.id + '"' }))
+        .concat(leavers().slice(0, 3).map((x) => ({ label: 'Like ' + x.name + ', who left', data: 'fc="like:' + x.id + '"' }))));
+  }
+  function fcRead() {
+    FC.waiting = false;
+    const crit = fcCrit(), lp = FC.like ? pastOf(FC.like) : null;
+    fcSay('aimy', 'I read that as ' + (FC.req ? 'the success profile for <b>' + esc(DB.reqById[FC.req].title) + '</b>' : lp ? '<b>' + esc(lp.name) + '</b>’s role, ' + esc(lp.title) : 'what you wrote') + ': ' +
+      crit.map((m) => '<b>' + esc(m) + '</b>').join(', ') + '. I look in your pool first, then on public pages. Each person comes back with how many of these they meet; a profile that is silent on one reads Not known, not No.',
+      [{ label: 'Find them', data: 'fc="go:both"', primary: true }, { label: 'Only the pool', data: 'fc="go:pool"' }, { label: 'Only the public web', data: 'fc="go:web"' }]);
+  }
+  /* A brief typed while AiMY waits for who. */
+  function fcTyped(text) {
+    if (!FC || !FC.waiting) return false;
+    FC.q = text; FC.req = null; FC.like = null;
+    fcSay('you', text);
+    if (!fcCrit().length) { fcSay('aimy', 'I could not read what to look for in that. Name a skill, a tool or a language, or pick a requisition above.', []); return true; }
+    fcRead();
+    return true;
   }
   function fcCrit() {
-    FIND.q = FC.q; FIND.req = FC.req; FIND.mode = FC.req ? 'req' : 'text'; FIND.need = null;
+    FIND.q = FC.q; FIND.req = FC.req; FIND.like = FC.like; FIND.mode = FC.req ? 'req' : FC.like ? 'like' : 'text'; FIND.need = null;
     return findCriteria();
   }
   function fcStep(v) {
     if (!FC) return;
     const open = DB.reqs.filter(isOpen).filter((q) => isHR() || q.rec === DESK);
-    if (v === 'both' || v === 'pool' || v === 'web') {
-      FC.src = v;
-      fcSay('you', { both: 'Both, pool first', pool: 'Only the pool', web: 'Only the public web' }[v]);
-    } else if (v.indexOf('req:') === 0) {
-      FC.req = v.slice(4);
-      fcSay('you', DB.reqById[FC.req].title);
-    }
-    if (v === 'both' || v === 'pool' || v === 'web' || v.indexOf('req:') === 0) {
-      const crit = fcCrit();
-      if (!crit.length) {
-        fcSay('aimy', 'For which requisition? I read its success profile, so the people come back already judged against it.',
-          open.slice(0, 6).map((q) => ({ label: q.title + ' · ' + accOf(q).name, data: 'fc="req:' + q.id + '"' })));
-        return;
-      }
-      fcSay('aimy', 'I read that as ' + (FC.req ? 'the success profile for <b>' + esc(DB.reqById[FC.req].title) + '</b>' : 'what you wrote') + ': ' +
-        crit.map((m) => '<b>' + esc(m) + '</b>').join(', ') + '. Each person comes back with how many of these they meet; a profile that is silent on one reads Not known, not No.',
-        [{ label: 'That is enough', data: 'fc="enough"', primary: true }]);
-      return;
-    }
-    if (v === 'enough') {
-      fcSay('you', 'That is enough');
+    if (v.indexOf('req:') === 0) { FC.req = v.slice(4); FC.like = null; FC.q = ''; fcSay('you', DB.reqById[FC.req].title); fcRead(); return; }
+    if (v.indexOf('like:') === 0) { FC.like = v.slice(5); FC.req = null; FC.q = ''; const lp = pastOf(FC.like); fcSay('you', 'Like ' + (lp ? lp.name : 'them')); fcRead(); return; }
+    if (v === 'enough') v = 'go:both';
+    if (v.indexOf('go:') === 0) {
+      FC.src = v.slice(3);
+      fcSay('you', { both: 'Find them', pool: 'Only the pool', web: 'Only the public web' }[FC.src]);
       FIND.src = { pool: FC.src !== 'web', web: FC.src !== 'pool', apollo: true, signal: false };
       const crit = fcCrit();
       const res = gatherFind(crit);
-      const title = (FC.req ? DB.reqById[FC.req].title : crit[0] || 'People') + ', ' + sayDay(0);
+      /* Named for what was asked: the requisition, who left, or the brief itself. */
+      const lp = FC.like ? pastOf(FC.like) : null, brief = String(FC.q || '').trim();
+      const title = (FC.req ? DB.reqById[FC.req].title : lp ? 'Like ' + lp.name : brief ? (brief.length > 40 ? brief.slice(0, 40).replace(/[ ,]+\S*$/, '') + '…' : brief) : crit[0] || 'People') + ', ' + sayDay(0);
       FC.res = res; FC.crit = crit; FC.name = title;
       const pool = res.filter((x) => x.src === 'pool').length;
-      fcSay('aimy', '<b>' + plural(res.length, 'person', 'people') + '</b> came back: ' + plural(pool, 'from your pool', 'from your pool') + ', ' + (res.length - pool) + ' from public pages, each page named. I would call it “' + esc(title) + '”.',
-        [{ label: 'Curate the list', data: 'fc="curate"', primary: true }]);
+      const out = FIND.out || { pool: 0, web: 0 };
+      fcSay('aimy', res.length ? '<b>' + plural(res.length, 'person', 'people') + '</b> came back: ' + pool + ' from your pool, ' + (res.length - pool) + ' from public pages, each page named' +
+          (out.pool + out.web ? '; ' + (out.pool + out.web) + ' more met none of it and are left out' : '') + '. I would call it “' + esc(title) + '”.'
+        : 'Nobody met any of it, in your pool or on public pages. Loosen one of the criteria, or try a requisition.',
+        res.length ? [{ label: 'Curate the list', data: 'fc="curate"', primary: true }] : []);
       return;
     }
     if (v === 'curate') {
@@ -6356,6 +6398,18 @@
         '<div class="b-grid">' + d.res.map((x, i) => '<div class="b-slot">' + draftCard(x, i, d, !!saved) + '</div>').join('') + '</div></section>' +
     '</div>';
   }
+  /* AiMY's read on a shortlist card, in the Candidates card's own form
+     (5 Nov): the verdict, then one sentence on what shows and what to check. */
+  function shortRead(x, crit) {
+    const lc = (m) => /^(German|English|Arabic|NetSuite|SQL|Jira|REST|Advanced Excel)\b/.test(m) ? m : m.charAt(0).toLowerCase() + m.slice(1);
+    const met = crit.filter((m, k) => x.ev[k] === 'm').map(lc), part = crit.filter((m, k) => x.ev[k] === 'p').map(lc), unk = crit.filter((m, k) => x.ev[k] === 'n').map(lc);
+    const v = met.length >= 2 ? ['Strong fit', 'is-strong'] : met.length || part.length ? ['Partly fits', 'is-part'] : ['Not shown yet', 'is-none'];
+    const f = first(x.name);
+    const say = (met.length ? f + ' shows <b>' + esc(listSay(met)) + '</b>' + (part.length ? ', and partly <em>' + esc(listSay(part)) + '</em>' : '') : part.length ? f + ' partly shows <em>' + esc(listSay(part)) + '</em>' : f + '’s profile is silent on these') + '.' +
+      (unk.length ? ' I’d check ' + esc(listSay(unk)) + '.' : '');
+    return '<div class="t-ins" title="AiMY’s read of ' + (x.src === 'pool' ? 'their history with us' : 'a public page, named on the card') + '">' +
+      '<p class="t-ins-h">' + mark(12) + '<span class="t-ins-v ' + v[1] + '">' + v[0] + '</span></p><p class="t-ins-say">' + say + '</p></div>';
+  }
   function draftCard(x, i, d, saved) {
     const met = x.ev.filter((e) => e === 'm').length;
     const keep = saved || d.keep[x.i] !== false;
@@ -6365,7 +6419,7 @@
       '<div class="b-qcard-top"><span class="tc-title s-card-title">' + esc(x.name) + '</span></div>' +
       '<p class="tc-summary b-qcard-role">' + esc(x.at) + '</p>' +
       '<p class="b-qcard-where">' + fact('job', plural(x.years, 'year')) + fact('pin', x.place) + fact('lang', x.langs.join(', ')) + '</p>' +
-      aimyBlock({ text: '<b>' + met + ' of ' + x.ev.length + '</b> must-haves met' + (x.ev.filter((e) => e === 'n').length ? '; ' + x.ev.filter((e) => e === 'n').length + ' not known, which is not a no' : '') + '.', from: x.src === 'pool' ? 'their history with us' : 'a public page, named' }) +
+      shortRead(x, d.crit) +
       '<p class="b-vfoot">' + esc(x.consent) + (x.email ? (x.emailFrom ? ' Work email from ' + esc(x.emailFrom) + '.' : ' Email on file.') : '') + '</p>' +
       (saved ? '' : '<div class="tc-gov b-qcard-foot"><span></span><button class="filter-chip' + (keep ? ' active' : '') + '" type="button" data-keep="' + x.i + '" aria-pressed="' + keep + '">' + (keep ? svg('check', 12) + 'Keep' : 'Keep') + '</button></div>') +
     '</article>';
@@ -6546,7 +6600,9 @@
     const open = DB.reqs.filter(isOpen).filter((r) => isHR() || r.rec === DESK);
     const n = selN('find'), left = FIND.res.filter((x) => inTab(x) && !FIND.done[x.i]).length;
     const q = FIND.req ? DB.reqById[FIND.req] : null;
-    const asked = FIND.q.trim() ? FIND.q.trim().split('\n')[0] : q ? 'People who fit ' + q.title : 'Anyone who fits';
+    const lp = FIND.mode === 'like' ? pastOf(FIND.like) : null;
+    const asked = FIND.q.trim() && FIND.mode === 'text' ? FIND.q.trim().split('\n')[0] : q ? 'People who fit ' + q.title : lp ? 'Like ' + lp.name + ', ' + lp.title : 'People who fit what you wrote';
+    const out = FIND.out || { pool: 0, web: 0 };
     const mails = web.filter((x) => x.emailFrom).length;
     /* Met, and what their profile is silent on, said apart (unknown is not a no). */
     const req = (k) => !FIND.need || FIND.need[k] !== false;
@@ -6574,7 +6630,8 @@
       '<div class="search">' + svg('find', 16) + '<span>' + esc(asked) + '</span>' + (q ? '<span style="margin-left:auto" class="chip acc">' + svg('doc', 12) + ' from ' + esc(q.title) + '</span>' : '') + '</div>' +
       '<div class="tabs" role="tablist">' + [['pool', 'In your pool', pool.length], ['web', 'Web prospects', web.length]].map((t) =>
         (t[0] === tab ? '<button class="on" type="button" role="tab" aria-selected="true"' : '<button type="button" role="tab" aria-selected="false"') + ' data-find-tab="' + t[0] + '">' + t[1] + '<b>' + t[2] + '</b></button>').join('') + '</div>' +
-      '<div class="card" style="padding:4px 16px 12px">' + (rows || '<div class="person" style="border-top:0"><div class="av g" aria-hidden="true">' + svg('find', 15) + '</div><div><h4>Nobody here</h4><div class="sub">Try the other sources above</div></div><span></span></div>') +
+      '<div class="card" style="padding:4px 16px 12px">' + (rows || '<div class="person" style="border-top:0"><div class="av g" aria-hidden="true">' + svg('find', 15) + '</div><div><h4>' + (tab === 'pool' ? 'Nobody in your pool meets any of these' : 'Nobody on public pages meets any of these') + '</h4><div class="sub">Loosen a criterion above, or look in the other source</div></div><span></span></div>') +
+        (out[tab] ? '<p class="sub t-find-out">' + plural(out[tab], 'other') + (tab === 'pool' ? ' in your pool' : ' on public pages') + ' met none of these, so they are left out.</p>' : '') +
         '<div class="row between" style="margin-top:10px;flex-wrap:wrap"><span class="sub">' + svg('mail', 12) + ' First contact by email with a privacy notice' +
           (tab === 'web' ? ', once you approve it' + (mails ? ' · ' + mails + ' with a work email from Apollo' : '') : '') + '</span>' +
           '<span class="row" style="gap:8px;flex-wrap:wrap">' + (left ? rcBtn('Select all ' + left, 'data-sel-all="find"', 'small') : '') +
@@ -8363,6 +8420,7 @@
     const t = String(text || '').trim();
     if (!t || THINK) return;
     if (PENDING) { byId('overlayInput').value = ''; callCorrect(t); return; }
+    if (fcTyped(t)) { byId('overlayInput').value = ''; return; }
     if (draftCorrect(t) || wuCorrect(t)) { byId('overlayInput').value = ''; return; }
     const bar = document.querySelector('.overlay-input-bar');
     byId('overlayInput').value = '';
@@ -9027,14 +9085,14 @@
     const reqs = () => add('Requisitions', goAttr({ on: 'reqs' }).trim());
     const reqStep = (q, attr) => add(q.title || 'Untitled draft', attr || 'data-req="' + q.id + '"');
     if (S.on === 'add') { const q = S.req && DB.reqById[S.req]; if (q) { reqs(); reqStep(q); } return { up: up, now: 'Add a candidate' }; }
-    if (S.on === 'find') return { up: up, now: 'Find candidates' };
+    if (S.on === 'find') { add('Candidates', goAttr({ on: 'cands' }).trim()); return { up: up, now: 'Find candidates' }; }
     if (S.on === 'decide') return { up: up, now: S.q === 'send' ? 'Sending profiles' : 'Deciding' };
     if (S.on === 'calls' && (S.th || S.lg)) {
       add('Interactions', goAttr({ on: 'calls' }).trim());
       return { up: up, now: S.lg ? 'Log a call from elsewhere' : (DB.byId[S.th] || {}).name || 'WhatsApp' };
     }
     if (S.on === 'newreq') { reqs(); const a = ACCOUNTS.filter((x) => x.id === S.account)[0]; return { up: up, now: 'New requisition' + (a ? ' for ' + a.name : '') }; }
-    if (S.on === 'draft') { add('Find candidates', goAttr({ on: 'find' }).trim()); const l = S.list ? D.lists.filter((x) => x.id === S.list)[0] : DRAFT; return { up: up, now: l ? l.name : 'Shortlist' }; }
+    if (S.on === 'draft') { add('Candidates', goAttr({ on: 'cands' }).trim()); add('Find candidates', goAttr({ on: 'find' }).trim()); const l = S.list ? D.lists.filter((x) => x.id === S.list)[0] : DRAFT; return { up: up, now: l ? l.name : 'Shortlist' }; }
     if (S.cand && DB.byId[S.cand]) {
       const c = DB.byId[S.cand], q = reqOf(c);
       reqs(); reqStep(q);
@@ -9387,6 +9445,14 @@
       byId('addTo' + c0.id).hidden = true;
       paint();
       toast('Added ' + first(c.name) + ' to ' + q.title, () => { unmake('events', e); dropCand(c); paint(); }, 'Same person, another application. Both show on their profile.');
+      return;
+    }
+    if ((el = at('[data-contact-all]'))) {
+      const list = val('data-contact-all').split(',').map((id) => DB.byId[id]).filter((c) => c && !c.contactOk);
+      const es = list.map((c) => { write(c, { contactOk: true }); return note(c, 'note', 'First contact approved by ' + me().name + '.'); });
+      paint();
+      toast('First contact approved for ' + plural(list.length, 'person', 'people'), () => { list.forEach((c) => write(c, { contactOk: false })); es.forEach((e) => unmake('events', e)); paint(); },
+        'AiMY sends each one short message by email with a privacy notice, naming the role. Nothing about pay.');
       return;
     }
     if ((el = at('[data-contact-ok]'))) {
