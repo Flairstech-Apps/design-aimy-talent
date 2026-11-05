@@ -1,0 +1,17 @@
+# What `wrangler deploy` must not publish (Sales's list). The assets directory
+# is the repo root, so without this the git history, local tool settings and
+# dev scripts would be served to anyone who asks for them.
+.git
+.gitattributes
+.gitignore
+.assetsignore
+.claude
+.wrangler
+.dev.vars*
+.env*
+node_modules
+wrangler.jsonc
+devserver.py
+README.md
+assets/audit.js
+.aimy
