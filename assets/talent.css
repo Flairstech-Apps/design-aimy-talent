@@ -1345,6 +1345,11 @@ body.is-portal .aimy-overlay { display: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .snav-tab::before, .snav-tab-link, .snav-tab-read, .snav-read-act { transition: none; }
 }
+/* The door at AiMY UI 1.4.0 (tokens shell.css, RailDoor): the caption and
+   the clock in the secondary ink, a step up from this copy of Sales's
+   bdr.css, and the button takes the page's type. Sizes already match. */
+.rail-doors .b-door { font-family: inherit; color: inherit; }
+.rail-doors .b-door-cap, .rail-doors .b-door-clock { color: var(--ink-secondary); }
 /* THE DIARY CARD, WHEN THE DIARY IS THE PAGE (5 Nov). The Diary tab went
    and its card is the way in, so the card takes the tab's active state: the
    same accent wash and 42% edge over the card, the clock and the way in in
