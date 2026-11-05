@@ -134,6 +134,7 @@
     check: '<path d="M20 6 9 17l-5-5"/>',
     upload: '<path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>',
     plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+    minus: '<path d="M5 12h14"/>',
     trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
     link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
     /* For the research mockups (30 Research/UI): Lucide, as the rest. */
@@ -6817,6 +6818,33 @@
     go({ asmt: a.id, edit: '1' });
     if (q) toast('AiMY drafted ' + plural(a.questions.length, 'question') + ' from the success profile', () => { unmake('asmts', a); go({ on: 'asmts' }, true); }, 'One per must-have. Change any of them.');
   }
+  /* A SEGMENTED CHOICE: one of a few, pressed in place (6 Nov). Each option
+     is [label, on, attrs]. */
+  const seg = (label, opts) => '<div class="t-seg" role="group" aria-label="' + esc(label) + '">' +
+    opts.map((o) => '<button class="t-seg-opt" type="button" aria-pressed="' + !!o[1] + '" ' + o[2] + '>' + esc(o[0]) + '</button>').join('') + '</div>';
+  /* ONE QUESTION, EDITED (Engy, 6 Nov; after Podia, Whop and Teachable on
+     Mobbin). Its number, its answer type and Remove on one line; the
+     question in a field that grows with it; each option a field with a
+     native radio for the right answer, so arrow keys move it, and the right
+     one says so in words. Options add and remove in place. */
+  function qEdit(a, qq, i) {
+    const n = i + 1, opts = qq.options || [];
+    return '<div class="t-qe-head"><span class="t-asq-n">Q' + n + '</span>' +
+        seg('Answer type for question ' + n, [['One right answer', qq.type === 'choice', 'data-qtype="' + i + '|choice"'], ['Open answer, scored by AiMY', qq.type !== 'choice', 'data-qtype="' + i + '|open"']]) +
+        '<button class="t-icon-btn is-danger" type="button" data-q-del="' + a.id + '|' + i + '" aria-label="Remove question ' + n + '" title="Remove question ' + n + '">' + svg('trash', 16) + '</button></div>' +
+      '<textarea class="t-field t-qe-q" rows="1" data-qed="' + i + '|q" aria-label="Question ' + n + '" placeholder="Write the question">' + esc(qq.q) + '</textarea>' +
+      (qq.type === 'choice'
+        ? '<div class="t-qe-opts" role="radiogroup" aria-label="The right answer to question ' + n + '">' + opts.map((o, k) =>
+            '<div class="t-qe-opt' + (qq.right === k ? ' is-right' : '') + '">' +
+              '<input class="t-radio" type="radio" name="right' + i + '" data-qright="' + i + '|' + k + '"' + (qq.right === k ? ' checked' : '') + ' aria-label="Option ' + (k + 1) + ' is the right answer">' +
+              '<input class="t-field" type="text" data-qopt="' + i + '|' + k + '" value="' + esc(o) + '" aria-label="Option ' + (k + 1) + '" placeholder="Option ' + (k + 1) + '">' +
+              (qq.right === k ? tag('Right answer', 'ok') : '<span></span>') +
+              (opts.length > 2 ? '<button class="t-icon-btn" type="button" data-qopt-del="' + i + '|' + k + '" aria-label="Remove option ' + (k + 1) + '" title="Remove option ' + (k + 1) + '">' + svg('x', 16) + '</button>' : '<span></span>') +
+            '</div>').join('') + '</div>' +
+          (opts.length < 6 ? '<button class="t-qe-more" type="button" data-qopt-add="' + i + '">' + svg('plus', 14) + 'Add an option</button>' : '')
+        : '<label class="t-qe-lbl">What a good answer covers<input class="t-field" type="text" data-qpts="' + i + '" value="' + esc((qq.points || []).join(', ')) + '" placeholder="A real example, what they did, the result"></label>' +
+          '<p class="t-qe-hint">Separate the points with commas. AiMY scores the answer against each one.</p>');
+  }
   function asmtPage() {
     const a = asmtOf(S.asmt);
     const edit = !!S.edit && asmtDesigner();
@@ -6833,29 +6861,24 @@
         (edit ? '<input class="b-draft-name" type="text" data-aed="title" value="' + esc(a.title) + '" aria-label="Title">' : '<div class="s-rec-title"><h1 class="s-rec-name">' + esc(a.title) + '</h1></div>') +
         '<div class="b-cmeta">' +
           '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">How it is taken</h2><div class="b-cmeta-say">' + (edit
-            ? Object.keys(ASMT_KIND).map((k) => '<button class="filter-chip' + (a.kind === k ? ' active' : '') + '" type="button" data-aset="kind|' + k + '">' + ASMT_KIND[k] + '</button>').join('')
+            ? seg('How it is taken', Object.keys(ASMT_KIND).map((k) => [ASMT_KIND[k], a.kind === k, 'data-aset="kind|' + k + '"']))
             : '<p class="b-cmeta-p">' + esc(ASMT_KIND[a.kind]) + '</p>') + '</div></div>' +
           '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Pass mark</h2><div class="b-cmeta-say">' + (a.lang ? (edit
-            ? CEFR.slice(2).map((l) => '<button class="filter-chip' + ((a.level || 'C1') === l ? ' active' : '') + '" type="button" data-aset="level|' + l + '">' + l + '</button>').join('')
+            ? seg('Pass mark', CEFR.slice(2).map((l) => [l, (a.level || 'C1') === l, 'data-aset="level|' + l + '"']))
             : '<p class="b-cmeta-p"><b>' + esc(a.level || 'C1') + ' or above</b> in spoken ' + esc(a.lang) + ', on the CEFR scale the requisition uses</p>') : edit
-            ? '<span class="t-step"><button class="b-ghost" type="button" data-aset="pass|-5" aria-label="Lower">−</button><b class="t-step-n">' + a.pass + '%</b><button class="b-ghost" type="button" data-aset="pass|5" aria-label="Higher">+</button></span>'
+            ? '<span class="t-stepper"><button type="button" data-aset="pass|-5" aria-label="Lower the pass mark by 5 points"' + (a.pass <= 30 ? ' disabled' : '') + '>' + svg('minus', 16) + '</button><b class="t-stepper-n">' + a.pass + '%</b><button type="button" data-aset="pass|5" aria-label="Raise the pass mark by 5 points"' + (a.pass >= 100 ? ' disabled' : '') + '>' + svg('plus', 16) + '</button></span>'
             : '<p class="b-cmeta-p"><b>' + a.pass + '%</b></p>') + '</div></div>' +
-          '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Link to share</h2><div class="b-cmeta-say"><p class="b-cmeta-p"><b class="t-link-text">' + esc(link) + '</b></p>' +
-            '<p class="b-cmeta-p t-acts"><button class="s-insight-lnk" type="button" data-copy="https://' + esc(link) + '">Copy the link</button></p></div></div>' +
+          (edit ? '' : '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Link to share</h2><div class="b-cmeta-say"><p class="b-cmeta-p"><b class="t-link-text">' + esc(link) + '</b></p>' +
+            '<p class="b-cmeta-p t-acts"><button class="s-insight-lnk" type="button" data-copy="https://' + esc(link) + '">Copy the link</button></p></div></div>') +
         '</div>' +
       '</section>' +
       (asmtDesigner() ? (edit ? '' : asmtReview(a, rates, outs, worst)) +
       '<section class="s-block s-block-wide" aria-label="Questions">' +
-        '<div class="s-camp-list-head"><h2 class="s-block-h">Questions</h2><span class="s-block-say">' + plural(a.questions.length, 'question') + (r.length ? ' · how many got each right' : '') + '</span></div>' +
-        (a.questions.length ? '<div class="t-asq">' + a.questions.map((qq, i) => '<div class="t-asq-row">' +
-          '<span class="t-asq-n">Q' + (i + 1) + '</span>' +
+        '<div class="s-camp-list-head"><h2 class="s-block-h">Questions</h2><span class="s-block-say">' + plural(a.questions.length, 'question') + (edit ? ' · mark the right answer on each' : r.length ? ' · how many got each right' : '') + '</span></div>' +
+        (a.questions.length ? '<div class="t-asq">' + a.questions.map((qq, i) => '<div class="t-asq-row' + (edit ? ' t-qe' : '') + '">' +
+          (edit ? '' : '<span class="t-asq-n">Q' + (i + 1) + '</span>') +
           '<div class="t-asq-main">' + (edit
-            ? '<textarea class="b-draft-in b-draft-area t-area" rows="2" data-qed="' + i + '|q" aria-label="Question ' + (i + 1) + '">' + esc(qq.q) + '</textarea>' +
-              '<div class="b-cuts">' + [['choice', 'One right answer'], ['open', 'Open answer, scored by AiMY']].map((x) => '<button class="filter-chip' + (qq.type === x[0] ? ' active' : '') + '" type="button" data-qtype="' + i + '|' + x[0] + '">' + x[1] + '</button>').join('') + '</div>' +
-              (qq.type === 'choice' ? (qq.options || []).map((o, k) => '<p class="t-q"><button class="t-check' + (qq.right === k ? ' is-on' : '') + '" type="button" data-qright="' + i + '|' + k + '" aria-pressed="' + (qq.right === k) + '" aria-label="Mark as the right answer">' + (qq.right === k ? svg('check', 12) : '') + '</button>' +
-                '<input class="b-draft-in" type="text" data-qopt="' + i + '|' + k + '" value="' + esc(o) + '" aria-label="Option ' + (k + 1) + '"></p>').join('')
-                : '<input class="b-draft-in" type="text" data-qpts="' + i + '" value="' + esc((qq.points || []).join(', ')) + '" aria-label="What a good answer covers">') +
-              '<p class="t-acts"><button class="b-ghost" type="button" data-q-del="' + a.id + '|' + i + '">Remove</button></p>'
+            ? qEdit(a, qq, i)
             : '<p class="t-asq-q">' + esc(qq.q) + '</p>' +
               (qq.type === 'choice' ? '<p class="b-vfoot">Right answer: ' + esc(qq.options[qq.right]) + '</p>' : '<p class="b-vfoot">A good answer covers: ' + esc((qq.points || []).join('; ')) + '</p>') +
               verHist(qq) + outcomeLink(outs[i])) +
@@ -6863,7 +6886,7 @@
           (rates[i] != null && !edit ? '<span class="t-asq-rate' + (rates[i] < 40 ? ' is-low' : '') + '"><b>' + rates[i] + '%</b> right</span>' : '') +
         '</div>').join('') + '</div>' : '<p class="s-none">No questions yet.</p>') +
         (a.dropped && a.dropped.length && !edit ? '<p class="b-vfoot">' + a.dropped.map((x) => 'Dropped by ' + esc(DESKS[x.by] ? DESKS[x.by].name : 'the HR Manager') + ' ' + esc(sayWhen(x.day)) + ': “' + esc(x.q) + '”').join(' · ') + '</p>' : '') +
-        (edit ? '<p class="t-acts"><button class="s-insight-lnk" type="button" data-q-add="' + a.id + '">Add a question</button></p>' : '') +
+        (edit ? '<button class="t-qe-add" type="button" data-q-add="' + a.id + '">' + svg('plus', 16) + 'Add a question</button>' : '') +
       '</section>' : asmtResultsHead(a, r)) +
       (r.length && !edit ? '<section class="s-block s-block-wide" aria-label="Results"><div class="s-camp-list-head"><h2 class="s-block-h">' + (asmtDesigner() ? 'Results' : 'Everyone who took it') + '</h2><span class="s-block-say">' + r.length + ', newest first · ' +
           plural(r.filter((x) => x.flags && x.flags.length).length, 'with an integrity flag', 'with an integrity flag') + ', said apart: a flag never changes a score</span></div>' +
@@ -9717,6 +9740,22 @@
       asmtSet(a, { questions: qs }); return;
     }
     if ((el = at('[data-qright]'))) { const p = two('data-qright'), a = asmtOf(S.asmt), qs = JSON.parse(JSON.stringify(a.questions)); qs[Number(p[0])].right = Number(p[1]); asmtSet(a, { questions: qs }); return; }
+    if ((el = at('[data-qopt-add]'))) {
+      const i = Number(val('data-qopt-add')), a = asmtOf(S.asmt), qs = JSON.parse(JSON.stringify(a.questions));
+      qs[i].options = (qs[i].options || []).concat(['']);
+      asmtSet(a, { questions: qs });
+      const f = document.querySelector('[data-qopt="' + i + '|' + (qs[i].options.length - 1) + '"]'); if (f) f.focus();
+      return;
+    }
+    if ((el = at('[data-qopt-del]'))) {
+      const p = two('data-qopt-del').map(Number), a = asmtOf(S.asmt), qs = JSON.parse(JSON.stringify(a.questions)), qq = qs[p[0]];
+      if ((qq.options || []).length <= 2) return;
+      qq.options.splice(p[1], 1);
+      /* The right answer keeps pointing at the same option, or the first. */
+      qq.right = qq.right === p[1] ? 0 : qq.right > p[1] ? qq.right - 1 : qq.right;
+      asmtSet(a, { questions: qs }, 'Removed option ' + (p[1] + 1) + ' of Q' + (p[0] + 1));
+      return;
+    }
     if ((el = at('[data-q-add]'))) {
       const a = asmtOf(val('data-q-add')), qs = JSON.parse(JSON.stringify(a.questions));
       qs.push({ q: '', type: 'choice', options: ['', '', '', ''], right: 0, fails: 0 });
