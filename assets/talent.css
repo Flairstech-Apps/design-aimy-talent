@@ -1350,10 +1350,15 @@ body.is-portal .aimy-overlay { display: none !important; }
    bdr.css, and the button takes the page's type. Sizes already match. */
 .rail-doors .b-door { font-family: inherit; color: inherit; }
 .rail-doors .b-door-cap, .rail-doors .b-door-clock { color: var(--ink-secondary); }
+/* The kind beside the name in the library's ink (records.css .b-kind,
+   secondary), not this copy of Sales's fainter one. */
+.rail-doors .b-door-who .b-kind { color: var(--ink-secondary); }
 /* THE DIARY CARD, WHEN THE DIARY IS THE PAGE (5 Nov). The Diary tab went
-   and its card is the way in, so the card takes the tab's active state: the
-   same accent wash and 42% edge over the card, the clock and the way in in
-   the accent ink. It stays still under the pointer, as the page you are on. */
+   and its card is the way in. AiMY UI has no active door, so the card
+   takes the active side-nav tab's colours (tokens sidenav.css .snav-tab.is-on):
+   its accent wash and 42% edge over the card ground, the words in the
+   strongest ink, and only the icon in the accent ink; the way in keeps the
+   door's own accent. It stays still under the pointer, as the page you are on. */
 .rail-doors .b-door.is-on {
   border-color: rgba(var(--accent-rgb), 0.42);
   background:
@@ -1362,7 +1367,8 @@ body.is-portal .aimy-overlay { display: none !important; }
     var(--card-bg);
 }
 .rail-doors .b-door.is-on:hover { transform: none; border-color: rgba(var(--accent-rgb), 0.42); }
-.rail-doors .b-door.is-on .b-door-clock, .rail-doors .b-door.is-on .b-door-cap { color: var(--accent-text); }
+.rail-doors .b-door.is-on .b-door-cap { color: var(--d50); }
+.rail-doors .b-door.is-on .b-door-clock { color: var(--accent-text); }
 :root[data-theme="light"] .rail-doors .b-door.is-on {
   background: linear-gradient(120deg, rgba(var(--accent-rgb), 0.12), rgba(0, 102, 255, 0.05)), var(--card-bg);
 }
