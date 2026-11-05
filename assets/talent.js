@@ -1336,6 +1336,9 @@
   const isRec = () => me().fn === 'rec';
   const isHM = () => me().fn === 'hm';
   const isHR = () => me().fn === 'hr';
+  /* An assessment's design (its checks, questions and edits) is the hiring
+     manager's, and the HR Manager's; the recruiter reads its results (Engy, 5 Nov). */
+  const asmtDesigner = () => isHM() || isHR();
   const isClient = () => me().fn === 'client';
   const isBU = () => me().fn === 'bu';
   /* WHOSE REQUISITIONS. The recruiter's are the ones they fill, the hiring
@@ -1842,11 +1845,6 @@
     byId('userAvatar').textContent = d.ini;
     byId('userName').textContent = d.name;
     byId('userRole').textContent = d.role;
-    byId('asPanel').innerHTML = '<span class="b-menu-cap">Looking as</span>' + DESK_ORDER.map((k) => {
-      const x = DESKS[k];
-      return '<button class="b-menu-item' + (k === DESK ? ' is-on' : '') + '" type="button" role="menuitemradio" aria-checked="' + (k === DESK) + '" data-as="' + k + '">' +
-        '<span class="b-menu-name">' + esc(x.name) + '</span><span class="tel-menu-cc">' + esc(x.role) + '</span></button>';
-    }).join('');
   }
 
   /* ── THE RAIL, IN SALES'S FORM (Engy, 5 Nov: "use sales method in the
@@ -2036,6 +2034,7 @@
     };
     const row = isRec() ? ['', 'cands', 'reqs', 'calls', 'asmts', 'reports'] : isHM() ? ['', 'reqs', 'reports'] : isBU() ? ['', 'reqs', 'reports']
       : isHR() ? ['', 'cands', 'reqs', 'asmts', 'templates', 'reports'] : ['', 'reqs'];
+    if (isHM()) row.splice(2, 0, 'asmts');
     return row.map((k) => ({ k: k, label: TAB_NAME[k], n: n[k] }));
   }
   function switcher(here) {
@@ -6721,7 +6720,7 @@
       '<section class="s-block s-block-wide" aria-label="Assessments">' +
         /* Distilled 5 Nov: what the page is, a sentence under its title as
            on Candidates, not a box. */
-        '<div class="s-camp-list-head">' + switcher('asmts') + '<span class="b-draft-acts"><button class="b-ghost" type="button" data-asmt-new>New assessment</button></span></div>' +
+        '<div class="s-camp-list-head">' + switcher('asmts') + (asmtDesigner() ? '<span class="b-draft-acts"><button class="b-ghost" type="button" data-asmt-new>New assessment</button></span>' : '') + '</div>' +
         '<p class="b-tocall">Taken from a link before the phone screen. AiMY scores them; a person decides.</p>' +
         '<div class="b-grid">' + list.map((a, i) => {
           const r = resultsOf(a), rates = qRates(a);
@@ -6737,12 +6736,12 @@
                sentence size, AiMY's note without its source line, and no
                Open it: the card opens itself. */
             '<p class="b-qcard-where t-req-facts">' + fact('goal', plural(a.questions.length, 'question') + ' · pass ' + passSayOf(a)) + fact(a.kind === 'live' ? 'mic' : 'doc', a.kind === 'live' ? 'Spoken, then transcribed' : 'Written') + '</p>' +
-            (function () { const ck = asmtChecks(a), ok = ck.filter((x) => x.ok).length;
+            (!asmtDesigner() ? '' : function () { const ck = asmtChecks(a), ok = ck.filter((x) => x.ok).length;
               const fails = ck.filter((x) => !x.ok).map((x) => x.k === 'length' ? 'longer than 15 minutes' : lower(x.label));
-              return '<p class="b-qcard-where t-asmt-checks' + (fails.length ? ' is-warn' : '') + '">' + fact('listc', fails.length ? ok + ' of ' + ck.length + ' checks · ' + listSay(fails) : 'All ' + ck.length + ' checks pass') + '</p>'; })() +
+              return '<p class="b-qcard-where t-asmt-checks' + (fails.length ? ' is-warn' : '') + '">' + fact('listc', fails.length ? ok + ' of ' + ck.length + ' checks · ' + listSay(fails) : 'All ' + ck.length + ' checks pass') + '</p>'; }()) +
             '<p class="t-req-prog"><b>' + r.length + '</b> taken' + (avg != null ? ', average ' + (a.lang ? cefrOf(avg) : avg + '%') : '') + ', on ' + plural(used, 'open requisition') + '.' +
               (r.some(needsPerson) ? ' <b>' + r.filter(needsPerson).length + '</b> waiting on a person.' : '') + '</p>' +
-            (worst != null && rates[worst] < 40 ? aimyBlock({ text: 'Only <b>' + rates[worst] + '%</b> get Q' + (worst + 1) + ' right. Worth rewording.' }, true) : '') +
+            (asmtDesigner() && worst != null && rates[worst] < 40 ? aimyBlock({ text: 'Only <b>' + rates[worst] + '%</b> get Q' + (worst + 1) + ' right. Worth rewording.' }, true) : '') +
           '</article></div>';
         }).join('') + '</div>' +
       '</section></div>';
@@ -6757,14 +6756,14 @@
   }
   function asmtPage() {
     const a = asmtOf(S.asmt);
-    const edit = !!S.edit && (isRec() || isHR());
+    const edit = !!S.edit && asmtDesigner();
     const r = resultsOf(a), rates = qRates(a);
     const worst = rates.reduce((w, x, k) => (x != null && (w == null || x < rates[w]) ? k : w), null);
     const outs = qOutcomes(a);
     const link = 'talent.flairstech.com/test/' + a.id;
     return '<div class="s-home">' +
       '<div class="b-topbar s-block-wide"><button class="s-back" type="button"' + goAttr({ on: 'asmts' }) + '>' + svg('back', 14) + 'Back to Assessments</button>' +
-        (isRec() || isHR() ? '<span class="b-draft-acts">' + (edit ? '<button class="btn btn-brand btn-sm" type="button"' + goAttr({ asmt: a.id }) + '>Done</button>'
+        (asmtDesigner() ? '<span class="b-draft-acts">' + (edit ? '<button class="btn btn-brand btn-sm" type="button"' + goAttr({ asmt: a.id }) + '>Done</button>'
           : '<button class="b-ghost" type="button"' + goAttr({ asmt: a.id, edit: '1' }) + '>Edit</button>') + '</span>' : '') + '</div>' +
       '<section class="s-rec-head s-block-wide">' +
         '<span class="s-rec-kind b-kinds">' + fact('goal', 'Assessment') + fact('clock', a.mins + ' minutes') + fact('req', ASMT_KIND[a.kind]) + '</span>' +
@@ -6782,7 +6781,7 @@
             '<p class="b-cmeta-p t-acts"><button class="s-insight-lnk" type="button" data-copy="https://' + esc(link) + '">Copy the link</button></p></div></div>' +
         '</div>' +
       '</section>' +
-      (edit ? '' : checksCard(a)) +
+      (asmtDesigner() ? (edit ? '' : checksCard(a)) +
       (r.length && !edit ? itemInsights(a, rates, outs, worst, link) : '') +
       '<section class="s-block s-block-wide" aria-label="Questions">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">Questions</h2><span class="s-block-say">' + plural(a.questions.length, 'question') + (r.length ? ' · share who got each right' : '') + '</span></div>' +
@@ -6803,8 +6802,8 @@
         '</div>').join('') + '</div>' : '<p class="s-none">No questions yet.</p>') +
         (a.dropped && a.dropped.length && !edit ? '<p class="b-vfoot">' + a.dropped.map((x) => 'Dropped by ' + esc(DESKS[x.by] ? DESKS[x.by].name : 'the HR Manager') + ' ' + esc(sayWhen(x.day)) + ': “' + esc(x.q) + '”').join(' · ') + '</p>' : '') +
         (edit ? '<p class="t-acts"><button class="s-insight-lnk" type="button" data-q-add="' + a.id + '">Add a question</button></p>' : '') +
-      '</section>' +
-      (r.length && !edit ? '<section class="s-block s-block-wide" aria-label="Results"><div class="s-camp-list-head"><h2 class="s-block-h">Results</h2><span class="s-block-say">' + r.length + ', newest first · ' +
+      '</section>' : asmtResultsHead(a, r)) +
+      (r.length && !edit ? '<section class="s-block s-block-wide" aria-label="Results"><div class="s-camp-list-head"><h2 class="s-block-h">' + (asmtDesigner() ? 'Results' : 'Everyone who took it') + '</h2><span class="s-block-say">' + r.length + ', newest first · ' +
           plural(r.filter((x) => x.flags && x.flags.length).length, 'with an integrity flag', 'with an integrity flag') + ', said apart: a flag never changes a score</span></div>' +
         '<div class="b-log">' + r.slice().sort((x, y) => (y.doneDay || 0) - (x.doneDay || 0)).slice(0, 20).map((s, i) => { const c = DB.byId[s.cand];
           return c ? logRow({ tone: '', ico: svg('goal'), who: c.name, meta: logMeta([scoreShort(a, s), asmtPass(a, s) ? 'a pass' : 'under the pass mark',
@@ -6813,8 +6812,29 @@
             act: 'data-cand="' + c.id + '"', go: 'Open' }, i) : ''; }).join('') + '</div></section>' : '') +
     '</div>';
   }
+  /* THE RECRUITER'S VIEW OF AN ASSESSMENT (Engy, 5 Nov): what came back,
+     not how the test is built. How many took it and passed, who waits on a
+     person to score or review it, and who has it and has not taken it yet;
+     the list of everyone who took it follows. */
+  function asmtResultsHead(a, r) {
+    const pass = r.filter((s) => asmtPass(a, s)).length, wait = r.filter(needsPerson);
+    const out = DB.sends.filter((x) => x.asmt === a.id && x.status === 'sent' && DB.byId[x.cand] && sees(DB.byId[x.cand]));
+    const avg = r.length ? Math.round(r.reduce((n, s) => n + s.score, 0) / r.length) : null;
+    return '<section class="s-block s-block-wide" aria-label="How it went">' +
+      '<div class="s-camp-list-head"><h2 class="s-block-h">How it went</h2></div>' +
+      '<p class="b-tocall">' + (r.length ? '<b>' + r.length + '</b> took it, <b>' + pass + '</b> passed' + (avg != null ? ', average ' + (a.lang ? cefrOf(avg) : avg + '%') : '') + '.' : 'Nobody has taken it yet.') +
+        (out.length ? ' <b>' + out.length + '</b> ' + (out.length === 1 ? 'has' : 'have') + ' it and ' + (out.length === 1 ? 'has' : 'have') + ' not taken it yet.' : '') + '</p>' +
+      (wait.length ? '<div class="s-camp-list-head t-asmt-sub"><h3 class="s-block-h">Waiting on a person</h3><span class="s-block-say">' + plural(wait.length, 'result') + ' to score or review</span></div>' +
+        '<div class="b-log">' + wait.map((s, i) => { const c = DB.byId[s.cand];
+          return c ? logRow({ tone: '', ico: svg('goal'), who: c.name, meta: logMeta([s.consent === 'person' ? 'asked for a person to score it' : 'asked for a review', reqOf(c).title, sayWhen(s.doneDay != null ? s.doneDay : s.day)]),
+            act: 'data-cand="' + c.id + '"', go: 'Open' }, i) : ''; }).join('') + '</div>' : '') +
+      (out.length ? '<div class="s-camp-list-head t-asmt-sub"><h3 class="s-block-h">Sent, not taken yet</h3><span class="s-block-say">' + plural(out.length, 'person', 'people') + '</span></div>' +
+        '<div class="b-log">' + out.map((x, i) => { const c = DB.byId[x.cand];
+          return logRow({ tone: '', ico: svg('send'), who: c.name, meta: logMeta(['sent ' + sayWhen(x.day), reqOf(c).title]), act: 'data-cand="' + c.id + '"', go: 'Open' }, i); }).join('') + '</div>' : '') +
+    '</section>';
+  }
   function checksCard(a) {
-    const ck = asmtChecks(a), ok = ck.filter((x) => x.ok).length, can = isRec() || isHR();
+    const ck = asmtChecks(a), ok = ck.filter((x) => x.ok).length, can = asmtDesigner();
     return rcard({ cap: 'Assessments · before anyone takes it', ico: 'shield', label: 'Checklist',
       body: rcHead('What keeps people finishing, and keeps it fair', 'From the assessment research (R4) · the settings are one press', rcChip(ok + ' of ' + ck.length, ok === ck.length ? 'ok' : 'warn')) +
         '<div style="margin-top:12px">' + ck.map((x) => rcGate(x.ok ? 'okc' : 'warnc', x.ok ? 'ok' : 'warn', esc(x.label), esc(x.say),
@@ -8491,7 +8511,7 @@
       return;
     }
     if (/\b(add|upload)\b.*\b(cv|candidate|resume)\b/.test(lc) && (isRec() || isHR())) { go({ on: 'add', req: reqMatch ? reqMatch.id : undefined }); return; }
-    if (/\b(assessment|test|quiz)\b/.test(lc) && /\b(draft|create|make|new|write)\b/.test(lc) && (isRec() || isHR())) { newAsmt(reqMatch ? reqMatch.id : null); return; }
+    if (/\b(assessment|test|quiz)\b/.test(lc) && /\b(draft|create|make|new|write)\b/.test(lc) && asmtDesigner()) { newAsmt(reqMatch ? reqMatch.id : null); return; }
     if (/^call\b/.test(lc) && isRec()) {
       const who = DB.cands.filter((c) => lc.indexOf(c.name.toLowerCase()) >= 0 || lc.indexOf(first(c.name).toLowerCase() + ' ') >= 0)[0];
       if (who && startCall(who.id)) { peekHide(); return; }
@@ -9056,7 +9076,13 @@
   function paintProto() {
     const p = byId('protoPanel');
     if (p.hidden) return;
+    /* Looking as (Engy, 5 Nov): the desks are a demo control, so they live
+       here, not in the top bar. */
     p.innerHTML = '<div class="proto-sec">' +
+        '<div class="proto-h">Looking as</div>' +
+        DESK_ORDER.map((k) => '<button class="proto-link t-proto-desk" type="button" data-as="' + k + '" aria-pressed="' + (k === DESK) + '"><b>' + esc(DESKS[k].name) + '</b> · ' + esc(DESKS[k].role) + '</button>').join('') +
+      '</div>' +
+      '<div class="proto-sec">' +
         '<div class="proto-h">Incoming calls</div>' +
         '<button class="proto-link" type="button" data-ring="known">A candidate calls in</button>' +
         '<button class="proto-link" type="button" data-ring="named">A stranger calls in, and says who they are</button>' +
@@ -9368,7 +9394,7 @@
     const val = (name) => el.getAttribute(name);
     const two = (name) => val(name).split('|');
     /* ── Desks ── */
-    if ((el = at('[data-as]'))) { EDIT = null; byId('asPanel').hidden = true; go({ as: val('data-as') === 'omar' ? undefined : val('data-as') }); return; }
+    if ((el = at('[data-as]'))) { EDIT = null; go({ as: val('data-as') === 'omar' ? undefined : val('data-as') }); paintProto(); return; }
     /* ── Requisitions ── */
     if ((el = at('[data-new-req]'))) { go({ on: 'newreq', account: val('data-new-req') || undefined }); return; }
     if ((el = at('[data-new-blank]'))) { newReq({ acc: S.account || undefined }); return; }
@@ -9599,7 +9625,7 @@
       return;
     }
     /* ── Assessments ── */
-    if ((el = at('[data-asmt-new]'))) { newAsmt(null); return; }
+    if ((el = at('[data-asmt-new]'))) { if (asmtDesigner()) newAsmt(null); return; }
     if ((el = at('[data-aset]'))) {
       const p = two('data-aset'), a = asmtOf(S.asmt);
       if (p[0] === 'pass') asmtSet(a, { pass: Math.max(30, Math.min(100, a.pass + Number(p[1]))) });

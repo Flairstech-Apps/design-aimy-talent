@@ -65,7 +65,7 @@
        copied unedited like sales.css. talent.css is this product's appendix:
        only what neither of them already says. -->
   <link rel="stylesheet" href="assets/bdr.css?v=2" />
-  <link rel="stylesheet" href="assets/talent.css?v=128" />
+  <link rel="stylesheet" href="assets/talent.css?v=129" />
   <link rel="stylesheet" href="assets/aimy-responsive.css?v=2" />
   <link rel="stylesheet" href="assets/voice.css?v=1" />
   <link rel="stylesheet" href="assets/aimy-scroll.css?v=2" />
@@ -275,19 +275,17 @@
     </div>
 
     <!-- WHO THE SURFACE THINKS YOU ARE (Sales). It changes what is on
-         screen, so it is stated in the chrome; the chevron opens the desks:
-         recruiter, hiring manager, HR Manager and client. -->
-    <div class="ntf-anchor b-menu-wrap">
-      <button class="topnav-user" id="asBtn" type="button"
-              data-pickopen="asPanel" aria-haspopup="menu" aria-controls="asPanel">
+         screen, so it is stated in the chrome. Switching desks is a demo
+         control (Engy, 5 Nov), so it lives in the prototype panel, bottom
+         right, and this says who you are without being a menu. -->
+    <div class="ntf-anchor">
+      <div class="topnav-user t-who" id="asBtn">
         <span class="topnav-avatar" id="userAvatar"></span>
         <span class="topnav-user-info">
           <span class="topnav-user-name" id="userName"></span>
           <span class="topnav-user-role" id="userRole"></span>
         </span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-      </button>
-      <div class="b-menu is-right" id="asPanel" role="menu" hidden></div>
+      </div>
     </div>
   </div>
 </div>
@@ -516,7 +514,7 @@
 <div class="t-cv" id="cvPop" role="tooltip" hidden></div>
 
 <script src="assets/aimy-ds.js"></script>
-<script src="assets/talent.js?v=156"></script>
+<script src="assets/talent.js?v=157"></script>
 <!-- Voice (Sales, unedited): dictation and a spoken conversation on both bars.
      It drives the composer and the product does not know it exists. -->
 <script src="assets/voice.js?v=1"></script>

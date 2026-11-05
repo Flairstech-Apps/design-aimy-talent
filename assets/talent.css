@@ -1765,3 +1765,11 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-find-out { margin: 10px 0 0; }
 /* An assessment card's checks: one line, amber when any fails (5 Nov). */
 .t-asmt-checks.is-warn, .t-asmt-checks.is-warn .b-fact > svg { color: var(--warn-text, var(--warn)); }
+
+/* WHO YOU ARE, NOT A MENU (5 Nov): the desks moved to the prototype panel. */
+.topnav-user.t-who { cursor: default; }
+.topnav-user.t-who:hover { background: transparent; }
+/* The prototype panel's desks: the one you are on is marked. */
+.t-proto-desk[aria-pressed="true"] { color: var(--accent-text, var(--accent)); }
+/* The recruiter's results on an assessment: its sub-lists. */
+.t-asmt-sub { margin-top: 16px; }
