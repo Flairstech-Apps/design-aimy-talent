@@ -2424,7 +2424,8 @@
         '</div>' +
         '<div class="b-cuts b-cuts-row">' + QCUTS.map((x) => '<button class="filter-chip' + (x.k === cut ? ' active' : '') + '" type="button"' + keep({ q: x.k === 'all' ? undefined : x.k }) + '>' +
           esc(x.label) + '<span class="b-cut-n">' + n(x.k) + '</span></button>').join('') +
-          '<button class="filter-chip t-cut-apart' + (cut === 'untold' ? ' active' : '') + '" type="button"' + keep({ q: 'untold' }) + '>Not told yet<span class="b-cut-n">' + owed.length + '</span></button>' +
+          /* A toggle (Engy, 5 Nov): pressed again, it goes back to All. */
+          '<button class="filter-chip t-cut-apart' + (cut === 'untold' ? ' active' : '') + '" type="button" aria-pressed="' + (cut === 'untold') + '"' + keep({ q: cut === 'untold' ? undefined : 'untold' }) + '>Not told yet<span class="b-cut-n">' + owed.length + '</span></button>' +
         '</div>' +
         (narrowed ? '<p class="b-vfoot t-cf-on">Showing ' + (rqQ ? 'the people on ' + esc(rqQ.title) + ', ' + esc(accOf(rqQ).name) : stK ? 'everyone on your open requisitions' : 'everyone') +
           (stK ? ' at the ' + esc(lower(STAGE[stK].label)) + ' now' : '') + (S.find ? ' matching “' + esc(S.find) + '”' : '') + '. ' + clear + '</p>' : '') +
