@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assessment Card Variations</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+  /* AiMY's dark tokens (aimy-ds.css), so the mocks read as Talent. */
+  :root {
+    --bg: #0d1117; --card: #141b24; --raised: #1c2630; --line: rgba(255,255,255,0.07); --line2: rgba(255,255,255,0.12);
+    --d50: #eef2f6; --d100: #d8e0e8; --d200: #c8d2dc; --d300: #b0bcca; --d400: #8b9aaa; --d500: #637280; --d600: #4a5b6e;
+    --accent: #8b4ff4; --accent-rgb: 139,79,244; --accent-text: #b18cff; --brand: #3369ff;
+    --ok: #4ed6a1; --ok-rgb: 78,214,161; --warn: #f7c95c; --warn-rgb: 247,201,92;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: 'Poppins', system-ui, sans-serif; color: var(--d100); font-size: 14px; line-height: 1.55; }
+  button { font: inherit; color: inherit; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 48px 24px 96px; }
+  h1 { font-size: 34px; line-height: 1.15; letter-spacing: -0.5px; color: var(--d50); margin: 6px 0 10px; }
+  h2 { font-size: 22px; line-height: 1.25; color: var(--d50); margin: 0 0 6px; letter-spacing: -0.2px; }
+  p { margin: 0 0 10px; }
+  a { color: var(--accent-text); }
+  b, strong { color: var(--d50); font-weight: 600; }
+  .kicker { font-size: 12px; font-weight: 600; color: var(--accent-text); }
+  .lead { font-size: 16px; color: var(--d300); max-width: 82ch; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
+  .pill { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--raised); color: var(--d300); border: 1px solid var(--line); }
+  section.it { margin-top: 60px; padding-top: 32px; border-top: 1px solid var(--line); }
+  .it-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; }
+  .it-n { font-size: 12px; font-weight: 700; color: var(--bg); background: var(--accent-text); border-radius: 6px; padding: 2px 8px; }
+  .it-n.rec { background: var(--ok); }
+  .say { color: var(--d300); max-width: 86ch; }
+  .notes { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 16px; }
+  @media (max-width: 900px) { .notes { grid-template-columns: 1fr; } }
+  .note { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; font-size: 13px; color: var(--d300); }
+  .note h4 { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--d200); }
+  .note ul { margin: 0; padding-left: 18px; } .note li { margin: 3px 0; }
+  .refs a { display: block; margin: 4px 0; text-decoration: none; line-height: 1.4; }
+  .refs a:hover { text-decoration: underline; }
+  .refs .why { display: block; color: var(--d400); font-size: 11.5px; }
+  .stage { margin-top: 18px; padding: 20px; border-radius: 18px; background: radial-gradient(120% 120% at 0% 0%, rgba(51,105,255,0.08), transparent 60%), #0b0f14; border: 1px solid var(--line2); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; align-items: stretch; }
+  .rows { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: rgba(20,27,36,0.85); }
+
+  /* ── The card, in Talent's parts ── */
+  .card { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 14px; background: rgba(20,27,36,0.85); border: 1px solid var(--line); cursor: pointer; transition: border-color 160ms cubic-bezier(.22,1,.36,1); }
+  .card:hover { border-color: rgba(var(--accent-rgb),0.35); }
+  .head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; color: var(--d200); background: rgba(255,255,255,0.07); white-space: nowrap; }
+  .tag.ok { color: var(--ok); background: rgba(var(--ok-rgb),0.13); }
+  .tag.warn { color: var(--warn); background: rgba(var(--warn-rgb),0.13); }
+  .kind { font-size: 12px; color: var(--d400); }
+  .nm { font-size: 16px; font-weight: 600; color: var(--d50); line-height: 1.25; }
+  .fact { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--d400); }
+  .fact span { display: inline-flex; align-items: center; gap: 5px; }
+  .fact svg, .ico { width: 12px; height: 12px; flex: none; }
+  .line { font-size: 13px; color: var(--d200); }
+  .line b { color: var(--d50); }
+  .wait { color: var(--warn); font-weight: 600; }
+  .push { margin-top: auto; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; border: 0; background: var(--brand); color: #fff; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; flex: none; }
+  .btn.ghost { background: transparent; color: var(--d100); border: 1px solid var(--line2); }
+  .foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 10px; margin-top: 4px; border-top: 1px solid var(--line); }
+  .mute { color: var(--d400); font-size: 12px; }
+
+  /* 2 · figures (AiMY UI StatTile: caption, figure, what it means; a hairline above, never boxed) */
+  .figs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .fig-c { font-size: 11.5px; color: var(--d400); }
+  .fig-n { font-size: 22px; font-weight: 600; color: var(--d50); line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .fig-s { font-size: 11.5px; color: var(--d400); }
+
+  /* 3 · one bar (AiMY UI Progress, meter) */
+  .bar { position: relative; display: flex; height: 8px; border-radius: 999px; overflow: visible; background: rgba(255,255,255,0.06); }
+  .bar i { display: block; height: 100%; }
+  .bar i:first-child { border-radius: 999px 0 0 999px; }
+  .bar .p { background: var(--ok); } .bar .u { background: var(--d600); } .bar .w { background: var(--warn); }
+  .bar .mk { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--d50); border-radius: 2px; }
+  .key { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11.5px; color: var(--d400); }
+  .key i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: 0; }
+
+  /* 4 · the spread, with the pass mark */
+  .spread { position: relative; display: flex; align-items: flex-end; gap: 6px; height: 64px; padding-top: 6px; }
+  .spread .col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+  .spread .b { width: 100%; border-radius: 4px 4px 0 0; background: rgba(255,255,255,0.12); }
+  .spread .b.ok { background: rgba(var(--ok-rgb),0.7); }
+  .spread .lbl { font-size: 10.5px; color: var(--d400); }
+  .spread .pm { position: absolute; top: 0; bottom: 18px; border-left: 1px dashed var(--d300); }
+  .spread .pm span { position: absolute; top: -2px; left: 4px; font-size: 10.5px; color: var(--d300); white-space: nowrap; }
+
+  /* 5 · people first (AiMY UI FaceStack: faces over each other, the rest as a count) */
+  .faces { display: inline-flex; }
+  .face { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 10.5px; font-weight: 600; color: #fff; border: 2px solid #141b24; margin-left: -8px; }
+  .face:first-child { margin-left: 0; }
+  .face.more { background: var(--raised); color: var(--d200); }
+  .who { display: flex; align-items: center; gap: 10px; }
+  .big { font-size: 15px; font-weight: 600; color: var(--warn); }
+  .calm { font-size: 15px; font-weight: 600; color: var(--ok); }
+
+  /* 6 · from sent to decided */
+  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .flow div { padding: 8px 10px; border-left: 1px solid var(--line); }
+  .flow div:first-child { border-left: 0; }
+  .flow .n { font-size: 17px; font-weight: 600; color: var(--d50); font-variant-numeric: tabular-nums; }
+  .flow .c { font-size: 11px; color: var(--d400); }
+  .flow .w .n { color: var(--warn); }
+
+  /* 7 · a row each (AiMY UI DataTable, rows form) */
+  .r7 { display: grid; grid-template-columns: minmax(0, 2.4fr) 0.8fr 0.9fr 0.8fr 1fr auto; align-items: center; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--line); cursor: pointer; }
+  .r7:first-child { border-top: 0; }
+  .r7.th { cursor: default; font-size: 11.5px; color: var(--d400); padding-top: 10px; padding-bottom: 10px; background: rgba(255,255,255,0.02); }
+  .r7:not(.th):hover { background: rgba(255,255,255,0.025); }
+  .r7 .t { min-width: 0; }
+  .r7 .t .nm { font-size: 14px; }
+  .r7 .num { font-variant-numeric: tabular-nums; color: var(--d100); }
+  @media (max-width: 760px) { .r7 { grid-template-columns: 1fr 1fr; } .r7.th { display: none; } }
+
+  .side { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-top: 18px; }
+  .side .cap { font-size: 12px; font-weight: 600; color: var(--d300); margin-bottom: 6px; }
+  .rec-box { margin-top: 18px; padding: 16px 18px; border-radius: 14px; background: rgba(var(--ok-rgb),0.07); border: 1px solid rgba(var(--ok-rgb),0.25); color: var(--d200); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="kicker">AiMY Talent · Assessments · the recruiter's view · 6 Nov 2026</p>
+  <h1>The assessment card, seven ways</h1>
+  <p class="lead">Since 5 Nov an assessment's design (its checks, questions and edits) is the hiring manager's and the HR Manager's. The recruiter's card only has to answer two questions: <b>is this test doing its job</b>, and <b>who needs me</b>. Each variation below draws the four real assessments with the prototype's own numbers.</p>
+  <div class="meta">
+    <span class="pill">Real numbers from the prototype</span>
+    <span class="pill">References: Mobbin, web</span>
+    <span class="pill">Built from AiMY UI parts only</span>
+    <span class="pill">The whole card opens the assessment</span>
+  </div>
+  <div id="sheet"></div>
+</div>
+
+<script>
+/* The four assessments, as the prototype holds them on 6 Nov. `spread` is
+   how many scored in each band; `pm` is the band the pass mark sits above. */
+const A = [
+  { title: 'Support troubleshooting and written English', kind: 'Questionnaire', mins: 20, q: 6, pass: '70%', way: 'Written', reqs: 3,
+    took: 65, passed: 35, avg: '73%', wait: ['Sherif Ezz', 'Wael Shawky', 'Bassem Tawfik', 'Seif Sabry', 'Nour Lotfy', 'Adham Fathy'], sent: [],
+    spread: [['33%', 6], ['50%', 4], ['67%', 20], ['83%', 35]], pm: 3, last: 'yesterday' },
+  { title: 'German language check', kind: 'Live with the AiMY agent', mins: 12, q: 3, pass: 'C1 or above', way: 'Spoken, then transcribed', reqs: 3,
+    took: 24, passed: 11, avg: 'B2', wait: ['Yara Farouk', 'Salma Hassan', 'Sara Morsy', 'Farida Hassan'], sent: ['Dina Gamal'],
+    spread: [['A2', 4], ['B1', 0], ['B2', 9], ['C1', 0], ['C2', 11]], pm: 3, last: 'yesterday' },
+  { title: 'Accounting basics', kind: 'Questionnaire', mins: 25, q: 4, pass: '65%', way: 'Written', reqs: 3,
+    took: 34, passed: 28, avg: '77%', wait: ['Adham Hamdy', 'Tamer Lotfy', 'Laila Mansour', 'Marwan Fouad'], sent: ['Islam Gamal', 'Hany Hegazy', 'Nadine Ibrahim'],
+    spread: [['50%', 6], ['75%', 15], ['100%', 13]], pm: 1, last: 'yesterday' },
+  { title: 'Operations case', kind: 'Questionnaire', mins: 20, q: 3, pass: '65%', way: 'Written', reqs: 1,
+    took: 19, passed: 17, avg: '83%', wait: ['Reem Hegazy', 'Bassem Amin', 'Malak Hassan'], sent: [],
+    spread: [['33%', 2], ['67%', 7], ['100%', 10]], pm: 1, last: 'yesterday' },
+];
+const pct = (a) => Math.round(a.passed / a.took * 100);
+const pl = (n, w, ws) => n + ' ' + (n === 1 ? w : (ws || w + 's'));
+const and = (l) => l.length < 2 ? l[0] : l.slice(0, -1).join(', ') + ' and ' + l[l.length - 1];
+const ICO = {
+  goal: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+  doc: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>',
+  req: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></svg>',
+};
+const head = (a) => '<div class="head"><span class="tag">' + a.kind + '</span><span class="kind">' + a.mins + ' minutes</span></div><div class="nm">' + a.title + '</div>';
+const facts = (a) => '<div class="fact"><span>' + ICO.goal + pl(a.q, 'question') + ' · pass ' + a.pass + '</span><span>' + ICO.req + 'On ' + pl(a.reqs, 'open requisition') + '</span></div>';
+const ini = (n) => n.split(' ').map((w) => w[0]).join('').slice(0, 2);
+const HUE = ['#8b4ff4', '#3369ff', '#1fa37a', '#c2692b', '#b8457b', '#4a7fb8'];
+const faces = (names, max) => '<span class="faces">' + names.slice(0, max).map((n, i) => '<span class="face" style="background:' + HUE[i % HUE.length] + '" title="' + n + '">' + ini(n) + '</span>').join('') +
+  (names.length > max ? '<span class="face more">+' + (names.length - max) + '</span>' : '') + '</span>';
+
+/* ── The seven cards ── */
+const V = {
+  1: (a) => '<div class="card">' + head(a) + facts(a) +
+    '<div class="line"><b>' + a.took + '</b> took it, average ' + a.avg + '. <b>' + a.wait.length + '</b> waiting on a person.</div></div>',
+  2: (a) => '<div class="card">' + head(a) +
+    '<div class="figs push"><div><div class="fig-c">Took it</div><div class="fig-n">' + a.took + '</div><div class="fig-s">' + (a.sent.length ? a.sent.length + ' not yet' : 'all who had it') + '</div></div>' +
+      '<div><div class="fig-c">Passed</div><div class="fig-n">' + pct(a) + '%</div><div class="fig-s">' + a.passed + ' of ' + a.took + '</div></div>' +
+      '<div><div class="fig-c">Average</div><div class="fig-n">' + a.avg + '</div><div class="fig-s">pass ' + a.pass + '</div></div></div>' +
+    '<div class="line"><span class="wait">' + a.wait.length + ' wait on you</span> to score or review</div></div>',
+  /* Waiting on a person cuts across passed and under (a pass can ask for a
+     review too), so the bar is passed against under, and who waits is its
+     own line. */
+  3: (a) => { const p = a.passed / a.took * 100;
+    return '<div class="card">' + head(a) + facts(a) +
+      '<div class="line push"><b>' + a.passed + ' of ' + a.took + '</b> passed (' + pct(a) + '%), average ' + a.avg + '</div>' +
+      '<div class="bar"><i class="p" style="width:' + p + '%"></i><i class="u" style="width:' + (100 - p) + '%"></i></div>' +
+      '<div class="key"><span><i style="background:var(--ok)"></i>Passed ' + a.passed + '</span><span><i style="background:var(--d600)"></i>Under the mark ' + (a.took - a.passed) + '</span>' +
+        (a.sent.length ? '<span>Not taken yet ' + a.sent.length + '</span>' : '') + '</div>' +
+      '<div class="line"><span class="wait">' + a.wait.length + ' wait on you</span> to score or review</div></div>'; },
+  4: (a) => { const top = Math.max.apply(null, a.spread.map((s) => s[1])) || 1;
+    return '<div class="card">' + head(a) +
+      '<div class="line"><b>' + a.took + '</b> took it, <b>' + pct(a) + '%</b> passed, average ' + a.avg + '</div>' +
+      '<div class="spread push">' + a.spread.map((s, i) => '<div class="col"><div class="b' + (i >= a.pm ? ' ok' : '') + '" style="height:' + Math.max(3, s[1] / top * 44) + 'px" title="' + s[1] + ' scored ' + s[0] + '"></div><span class="lbl">' + s[0] + '</span></div>').join('') +
+        '<span class="pm" style="left:' + (a.pm / a.spread.length * 100) + '%"><span>pass ' + a.pass + '</span></span></div>' +
+      '<div class="line"><span class="wait">' + a.wait.length + ' wait on you</span></div></div>'; },
+  5: (a) => '<div class="card">' + head(a) +
+    '<div class="who push">' + faces(a.wait, 4) + '<div><div class="big">' + a.wait.length + ' wait on you</div><div class="mute">asked for a review or a person to score it</div></div></div>' +
+    '<div class="line"><b>' + a.took + '</b> took it, <b>' + a.passed + '</b> passed, average ' + a.avg + '.' + (a.sent.length ? ' ' + a.sent.length + ' not taken yet.' : '') + '</div>' +
+    '<div class="foot"><span class="mute">Last result ' + a.last + '</span><button class="btn" type="button">Review the ' + a.wait.length + '</button></div></div>',
+  6: (a) => '<div class="card">' + head(a) + facts(a) +
+    '<div class="flow push"><div><div class="n">' + (a.took + a.sent.length) + '</div><div class="c">Sent</div></div><div><div class="n">' + a.took + '</div><div class="c">Took it</div></div>' +
+      '<div><div class="n">' + a.passed + '</div><div class="c">Passed</div></div><div class="w"><div class="n">' + a.wait.length + '</div><div class="c">Wait on you</div></div></div>' +
+    '<div class="mute">Average ' + a.avg + ' · pass ' + a.pass + '</div></div>',
+};
+/* 7 is rows, not cards: drawn whole. */
+const ROWS = () => '<div class="rows"><div class="r7 th"><span>Assessment</span><span>Took it</span><span>Passed</span><span>Average</span><span>Wait on you</span><span></span></div>' +
+  A.map((a) => '<div class="r7"><div class="t"><div class="nm">' + a.title + '</div><div class="mute">' + a.kind + ' · ' + a.mins + ' minutes · on ' + pl(a.reqs, 'open requisition') + '</div></div>' +
+    '<span class="num">' + a.took + (a.sent.length ? ' <span class="mute">+' + a.sent.length + ' not yet</span>' : '') + '</span><span class="num">' + a.passed + ' <span class="mute">' + pct(a) + '%</span></span>' +
+    '<span class="num">' + a.avg + '</span><span class="wait">' + a.wait.length + '</span><button class="btn ghost" type="button">Review</button></div>').join('') + '</div>';
+
+const M = (id, app, why) => '<a href="https://mobbin.com/screens/' + id + '" target="_blank" rel="noopener">' + app + '<span class="why">' + why + '</span></a>';
+const IT = [
+  { n: 1, h: 'Today’s card, tidied', say: 'The baseline: what is live now, after the 5 Nov distil. One facts line and one sentence of usage. It is honest and calm, and the number that needs the recruiter (who waits on a person) is the last thing in the sentence.',
+    keep: ['Nothing new to learn', 'The quietest card on the page'], cost: ['“Waiting on a person” is easy to miss', 'No sense of whether the test is too hard or too easy'],
+    lib: 'Card, Tag', refs: [M('84e3ee01-fb0d-43a9-bb84-d72f79ef1cb2', 'Uxcel · Screening', 'results as a quiet list, score per person')] },
+  { n: 2, h: 'Three figures', say: 'The card leads with three figures: took it, passed, average, each with what it means under it. The line under them names who waits on you. It reads like a survey’s overview, at a glance across all four.',
+    keep: ['Compares well across cards: the same three numbers in the same place', 'Pass rate is visible without arithmetic'], cost: ['Three big numbers per card is a lot of numbers on one page', 'The people are a line, not a thing to press'],
+    lib: 'StatTile (caption, figure, sub-line, hairline above, never boxed), Tag', refs: [M('de9e5e24-7647-499c-8ad7-c1b226d0fc54', 'Hotjar · Survey overview', 'impressions, starts, completes, completion rate'), M('45b27475-0ad1-40c2-81db-54c2ff642927', 'Zoom · Results overview', 'responses, time spent, completion rate'), M('fffe0e21-c479-452d-8eb5-71eb63e7e7cc', 'Tally · Insights', 'visits, submissions, respondents in a row')] },
+  { n: 3, h: 'One bar', say: 'One bar splits everyone who took it: passed, waiting on you, under the mark. The sentence above says the pass rate in words, so the bar is never the only way to read it.',
+    keep: ['Shows the shape at a glance: German check passes under half, Operations nearly everyone', 'Who waits on you stays a line of its own: a review can come from a pass too'], cost: ['A bar invites comparing widths across cards that have very different totals', 'The people are a line, not a thing to press'],
+    lib: 'Progress (meter, 6px), Tag', refs: [M('c9b5d568-5452-460d-9d02-6b4fe1d55524', 'Unity · Your results', 'passed, 4 of 5, one bar'), M('56959b73-e28c-4ed8-a6f2-df91112e5a69', 'Coursera · Your grade', 'grade, latest and highest, the pass mark said'), M('b6376625-f021-4063-a45c-61c097d747da', 'Circle · Quiz result', 'passed, score and correct answers side by side')] },
+  { n: 4, h: 'The spread, with the pass mark', say: 'A small chart of how scores spread, with the pass mark drawn across it. It answers the recruiter’s real question about a test: is it sorting people, or is everybody passing (Operations) or failing (German) together?',
+    keep: ['The only variation that shows whether the test discriminates', 'Pass mark in context'], cost: ['A chart on every card is heavy; it belongs on the assessment’s own page as much as here', 'Small bars need their numbers on hover'],
+    lib: 'Funnel-style bars from the library’s chart family, Tag', refs: [M('470d90c2-3137-4efb-9798-7dea10710d64', 'Uxcel · Screening report', 'score distribution with the candidate marked'), M('8106522f-56e0-4902-8ea1-19bb73ac79d6', 'Workable · Abstract reasoning', 'a bell curve with the average band'), M('907be249-4186-44c9-9de9-d9def2652a17', 'NYT Wordle · Statistics', 'a tiny distribution that reads at once')] },
+  { n: 5, h: 'People first', rec: true, say: 'The card leads with who needs the recruiter: their faces and “6 wait on you”, with Review the 6 as the card’s one button. The results follow in one sentence. It turns the card from a report into a to-do, which is what a recruiter opens it for.',
+    keep: ['The action is the headline, and it names how many', 'Faces make it about people, as the rest of Talent is', 'One button with a verb, never “Open”'], cost: ['A test with nobody waiting needs its own calm state (“Nobody waits on you”)', 'The pass rate is in a sentence, not a figure'],
+    lib: 'FaceStack (Sales’ faces, the rest as a count), Button, Tag', refs: [M('c5222959-941d-48f0-8138-761317c73f22', '15Five · Check-ins', '“1 check-in ready for review”, Start reviewing'), M('01e5cb49-dd61-484d-a2c7-5ae3fcfe1d76', 'Maze · Recruitment', 'review applicants, needs review, one row each'), M('69aff800-d27f-4b29-b4dc-ee3d1e98579e', 'Deel · Peer selection', '37 of 37 with Send reminder beside it')] },
+  { n: 6, h: 'From sent to decided', say: 'Four steps in a row: sent, took it, passed, waiting on you. It shows where people stop, including the ones who were sent it and never took it (three on Accounting basics).',
+    keep: ['The only one that shows “sent, never taken”', 'Reads left to right like the hiring path'], cost: ['Four boxed numbers is close to a KPI tile row, which Talent avoids', 'Repeats the funnel the reports already draw'],
+    lib: 'Funnel (Sales’ name, bar, count), Tag', refs: [M('e4cf7532-4c38-4bce-a03d-ac4ca0b266f7', 'Typeform · Big picture', 'views, starts, submissions, completion'), M('de9e5e24-7647-499c-8ad7-c1b226d0fc54', 'Hotjar · Survey overview', 'starts, completes, then drop-off by question')] },
+  { n: 7, h: 'A row each', say: 'Not cards at all: one row per assessment, the same columns down the page, and Review on each row. With four to ten assessments the table compares them better than a grid of cards does.',
+    keep: ['Best for comparing across assessments', 'Densest: all four fit in the height of one card'], cost: ['Talent’s pages are cards elsewhere (Engy’s 29 Oct preference: equal cards, not tables)', 'Less room for the people'],
+    lib: 'DataTable (rows form; the first column takes its own line below 46rem), Button', refs: [M('8d405665-5330-453d-b68a-31736076c834', 'Kajabi · Assessment results', 'completed, passed, percentage per row'), M('59658617-8ce0-43d3-83cf-13868792131f', 'Optimal Workshop · Participants', 'status, time taken, answers per row'), M('84e3ee01-fb0d-43a9-bb84-d72f79ef1cb2', 'Uxcel · Screening', 'score as a coloured figure at the end of the row')] },
+];
+
+let html = '';
+IT.forEach((it) => {
+  html += '<section class="it"><div class="it-head"><span class="it-n' + (it.rec ? ' rec' : '') + '">' + it.n + (it.rec ? ' · Recommended' : '') + '</span><h2>' + it.h + '</h2></div>' +
+    '<p class="say">' + it.say + '</p>' +
+    '<div class="stage">' + (it.n === 7 ? ROWS() : '<div class="grid">' + A.map(V[it.n]).join('') + '</div>') + '</div>' +
+    '<div class="notes"><div class="note"><h4>What it does well</h4><ul>' + it.keep.map((x) => '<li>' + x + '</li>').join('') + '</ul></div>' +
+      '<div class="note"><h4>What it costs</h4><ul>' + it.cost.map((x) => '<li>' + x + '</li>').join('') + '</ul><h4 style="margin-top:10px">AiMY UI parts</h4>' + it.lib + '</div>' +
+      '<div class="note refs"><h4>Mobbin references (web)</h4>' + it.refs.join('') + '</div></div></section>';
+});
+/* All seven on one assessment, so the difference is the only difference. */
+html += '<section class="it"><div class="it-head"><h2>Side by side</h2></div><p class="say">The same assessment, Support troubleshooting and written English, in each of the seven.</p>' +
+  '<div class="side">' + [1, 2, 3, 4, 5, 6].map((n) => '<div><div class="cap">' + n + ' · ' + IT[n - 1].h + '</div>' + V[n](A[0]) + '</div>').join('') +
+  '<div><div class="cap">7 · ' + IT[6].h + '</div><div class="rows"><div class="r7" style="grid-template-columns:1fr auto">' +
+    '<div class="t"><div class="nm">' + A[0].title + '</div><div class="mute">65 took it · 35 passed · average 73%</div></div><span class="wait">6</span></div></div></div>' +
+  '</div>' +
+  '<div class="rec-box"><b>Recommended: 5, people first.</b> The recruiter opens an assessment to act on the people it sent back, so the card leads with them and gives the one action a verb. Where nobody waits, the line says “Nobody waits on you” in green and the button goes. If the pass rate needs to be visible at a glance too, 3’s bar can sit under the sentence; the spread (4) belongs on the assessment’s own page.</div></section>';
+document.getElementById('sheet').innerHTML = html;
+</script>
+</body>
+</html>
