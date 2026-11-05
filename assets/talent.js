@@ -9013,9 +9013,12 @@
     const f = editBuf('req', q, () => ({ title: q.title, desc: q.desc || '', must: q.must.join('\n'), level: q.level, seats: q.seats,
       target: q.target, place: q.place, acc: q.acc, tpl: q.tpl, bmin: q.budget ? q.budget.min : '', bmax: q.budget ? q.budget.max : '',
       kind: q.kind, billable: q.billable, asmt: q.asmt || null }));
-    const chip = (k, v, label) => '<button class="filter-chip' + (String(f[k]) === String(v) ? ' active' : '') + '" type="button" data-set="' + k + '|' + v + '">' + esc(label) + '</button>';
-    const stepper = (k, step, say) => '<span class="t-step"><button class="b-ghost" type="button" data-step="' + k + '|' + (-step) + '" aria-label="Less">−</button>' +
-      '<b class="t-step-n">' + esc(say) + '</b><button class="b-ghost" type="button" data-step="' + k + '|' + step + '" aria-label="More">+</button></span>';
+    /* Distilled 6 Nov, as the assessment editor: one of a few is a
+       segmented choice, a number is a compact stepper, text is a bordered
+       field. The long lists (accounts, assessments) wrap inside theirs. */
+    const pick = (k, label, opts, wrap) => seg(label, opts.map((o) => [o[1], String(f[k]) === String(o[0]), 'data-set="' + k + '|' + o[0] + '"'])).replace('class="t-seg"', 'class="t-seg' + (wrap ? ' is-wrap' : '') + '"');
+    const stepper = (k, step, say, less, more) => '<span class="t-stepper"><button type="button" data-step="' + k + '|' + (-step) + '" aria-label="' + esc(less) + '"' + (Number(f[k]) <= 1 ? ' disabled' : '') + '>' + svg('minus', 16) + '</button>' +
+      '<b class="t-stepper-n">' + esc(say) + '</b><button type="button" data-step="' + k + '|' + step + '" aria-label="' + esc(more) + '">' + svg('plus', 16) + '</button></span>';
     const part = (cap, body, wide) => '<div class="b-cmeta-part' + (wide ? ' t-wide' : '') + '"><h2 class="b-cmeta-cap">' + esc(cap) + '</h2><div class="b-cmeta-say">' + body + '</div></div>';
     const hasAssess = TEMPLATE[f.tpl].indexOf('assess') >= 0;
     return '<div class="s-home">' +
@@ -9035,25 +9038,25 @@
           'placeholder="Name the role, like Technical Support Engineer" aria-label="Role title" spellcheck="false">' +
           '<p class="t-error-msg">Give the role a name first.</p></div>' +
         '<div class="b-cmeta t-edit-grid">' +
-          part('Account', (isDraft || isHR() ? ACCOUNTS.map((a) => chip('acc', a.id, a.name)).join('') : '<p class="b-cmeta-p"><b>' + esc(accOf(q).name) + '</b></p>'), true) +
-          part('Level', LEVELS.map((l) => chip('level', l, l)).join('')) +
-          part('Seats', stepper('seats', 1, plural(f.seats, 'seat'))) +
-          part('Target date', stepper('target', 7, sayDay(f.target)) + '<p class="b-cmeta-p">' + days(Math.max(0, f.target)) + ' from today</p>') +
-          part('Replacement or new', chip('kind', 'replacement', 'Replacement') + chip('kind', 'new', 'New role')) +
-          part('Billing', chip('billable', true, 'Billable') + chip('billable', false, 'Not billable')) +
-          part('Where', '<input class="b-draft-in" type="text" data-ed="place" value="' + esc(f.place) + '" aria-label="Where the job is">') +
-          part('Budget, EGP a month', '<span class="t-range"><input class="b-draft-in t-num" type="text" inputmode="numeric" data-ed="bmin" value="' + esc(f.bmin) + '" aria-label="Lowest">' +
-            '<span>to</span><input class="b-draft-in t-num" type="text" inputmode="numeric" data-ed="bmax" value="' + esc(f.bmax) + '" aria-label="Highest"></span>') +
-          part('Stages', Object.keys(TEMPLATE).map((k) => chip('tpl', k, TEMPLATE_NAME[k] || k)).join('') +
-            '<p class="b-cmeta-p">' + esc(TEMPLATE[f.tpl].filter((k) => k !== 'joined').map((k) => STAGE[k].label).join(' → ')) + '</p>', true) +
-          (hasAssess ? part('Assessment', DB.asmts.map((a) => chip('asmt', a.id, a.title)).join(''), true) : '') +
+          part('Account', (isDraft || isHR() ? pick('acc', 'Account', ACCOUNTS.map((a) => [a.id, a.name]), true) : '<p class="b-cmeta-p"><b>' + esc(accOf(q).name) + '</b></p>'), true) +
+          part('Level', pick('level', 'Level', LEVELS.map((l) => [l, l])), true) +
+          part('Seats', stepper('seats', 1, plural(f.seats, 'seat'), 'One seat fewer', 'One seat more')) +
+          part('Target date', stepper('target', 7, sayDay(f.target), 'A week earlier', 'A week later') + '<p class="t-edit-say">' + days(Math.max(0, f.target)) + ' from today</p>') +
+          part('Replacement or new', pick('kind', 'Replacement or new', [['replacement', 'Replacement'], ['new', 'New role']])) +
+          part('Billing', pick('billable', 'Billing', [[true, 'Billable'], [false, 'Not billable']])) +
+          part('Where', '<input class="t-field" type="text" data-ed="place" value="' + esc(f.place) + '" aria-label="Where the job is" placeholder="Hybrid, Maadi office">') +
+          part('Budget, EGP a month', '<span class="t-range"><input class="t-field t-num" type="text" inputmode="numeric" data-ed="bmin" value="' + esc(f.bmin) + '" aria-label="Lowest monthly budget, EGP">' +
+            '<span aria-hidden="true">to</span><input class="t-field t-num" type="text" inputmode="numeric" data-ed="bmax" value="' + esc(f.bmax) + '" aria-label="Highest monthly budget, EGP"></span>') +
+          part('Stages', pick('tpl', 'Stages', Object.keys(TEMPLATE).map((k) => [k, TEMPLATE_NAME[k] || k]), true) +
+            '<ol class="t-edit-stages" aria-label="The stages, in order">' + TEMPLATE[f.tpl].filter((k) => k !== 'joined').map((k) => '<li>' + esc(STAGE[k].label) + '</li>').join('') + '</ol>', true) +
+          (hasAssess ? part('Assessment', pick('asmt', 'Assessment', DB.asmts.map((a) => [a.id, a.title]), true), true) : '') +
         '</div>' +
         '<div class="b-cmeta b-said">' +
           '<div class="b-cmeta-part"><div class="b-draft-caprow"><span class="b-cmeta-cap">About the role</span>' +
             '<button class="b-draft-ai" type="button" data-ai-draft>' + mark(12) + 'Write it with AiMY</button></div>' +
-            '<div class="b-cmeta-say"><textarea class="b-draft-in b-draft-area t-area" rows="3" data-ed="desc" aria-label="About the role" placeholder="What the person will do, in two or three sentences">' + esc(f.desc) + '</textarea></div></div>' +
+            '<div class="b-cmeta-say"><textarea class="t-field t-grow" rows="3" data-ed="desc" aria-label="About the role" placeholder="What the person will do, in two or three sentences">' + esc(f.desc) + '</textarea></div></div>' +
           '<div class="b-cmeta-part"><div class="b-draft-caprow"><span class="b-cmeta-cap">Success profile, one must-have per line</span></div>' +
-            '<div class="b-cmeta-say t-input-wrap" id="wrapMust"><textarea class="b-draft-in b-draft-area t-area t-input" rows="5" data-ed="must" aria-label="Must-haves" placeholder="2+ years of L2 software support">' + esc(f.must) + '</textarea>' +
+            '<div class="b-cmeta-say t-input-wrap" id="wrapMust"><textarea class="t-field t-grow t-input" rows="5" data-ed="must" aria-label="Must-haves" placeholder="2+ years of L2 software support">' + esc(f.must) + '</textarea>' +
             '<p class="t-error-msg">Add at least one must-have. Candidates are read against these.</p></div></div>' +
         '</div>' +
       '</section>' +
