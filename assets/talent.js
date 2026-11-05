@@ -1813,10 +1813,12 @@
     if (now >= 0) rows[now].classList.add('is-on');
   }
   /* THE DIARY, A CARD OF ITS OWN UNDER THE TABS (Engy, 5 Nov: "show the
-     card of the diary alone like sales"). Sales's door (.b-door in
-     .rail-doors; AiMY UI's RailDoor): what is next today at the size of a
-     figure with a clock before it, who and what under it, how many more,
-     and where it opens. A clear day says so, and how much is ahead. */
+     card of the diary alone like sales"). AiMY UI 1.4.0's diary door
+     (RailDoor, the Rail doors page; Sales's diaryDoor): captioned Diary,
+     what is next today at the size of a figure with a clock before it, who
+     and what under it, and Open, since the caption already names the page.
+     No sentence under it, as the library draws it. A clear day says so, and
+     how much is ahead. */
   function diaryDoor() {
     const left = diaryItems(0, 0).filter((m) => !m.done && m.kind !== 'owed')
       .sort((a, b) => (a.time || '99').localeCompare(b.time || '99'));
@@ -1825,14 +1827,13 @@
        aria-current, as the tab it replaced had. */
     const on = S.on === 'diary';
     const door = (inner) => '<div class="rail-doors"><button class="' + (on ? 'b-door is-on' : 'b-door') + '" type="button"' + goAttr({ on: 'diary' }) + (on ? ' aria-current="page"' : '') + '>' +
-      '<span class="b-door-cap">Today</span> ' + inner + ' <span class="b-door-go">Open the diary' + svg('go', 13) + '</span></button></div>';
+      '<span class="b-door-cap">Diary</span> ' + inner + ' <span class="b-door-go">Open' + svg('go', 13) + '</span></button></div>';
     if (!nx) {
       const ahead = diaryItems(1, 14).length;
       return door('<span class="b-door-who">Nothing is in the diary <span class="b-kind">' + (ahead ? plural(ahead, 'thing') + ' in the fortnight ahead' : 'nor in the fortnight ahead') + '</span></span>');
     }
     return door((nx.time ? '<span class="b-door-fig"><span class="b-door-clock" aria-hidden="true">' + svg('clock', 24) + '</span>' + esc(nx.time) + '</span> ' : '') +
-      '<span class="b-door-who">' + esc(nx.c.name) + ' <span class="b-kind">' + esc(nx.what) + '</span></span>' +
-      (left.length > 1 ? ' <span class="b-door-say">' + plural(left.length - 1, 'more thing') + ' today.</span>' : ''));
+      '<span class="b-door-who">' + esc(nx.c.name) + ' <span class="b-kind">' + esc(nx.what) + '</span></span>');
   }
   /* Reports' reading: the story's speed, and where people are lost. */
   function railStory() {
