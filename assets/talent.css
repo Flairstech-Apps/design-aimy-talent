@@ -1886,7 +1886,7 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-seg.is-wrap { border-radius: 12px; }
 .t-seg.is-wrap .t-seg-opt { border-radius: 9px; }
 .t-edit-say { margin: 8px 0 0; font-size: var(--fs-2xs); color: var(--ink-muted); }
-.t-edit-grid .t-field:not(.t-num) { max-width: 360px; }
+.t-esec-r .t-field:not(.t-num):not(.t-grow) { max-width: 360px; }
 .t-range { gap: 10px; color: var(--ink-muted); font-size: var(--fs-2xs); }
 .t-range .t-num { width: 12ch; text-align: right; font-variant-numeric: tabular-nums; }
 .t-grow { resize: none; field-sizing: content; min-height: 88px; line-height: var(--lh-base); }
@@ -1896,6 +1896,24 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-trk.is-plan .t-trk-step::before { background: rgba(var(--accent-rgb), 0.3); }
 .t-trk.is-plan .t-trk-dot { border-color: rgba(var(--accent-rgb), 0.6); }
 .t-trk.is-plan .t-trk-k { color: var(--d100); }
+/* Eleven stages fit the section's column: narrower steps, names that break between words. */
+.t-trk.is-plan { grid-template-columns: repeat(var(--n), minmax(60px, 1fr)); }
+.t-trk.is-plan .t-trk-k { overflow-wrap: normal; hyphens: auto; }
 
-/* The editor's closing note runs the full width of the page (6 Nov). */
-.t-edit-note .b-aimy { margin: 10px 0 14px; max-width: none; }
+/* ══ THE REQUISITION EDITOR IN THREE SECTIONS (6 Nov; after Wellfound and
+   Peerlist on Mobbin) ═══ Each section names itself and why on the left, its
+   fields on the right in two columns; a rule between sections, none above
+   the first. Below 900px the label sits above its fields. */
+.t-esec { display: grid; grid-template-columns: minmax(180px, 240px) minmax(0, 1fr); gap: 16px 48px; padding: 28px 0; border-top: 1px solid var(--card-border); max-width: 1080px; }
+.t-esec:first-of-type { margin-top: 12px; }
+.t-esec-l { min-width: 0; }
+.t-esec-h { margin: 0; font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--d50); }
+.t-esec-say { margin: 4px 0 0; font-size: var(--fs-2xs); line-height: var(--lh-snug); color: var(--ink-muted); }
+.t-esec-r { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 32px; align-content: start; }
+.t-esec-r > .b-cmeta-part { min-width: 0; }
+@media (max-width: 900px) {
+  .t-esec { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+}
+@media (max-width: 560px) {
+  .t-esec-r { grid-template-columns: minmax(0, 1fr); }
+}
