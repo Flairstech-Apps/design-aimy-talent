@@ -6759,31 +6759,47 @@
           const wait = r.filter((x) => needsPerson(x) && DB.byId[x.cand] && sees(DB.byId[x.cand]));
           const pass = r.filter((x) => asmtPass(a, x)).length;
           const out = DB.sends.filter((x) => x.asmt === a.id && x.status === 'sent' && DB.byId[x.cand] && sees(DB.byId[x.cand])).length;
+          const avgSay = avg != null ? ', average ' + (a.lang ? cefrOf(avg) : avg + '%') : '';
+          const results = '<p class="t-req-prog">' + (r.length ? '<b>' + r.length + '</b> took it, <b>' + pass + '</b> passed' + avgSay + '.' : 'Nobody has taken it yet.') +
+            (out ? ' ' + out + ' not taken yet.' : '') + ' On ' + plural(used, 'open requisition') + '.</p>';
+          const last = r.length ? 'Last result ' + esc(sayWhen(Math.max(...r.map((x) => x.doneDay != null ? x.doneDay : x.day)))) : '';
+          const review = wait.length ? '<button class="s-insight-lnk primary" type="button" data-asmt="' + a.id + '">Review the ' + wait.length + '</button>' : '';
+          const waitSay = wait.length + (wait.length === 1 ? ' waits on ' : ' wait on ') + (isRec() ? 'you' : 'a person');
+          /* PEOPLE FIRST (Engy, 6 Nov: variation 5 of
+             deliverables/assessment-card-variations.html). A recruiter opens
+             an assessment to act on the people it sent back, so the card
+             leads with who waits, their faces and how many, and its one
+             button names the count. The results follow in one sentence;
+             when nobody waits, the card says so and has no button. */
+          const recruiterBody = () =>
+            (wait.length
+              ? '<div class="t-asmt-wait">' + faceStack(wait.map((x) => DB.byId[x.cand].name)) +
+                  '<p class="t-asmt-wait-say"><b>' + waitSay + '</b><span>asked for a review or a person to score it</span></p></div>'
+              : '<p class="t-asmt-wait is-calm">' + fact('check', 'Nobody waits on you') + '</p>') +
+            results +
+            (r.length ? '<div class="tc-gov b-qcard-foot"><span class="b-kind">' + last + '</span>' + review + '</div>' : '');
+          /* THE DESIGNER'S CARD, DISTILLED (Engy, 6 Nov: "cluttered"). It
+             stacked a facts line, a checks line, the faces, the results, an
+             AiMY note and a foot, with two warnings in amber competing. Now:
+             what the test is in one quiet line, how it went in one sentence,
+             what to fix in one amber line (the failing checks counted, the
+             hardest question named; the details are on its page), and who
+             waits at the foot beside the button. */
+          const designerBody = () => {
+            const ck = asmtChecks(a), bad = ck.filter((x) => !x.ok).length;
+            const hard = worst != null && rates[worst] < 40 ? 'only ' + rates[worst] + '% get Q' + (worst + 1) + ' right' : '';
+            const fix = [bad ? plural(bad, 'check') + ' ' + (bad === 1 ? 'fails' : 'fail') : '', hard].filter(Boolean).join(' · ');
+            return '<p class="b-qcard-where t-req-facts">' + esc(plural(a.questions.length, 'question') + ' · pass ' + passSayOf(a) + ' · ' + (a.kind === 'live' ? 'spoken' : 'written')) + '</p>' +
+              results +
+              (fix ? '<p class="b-qcard-where t-asmt-checks is-warn">' + fact('listc', fix.charAt(0).toUpperCase() + fix.slice(1)) + '</p>' : '') +
+              '<div class="tc-gov b-qcard-foot">' + (wait.length
+                ? '<span class="t-asmt-foot-who">' + faceStack(wait.map((x) => DB.byId[x.cand].name), 3) + '<span class="b-kind">' + waitSay + '</span></span>' + review
+                : '<span class="b-kind">' + (last || 'Not taken yet') + (r.length ? ' · nobody waits' : '') + '</span>') + '</div>';
+          };
           return '<div class="b-slot"><article class="type-card s-card b-qcard" data-open="asmt:' + a.id + '" style="--i:' + Math.min(i, 8) + '">' +
             '<div class="tc-head">' + tag(ASMT_KIND[a.kind]) + '<span class="b-kind">' + a.mins + ' minutes</span></div>' +
             '<button class="tc-title s-card-title" type="button" data-asmt="' + a.id + '">' + esc(a.title) + '</button>' +
-            /* How the test is built is the designer's (5 Nov), so its facts
-               line and its checks show on their desk only. */
-            (!asmtDesigner() ? '' : '<p class="b-qcard-where t-req-facts">' + fact('goal', plural(a.questions.length, 'question') + ' · pass ' + passSayOf(a)) + fact(a.kind === 'live' ? 'mic' : 'doc', a.kind === 'live' ? 'Spoken, then transcribed' : 'Written') + '</p>') +
-            (!asmtDesigner() ? '' : function () { const ck = asmtChecks(a), ok = ck.filter((x) => x.ok).length;
-              const fails = ck.filter((x) => !x.ok).map((x) => x.k === 'length' ? 'longer than 15 minutes' : lower(x.label));
-              return '<p class="b-qcard-where t-asmt-checks' + (fails.length ? ' is-warn' : '') + '">' + fact('listc', fails.length ? ok + ' of ' + ck.length + ' checks · ' + listSay(fails) : 'All ' + ck.length + ' checks pass') + '</p>'; }()) +
-            /* PEOPLE FIRST (Engy, 6 Nov: variation 5 of
-               deliverables/assessment-card-variations.html). A recruiter opens
-               an assessment to act on the people it sent back, so the card
-               leads with who waits on a person, their faces and how many,
-               and its one button names the count. The results follow in one
-               sentence; when nobody waits, the card says so and has no
-               button. */
-            (wait.length
-              ? '<div class="t-asmt-wait">' + faceStack(wait.map((x) => DB.byId[x.cand].name)) +
-                  '<p class="t-asmt-wait-say"><b>' + wait.length + (wait.length === 1 ? ' waits on ' : ' wait on ') + (isRec() ? 'you' : 'a person') + '</b><span>asked for a review or a person to score it</span></p></div>'
-              : '<p class="t-asmt-wait is-calm">' + fact('check', 'Nobody waits on ' + (isRec() ? 'you' : 'a person')) + '</p>') +
-            '<p class="t-req-prog">' + (r.length ? '<b>' + r.length + '</b> took it, <b>' + pass + '</b> passed' + (avg != null ? ', average ' + (a.lang ? cefrOf(avg) : avg + '%') : '') + '.' : 'Nobody has taken it yet.') +
-              (out ? ' ' + out + ' not taken yet.' : '') + ' On ' + plural(used, 'open requisition') + '.</p>' +
-            (asmtDesigner() && worst != null && rates[worst] < 40 ? aimyBlock({ text: 'Only <b>' + rates[worst] + '%</b> get Q' + (worst + 1) + ' right. Worth rewording.' }, true) : '') +
-            (r.length ? '<div class="tc-gov b-qcard-foot"><span class="b-kind">Last result ' + esc(sayWhen(Math.max(...r.map((x) => x.doneDay != null ? x.doneDay : x.day)))) + '</span>' +
-              (wait.length ? '<button class="s-insight-lnk primary" type="button" data-asmt="' + a.id + '">Review the ' + wait.length + '</button>' : '') + '</div>' : '') +
+            (asmtDesigner() ? designerBody() : recruiterBody()) +
           '</article></div>';
         }).join('') + '</div>' +
       '</section></div>';

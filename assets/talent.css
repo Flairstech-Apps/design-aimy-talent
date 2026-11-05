@@ -1794,3 +1794,7 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-face:first-child { margin-left: 0; }
 .t-face:nth-child(2n) { background: color-mix(in srgb, var(--brand) 42%, var(--card-bg)); }
 .t-face.is-more { background: var(--card-bg-raised); color: var(--d200); font-variant-numeric: tabular-nums; }
+/* The designer's foot: who waits, small, beside the button. */
+.t-asmt-foot-who { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.t-asmt-foot-who .t-face { width: 28px; height: 28px; }
+.b-qcard .t-asmt-checks { padding-top: 10px; }
