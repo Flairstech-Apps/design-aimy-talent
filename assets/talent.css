@@ -1861,6 +1861,8 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-qe .t-asq-main { display: grid; gap: 12px; }
 .t-qe-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .t-qe-head .t-icon-btn { margin-left: auto; }
+/* The number is the row's anchor: as tall as the answer-type switch beside it. */
+.t-qe-head .t-asq-n { min-width: 40px; height: 40px; padding: 0 10px; border-radius: 10px; font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
 .t-field { width: 100%; box-sizing: border-box; min-width: 0; padding: 9px 12px; border: 1px solid var(--card-border-hover); border-radius: 10px; background: transparent; color: var(--d50); font: inherit; font-size: var(--fs-xs); line-height: var(--lh-snug); transition: border-color 160ms ease-out, box-shadow 160ms ease-out; }
 .t-field::placeholder { color: var(--ink-placeholder, var(--d400)); }
 .t-field:hover { border-color: var(--d500, #637280); }
