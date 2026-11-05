@@ -27,7 +27,7 @@ The recruiter's desk opens as **Omar Saeed**. The other three desks are describe
   - The funnel, with the biggest drop marked.
   - The candidates on it, cut by stage. Each card has its next move and its exit, each with Undo.
 
-- **Conversations** (`?on=calls`, Calls until 5 Nov) is every way the recruiter and a candidate talk, with three tabs:
+- **Interactions** (`?on=calls`, Calls until 5 Nov) is every way the recruiter and a candidate talk, with three tabs:
   - **To reach:** callbacks someone asked for come first, then phone screens that are due, then people who applied and haven't been called. "Call them in order" calls down the list, with "Log it and call the next one" or "Log it and stop" after each call.
   - **Inbox:** missed calls (with any message they left) and WhatsApp replies, newest first. A missed call clears when you call them back; a WhatsApp reply clears when you answer it or press Needs no reply.
   - **History:** every call and message on every channel, grouped by day: calls in AiMY, Teams calls, calls logged from elsewhere, and WhatsApp both ways.
@@ -112,6 +112,14 @@ These four parts close the gaps between this prototype and AiMY Sales. They were
 - **Finding through the chat** (Sales B8). Find people on Today, or "find …" in the bar, opens the canvas. AiMY asks whether to search the pool, the web or both, reads the success profile back, and brings back a shortlist marked **Not saved yet**, with a Keep tick on each card. From there you can add the kept people to a requisition, save the list (saved lists appear under Find candidates) or discard it. If you leave without saving, a gate at the top of the page offers Save, Discard or Stay, and the browser's Back is caught too. The Find tab's form is still there.
 - **The bell brings work back.** When a decision is taken on another desk, it lands in the bell of the desk it is for, and Undo takes the news back with it. That covers a client's pass or meet, an interviewer's debrief, an offer approved or sent back, a requisition reassigned, and a hiring request.
 - **The BU Director's desk** (`?as=hesham`). See the desk list above.
+
+## Work done in the AiMY chat, and Outlook (5 Nov)
+
+The split follows Sales and QA, and is written up journey by journey in `uiux-plan.html` ("The AiMY chat in every journey"): the chat does what AiMY writes or runs and says it back before anything commits; pages hold records and one-press moves; after a commit you land where the result lives.
+
+- **Booking with Outlook.** "Book Karim's HR interview Thursday" in the bar, Book the interview on a card, or Book an interview on the Diary: AiMY offers times free in both Outlook calendars (the interviewer's and the recruiter's), Teams or in person, and shows the invite as it will go. Put it in sends the Outlook invite to the candidate and the interviewer and opens the diary on that day; the toast's Undo cancels it. The candidate's page offers the same free times as one press each, on Teams. The Diary says it is the recruiter's Outlook calendar.
+- **Writing to someone.** "Message Karim about the next step", or Write it with AiMY on a WhatsApp thread: AiMY drafts it from where they are, it is changed in place or by saying so ("shorter"), and it goes the one way open to them (WhatsApp through Connect, as the approved template after 24 hours; their own WhatsApp without Connect; email with no opt-in). It ends with the way to their thread.
+- **A call told in a sentence.** "I called Karim on my mobile, he passed the screen, one month notice, expects 25,000": AiMY says back who, the channel, the outcome, notice and pay, and Log it logs it with the same effects and Undo as any call, then opens their page.
 
 ## Rules carried over from Sales
 

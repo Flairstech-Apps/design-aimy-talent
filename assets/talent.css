@@ -1705,3 +1705,9 @@ body.is-portal .aimy-overlay { display: none !important; }
 /* Their reply, pasted in by hand when WhatsApp is the recruiter's own. */
 .t-wa-add { display: flex; flex-direction: column; gap: 8px; }
 .t-wa-add .t-acts { margin: 0; justify-content: flex-end; }
+/* A message draft inside AiMY's answer (5 Nov): the bubble's full width. */
+.t-dr-in { width: 100%; margin: 8px 0 0; resize: vertical; }
+/* An answer with rows and choices in it wraps to the chat's width on a
+   phone instead of growing past the edge (5 Nov). */
+#overlayThread .chat-msg > .msg-bubble { min-width: 0; }
+#overlayThread .s-callsum-val { min-width: 0; overflow-wrap: anywhere; }

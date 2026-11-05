@@ -458,7 +458,7 @@
     { id: 'tp-cli',  kind: 'client', title: 'Client interview',            items: ['The client introduces the team', 'Their questions on the candidate’s experience', 'Fit with the client’s hours and tools'] },
     { id: 'tp-ctech', kind: 'ctech', title: 'Client technical interview',  items: ['The client’s own technical exercise', 'Questions on their stack'] },
   ];
-  const IV_MODES = { person: 'In person or on Teams', aimy: 'With the AiMY agent', phone: 'By phone' };
+  const IV_MODES = { person: 'In person', video: 'On Teams', aimy: 'With the AiMY agent', phone: 'By phone' };
   const RATE = { m: 'Met', p: 'Partly met', n: 'Not shown' };
 
   /* ── Why a client passes (UI/UX plan, P1) ── one reason per decline, from
@@ -865,7 +865,7 @@
     seedStageDays();
     seedMsgs();
   }
-  /* ── WhatsApp so far (Conversations, 5 Nov) ── three threads on the
+  /* ── WhatsApp so far (Interactions, 5 Nov) ── three threads on the
      recruiter's own desk, each with someone who opted in: a reply to the
      message after a missed call, a question from yesterday evening, and an
      interview reminder answered two days ago, which needs nothing more and
@@ -892,6 +892,14 @@
       M(booked, 'out', -2, '10:00', 'Hi ' + first(booked.name) + ', a reminder of your HR interview for ' + DB.reqById[booked.req].title + '. Reply here if the time no longer works. ' + first(RECRUITERS[0].name) + ', FlairsTech', { tpl: 'iv' });
       M(booked, 'in', -2, '10:20', 'Thank you, see you then.', { done: true });
     }
+    /* Two interviews still to book (Outlook, 5 Nov): AiMY books most of
+       them under the HR Manager's rule, so without these the seed has
+       nobody for a person to book. Taken from interviews booked for a later
+       day, never today's. */
+    mine.filter((c) => c !== booked && (c.stage === 'hr' || c.stage === 'tech') && c.meet != null && c.meet > 0).slice(0, 2).forEach((c) => {
+      DB.ivs = DB.ivs.filter((v) => !(v.cand === c.id && v.stage === c.stage));
+      c.meet = null; c.slot = null; c.fb = false;
+    });
   }
   /* Days spent at each stage a person has finished (`took`), drawn from
      their id and their requisition's own pace rather than the random
@@ -1988,7 +1996,7 @@
      the one way round: every tab is a rail entry with its count, and what a
      rail card used to say (the next interview, a missed call) is the line
      under its entry. The page keeps its name as a plain heading. ── */
-  const TAB_NAME = { '': 'Today', cands: 'Candidates', reqs: 'Requisitions', calls: 'Conversations', diary: 'Diary', asmts: 'Assessments', templates: 'Templates', reports: 'Reports' };
+  const TAB_NAME = { '': 'Today', cands: 'Candidates', reqs: 'Requisitions', calls: 'Interactions', diary: 'Diary', asmts: 'Assessments', templates: 'Templates', reports: 'Reports' };
   function tabsFor() {
     const open = myOpen().length;
     /* Each desk's row is the work that desk does (Sales: a surface belongs
@@ -2727,7 +2735,7 @@
       if (c.stage === 'sourced' && !c.contactOk) special = foot(ghostOut, '<button class="s-insight-lnk primary" type="button" data-contact-ok="' + c.id + '">Approve first contact</button>');
       else if (c.stage === 'assess' && !s) special = foot(ghostOut, '<button class="s-insight-lnk primary" type="button" data-send-asmt="' + c.id + '">Send the assessment</button>');
       else if (c.stage === 'assess' && s.status === 'sent') special = foot(ghostOut, '<span class="b-kind">Waiting on their test, sent ' + esc(sayWhen(s.day)) + '</span>');
-      else if (MEETS[c.stage] && !ivNow(c) && c.meet == null) special = foot(ghostOut, '<button class="s-insight-lnk primary" type="button" data-cand="' + c.id + '">Book the interview</button>');
+      else if (MEETS[c.stage] && !ivNow(c) && c.meet == null) special = foot(ghostOut, '<button class="s-insight-lnk primary" type="button" data-book-chat="' + c.id + '">Book the interview</button>');
       else if (c.stage === 'offer' && !o) special = foot(ghostOut, '<button class="s-insight-lnk primary" type="button" data-offer-new="' + c.id + '">Prepare the offer</button>');
       else if (c.stage === 'offer' && o.status === 'approving') special = foot(ghostOut, o.hm === 'ok' && o.bu === 'ok'
         ? '<button class="s-insight-lnk primary" type="button" data-offer-send="' + o.id + '">Send the offer</button>'
@@ -4620,8 +4628,8 @@
   const RUN_N = [5, 10, 0];
   const runN = (n) => { const k = UI.runN != null ? UI.runN : 10; return k && k < n ? k : n; };
   const runMins = (n) => Math.max(5, Math.round(n * (0.6 * 10 + 0.4) / 5) * 5);
-  /* ══ CONVERSATIONS: WHATSAPP, AND CALLS MADE ELSEWHERE (Engy, 5 Nov) ═════
-     Calls became Conversations: every way the recruiter and a candidate
+  /* ══ INTERACTIONS: WHATSAPP, AND CALLS MADE ELSEWHERE (Engy, 5 Nov) ═════
+     Calls became Interactions (named so on 5 Nov): every way the recruiter and a candidate
      talk, in one place. WhatsApp runs through AiMY Connect, which checks
      the person's own opt-in before anything goes. Within 24 hours of their
      last message a reply is free text; after that only an approved template
@@ -4698,8 +4706,8 @@
           (tpl ? '<div class="t-msg"><p class="t-msg-body">' + esc(waFill(tpl.text, c)) + '</p><div class="t-msg-end"><p class="t-msg-foot">To ' + esc(first(c.name)) + ' on WhatsApp · template approved by ' + esc(DESKS.dina.name) + '.</p>' +
             '<button class="s-insight-lnk primary" type="button" data-wa-send="' + c.id + '">' + svg('send', 14) + 'Send the template</button></div></div>' : '') + '</div>';
     return '<div class="s-home">' +
-      '<div class="b-topbar s-block-wide"><button class="s-back" type="button"' + goAttr({ on: 'calls', q: 'inbox' }) + '>' + svg('back', 14) + 'Conversations</button>' +
-        '<span class="b-draft-acts">' + (canCall(c) ? '<button class="b-ghost" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call</button>' : '') +
+      '<div class="b-topbar s-block-wide"><button class="s-back" type="button"' + goAttr({ on: 'calls', q: 'inbox' }) + '>' + svg('back', 14) + 'Interactions</button>' +
+        '<span class="b-draft-acts"><button class="b-ghost" type="button" data-draft-chat="' + c.id + '">Write it with AiMY</button>' + (canCall(c) ? '<button class="b-ghost" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call</button>' : '') +
           '<button class="b-ghost" type="button"' + goAttr({ on: 'calls', lg: c.id }) + '>Log a call from elsewhere</button></span></div>' +
       '<section class="s-block s-block-wide" aria-label="WhatsApp with ' + esc(c.name) + '">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">' + esc(c.name) + '</h2>' +
@@ -4838,7 +4846,245 @@
     logCall();
   }
 
-  /* ── CONVERSATIONS ── who to reach, what came in, and everything said. */
+  /* ══ OUTLOOK, AND WORK DONE IN THE CHAT (Engy, 5 Nov) ═══════════════════
+     The split, from Sales and QA: what AiMY writes or runs happens in the
+     chat, said back before it commits (a booking, a message, a call told in
+     a sentence); one press with Undo, records, threads and lists stay on
+     pages; once committed you land where the result now lives.
+
+     OUTLOOK. The diary is the recruiter's Outlook calendar. A time is free
+     when it is free in both Outlook calendars, the interviewer's and the
+     recruiter's; booking sends an Outlook invite to the candidate and the
+     interviewer, on Teams with its link or in person at the office. Busy
+     times are drawn from a hash of who, day and time, so a demo walked
+     twice finds the same calendar. */
+  const OUT_TIMES = ['10:00', '11:30', '13:00', '14:30', '16:00'];
+  const hashU = (t) => { let x = 7; for (let i = 0; i < t.length; i++) x = (x * 31 + t.charCodeAt(i)) >>> 0; return (x % 1000) / 1000; };
+  const outBusy = (who, d, t) => DB.ivs.some((v) => v.status === 'booked' && v.day === d && v.slot === t && v.by.split(',')[0] === who) || hashU(who + '|' + d + '|' + t) < 0.4;
+  const needsBook = (c) => !c.exit && MEETS[c.stage] && !ivNow(c) && c.meet == null;
+  function freeSlots(c, n) {
+    const by = interviewerFor(reqOf(c), c.stage).split(',')[0], mine = me().name, out = [];
+    for (let d = 1; d <= 12 && out.length < n; d++) {
+      const g = dayOf(d).getDay();
+      if (g === 5 || g === 6) continue;
+      OUT_TIMES.forEach((t) => { if (out.length < n && !outBusy(by, d, t) && (by === mine || !outBusy(mine, d, t))) out.push({ d: d, t: t }); });
+    }
+    return out;
+  }
+  const slotSay = (d, t) => DAY_FULL[dayOf(d).getDay()] + ' ' + sayDay(d) + ', ' + t;
+  const MODE_SAY = { video: 'On Teams', person: 'In person' };
+  /* The invite as it will go, in the read-back's rows. */
+  function inviteRows(c, d, t, mode) {
+    const q = reqOf(c), by = interviewerFor(q, c.stage).split(',')[0];
+    const rows = [['Subject', STAGE[c.stage].label + ' · ' + q.title + ' · FlairsTech'], ['When', slotSay(d, t) + ', 45 minutes'],
+      ['Where', mode === 'video' ? 'Microsoft Teams; the link is in the invite' : 'FlairsTech, Maadi office'],
+      ['To', c.name + (c.email ? ' (' + c.email + ')' : '') + (by === me().name ? '' : ', and ' + by)]];
+    if (waAuto(c)) rows.push(['Also', 'A WhatsApp reminder the day before']);
+    return '<div class="s-callsum-in-turn"><div class="s-callsum"><div class="s-callsum-rows">' + rows.map((r) =>
+      '<div class="s-callsum-row"><span class="s-callsum-cap">' + esc(r[0]) + '</span><span class="s-callsum-val">' + esc(r[1]) + '</span></div>').join('') + '</div></div></div>';
+  }
+
+  /* A turn of AiMY's in the chat, opening it; a press on a page starts a
+     conversation of its own, a question asked keeps the one it is in. */
+  function aiTurn(turn, title, asked, fresh) {
+    if (fresh) CHAT_AT = null;
+    const ch = chatFor();
+    if (!ch.title) ch.title = title;
+    if (asked) ch.turns.push({ who: 'you', html: esc(asked) });
+    turn.id = uid('t'); turn.who = 'aimy';
+    ch.turns.push(turn);
+    saveChats();
+    if (canvasShown()) paintThread(); else openCanvas();
+    return turn;
+  }
+  const turnById = (id) => { for (const ch of CHATS) { const t = ch.turns.filter((x) => x.id === id)[0]; if (t) return t; } return null; };
+  const doneTurn = (t, html, acts) => { t.done = true; t.html = html; t.acts = acts || []; saveChats(); };
+  /* Who a sentence names: a full name first, then a first name, on this desk. */
+  function candIn(lc) {
+    const mine = DB.cands.filter((c) => sees(c) && (isHR() || deskReqs().indexOf(reqOf(c)) >= 0));
+    return mine.filter((c) => lc.indexOf(c.name.toLowerCase()) >= 0).sort((a, b) => (a.exit ? 1 : 0) - (b.exit ? 1 : 0))[0] ||
+      mine.filter((c) => !c.exit && new RegExp('\\b' + first(c.name).toLowerCase() + '\\b').test(lc))[0] || null;
+  }
+  /* "Thursday", "tomorrow", "at 11", "2pm", "14:30". */
+  function whenIn(lc) {
+    let d = /\btomorrow\b/.test(lc) ? 1 : null;
+    DAY_FULL.forEach((n, g) => { if (d == null && lc.indexOf(n.toLowerCase()) >= 0) { for (let i = 1; i <= 7; i++) if (dayOf(i).getDay() === g) { d = i; break; } } });
+    const m = /\b(?:at\s*)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/.exec(lc.replace(/\b(19|20)\d{2}\b/g, ''));
+    let t = null;
+    if (m && (m[2] || m[3] || /\bat\s*\d/.test(lc))) {
+      let h = Number(m[1]);
+      if (m[3] === 'pm' && h < 12) h += 12;
+      if (!m[3] && h < 8) h += 12;
+      t = String(h).padStart(2, '0') + ':' + (m[2] || '00');
+    }
+    return { d: d, t: t };
+  }
+
+  /* BOOKING, IN THE CHAT. With nobody named, AiMY lists who is waiting for
+     an interview; with somebody, the first time free in both calendars (or
+     the one asked for, when it is free), the other free times, Teams or in
+     person, and the invite as it will go. Put it in books it, sends the
+     invite and lands on that day in the diary (Sales: "something went into
+     the calendar, so the calendar is what you want to see"). */
+  function bookChat(c, asked, keep) {
+    /* Picked from AiMY's own list, it carries on in that conversation. */
+    const fresh = !asked && !keep;
+    if (!c) {
+      const wait = [];
+      myOpen().forEach((q) => activeOf(q).forEach((x) => { if (needsBook(x)) wait.push(x); }));
+      aiTurn({ html: wait.length ? '<b>' + plural(wait.length, 'person', 'people') + '</b> ' + (wait.length === 1 ? 'is' : 'are') + ' waiting for an interview to be booked. Who is it for?' : 'Nobody is waiting for an interview to be booked.',
+        acts: wait.slice(0, 6).map((x) => ({ label: x.name + ', ' + lower(STAGE[x.stage].label), data: 'book-chat="' + x.id + '"' })) }, 'Booking an interview', asked, fresh);
+      return;
+    }
+    if (!needsBook(c)) {
+      const v = ivNow(c);
+      aiTurn({ html: esc(c.name) + (v && v.status === 'booked' ? '’s ' + esc(lower(STAGE[c.stage].label)) + ' is already booked, ' + esc(slotSay(v.day, v.slot)) + '.' : ' has no interview to book at ' + esc(lower(STAGE[c.stage].label)) + '.'),
+        acts: [{ label: 'Open ' + first(c.name), go: { cand: c.id } }] }, 'Booking ' + c.name, asked, fresh);
+      return;
+    }
+    const want = asked ? whenIn(asked.toLowerCase()) : { d: null, t: null };
+    const slots = freeSlots(c, 6), by = interviewerFor(reqOf(c), c.stage).split(',')[0];
+    const hit = slots.filter((x) => (want.d == null || x.d === want.d) && (want.t == null || x.t === want.t))[0];
+    const note = want.d != null || want.t != null ? (hit ? '' : 'That time is taken in ' + (by === me().name ? 'your' : by + '’s or your') + ' Outlook calendar, so here is the nearest free one. ') : '';
+    const pick = hit || slots[0];
+    if (!pick) { aiTurn({ html: 'Nothing is free in both calendars in the next two weeks. Open the diary to find a time by hand.', acts: [{ label: 'Open the diary', go: { on: 'diary' } }] }, 'Booking ' + c.name, asked, fresh); return; }
+    aiTurn({ kind: 'book', cand: c.id, d: pick.d, t: pick.t, mode: 'video', note: note, slots: slots }, 'Booking ' + c.name + '’s ' + lower(STAGE[c.stage].label), asked, fresh);
+  }
+  function bookTurnHtml(t) {
+    const c = DB.byId[t.cand];
+    if (!c) return 'They are no longer on file.';
+    const by = interviewerFor(reqOf(c), c.stage).split(',')[0];
+    return '<p>' + esc(t.note || '') + 'I looked in Outlook for times when ' + (by === me().name ? 'you are free' : esc(by) + ' and you are both free') + ' for ' + esc(c.name) + '’s <b>' + esc(lower(STAGE[c.stage].label)) + '</b>. This is the first; pick another if it suits better.</p>' +
+      '<div class="b-cuts t-log-row" role="group" aria-label="Free times">' + t.slots.map((x) => { const on = x.d === t.d && x.t === t.t;
+        return '<button class="filter-chip' + (on ? ' active' : '') + '" type="button" data-bk-slot="' + t.id + '|' + x.d + '|' + x.t + '" aria-pressed="' + on + '">' + esc(slotSay(x.d, x.t)) + '</button>'; }).join('') + '</div>' +
+      '<div class="b-cuts t-log-row" role="group" aria-label="Where">' + ['video', 'person'].map((m) => '<button class="filter-chip' + (t.mode === m ? ' active' : '') + '" type="button" data-bk-mode="' + t.id + '|' + m + '" aria-pressed="' + (t.mode === m) + '">' + MODE_SAY[m] + '</button>').join('') + '</div>' +
+      inviteRows(c, t.d, t.t, t.mode) +
+      '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-bk-go="' + t.id + '">Put it in and send the invite</button><button class="btn btn-ghost btn-sm" type="button" data-turn-leave="' + t.id + '">Leave it</button></p>';
+  }
+  function bookGo(t) {
+    const c = DB.byId[t.cand];
+    if (!c || t.done) return;
+    const by = interviewerFor(reqOf(c), c.stage).split(',')[0];
+    bookIv(c, t.d, t.t, t.mode, () => { doneTurn(t, 'Booked, then undone. Nothing was sent.'); });
+    doneTurn(t, 'Booked ' + esc(c.name) + '’s ' + esc(lower(STAGE[c.stage].label)) + ', ' + esc(slotSay(t.d, t.t)) + ', ' + esc(MODE_SAY[t.mode].toLowerCase()) + '. The Outlook invite went to ' + esc(first(c.name)) + (by === me().name ? '' : ' and ' + esc(by)) + '.',
+      [{ label: 'Open the diary on that day', go: { on: 'diary', day: String(t.d) } }]);
+    go({ on: 'diary', day: String(t.d) });
+  }
+
+  /* WRITING TO SOMEONE, IN THE CHAT (Sales's email draft). AiMY drafts from
+     what was asked; it is changed in place or by saying so ("shorter"), and
+     goes the one way open to this person: WhatsApp through AiMY Connect (an
+     approved template once 24 hours have passed), their own WhatsApp
+     without Connect, or email with no opt-in. It ends with the way to the
+     thread where it now lives. */
+  function draftFor(c, about) {
+    const a = String(about || '').toLowerCase(), q = reqOf(c), fill = (x) => waFill(x, c);
+    if (/interview|remind|meeting/.test(a) && c.meet != null && c.meet >= 0) return 'Hi ' + first(c.name) + ', a reminder of your ' + lower(STAGE[c.stage].label) + ' for ' + q.title + ', ' + slotSay(c.meet, c.slot) + '. Reply here if the time no longer works. ' + first(me().name) + ', FlairsTech';
+    if (/update|news|status|where (it|things) stand/.test(a)) return fill(WA_TPL[1].text);
+    if (/interview|remind/.test(a)) return fill(WA_TPL[2].text);
+    /* What was asked is quoted only when it is a real sentence; otherwise
+       the draft says what fits where they are. */
+    const rest = a.replace(/^.*?\babout\b\s*/, '').replace(/[.?!]+$/, '').trim();
+    if (rest.split(/\s+/).length >= 4 && !/call|talk|good time|next step/.test(rest)) return 'Hi ' + first(c.name) + ', this is ' + first(me().name) + ' from FlairsTech about the ' + q.title + ' role. ' + rest.charAt(0).toUpperCase() + rest.slice(1) + '. ' + first(me().name);
+    const sign = ' ' + first(me().name) + ', FlairsTech';
+    if (MEETS[c.stage] && c.meet == null) return 'Hi ' + first(c.name) + ', good news on the ' + q.title + ' role: you are through to the ' + lower(STAGE[c.stage].label) + '. I will send you the invite with the time shortly.' + sign;
+    if (c.stage === 'sent' || c.stage === 'client' || c.stage === 'ctech') return fill(WA_TPL[1].text);
+    if (c.stage === 'offer') return 'Hi ' + first(c.name) + ', a quick note on your offer for ' + q.title + ': reply here with any questions and I will answer them.' + sign;
+    if ((c.stage === 'applied' || c.stage === 'sourced') && /next step/.test(a)) return 'Hi ' + first(c.name) + ', thank you for applying for ' + q.title + '. The next step is a short call of about ten minutes. When is a good time for you?' + sign;
+    return fill(WA_TPL[0].text);
+  }
+  const tplFrom = (text) => /reminder of your/.test(text) ? 'iv' : /an update on/.test(text) ? 'update' : 'talk';
+  function draftChat(c, about, asked) {
+    aiTurn({ kind: 'draft', cand: c.id, text: draftFor(c, about || asked) }, 'Writing to ' + c.name, asked, !asked);
+  }
+  function draftTurnHtml(t) {
+    const c = DB.byId[t.cand];
+    if (!c) return 'They are no longer on file.';
+    const shut = waAuto(c) && !waHrs(c), tpl = shut ? WA_TPL.filter((x) => x.k === tplFrom(t.text))[0] : null;
+    const how = waAuto(c) ? (shut ? 'It has been more than 24 hours since ' + first(c.name) + ' wrote, so it goes as ' + DESKS.dina.name + '’s approved template “' + tpl.label + '”, shown here as it will read.' : 'It goes on WhatsApp through AiMY Connect.')
+      : c.wa ? 'It opens your own WhatsApp with this text, and is logged on ' + first(c.name) + '’s thread.' : first(c.name) + ' has not opted in to WhatsApp, so it goes by email to ' + (c.email || 'the address on file') + '.';
+    const go = waAuto(c) ? 'Send on WhatsApp' : c.wa ? 'Open in WhatsApp' : 'Send by email';
+    return '<p>A draft to <b>' + esc(c.name) + '</b>. Change it here, or tell me what to change (“shorter”, or what it should say).</p>' +
+      '<textarea class="input t-dr-in" rows="4" data-dr-text="' + t.id + '" aria-label="The message to ' + esc(c.name) + '"' + (shut ? ' readonly' : '') + '>' + esc(shut ? waFill(tpl.text, c) : t.text) + '</textarea>' +
+      '<p class="t-log-will">' + esc(how) + '</p>' +
+      '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-dr-go="' + t.id + '">' + esc(go) + '</button><button class="btn btn-ghost btn-sm" type="button" data-turn-leave="' + t.id + '">Leave it</button></p>';
+  }
+  function draftGo(t) {
+    const c = DB.byId[t.cand];
+    if (!c || t.done) return;
+    const shut = waAuto(c) && !waHrs(c), tk = shut ? tplFrom(t.text) : null;
+    const text = shut ? waFill(WA_TPL.filter((x) => x.k === tk)[0].text, c) : String(t.text || '').trim();
+    if (!text) { toast('Write something first.'); return; }
+    let m = null, e;
+    if (c.wa) {
+      if (!waAuto(c)) { try { window.open('https://wa.me/' + String(c.phone || '').replace(/\D/g, '') + '?text=' + encodeURIComponent(text), '_blank', 'noopener'); } catch (x) {} }
+      m = { id: 'w' + Date.now().toString(36), cand: c.id, dir: 'out', day: 0, time: nowHM(), text: text, by: ME, tpl: tk, own: !waAuto(c) };
+      D.msgs.push(m); DB.msgs.push(m);
+      e = note(c, 'msg', 'On WhatsApp ' + (waAuto(c) ? '' : 'from ' + first(me().name) + '’s own number ') + 'to ' + first(c.name) + ': “' + text + '”');
+    } else {
+      e = note(c, 'msg', 'Email to ' + first(c.name) + ': “' + text + '”');
+    }
+    const how = waAuto(c) ? 'on WhatsApp' : c.wa ? 'from your own WhatsApp' : 'by email';
+    doneTurn(t, 'Sent to ' + esc(first(c.name)) + ' ' + how + ': “' + esc(text) + '”',
+      c.wa ? [{ label: 'See it in ' + first(c.name) + '’s thread', go: { on: 'calls', th: c.id } }] : [{ label: 'Open ' + first(c.name), go: { cand: c.id } }]);
+    paint(); paintThread();
+    toast((c.wa && !waAuto(c) ? 'Opened WhatsApp with the message' : 'Sent to ' + first(c.name) + ' ' + how), () => {
+      if (m) { D.msgs = D.msgs.filter((x) => x.id !== m.id); DB.msgs = DB.msgs.filter((x) => x.id !== m.id); }
+      unmake('events', e); save(); doneTurn(t, 'Sent, then undone.'); paint(); paintThread();
+    }, c.wa ? 'It is on their thread and their history.' : 'It is on their history.');
+  }
+  /* A sentence typed while a draft is open changes the draft. */
+  function draftCorrect(text) {
+    const ch = chatNow(), last = ch && ch.turns[ch.turns.length - 1];
+    if (!last || last.kind !== 'draft' || last.done) return false;
+    const c = DB.byId[last.cand];
+    /* A new request is not a correction: someone else named, or another
+       verb (book, log a call, find, a question). */
+    const other = candIn(text.toLowerCase());
+    if ((other && other !== c) || /\b(book|schedule|called|spoke|talked|rang|find|search|what|which|how|why|who)\b/i.test(text)) return false;
+    const shorter = /\b(short|shorter|brief|less)\b/i.test(text);
+    const body = shorter ? last.text.split(/(?<=[.?!])\s+/).filter((x, i, a) => i === 0 || i === a.length - 1 || /\?$/.test(x)).join(' ') : draftFor(c, text);
+    doneTurn(last, 'Rewritten below.');
+    ch.turns.push({ who: 'you', html: esc(text) });
+    aiTurn({ kind: 'draft', cand: c.id, text: body }, '', null);
+    return true;
+  }
+
+  /* A CALL TOLD IN A SENTENCE: "I called Karim on my mobile, he passed, one
+     month's notice". AiMY says it back (who, the channel, the outcome,
+     notice and pay) and Log it logs it as the form would, with Undo; then
+     their page opens, where the call now lives. */
+  function logSayChat(c, text) {
+    const lc = text.toLowerCase(), rd = readCall(text);
+    const via = /whatsapp/.test(lc) ? 'wa' : /\bteams\b/.test(lc) ? 'teams' : 'mobile';
+    aiTurn({ kind: 'logsay', cand: c.id, via: via, lit: rd.outcome || null, read: rd, said: text }, 'A call with ' + c.name, text);
+  }
+  function logSayHtml(t) {
+    const c = DB.byId[t.cand];
+    if (!c) return 'They are no longer on file.';
+    const rd = t.read || {}, call = { cand: c.id, lit: t.lit, dir: 'out', fu: false, read: rd };
+    const rows = [['Who', c.name], ['On', VIA_SAY[t.via].replace(/^a /, '').replace(/^./, (x) => x.toUpperCase())], ['When', 'Today, ' + nowHM()], ['Outcome', t.lit ? OUTCOME[t.lit].label : 'Not picked yet']];
+    if (rd.notice) rows.push(['Notice', rd.notice]);
+    if (rd.salary) rows.push(['Expects', rd.salary]);
+    return (t.lit ? 'I have it as a call ' + esc(VIA_SAY[t.via]) + ' with <b>' + esc(c.name) + '</b>: <b>' + esc(OUTCOME[t.lit].label.toLowerCase()) + '</b>. Is that right?' : 'I could not tell how the call with <b>' + esc(c.name) + '</b> went. Pick it below.') +
+      '<div class="s-callsum-in-turn"><div class="s-callsum"><div class="s-callsum-rows">' + rows.map((r) =>
+        '<div class="s-callsum-row"><span class="s-callsum-cap">' + esc(r[0]) + '</span><span class="s-callsum-val">' + esc(r[1]) + '</span></div>').join('') + '</div></div></div>' +
+      '<div class="b-cuts t-log-row" role="group" aria-label="What happened">' + OUTCOMES.map((x) => '<button class="filter-chip' + (t.lit === x.k ? ' active' : '') + '" type="button" data-lg-o="' + t.id + '|' + x.k + '" aria-pressed="' + (t.lit === x.k) + '">' + esc(x.label) + '</button>').join('') + '</div>' +
+      (t.lit ? '<p class="t-log-will">' + esc(willSay(call)) + '</p>' : '') +
+      '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-lg-go="' + t.id + '"' + (t.lit ? '' : ' disabled') + '>Log it</button><button class="btn btn-ghost btn-sm" type="button" data-turn-leave="' + t.id + '">Leave it</button></p>';
+  }
+  function logSayGo(t) {
+    const c = DB.byId[t.cand];
+    if (!c || t.done || !t.lit) return;
+    if (busy()) return;
+    PENDING = { cand: c.id, phone: c.phone, dir: 'out', secs: 0, lit: t.lit, read: t.read || {}, video: t.via === 'teams', via: t.via, recording: false, script: [], shown: 0,
+      note: t.said, fu: false, day: 0, time: nowHM() };
+    doneTurn(t, 'Logged the call ' + esc(VIA_SAY[t.via]) + ' with ' + esc(c.name) + ': ' + esc(OUTCOME[t.lit].label.toLowerCase()) + '.', [{ label: 'Open ' + first(c.name), go: { cand: c.id } }]);
+    go({ cand: c.id }, false);
+    logCall();
+  }
+
+  /* ── INTERACTIONS ── who to reach, what came in, and everything said. */
   function callsPage() {
     /* A thread and the call-from-elsewhere form are pages of their own. */
     if (S.lg) return elsewherePage();
@@ -4908,7 +5154,7 @@
         '<p class="b-vfoot">The last ' + shown.length + ' of ' + all.length + ' calls and messages.</p>' : '<p class="b-vfoot">Nothing yet.</p>';
     }
     return '<div class="s-home">' +
-      '<section class="s-block s-block-wide" aria-label="Conversations">' +
+      '<section class="s-block s-block-wide" aria-label="Interactions">' +
         '<div class="s-camp-list-head">' + switcher('calls') +
           '<span class="b-draft-acts"><button class="b-ghost" type="button"' + goAttr({ on: 'calls', lg: 'new' }) + '>Log a call from elsewhere</button></span></div>' +
         '<p class="t-scope">' + tag('Design target', 'warn') + '<span>' + (connectOn() ? 'Calls wait on AiMY Phone, and WhatsApp on AiMY Connect’s templates being approved.' : 'Calls wait on AiMY Phone. WhatsApp is each recruiter’s own, logged here.') + ' This shows where it is going, not what ships first.</span></p>' +
@@ -5074,8 +5320,12 @@
     const tpl = tplFor(c.stage);
     return '<section class="s-block s-block-wide" aria-label="Interviews">' +
       '<div class="s-camp-list-head"><h2 class="s-block-h">Interviews</h2><span class="s-block-say">' + plural(list.length, 'interview') + '</span></div>' +
-      (needsBooking ? '<div class="t-book"><p class="b-tocall"><b>' + esc(STAGE[c.stage].label) + '</b> is next. Pick a time from ' + esc(interviewerFor(q, c.stage)) + '’s free slots on Bookings. AiMY tells ' + esc(first(c.name)) + ' from the booking.</p>' +
-        '<div class="b-cuts t-slots">' + SLOT_DAYS.map((d) => SLOT_TIMES.map((t) => '<button class="filter-chip" type="button" data-book="' + c.id + '|' + d + '|' + t + '">' + esc(sayWhen(d)) + ', ' + t + '</button>').join('')).join('') + '</div>' +
+      /* Free in both Outlook calendars; a press books it on Teams and sends
+         the invite, with Undo (5 Nov). In person, or a time said in words,
+         is the chat's. */
+      (needsBooking ? '<div class="t-book"><p class="b-tocall"><b>' + esc(STAGE[c.stage].label) + '</b> is next. These times are free in ' + (interviewerFor(q, c.stage).split(',')[0] === me().name ? 'your' : esc(interviewerFor(q, c.stage).split(',')[0]) + '’s and your') + ' Outlook calendar. A press books it on Teams and sends ' + esc(first(c.name)) + ' the Outlook invite.</p>' +
+        '<div class="b-cuts t-slots">' + freeSlots(c, 6).map((x) => '<button class="filter-chip" type="button" data-book="' + c.id + '|' + x.d + '|' + x.t + '">' + esc(slotSay(x.d, x.t)) + '</button>').join('') + '</div>' +
+        '<p class="t-acts"><button class="s-inline-btn" type="button" data-book-chat="' + c.id + '">In person, or another time? Book it with AiMY</button></p>' +
         (tpl ? '<p class="b-vfoot">The kit follows the ' + esc(tpl.title) + ' template, plus what the CV is silent on.</p>' : '') + '</div>' : '') +
       (list.length ? '<div class="t-ivs">' + list.map((v) => ivRow(c, v)).join('') + '</div>' : '') +
     '</section>';
@@ -5486,17 +5736,19 @@
   }
 
   /* ── Booking, nudging and recordings ── */
-  function bookIv(c, d, slot) {
+  function bookIv(c, d, slot, mode, onUndo) {
     const q = reqOf(c);
     const tpl = tplFor(c.stage);
-    const v = make('ivs', { id: uid('iv'), cand: c.id, stage: c.stage, day: d, slot: slot, by: interviewerFor(q, c.stage), mode: 'person',
+    mode = mode || 'video';
+    const v = make('ivs', { id: uid('iv'), cand: c.id, stage: c.stage, day: d, slot: slot, by: interviewerFor(q, c.stage), mode: mode, invite: 'outlook',
       status: 'booked', ratings: null, notes: null, verdict: null, recording: null, tpl: tpl ? tpl.id : null });
     const was = { meet: c.meet, slot: c.slot, fb: c.fb };
     write(c, { meet: d, slot: slot, fb: false });
-    const e = note(c, 'iv', 'Booked the ' + lower(STAGE[c.stage].label) + ' with ' + v.by + ', ' + sayWhen(d) + ' at ' + slot + '.');
+    const by = v.by.split(',')[0];
+    const e = note(c, 'iv', 'Booked the ' + lower(STAGE[c.stage].label) + ' with ' + v.by + ', ' + sayWhen(d) + ' at ' + slot + (mode === 'video' ? ', on Teams' : ', in person') + '. Outlook invite sent to ' + first(c.name) + (by === me().name ? '' : ' and ' + by) + '.');
     paint();
-    toast('Booked ' + sayWhen(d) + ' at ' + slot, () => { unmake('ivs', v); unmake('events', e); write(c, was); paint(); },
-      'On Bookings. AiMY tells ' + first(c.name) + ' from the booking and sends the interviewer the kit.');
+    toast('Booked ' + sayWhen(d) + ' at ' + slot + ', invite sent', () => { unmake('ivs', v); unmake('events', e); write(c, was); if (onUndo) onUndo(); paint(); if (canvasShown()) paintThread(); },
+      'Outlook invite to ' + first(c.name) + (by === me().name ? '' : ' and ' + by) + '. Undo cancels it.');
   }
   /* A recording is uploaded, transcribed and matched to the success
      profile. AiMY's reading is kept apart from the interviewer's own rating,
@@ -7402,7 +7654,9 @@
             '<span class="b-cal-nwhen">' + esc(sayDay(m.day)) + (m.time ? ' · ' + esc(m.time) : '') + '</span><span class="b-cal-nwho">' + esc(m.c.name) + '</span></button>').join('') + '</div></div>' : '') +
       '</div></div></div>';
     return '<div class="s-home">' +
-      '<section class="s-block s-block-wide" aria-label="The diary"><div class="s-camp-list-head">' + switcher('diary') + '</div>' + lead1 +
+      '<section class="s-block s-block-wide" aria-label="The diary"><div class="s-camp-list-head">' + switcher('diary') +
+        (isRec() ? '<span class="b-draft-acts"><button class="b-ghost" type="button" data-book-chat="">Book an interview</button></span>' : '') + '</div>' +
+        (isRec() ? '<p class="t-scope">' + tag('Outlook', 'info') + '<span>Your Outlook calendar. Interviews booked here send Outlook invites, and a time is offered only when it is free in both calendars.</span></p>' : '') + lead1 +
         '<div class="b-diary">' + cal + '</div></section>' +
       /* Results that are in and wait on your move, beside the ones that are
          not. They stood under Today's tabs until 29 Oct. */
@@ -7891,7 +8145,8 @@
   const msgAvatar = (who) => who === 'you'
     ? '<div class="msg-avatar user-av">' + esc(me().name.split(' ').map((w) => w[0]).join('').slice(0, 2)) + '</div>'
     : '<div class="msg-avatar aimy-av">' + mark(14) + '</div>';
-  const turnBody = (t) => t.html || (t.kind === 'brief' ? briefHtml(t) : t.kind === 'readback' ? readbackHtml(t) : '');
+  const turnBody = (t) => t.html || (t.kind === 'brief' ? briefHtml(t) : t.kind === 'readback' ? readbackHtml(t)
+    : t.kind === 'book' ? bookTurnHtml(t) : t.kind === 'draft' ? draftTurnHtml(t) : t.kind === 'logsay' ? logSayHtml(t) : '');
   const turnHtml = (t) => t.who === 'you'
     ? '<div class="chat-msg user">' + msgAvatar('you') + '<div class="msg-bubble">' + t.html + '</div></div>'
     : '<div class="chat-msg aimy">' + msgAvatar('aimy') + '<div class="msg-bubble">' + turnBody(t) +
@@ -7966,6 +8221,7 @@
     const t = String(text || '').trim();
     if (!t || THINK) return;
     if (PENDING) { byId('overlayInput').value = ''; callCorrect(t); return; }
+    if (draftCorrect(t)) { byId('overlayInput').value = ''; return; }
     const bar = document.querySelector('.overlay-input-bar');
     byId('overlayInput').value = '';
     THINK = t;
@@ -8020,6 +8276,11 @@
         : 'I started a draft' + (accMatch ? ' for ' + esc(accMatch.name) : '') + '. Name the role and I can write the rest.', []);
       return;
     }
+    /* Done in the chat, said back before it commits (5 Nov). */
+    const named = candIn(lc);
+    if (isRec() && /\b(book|schedule|arrange|set up)\b/.test(lc) && (named || /\binterview/.test(lc))) { ASKING = null; bookChat(named, t); return; }
+    if (isRec() && named && /\b(message|whatsapp|text|write to|email|remind)\b/.test(lc)) { ASKING = null; draftChat(named, t, t); return; }
+    if (isRec() && named && !/^call\b/.test(lc) && /\b(called|spoke (to|with)|talked (to|with)|rang|had a call)\b/.test(lc)) { ASKING = null; logSayChat(named, t); return; }
     /* Finding is a conversation (Sales B8): the canvas asks where to look,
        reads the success profile back, and brings back a draft shortlist. */
     if (/\b(find|search|source|look for|looking for)\b/.test(lc) && (isRec() || isHR())) {
@@ -8627,7 +8888,7 @@
     if (S.on === 'find') return { up: up, now: 'Find candidates' };
     if (S.on === 'decide') return { up: up, now: S.q === 'send' ? 'Sending profiles' : 'Deciding' };
     if (S.on === 'calls' && (S.th || S.lg)) {
-      add('Conversations', goAttr({ on: 'calls' }).trim());
+      add('Interactions', goAttr({ on: 'calls' }).trim());
       return { up: up, now: S.lg ? 'Log a call from elsewhere' : (DB.byId[S.th] || {}).name || 'WhatsApp' };
     }
     if (S.on === 'newreq') { reqs(); const a = ACCOUNTS.filter((x) => x.id === S.account)[0]; return { up: up, now: 'New requisition' + (a ? ' for ' + a.name : '') }; }
@@ -9323,7 +9584,16 @@
     if ((el = at('[data-diary-day]'))) { const v = val('data-diary-day'); go(Object.assign({}, S, { day: v === '0' ? null : v }), true); return; }
     if ((el = at('[data-nudge]'))) { nudge(DB.byId[el.getAttribute('data-nudge')]); return; }
     if ((el = at('[data-start]'))) { start(el.getAttribute('data-start')); return; }
-    /* ── Conversations: WhatsApp and calls made elsewhere ── */
+    /* ── Interactions: WhatsApp and calls made elsewhere ── */
+    if ((el = at('[data-book-chat]'))) { bookChat(DB.byId[val('data-book-chat')] || null, null, !!el.closest('#overlayThread')); return; }
+    if ((el = at('[data-draft-chat]'))) { draftChat(DB.byId[val('data-draft-chat')], ''); return; }
+    if ((el = at('[data-bk-slot]'))) { const p = val('data-bk-slot').split('|'), t = turnById(p[0]); if (t && !t.done) { t.d = Number(p[1]); t.t = p[2]; saveChats(); paintThread(); } return; }
+    if ((el = at('[data-bk-mode]'))) { const p = val('data-bk-mode').split('|'), t = turnById(p[0]); if (t && !t.done) { t.mode = p[1]; saveChats(); paintThread(); } return; }
+    if ((el = at('[data-bk-go]'))) { const t = turnById(val('data-bk-go')); if (t) bookGo(t); return; }
+    if ((el = at('[data-dr-go]'))) { const t = turnById(val('data-dr-go')); if (t) draftGo(t); return; }
+    if ((el = at('[data-lg-o]'))) { const p = val('data-lg-o').split('|'), t = turnById(p[0]); if (t && !t.done) { t.lit = t.lit === p[1] ? null : p[1]; saveChats(); paintThread(); } return; }
+    if ((el = at('[data-lg-go]'))) { const t = turnById(val('data-lg-go')); if (t) logSayGo(t); return; }
+    if ((el = at('[data-turn-leave]'))) { const t = turnById(val('data-turn-leave')); if (t && !t.done) { doneTurn(t, 'Left it. Nothing was ' + (t.kind === 'book' ? 'booked or sent.' : t.kind === 'draft' ? 'sent.' : 'logged.')); paintThread(); } return; }
     if ((el = at('[data-connect]'))) { setConnect(val('data-connect') === 'on'); return; }
     if ((el = at('[data-wa-open]'))) { openWa(DB.byId[val('data-wa-open')]); return; }
     if ((el = at('[data-wa-addgo]'))) { addWaReply(DB.byId[val('data-wa-addgo')]); return; }
@@ -9473,6 +9743,7 @@
     const t = e.target;
     const g = (n) => t.getAttribute(n);
     if (t.matches('[data-ed]') && EDIT) { EDIT.f[g('data-ed')] = t.value; return; }
+    if (t.matches('[data-dr-text]')) { const x = turnById(g('data-dr-text')); if (x && !x.done) { x.text = t.value; saveChats(); } return; }
     if (t.matches('[data-in]') && INTAKE && INTAKE.f) { INTAKE.f[g('data-in')] = t.value; return; }
     if (t.matches('[data-find-q]')) { FIND.q = t.value; return; }
     if (t.matches('[data-crit-ed]')) { const c = critList()[Number(g('data-crit-ed'))]; if (c) c.t = t.value; return; }
