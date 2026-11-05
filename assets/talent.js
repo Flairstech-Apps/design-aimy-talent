@@ -2740,9 +2740,13 @@
     const steps = '<span class="t-steps">' +
       (prev ? step('is-done', svg('check', 9), esc(name(prev))) : step('is-start', '', 'Start')) + '<span class="t-st-ln"></span>' +
       (c.exit ? step('is-out', '', esc(EXIT[c.exit].label) + ' · ' + esc(name(c.stage)))
-        : step('is-now' + (late ? ' is-late' : ''), '', esc(name(c.stage)))) +
+        /* The days in the stage ride on the step itself (Engy, 6 Nov), so no
+           line under it says the stage again; past its usual time the step
+           turns amber and says how long it usually takes. */
+        : step('is-now' + (late ? ' is-late' : ''), '', esc(name(c.stage)) + ' · ' + days(c.since) +
+          (late ? '<span class="sr-only">, usually ' + days(STAGE[c.stage].exp) + '</span>' : ''))) +
       (nx ? '<span class="t-st-ln is-ahead"></span>' + step('is-next', '', esc(name(nx))) : '') + '</span>';
-    return '<div class="t-prog" title="' + esc((c.exit ? EXIT[c.exit].label + ' ' + exitAt(c) : STAGE[c.stage].label) + ', stage ' + (cur + 1) + ' of ' + t.length) + '">' + steps + '</div>';
+    return '<div class="t-prog" title="' + esc((c.exit ? EXIT[c.exit].label + ' ' + exitAt(c) : STAGE[c.stage].label + ', ' + days(c.since) + (late ? ', usually ' + days(STAGE[c.stage].exp) : '')) + ', stage ' + (cur + 1) + ' of ' + t.length) + '">' + steps + '</div>';
   }
 
   /* One candidate, as the same card. */
@@ -2799,12 +2803,18 @@
       whySay(c) +
       (was ? '<p class="b-qcard-where t-before">' + fact('hist', beforeSay(was)) + '</p>' : '') +
       prog +
-      /* The days in the stage are said here once, so the steps above carry
-         names only; past its usual time, the line says that too. */
-      '<p class="b-qcard-where t-cnow">' + fact('clock', say + (slowAt(c) ? ' Usually ' + days(STAGE[c.stage].exp) + '.' : '') +
-        (s && s.status === 'done' ? ' Assessment ' + scoreShort(asmtOf(s.asmt), s) + '.' : '')) +
+      /* The line under the steps says only what they do not (Engy, 6 Nov):
+         an interview's time or result, a way out, a score, a nudge. When
+         the steps show, the days are on them; with none to show, the line
+         carries the days as before. */
+      (function () {
+        const news = c.exit || (MEETS[c.stage] && c.meet != null);
+        const sc = s && s.status === 'done' ? 'Assessment ' + scoreShort(asmtOf(s.asmt), s) + '.' : '';
         /* A client past the usual time is nudged from here (5 Nov). */
-        (c.stage === 'sent' && !c.exit && slowAt(c) && (isRec() || isHR()) ? (c.nudged == null ? ' <button class="s-inline-btn" type="button" data-nudge="' + c.id + '">' + esc(nudgeSay(c)) + '</button>' : ' <span class="b-kind">Nudged ' + esc(sayWhen(c.nudged)) + '</span>') : '') + '</p>' +
+        const ndg = c.stage === 'sent' && !c.exit && slowAt(c) && (isRec() || isHR()) ? (c.nudged == null ? ' <button class="s-inline-btn" type="button" data-nudge="' + c.id + '">' + esc(nudgeSay(c)) + '</button>' : ' <span class="b-kind">Nudged ' + esc(sayWhen(c.nudged)) + '</span>') : '';
+        const txt = prog && !news ? sc : say + (!prog && slowAt(c) ? ' Usually ' + days(STAGE[c.stage].exp) + '.' : '') + (sc ? ' ' + sc : '');
+        return txt || ndg ? '<p class="b-qcard-where t-cnow">' + (txt ? fact('clock', txt) : '') + ndg + '</p>' : '';
+      })() +
       (c.stage === 'sent' || (isClient() && c.exit === 'clientno') ? sendout(c) : '') +
       /* AT THE SCREEN, THE CALL IS THE MOVE. Someone who applied or is due a
          phone screen moves forward by being called and the call being
@@ -6723,6 +6733,16 @@
     const r = resultsOf(a);
     return a.questions.map((q, i) => { const n = r.filter((s) => s.answers && s.answers[i] != null).length; return n ? Math.round(r.filter((s) => s.answers[i]).length / n * 100) : null; });
   }
+  /* Faces over each other, the rest as a count (AiMY UI's FaceStack, as
+     Sales draws people). Talent has no photographs, so each face is the
+     person's initials; the stack is one image named for everyone in it. */
+  function faceStack(names, max) {
+    const n = max || 4, shown = names.slice(0, n), rest = names.length - shown.length;
+    const label = shown.join(', ') + (rest ? ' and ' + rest + ' more' : '');
+    return '<span class="t-faces" role="img" aria-label="' + esc(label) + '">' +
+      shown.map((x) => '<span class="t-face" title="' + esc(x) + '">' + esc(x.split(' ').map((w) => w[0]).join('').slice(0, 2)) + '</span>').join('') +
+      (rest ? '<span class="t-face is-more">+' + rest + '</span>' : '') + '</span>';
+  }
   function asmtsPage() {
     const list = DB.asmts;
     return '<div class="s-home">' +
@@ -6736,21 +6756,34 @@
           const worst = rates.reduce((w, x, k) => (x != null && (w == null || x < rates[w]) ? k : w), null);
           const avg = r.length ? Math.round(r.reduce((n, s) => n + s.score, 0) / r.length) : null;
           const used = DB.reqs.filter((q) => q.asmt === a.id && isOpen(q)).length;
+          const wait = r.filter((x) => needsPerson(x) && DB.byId[x.cand] && sees(DB.byId[x.cand]));
+          const pass = r.filter((x) => asmtPass(a, x)).length;
+          const out = DB.sends.filter((x) => x.asmt === a.id && x.status === 'sent' && DB.byId[x.cand] && sees(DB.byId[x.cand])).length;
           return '<div class="b-slot"><article class="type-card s-card b-qcard" data-open="asmt:' + a.id + '" style="--i:' + Math.min(i, 8) + '">' +
             '<div class="tc-head">' + tag(ASMT_KIND[a.kind]) + '<span class="b-kind">' + a.mins + ' minutes</span></div>' +
             '<button class="tc-title s-card-title" type="button" data-asmt="' + a.id + '">' + esc(a.title) + '</button>' +
-            /* Distilled 5 Nov, as the other cards: one facts line (with how it
-               is taken, from the old foot), one line naming the checks it
-               fails rather than chips (the time was said twice), usage at
-               sentence size, AiMY's note without its source line, and no
-               Open it: the card opens itself. */
-            '<p class="b-qcard-where t-req-facts">' + fact('goal', plural(a.questions.length, 'question') + ' · pass ' + passSayOf(a)) + fact(a.kind === 'live' ? 'mic' : 'doc', a.kind === 'live' ? 'Spoken, then transcribed' : 'Written') + '</p>' +
+            /* How the test is built is the designer's (5 Nov), so its facts
+               line and its checks show on their desk only. */
+            (!asmtDesigner() ? '' : '<p class="b-qcard-where t-req-facts">' + fact('goal', plural(a.questions.length, 'question') + ' · pass ' + passSayOf(a)) + fact(a.kind === 'live' ? 'mic' : 'doc', a.kind === 'live' ? 'Spoken, then transcribed' : 'Written') + '</p>') +
             (!asmtDesigner() ? '' : function () { const ck = asmtChecks(a), ok = ck.filter((x) => x.ok).length;
               const fails = ck.filter((x) => !x.ok).map((x) => x.k === 'length' ? 'longer than 15 minutes' : lower(x.label));
               return '<p class="b-qcard-where t-asmt-checks' + (fails.length ? ' is-warn' : '') + '">' + fact('listc', fails.length ? ok + ' of ' + ck.length + ' checks · ' + listSay(fails) : 'All ' + ck.length + ' checks pass') + '</p>'; }()) +
-            '<p class="t-req-prog"><b>' + r.length + '</b> taken' + (avg != null ? ', average ' + (a.lang ? cefrOf(avg) : avg + '%') : '') + ', on ' + plural(used, 'open requisition') + '.' +
-              (r.some(needsPerson) ? ' <b>' + r.filter(needsPerson).length + '</b> waiting on a person.' : '') + '</p>' +
+            /* PEOPLE FIRST (Engy, 6 Nov: variation 5 of
+               deliverables/assessment-card-variations.html). A recruiter opens
+               an assessment to act on the people it sent back, so the card
+               leads with who waits on a person, their faces and how many,
+               and its one button names the count. The results follow in one
+               sentence; when nobody waits, the card says so and has no
+               button. */
+            (wait.length
+              ? '<div class="t-asmt-wait">' + faceStack(wait.map((x) => DB.byId[x.cand].name)) +
+                  '<p class="t-asmt-wait-say"><b>' + wait.length + (wait.length === 1 ? ' waits on ' : ' wait on ') + (isRec() ? 'you' : 'a person') + '</b><span>asked for a review or a person to score it</span></p></div>'
+              : '<p class="t-asmt-wait is-calm">' + fact('check', 'Nobody waits on ' + (isRec() ? 'you' : 'a person')) + '</p>') +
+            '<p class="t-req-prog">' + (r.length ? '<b>' + r.length + '</b> took it, <b>' + pass + '</b> passed' + (avg != null ? ', average ' + (a.lang ? cefrOf(avg) : avg + '%') : '') + '.' : 'Nobody has taken it yet.') +
+              (out ? ' ' + out + ' not taken yet.' : '') + ' On ' + plural(used, 'open requisition') + '.</p>' +
             (asmtDesigner() && worst != null && rates[worst] < 40 ? aimyBlock({ text: 'Only <b>' + rates[worst] + '%</b> get Q' + (worst + 1) + ' right. Worth rewording.' }, true) : '') +
+            (r.length ? '<div class="tc-gov b-qcard-foot"><span class="b-kind">Last result ' + esc(sayWhen(Math.max(...r.map((x) => x.doneDay != null ? x.doneDay : x.day)))) + '</span>' +
+              (wait.length ? '<button class="s-insight-lnk primary" type="button" data-asmt="' + a.id + '">Review the ' + wait.length + '</button>' : '') + '</div>' : '') +
           '</article></div>';
         }).join('') + '</div>' +
       '</section></div>';

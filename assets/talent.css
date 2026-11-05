@@ -1774,3 +1774,23 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-proto-desk[aria-pressed="true"] { color: var(--accent-text, var(--accent)); }
 /* The recruiter's results on an assessment: its sub-lists. */
 .t-asmt-sub { margin-top: 16px; }
+
+/* ══ THE ASSESSMENT CARD, PEOPLE FIRST (6 Nov, variation 5) ══════════════
+   Who waits on a person leads: their faces and how many, then the results
+   in a sentence, then Review the N at the foot. */
+.t-asmt-wait { display: flex; align-items: center; gap: 10px; margin: 0; padding: 12px 14px 0; }
+.t-asmt-wait-say { display: flex; flex-direction: column; margin: 0; min-width: 0; line-height: var(--lh-snug); }
+.t-asmt-wait-say b { font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--warn-text, var(--warn)); font-variant-numeric: tabular-nums; }
+.t-asmt-wait-say span { font-size: var(--fs-2xs); color: var(--ink-muted); }
+.t-asmt-wait.is-calm { font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--ok-text, var(--ok)); }
+.t-asmt-wait.is-calm .b-fact > svg { color: inherit; }
+.t-faces { display: inline-flex; flex: none; }
+.t-face {
+  display: grid; place-items: center; width: 32px; height: 32px; margin-left: -8px;
+  border-radius: 50%; border: 2px solid var(--card-bg);
+  background: color-mix(in srgb, var(--accent) 42%, var(--card-bg));
+  color: var(--d50); font-size: var(--fs-2xs); font-weight: var(--fw-semibold); line-height: 1;
+}
+.t-face:first-child { margin-left: 0; }
+.t-face:nth-child(2n) { background: color-mix(in srgb, var(--brand) 42%, var(--card-bg)); }
+.t-face.is-more { background: var(--card-bg-raised); color: var(--d200); font-variant-numeric: tabular-nums; }
