@@ -1620,7 +1620,8 @@ body.is-portal .aimy-overlay { display: none !important; }
    its own height on a card (bdr.css lets a note grow to fill the card) and
    reads the partly-shown topics as weight, not italics. */
 .b-qcard .b-aimy.t-fit { flex: none; margin: 12px 14px 0; }
-.b-aimy.t-fit .tag { margin-right: 2px; vertical-align: 1px; }
+/* The fit verdict beside the name, at the row's end (5 Nov). */
+.b-qcard-top > .tag { flex: none; margin-left: auto; align-self: center; }
 .b-aimy.t-fit em { font-style: normal; font-weight: var(--fw-semibold); }
 /* The library's screen-reader-only text: AimyNote's "AiMY:" prefix. */
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }

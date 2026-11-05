@@ -2786,7 +2786,7 @@
     const pick1 = !c.exit && c.stage === 'sourced' && !c.contactOk && (isRec() || isHR());
     return '<article class="type-card s-card b-qcard" data-open="cand:' + c.id + '" style="--i:' + Math.min(i, 8) + '">' +
       '<div class="tc-head">' + (pick1 ? selBox('sourced', c.id, c.name) : owedTell ? selBox('tell', c.id, c.name) : '') + stageTag(c) + (was ? tag('Returning', 'info') : '') + '<span class="b-kind">' + esc(c.source) + '</span></div>' +
-      '<div class="b-qcard-top"><button class="tc-title s-card-title" type="button" data-cand="' + c.id + '">' + esc(c.name) + '</button></div>' +
+      '<div class="b-qcard-top"><button class="tc-title s-card-title" type="button" data-cand="' + c.id + '">' + esc(c.name) + '</button>' + (isClient() ? '' : whySay(c, false, true)) + '</div>' +
       '<p class="tc-summary b-qcard-role">' + esc(c.at) + '</p>' +
       /* Who they are stays together under the name (Engy, 5 Nov), then
          AiMY's read of why they fit (4 Nov). */
@@ -3041,7 +3041,8 @@
      insights, not points"). On the cards and the CV on hover, AiMY says
      why they fit in one or two sentences; the profile keeps the labels and
      the line of the CV under each. */
-  function whySay(c, withFrom) {
+  /* `tagOnly` gives the verdict's Tag alone, for beside the name (5 Nov). */
+  function whySay(c, withFrom, tagOnly) {
     const must = reqOf(c).must || [], f = first(c.name);
     /* Mid-sentence, a must-have keeps its capital when it starts with a
        name (German, NetSuite, SQL); otherwise it goes lower case. */
@@ -3093,7 +3094,9 @@
        the library says; the candidate page keeps it. */
     const v = fitVerdict(met.length, part.length);
     const heard = verified(c).some((x) => x.seen.length);
-    return aimyNote(tag(v[0], v[1]) + ' ' + say, withFrom ? (heard ? 'the CV and the interviews, against the must-haves' : 'the CV, against the must-haves') : null,
+    if (tagOnly) return tag(v[0], v[1]);
+    /* The Tag sits beside the name, not inside the sentence (Engy, 5 Nov). */
+    return aimyNote(say, withFrom ? (heard ? 'the CV and the interviews, against the must-haves' : 'the CV, against the must-haves') : null,
       'AiMY’s read of the CV' + (heard ? ' and the interviews' : '') + ', against the must-haves');
   }
   /* The fit verdict as a library Tag: the state's name, both words capitalised. */
@@ -3124,7 +3127,7 @@
     /* Led by AiMY's read, the card's own words (5 Nov), not a row of tags
        that the list under it already names. */
     return rcard({ cap: 'Why they fit', ico: 'listc', label: 'Why they fit', bare: true,
-      body: rcHead('Why ' + esc(first(c.name)) + ' fits', esc(q.title) + ' · ' + esc(accOf(q).name)) +
+      body: rcHead('Why ' + esc(first(c.name)) + ' fits', esc(q.title) + ' · ' + esc(accOf(q).name), whySay(c, false, true)) +
         whySay(c, true) +
         '<div class="row between" style="margin-top:8px;flex-wrap:wrap;gap:6px"><span class="sub">each quoted from the CV · ' + (conf ? conf + ' confirmed in interview' : 'none confirmed in interview yet') + '</span>' +
           (diff ? rcChip(diff + (diff === 1 ? ' differs' : ' differ') + ' in interview', 'err') : '') + '</div>' +
@@ -6396,14 +6399,15 @@
   }
   /* AiMY's read on a shortlist card, in the Candidates card's own form
      (5 Nov): the verdict, then one sentence on what shows and what to check. */
-  function shortRead(x, crit) {
+  function shortRead(x, crit, tagOnly) {
     const lc = (m) => /^(German|English|Arabic|NetSuite|SQL|Jira|REST|Advanced Excel)\b/.test(m) ? m : m.charAt(0).toLowerCase() + m.slice(1);
     const met = crit.filter((m, k) => x.ev[k] === 'm').map(lc), part = crit.filter((m, k) => x.ev[k] === 'p').map(lc), unk = crit.filter((m, k) => x.ev[k] === 'n').map(lc);
     const v = fitVerdict(met.length, part.length);
     const f = first(x.name);
     const say = (met.length ? f + ' shows <b>' + esc(listSay(met)) + '</b>' + (part.length ? ', and partly <em>' + esc(listSay(part)) + '</em>' : '') : part.length ? f + ' partly shows <em>' + esc(listSay(part)) + '</em>' : f + '’s profile is silent on these') + '.' +
       (unk.length ? ' I’d check ' + esc(listSay(unk)) + '.' : '');
-    return aimyNote(tag(v[0], v[1]) + ' ' + say, null, 'AiMY’s read of ' + (x.src === 'pool' ? 'their history with us' : 'a public page, named on the card'));
+    if (tagOnly) return tag(v[0], v[1]);
+    return aimyNote(say, null, 'AiMY’s read of ' + (x.src === 'pool' ? 'their history with us' : 'a public page, named on the card'));
   }
   function draftCard(x, i, d, saved) {
     const met = x.ev.filter((e) => e === 'm').length;
@@ -6411,7 +6415,7 @@
     return '<article class="type-card s-card b-qcard" style="--i:' + Math.min(i, 8) + '">' +
       '<div class="tc-head">' + tag(x.src === 'pool' ? 'Talent pool' : 'Prospect', x.src === 'pool' ? 'ok' : 'neutral') +
         '<span class="b-kind">' + esc(x.was || (x.page ? x.page + ' · ' + x.link : '')) + '</span></div>' +
-      '<div class="b-qcard-top"><span class="tc-title s-card-title">' + esc(x.name) + '</span></div>' +
+      '<div class="b-qcard-top"><span class="tc-title s-card-title">' + esc(x.name) + '</span>' + shortRead(x, d.crit, true) + '</div>' +
       '<p class="tc-summary b-qcard-role">' + esc(x.at) + '</p>' +
       '<p class="b-qcard-where">' + fact('job', plural(x.years, 'year')) + fact('pin', x.place) + fact('lang', x.langs.join(', ')) + '</p>' +
       shortRead(x, d.crit) +
