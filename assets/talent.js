@@ -1821,7 +1821,10 @@
     const left = diaryItems(0, 0).filter((m) => !m.done && m.kind !== 'owed')
       .sort((a, b) => (a.time || '99').localeCompare(b.time || '99'));
     const nx = left[0];
-    const door = (inner) => '<div class="rail-doors"><button class="b-door" type="button"' + goAttr({ on: 'diary' }) + '>' +
+    /* On the Diary, the card is the page you are on: the tabs' tint and
+       aria-current, as the tab it replaced had. */
+    const on = S.on === 'diary';
+    const door = (inner) => '<div class="rail-doors"><button class="' + (on ? 'b-door is-on' : 'b-door') + '" type="button"' + goAttr({ on: 'diary' }) + (on ? ' aria-current="page"' : '') + '>' +
       '<span class="b-door-cap">Today</span> ' + inner + ' <span class="b-door-go">Open the diary' + svg('go', 13) + '</span></button></div>';
     if (!nx) {
       const ahead = diaryItems(1, 14).length;
@@ -1947,26 +1950,24 @@
      the one way round: every tab is a rail entry with its count, and what a
      rail card used to say (the next interview, a missed call) is the line
      under its entry. The page keeps its name as a plain heading. ── */
+  const TAB_NAME = { '': 'Today', cands: 'Candidates', reqs: 'Requisitions', calls: 'Calls', diary: 'Diary', asmts: 'Assessments', templates: 'Templates', reports: 'Reports' };
   function tabsFor() {
     const open = myOpen().length;
     /* Each desk's row is the work that desk does (Sales: a surface belongs
-       to whoever does the verb on it). */
-    const all = {
-      '': { label: 'Today' },
-      cands: { label: 'Candidates', n: isRec() || isHR() ? queue().length : null },
-      reqs: { label: 'Requisitions', n: open },
-      calls: { label: 'Calls', n: isRec() ? toCall().length : null },
-      diary: { label: 'Diary', n: isRec() || isHM() ? diaryItems(0, 0).filter((m) => !m.done).length || null : null },
-      asmts: { label: 'Assessments' },
-      templates: { label: 'Templates' },
-      reports: { label: 'Reports' },
+       to whoever does the verb on it). The Diary has no row: its card under
+       the tabs is the way in (Engy, 5 Nov: "remove the tab of the diary and
+       keep the widget"). */
+    const n = {
+      cands: isRec() || isHR() ? queue().length : null,
+      reqs: open,
+      calls: isRec() ? toCall().length : null,
     };
-    const row = isRec() ? ['', 'cands', 'reqs', 'calls', 'diary', 'asmts', 'reports'] : isHM() ? ['', 'reqs', 'diary', 'reports'] : isBU() ? ['', 'reqs', 'reports']
+    const row = isRec() ? ['', 'cands', 'reqs', 'calls', 'asmts', 'reports'] : isHM() ? ['', 'reqs', 'reports'] : isBU() ? ['', 'reqs', 'reports']
       : isHR() ? ['', 'cands', 'reqs', 'asmts', 'templates', 'reports'] : ['', 'reqs'];
-    return row.map((k) => Object.assign({ k: k }, all[k]));
+    return row.map((k) => ({ k: k, label: TAB_NAME[k], n: n[k] }));
   }
   function switcher(here) {
-    return '<h2 class="s-block-h">' + esc((tabsFor().filter((t) => t.k === here)[0] || { label: 'Today' }).label) + '</h2>';
+    return '<h2 class="s-block-h">' + esc(TAB_NAME[here] || 'Today') + '</h2>';
   }
   /* The rail's card, as AiMY UI's side-nav draws Sales's tabs. `reads`
      holds each tab's reading: { state, label?, tone, say, ev?, act? }, the

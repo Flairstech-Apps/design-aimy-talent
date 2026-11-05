@@ -1345,6 +1345,22 @@ body.is-portal .aimy-overlay { display: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .snav-tab::before, .snav-tab-link, .snav-tab-read, .snav-read-act { transition: none; }
 }
+/* THE DIARY CARD, WHEN THE DIARY IS THE PAGE (5 Nov). The Diary tab went
+   and its card is the way in, so the card takes the tab's active state: the
+   same accent wash and 42% edge over the card, the clock and the way in in
+   the accent ink. It stays still under the pointer, as the page you are on. */
+.rail-doors .b-door.is-on {
+  border-color: rgba(var(--accent-rgb), 0.42);
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(var(--accent-rgb), 0.24), transparent 70%),
+    linear-gradient(120deg, rgba(var(--accent-rgb), 0.13), rgba(0, 102, 255, 0.05)),
+    var(--card-bg);
+}
+.rail-doors .b-door.is-on:hover { transform: none; border-color: rgba(var(--accent-rgb), 0.42); }
+.rail-doors .b-door.is-on .b-door-clock, .rail-doors .b-door.is-on .b-door-cap { color: var(--accent-text); }
+:root[data-theme="light"] .rail-doors .b-door.is-on {
+  background: linear-gradient(120deg, rgba(var(--accent-rgb), 0.12), rgba(0, 102, 255, 0.05)), var(--card-bg);
+}
 
 /* ══ THE REPORTS STORY (V6, 4 Nov) ═══════════════════════════════════════
    A headline in AiMY's voice, a contents line, then one chapter a block:
