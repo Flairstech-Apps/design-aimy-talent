@@ -2060,7 +2060,7 @@
     return '<div class="snav-tabs"><ul>' + tabs.map((t) => {
       const cur = t.k === here, r = reads[t.k];
       return '<li class="' + (cur ? 'snav-tab is-on' : 'snav-tab') + '">' +
-        '<button class="snav-tab-link" type="button"' + goAttr(t.k ? { on: t.k } : {}) + (cur ? ' aria-current="page"' : '') + '>' +
+        '<button class="snav-tab-link" type="button"' + goAttr(t.k ? { on: t.k } : {}) + (cur ? ' aria-current="page"' : '') + ' title="' + esc(t.label + (t.n ? ', ' + t.n : '')) + '">' +
           '<span class="snav-tab-icon" aria-hidden="true">' + svg(TAB_ICO[t.k], 16) + '</span><span class="snav-tab-name">' + esc(t.label) + '</span>' +
           (t.n ? ' <span class="snav-tab-n">' + t.n + '</span>' : '') + '</button>' +
         (r ? '<div class="snav-tab-read"' + (cur ? '' : ' inert') + '><div class="snav-tab-read-in"><div class="snav-tab-body">' + readHtml(r) + '</div></div></div>' : '') +
