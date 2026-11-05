@@ -2510,15 +2510,16 @@
     return '<article class="type-card s-card b-qcard" data-open="req:' + q.id + '" style="--i:' + Math.min(i, 8) + '">' +
       '<div class="tc-head">' + tag(st.label, st.tone) + '<span class="b-kind">' + esc(clock) + '</span>' +
         '<span class="tc-type b-fact">' + svg('acc') + '<span>' + esc(accOf(q).name) + '</span></span></div>' +
+      /* Distilled 5 Nov, as the candidate card: the facts on one line with
+         the hiring manager in it, progress at sentence size, the forecast as
+         plain lines, AiMY's note without its source line (the library leaves
+         it off on a board card), and no Open it: the card opens itself. */
       '<button class="tc-title s-card-title" type="button" data-req="' + q.id + '">' + esc(q.title || 'Untitled draft') + '</button>' +
-      '<p class="tc-summary b-qcard-what b-fact">' + svg('goal') + '<span>' +
-        esc(plural(q.seats, 'seat')) + ' · ' + esc(q.kind === 'replacement' ? 'a replacement' : 'a new role') + ' · ' + esc(q.level) + '</span></p>' +
-      '<div class="b-qcard-why">' + (CLOSED[q.state] ? 'Opened ' + sayDay(q.opened)
-        : '<b>' + act.length + '</b> in progress' + (sent ? ', <b>' + sent + '</b> with the client' : '')) + '</div>' +
+      '<p class="b-qcard-where t-req-facts">' + fact('goal', plural(q.seats, 'seat') + ' · ' + (q.kind === 'replacement' ? 'a replacement' : 'a new role') + ' · ' + q.level) + fact('user', hmOf(q).name) + '</p>' +
+      '<p class="t-req-prog">' + (CLOSED[q.state] ? 'Opened ' + sayDay(q.opened)
+        : '<b>' + act.length + '</b> in progress' + (sent ? ', <b>' + sent + '</b> with the client' : '')) + '</p>' +
       (h && !isClient() ? forecastHtml(q, h) : '') +
-      aimyBlock({ text: read, from: 'this requisition’s own stages' }) +
-      '<div class="tc-gov b-qcard-foot"><span class="b-qcard-num b-fact">' + svg('user') + '<span>' + esc(hmOf(q).name) + '</span></span>' +
-        '<button class="s-insight-lnk primary" type="button" data-req="' + q.id + '">Open it</button></div>' +
+      aimyBlock({ text: read }, true) +
     '</article>';
   }
 

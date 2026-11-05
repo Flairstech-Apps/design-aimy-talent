@@ -989,12 +989,18 @@ body.is-portal .aimy-overlay { display: none !important; }
    The forecast is two short rows on the card, the late one in warn and in
    words. The start page sets Replace someone who left beside From a
    briefing; the approval sits above the draft it is about. */
-.t-fc { display: grid; gap: 4px; margin: 10px 0 2px; padding: 8px 10px; border: 1px solid var(--card-border); border-radius: var(--r-md, 8px); }
-.t-fc-row { display: grid; grid-template-columns: 92px auto minmax(0, 1fr); align-items: baseline; gap: 8px; font-size: var(--fs-xs); }
+/* Distilled 5 Nov: plain lines on the card's own ground, on the card's
+   14px edge, no box; only the figure that is late turns amber. */
+.t-fc { display: grid; gap: 4px; margin: 12px 14px 0; }
+.t-fc-row { display: grid; grid-template-columns: 92px auto minmax(0, 1fr); align-items: baseline; gap: 8px; font-size: var(--fs-2xs); }
 .t-fc-cap { color: var(--ink-muted); }
-.t-fc-n { color: var(--d50); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
-.t-fc-say { color: var(--d100); }
-.t-fc-row.is-late .t-fc-n, .t-fc-row.is-late .t-fc-say { color: var(--warn-text, var(--warn)); }
+.t-fc-n { color: var(--d50); font-size: var(--fs-xs); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
+.t-fc-say { color: var(--ink-muted); }
+.t-fc-row.is-late .t-fc-n { color: var(--warn-text, var(--warn)); }
+/* The requisition card's facts and its progress, at the candidate card's sizes. */
+.b-qcard .t-req-facts { padding-top: 6px; }
+.t-req-prog { margin: 0; padding: 12px 14px 0; font-size: var(--fs-xs); color: var(--d100); }
+.t-req-prog b { color: var(--d50); font-weight: var(--fw-semibold); }
 .t-starts { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; align-items: start; margin-top: 4px; }
 .t-start { padding: 16px 18px; border: 1px solid var(--card-border); border-radius: var(--r-lg); background: var(--card-see, var(--card-bg)); }
 .t-start-h { margin: 0 0 4px; font-size: var(--fs-md, 16px); font-weight: var(--fw-semibold); color: var(--d50); }
