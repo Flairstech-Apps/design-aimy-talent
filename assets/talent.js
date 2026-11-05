@@ -114,6 +114,8 @@
     lang: '<path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>',
     job: '<path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/>',
     go: '<path d="m9 18 6-6-6-6"/>',
+    /* The rail's collapse (lucide panel-left). */
+    panel: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>',
     back: '<path d="M15 18l-6-6 6-6"/>',
     find: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
     /* The call's own icons, verbatim from Sales's ICONS. */
@@ -1813,6 +1815,8 @@
     const before = RAIL_MOVE ? railRects() : null;
     RAIL_MOVE = false;
     byId('appRail').innerHTML = html;
+    byId('appRail').dataset.rail = UI.rail === 'collapsed' ? 'collapsed' : 'open';
+    railLabels();
     if (!before) return;
     byId('appRail').querySelectorAll('.snav-section').forEach((s) => {
       const was = before[s.querySelector('.snav-section-name').textContent];
@@ -1841,7 +1845,7 @@
         .concat(a[0] ? [{ fig: 'Next', text: a[0].head, go: a[0].go }] : []),
       reqs: [{ fig: open.length, text: 'open' }].concat(isClient() ? [] : [{ fig: filled, text: 'filled' }]),
       reports: isClient() ? [] : railStory(),
-    }));
+    }, isHR() ? risky.length : a.length));
   }
   function paintRail() {
     if (!isRec()) { paintDeskRail(); return; }
@@ -1863,7 +1867,7 @@
         .concat(cb ? [{ fig: cb, text: pl(cb, 'callback due today', 'callbacks due today') }] : []),
       diary: nxt ? [{ fig: nxt.slot, text: nxt.name + ', ' + lower(STAGE[nxt.stage].label) }] : [],
       reports: railStory(),
-    }));
+    }, d.length));
   }
 
   /* ── The briefing, on Today only. Sales opens a desk on it; every other
@@ -1946,7 +1950,25 @@
      requisition, a candidate), the tab it belongs under is the one you are
      in. The whole section is the link (its head's ::after covers it); a
      finding with its own link sits above that. */
-  function sideNav(summary, found) {
+  /* COLLAPSED, AND AS A DRAWER (AiMY UI side-nav, variant qa, 5 Nov). Both
+     forms are painted; the rail's data-rail and the width pick one. Open
+     (272px): the head's panel button collapses it. Collapsed (64px): the
+     mark's button, with the count, opens it again, then each page as a 40px
+     icon square with its count and a tooltip of its name and first figure,
+     the page you are on first. The choice is kept in UI. Between 640 and
+     1080 it stays collapsed and the mark brings the open form in as a
+     drawer over the scrim; on a phone the bar's rail button does, as before. */
+  const railNarrow = matchMedia('(max-width: 1079.98px)');
+  function railLabels() {
+    const n = railNarrow.matches;
+    byId('appRail').querySelectorAll('[data-rail-close]').forEach((b) => b.setAttribute('aria-label', n ? 'Close the pages' : 'Collapse the pages'));
+    byId('appRail').querySelectorAll('[data-rail-open]').forEach((b) => {
+      b.setAttribute('aria-label', n ? 'Open the pages' : 'Expand the pages');
+      b.setAttribute('data-tip', n ? 'Open the pages' : 'Expand the pages');
+      b.setAttribute('aria-expanded', String(n && byId('appRail').classList.contains('is-open')));
+    });
+  }
+  function sideNav(summary, found, count) {
     const tabs = tabsFor(), on = S.on || '';
     const here = on && tabs.some((t) => t.k === on) ? on : S.cand ? 'cands' : S.req || S.acc ? 'reqs' : S.asmt ? 'asmts' : on ? null : '';
     const ordered = tabs.filter((t) => t.k === here).concat(tabs.filter((t) => t.k !== here));
@@ -1954,8 +1976,17 @@
       const body = '<span class="snav-fig">' + esc(String(f.fig)) + '</span><span>' + esc(f.text) + '</span>';
       return '<li>' + (f.go ? '<button class="snav-finding is-link" type="button"' + goAttr(f.go) + '>' + body + '</button>' : '<div class="snav-finding">' + body + '</div>') + '</li>';
     };
-    return '<div class="snav-head"><span class="snav-head-mark">' + mark(16) + '</span><span class="snav-head-label">AiMY</span>' +
-        '<span class="snav-head-count">' + esc(summary) + '</span></div>' +
+    const mini = '<div class="snav-mini">' +
+      '<button class="snav-expand" type="button" data-rail-open aria-controls="appRail">' + mark(20) + (count ? '<span class="snav-badge" aria-hidden="true">' + count + '</span>' : '') + '</button>' +
+      ordered.map((t) => {
+        const cur = t.k === here, f = (found[t.k] || [])[0];
+        const name = t.label + (f ? ': ' + f.fig + ' ' + f.text : '') + (cur ? ' (you’re here)' : '');
+        return '<button class="snav-icon" type="button"' + goAttr(t.k ? { on: t.k } : {}) + (cur ? ' aria-current="page"' : '') + ' aria-label="' + esc(name) + '" data-tip="' + esc(name) + '">' +
+          svg(TAB_ICO[t.k], 16) + (t.n ? '<span class="snav-badge" aria-hidden="true">' + t.n + '</span>' : '') + '</button>';
+      }).join('') + '</div>';
+    return '<div class="snav-open"><div class="snav-head"><span class="snav-head-mark">' + mark(16) + '</span><span class="snav-head-label">AiMY</span>' +
+        '<span class="snav-head-count">' + esc(summary) + '</span>' +
+        '<button class="snav-collapse" type="button" data-rail-close aria-expanded="true" aria-controls="appRail">' + svg('panel', 16) + '</button></div>' +
       '<ul class="snav-groups">' + ordered.map((t) => {
         const cur = t.k === here, f = found[t.k] || [];
         const inner = '<span class="snav-section-icon">' + svg(TAB_ICO[t.k], 16) + '</span><span class="snav-section-name">' + esc(t.label) + '</span>';
@@ -1964,7 +1995,7 @@
             : '<button class="snav-section-head" type="button"' + goAttr(t.k ? { on: t.k } : {}) + '>' + inner + '<span class="snav-chevron">' + svg('go', 16) + '</span></button>') +
           (f.length ? '<ul class="snav-findings" aria-label="' + esc(t.label) + '">' + f.map(finding).join('') + '</ul>' : '') +
         '</li>';
-      }).join('') + '</ul>';
+      }).join('') + '</ul></div>' + mini;
   }
 
   /* ── One row of work: who, for what, why, and the one move. ── */
@@ -8493,28 +8524,66 @@
      handler, which mattered once the tabs moved into the rail: on a narrow
      screen it is the only way to another page. Picking an entry, the scrim
      or Escape closes it. */
+  /* Opening, the head and sections rise in one after another (QA's
+     rail-motion: 240ms each, 30ms apart), then the class comes off. */
+  function railRise() {
+    const rail = byId('appRail');
+    rail.classList.remove('rail-motion');
+    void rail.offsetWidth;
+    rail.classList.add('rail-motion');
+    setTimeout(() => rail.classList.remove('rail-motion'), 700);
+  }
   function railDrawer(on) {
     const rail = byId('appRail');
-    /* Opening, the head and sections rise in one after another (QA's
-       rail-motion: 240ms each, 30ms apart), then the class comes off. */
-    if (on && !rail.classList.contains('is-open')) {
-      rail.classList.remove('rail-motion');
-      void rail.offsetWidth;
-      rail.classList.add('rail-motion');
-      setTimeout(() => rail.classList.remove('rail-motion'), 700);
-    }
+    const was = rail.classList.contains('is-open');
+    if (on && !was) railRise();
     rail.classList.toggle('is-open', on);
     byId('railScrim').classList.toggle('is-open', on);
     byId('railToggle').setAttribute('aria-expanded', String(on));
+    railLabels();
+    /* Focus goes into the drawer, and back to the mark when it shuts. */
+    if (on && !was) requestAnimationFrame(() => { const b = rail.querySelector('[data-rail-close]'); if (b) b.focus(); });
+    if (!on && was && rail.contains(document.activeElement) && railNarrow.matches) { const m = rail.querySelector('[data-rail-open]'); if (m && m.offsetParent) m.focus(); }
   }
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') railDrawer(false); });
+  /* The open or collapsed choice, on a wide screen; narrow, the drawer. */
+  function railPref(open) {
+    if (railNarrow.matches) { railDrawer(open); return; }
+    UI.rail = open ? 'open' : 'collapsed';
+    saveUI();
+    byId('appRail').dataset.rail = UI.rail;
+    tipHide();
+    if (open) railRise();
+    requestAnimationFrame(() => { const b = byId('appRail').querySelector(open ? '[data-rail-close]' : '[data-rail-open]'); if (b) b.focus(); });
+  }
+  railNarrow.addEventListener('change', () => { if (!railNarrow.matches) railDrawer(false); railLabels(); });
+  /* The collapsed icons' tooltips: one, fixed beside the icon, so the
+     rail's scroll does not clip it. Rects are divided by the body's zoom,
+     as aimy-scroll.js does. */
+  let TIP = null;
+  function tipHide() { if (TIP) TIP.classList.remove('is-on'); }
+  function tipShow(el) {
+    if (!TIP) { TIP = document.createElement('div'); TIP.className = 'snav-tip'; TIP.setAttribute('aria-hidden', 'true'); document.body.appendChild(TIP); }
+    const z = parseFloat(getComputedStyle(document.body).zoom) || 1, r = el.getBoundingClientRect();
+    TIP.textContent = el.getAttribute('data-tip');
+    TIP.style.left = (r.right / z + 10) + 'px';
+    TIP.style.top = ((r.top + r.height / 2) / z) + 'px';
+    TIP.classList.add('is-on');
+  }
+  const tipAt = (e) => e.target.closest && e.target.closest('.snav-mini [data-tip]');
+  document.addEventListener('pointerover', (e) => { const el = tipAt(e); if (el) tipShow(el); });
+  document.addEventListener('pointerout', (e) => { if (tipAt(e)) tipHide(); });
+  document.addEventListener('focusin', (e) => { const el = tipAt(e); if (el && el.matches(':focus-visible')) tipShow(el); else tipHide(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { tipHide(); railDrawer(false); } });
   document.addEventListener('click', (e) => {
     const t = e.target;
     const at = (sel) => t.closest(sel);
     let el;
     if (at('#railToggle')) { railDrawer(!byId('appRail').classList.contains('is-open')); return; }
     if (at('#railScrim')) { railDrawer(false); return; }
-    if (at('.snav-section-head, .snav-finding.is-link')) {
+    if (at('[data-rail-open]')) { railPref(true); return; }
+    if (at('[data-rail-close]')) { railPref(false); return; }
+    if (at('.snav-icon')) tipHide();
+    if (at('.snav-section-head, .snav-finding.is-link, .snav-icon')) {
       RAIL_MOVE = !!at('button.snav-section-head') && e.detail > 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey &&
         !!Element.prototype.animate && !matchMedia('(prefers-reduced-motion: reduce)').matches;
       railDrawer(false);

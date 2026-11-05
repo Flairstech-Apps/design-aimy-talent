@@ -1260,7 +1260,8 @@ body.is-portal .aimy-overlay { display: none !important; }
    ground; an AiMY head; a section per page with its icon, name and a
    chevron, its figures under it in a 42px right-set column; the page you
    are on first, in an accent card with You're here. Nothing in it wears a
-   severity colour, as in QA. Below 1080 it is Sales's drawer, as before. */
+   severity colour, as in QA. It collapses, and narrower it is a drawer:
+   see COLLAPSED, AND AS A DRAWER below. */
 @media (min-width: 1080px) {
   :root { --rail-w: 272px; }
   .app-rail { background: rgba(20, 27, 36, 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
@@ -1335,6 +1336,85 @@ button.snav-section-head:hover .snav-chevron { color: var(--d200); transform: tr
   color: var(--d50); font-size: 15px; font-weight: var(--fw-bold); line-height: 1.2;
   text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap;
 }
+/* ══ COLLAPSED, AND AS A DRAWER (AiMY UI side-nav, variant qa, 5 Nov) ═════
+   The head's panel button collapses the rail to 64px: the mark's button
+   with the count, then a 40px icon square a page, its count as a badge,
+   the page you are on first in the accent wash. The mark opens it again.
+   Between 640 and 1080 it stays collapsed and the open form comes in as a
+   drawer, min(308px, 88%), over a 45% scrim. On a phone it is Sales's
+   drawer from the bar's button, as before. */
+.snav-collapse {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 28px; height: 28px; margin: -4px -6px -4px 2px; padding: 0; border: 0; border-radius: 8px;
+  background: transparent; color: var(--d300); cursor: pointer;
+  transition: background-color var(--t-fast) ease, color var(--t-fast) ease;
+}
+.snav-collapse:hover { background: var(--wash-6); color: var(--d50); }
+.snav-collapse:focus-visible, .snav-expand:focus-visible, .snav-icon:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.snav-mini { display: none; flex-direction: column; align-items: center; gap: 6px; }
+.app-rail[data-rail="collapsed"] .snav-open { display: none; }
+.app-rail[data-rail="collapsed"] .snav-mini { display: flex; }
+.snav-expand, .snav-icon {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 40px; height: 40px; padding: 0; border: 1px solid transparent; border-radius: 10px;
+  background: transparent; color: var(--d300); cursor: pointer;
+  transition: background-color var(--t-fast) ease, color var(--t-fast) ease;
+}
+.snav-expand { margin-bottom: 6px; border-color: var(--glass-border); background: var(--card-bg); }
+.snav-expand:hover { border-color: rgba(var(--accent-rgb), 0.42); }
+.snav-icon:hover { background: var(--wash-3); color: var(--d50); }
+.snav-icon[aria-current="page"] {
+  border-color: rgba(var(--accent-rgb), 0.42); color: var(--d50);
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(var(--accent-rgb), 0.26), transparent 70%),
+    linear-gradient(120deg, rgba(var(--accent-rgb), 0.14), rgba(0, 102, 255, 0.06));
+}
+:root[data-theme="light"] .snav-icon[aria-current="page"] { background: linear-gradient(120deg, rgba(var(--accent-rgb), 0.12), rgba(0, 102, 255, 0.05)); color: var(--d100); }
+.snav-badge {
+  position: absolute; top: -4px; right: -4px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+  background: var(--accent); color: #fff; font-size: 9.5px; font-weight: var(--fw-bold); line-height: 16px;
+  text-align: center; font-variant-numeric: tabular-nums;
+}
+.snav-tip {
+  position: fixed; z-index: 900; transform: translateY(-50%); padding: 5px 9px; border-radius: 8px; max-width: 260px;
+  background: var(--panel-bg); border: 1px solid var(--glass-border); box-shadow: var(--shadow-xl);
+  color: var(--d50); font-size: 11.5px; font-weight: var(--fw-medium); line-height: 1.35;
+  opacity: 0; pointer-events: none; transition: opacity var(--t-fast) ease;
+}
+.snav-tip.is-on { opacity: 1; }
+@media (min-width: 1080px) {
+  :root:has(#appRail[data-rail="collapsed"]) { --rail-w: 64px; }
+  .app-rail[data-rail="collapsed"] { padding: 12px 0 24px; scrollbar-gutter: auto; scrollbar-width: none; }
+}
+@media (min-width: 640px) and (max-width: 1079.98px) {
+  :root { --rail-w: 64px; }
+  .rail-toggle { display: none; }
+  .app-rail {
+    position: relative; top: auto; bottom: auto; z-index: 700; width: var(--rail-w); padding: 12px 0 24px;
+    transform: none; visibility: visible; background: transparent; box-shadow: none; border-right: 1px solid var(--hairline);
+    -webkit-backdrop-filter: none; backdrop-filter: none; scrollbar-gutter: auto; scrollbar-width: none;
+  }
+  .app-rail .snav-mini { display: flex; }
+  .app-rail[data-rail] .snav-open {
+    display: block; position: fixed; z-index: 700; top: var(--topbar-height); bottom: 0; left: 0;
+    width: min(308px, 88%); padding: 16px 12px 24px; overflow-y: auto;
+    background: var(--panel-bg); border-right: 1px solid var(--glass-border); box-shadow: var(--shadow-xl);
+    -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+    transform: translateX(-100%); visibility: hidden;
+  }
+  .app-rail.is-open .snav-open { transform: none; visibility: visible; }
+  .rail-scrim { background: rgba(10, 14, 18, 0.45); }
+}
+@media (max-width: 639.98px) {
+  .app-rail[data-rail] .snav-open { display: block; }
+  .app-rail .snav-mini { display: none; }
+}
+@media (min-width: 640px) and (max-width: 1079.98px) and (prefers-reduced-motion: no-preference) {
+  .app-rail { transition: none; }
+  .app-rail .snav-open { transition: transform 220ms var(--ease-out), visibility 220ms; }
+  .app-rail.is-open .snav-open { transition: transform 220ms var(--ease-out), visibility 0s; }
+}
+
 /* Opening the rail as a drawer, the head and each section rise in one after
    another (QA's rail-section-in). Transform and opacity only. */
 @keyframes snav-in {
@@ -1353,6 +1433,7 @@ button.snav-section-head:hover .snav-chevron { color: var(--d200); transform: tr
   .snav-section, .snav-section-head, .snav-finding, .snav-chevron { transition: none; }
   button.snav-section-head:hover .snav-chevron { transform: none; }
   .rail-motion .snav-head, .rail-motion .snav-section { animation: none; }
+  .snav-collapse, .snav-expand, .snav-icon, .snav-tip { transition: none; }
 }
 
 /* ══ THE REPORTS STORY (V6, 4 Nov) ═══════════════════════════════════════
