@@ -7622,6 +7622,10 @@
     byId('aimyOverlay').classList.add('open');
     paintBasis();
     paintThread();
+    /* The thread is a main reading surface, so it asks for the scroll dot
+       the rest of the canvas no longer gets, with QA's clickable track and
+       Latest pill (QA aimy-canvas.js). */
+    if (window.AimyScroll) window.AimyScroll.attach(byId('overlayThread'), { track: true, latest: true });
     if (CALL) paintCall();
     byId('overlayInput').focus();
   }
