@@ -1920,7 +1920,7 @@ body.is-portal .aimy-overlay { display: none !important; }
    unselected (ink-secondary), the chosen one in the accent. One height for
    the search and the picker so the row lines up. */
 .t-cfilters { gap: 8px; margin: 4px 0 12px; }
-.t-cfilters .b-find { min-height: 32px; padding: 0 6px 0 10px; gap: 8px; border-radius: var(--r-lg); background: var(--card-bg); transition: border-color var(--t-fast) ease-out; }
+.t-cfilters .b-find { min-height: 32px; padding: 0 10px; gap: 8px; border-radius: var(--r-lg); background: var(--card-bg); transition: border-color var(--t-fast) ease-out; }
 .t-cfilters .b-find:focus-within { border-color: var(--brand); }
 .t-cfilters .b-find input { height: 30px; }
 .t-cfilters .b-find input::-webkit-search-cancel-button { display: none; }
