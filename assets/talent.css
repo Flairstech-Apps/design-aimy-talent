@@ -1616,7 +1616,8 @@ body.is-portal .aimy-overlay { display: none !important; }
   .t-trk-step { padding: 0 0 14px 28px; }
   .t-trk-step::before, .t-trk-step:first-child::before, .t-trk-step:last-child::before { top: 15px; bottom: -2px; left: 6px; right: auto; width: 3px; height: auto; }
   .t-trk-step:last-child::before { display: none; }
-  .t-trk-step.is-now::before { background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.7), transparent 60%); }
+  /* Stacked, the path ahead is dashed downwards, not faded (6 Nov). */
+  .t-trk-step:not(.is-done):not(.is-start)::before { background: repeating-linear-gradient(180deg, var(--d500, #637280) 0 4px, transparent 4px 8px); width: 2px; margin-left: 0.5px; }
   .t-trk-step.is-hand { margin-top: 18px; }
   .t-trk-split { top: -14px; bottom: auto; left: 0; right: 0; border-left: 0; border-top: 1px dashed var(--d500, #637280); }
   .t-trk-split span { top: -9px; left: 28px; padding: 0 6px; background: var(--card-bg); }
@@ -1963,3 +1964,25 @@ body.is-portal .aimy-overlay { display: none !important; }
 .b-qcard .t-cfacts > .b-qcard-where { padding: 0; margin: 0; color: var(--ink-muted); }
 .b-qcard .t-cfacts > .t-before, .b-qcard .t-cfacts > .t-cnow { margin-top: 0; color: var(--ink-muted); }
 .b-qcard .t-cfacts + .b-aimy { margin-top: 12px; }
+
+/* ══ THE CARD'S TRACK, FULL WIDTH (Engy, 6 Nov) ══════════════════════════
+   The first dot on the card's left edge, the last on its right, the middle
+   one centred; one line under them, dashed for the path ahead, solid accent
+   up to where they are (--walked, the share of the line walked). The names
+   align with their dots. It stays across on every width. */
+.b-qcard .t-trk.is-fit { position: relative; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); padding: 0; }
+.b-qcard .t-trk.is-fit::before, .b-qcard .t-trk.is-fit::after { content: ''; position: absolute; top: 6px; left: 7px; height: 2px; margin-top: 0.5px; }
+.b-qcard .t-trk.is-fit::before { right: 7px; background: repeating-linear-gradient(90deg, var(--d500, #637280) 0 4px, transparent 4px 8px); }
+.b-qcard .t-trk.is-fit::after { width: calc((100% - 14px) * var(--walked)); height: 3px; margin-top: 0; background: var(--accent); }
+.b-qcard .t-trk.is-fit .t-trk-step { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 22px 0 0; }
+.b-qcard .t-trk.is-fit .t-trk-step::before { display: none; }
+.b-qcard .t-trk.is-fit .t-trk-step:first-child { align-items: flex-start; text-align: left; }
+.b-qcard .t-trk.is-fit .t-trk-step:last-child { align-items: flex-end; text-align: right; }
+.b-qcard .t-trk.is-fit .t-trk-dot { left: 50%; transform: translateX(-50%); }
+.b-qcard .t-trk.is-fit .t-trk-step:first-child .t-trk-dot { left: 0; transform: none; }
+.b-qcard .t-trk.is-fit .t-trk-step:last-child .t-trk-dot { left: auto; right: 0; transform: none; }
+:root[data-theme="light"] .b-qcard .t-trk.is-fit::before { background: repeating-linear-gradient(90deg, rgba(16, 24, 40, 0.3) 0 4px, transparent 4px 8px); }
+@media (max-width: 640px) {
+  .b-qcard .t-trk.is-fit { grid-template-columns: repeat(var(--n), minmax(0, 1fr)); }
+  .b-qcard .t-trk.is-fit .t-trk-step { padding: 22px 0 0; }
+}

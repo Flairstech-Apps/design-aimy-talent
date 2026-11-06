@@ -2761,7 +2761,10 @@
        how long it usually takes once past it). */
     const li = (cls, label, sub) => '<li class="t-trk-step ' + cls + '"' + (cls.indexOf('is-now') >= 0 ? ' aria-current="step"' : '') + '><span class="t-trk-dot" aria-hidden="true"></span>' +
       '<span class="t-trk-k">' + label + '</span>' + (sub ? '<span class="t-trk-t">' + sub + '</span>' : '') + '</li>';
-    const steps = '<ol class="t-trk' + (late ? ' tone-warn' : '') + '" style="--n:3" aria-label="' + esc('Where they are on ' + reqOf(c).title) + '">' +
+    /* Full width (Engy, 6 Nov): the first dot on the card's left edge, the
+       last on its right, one line between them, solid to where they are. */
+    const n = 1 + 1 + (c.exit || !nx ? 0 : 1);
+    const steps = '<ol class="t-trk is-fit' + (late ? ' tone-warn' : '') + '" style="--n:' + n + ';--walked:' + (1 / (n - 1)) + '" aria-label="' + esc('Where they are on ' + reqOf(c).title) + '">' +
       (prev ? li('is-done', esc(name(prev))) : li('is-start', 'Start')) +
       (c.exit ? li('is-out', esc(EXIT[c.exit].label), 'at ' + esc(name(c.stage)))
         : li('is-now', esc(name(c.stage)), days(c.since) + (late ? ', usually ' + days(STAGE[c.stage].exp) : ''))) +
