@@ -5364,7 +5364,9 @@
           /* Their other applications, each a link to it (6 Nov): the section
              that listed them went. */
           (isClient() ? '' : others.filter((x) => x.exit).map((x) => '<span class="b-fact">' + svg('hist') + '<span>Applied before for ' +
-            '<button class="t-inline-link" type="button" data-cand="' + x.id + '">' + esc(reqOf(x).title) + '</button>, ' + esc(lower(EXIT[x.exit].label)) + '</span></span>').join('') +
+            '<button class="t-inline-link" type="button" data-cand="' + x.id + '">' + esc(reqOf(x).title) + '</button>: ' + esc(lower(EXIT[x.exit].label)) +
+            /* With its reason (Engy, 6 Nov): could not reach them says to try another way this time. */
+            (x.outWhy && x.exit === 'out' ? ', ' + esc(lower(OUT_K[x.outWhy.why].label)) : x.decline ? ', ' + esc(lower(DECLINE_K[x.decline.why].label)) : '') + '</span></span>').join('') +
             (function () { const on = others.filter((x) => !x.exit); if (!on.length) return '';
               const ln = (x) => '<button class="t-inline-link" type="button" data-cand="' + x.id + '">' + esc(reqOf(x).title) + '</button>';
               return '<span class="b-fact">' + svg('req') + '<span>Also on ' + (on.length === 1 ? ln(on[0]) : on.slice(0, -1).map(ln).join(', ') + ' and ' + ln(on[on.length - 1])) + '</span></span>'; })()) + '</p>' +
