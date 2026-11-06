@@ -2278,7 +2278,7 @@
     return '<div class="s-home">' +
       topBrief() +
       noticed +
-      (owed.length ? '<section class="s-block s-block-wide" aria-label="Not told yet">' +
+      (owed.length ? '<section class="s-block s-block-wide" id="notToldYet" aria-label="Not told yet">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">Not told yet</h2>' +
           '<span class="s-block-say">' + plural(owed.length, 'person', 'people') + ' owed an answer · ' + (late.length ? late.length + ' past the ' + TELL_DAYS + '-day limit' : 'all inside the ' + TELL_DAYS + '-day limit') + '</span></div>' +
         msgPreview(DB.byId[Object.keys(SEL.tell)[0]] || owed[0], false) +
@@ -2392,9 +2392,10 @@
     const stK = S.st && STAGE[S.st] ? S.st : null;
     const hit = (c) => (!rqQ || c.req === rqQ.id) && (!stK || c.stage === stK) && candHit(c, S.find);
     const everyone = queue(), owedAll = untold();
-    const all = everyone.filter(hit), owed = owedAll.filter(hit);
-    const cut = S.q === 'untold' || QCUTS.some((x) => x.k === S.q) ? S.q : 'all';
-    const list = cut === 'untold' ? owed : cut === 'all' ? all : all.filter((c) => queueCut(c) === cut);
+    const all = everyone.filter(hit), owed = owedAll;
+    /* Not told yet is sent from Today only (Engy, 6 Nov); an old link to it lands on All. */
+    const cut = QCUTS.some((x) => x.k === S.q) ? S.q : 'all';
+    const list = cut === 'all' ? all : all.filter((c) => queueCut(c) === cut);
     const n = (k) => k === 'all' ? all.length : all.filter((c) => queueCut(c) === k).length;
     /* Cards only: the list view came out (Engy, 29 Oct). */
     const per = PAGE_N;
@@ -2433,19 +2434,14 @@
           esc(x.label) + '<span class="b-cut-n">' + n(x.k) + '</span></button>').join('') +
         '</div>' +
         /* NOT TOLD YET IS WORK OWED, NOT A CUT (Engy, 6 Nov): AiMY UI's
-           Notice (warn) under the cuts, with the one action that resolves
-           it. In that view it says so and leads back to everyone. */
+           Notice (warn) under the cuts. The answers are sent from Today
+           only, so its one action takes you there. */
         (owed.length ? '<div class="t-notice is-warn" role="status">' + svg('tri', 16) +
-          '<div class="t-notice-body"><p class="t-notice-h">' + (cut === 'untold' ? 'Showing the ' + plural(owed.length, 'person', 'people') + ' not told yet' : plural(owed.length, 'person is', 'people are') + ' out and not told yet') + '</p>' +
+          '<div class="t-notice-body"><p class="t-notice-h">' + plural(owed.length, 'person is', 'people are') + ' out and not told yet</p>' +
             '<p>' + (owed.some((x) => x.since >= TELL_DAYS) ? 'The oldest is past the ' + TELL_DAYS + '-day limit.' : 'Tell them by ' + esc(sayDay(Math.min.apply(null, owed.map((x) => TELL_DAYS - x.since)))) + '.') + '</p></div>' +
-          '<button class="b-ghost t-notice-act" type="button"' + keep({ q: cut === 'untold' ? undefined : 'untold' }) + '>' + (cut === 'untold' ? 'Back to everyone' : 'Review the ' + owed.length) + '</button></div>' : '') +
+          '<button class="b-ghost t-notice-act" type="button" data-goto-told>Send the answers on Today</button></div>' : '') +
         (narrowed ? '<p class="b-vfoot t-cf-on">Showing ' + (rqQ ? 'the people on ' + esc(rqQ.title) + ', ' + esc(accOf(rqQ).name) : stK ? 'everyone on your open requisitions' : 'everyone') +
           (stK ? ' at the ' + esc(lower(STAGE[stK].label)) + ' now' : '') + (S.find ? ' matching “' + esc(S.find) + '”' : '') + '. ' + clear + '</p>' : '') +
-        /* Where the volume is, select many and act once (Batch bar, M7); the
-           answer owed is shown as it will read (Message preview, M4). */
-        (cut === 'untold' && owed.length ? msgPreview(DB.byId[Object.keys(SEL.tell)[0]] || owed[0], true) +
-          (selN('tell') ? batchBar('tell', '<button class="s-insight-lnk primary" type="button" data-tell-sel>Send the answer to ' + plural(selN('tell'), 'person', 'people') + '</button>')
-            : '<p class="t-acts"><button class="b-ghost" type="button" data-sel-all="tell">Select all ' + owed.length + '</button></p>') : '') +
         (cut === 'new' && list.length ? trustCard(list.filter((c) => /^Found on/.test(c.source) && !c.contactOk)) : '') +
         (cut === 'new' && list.length ? (selN('sourced') ? batchBar('sourced', '<button class="s-insight-lnk primary" type="button" data-contact-sel>Approve first contact for ' + plural(selN('sourced'), 'person', 'people') + '</button>')
             : '<p class="t-acts"><button class="b-ghost" type="button" data-sel-all="sourced">Select all ' + list.length + '</button></p>') : '') +
@@ -9601,6 +9597,8 @@
     }
     if ((el = at('[data-acc]'))) { go({ acc: val('data-acc') }); return; }
     if ((el = at('[data-find-clear]'))) { const inp = document.querySelector('[data-find]'); if (inp) { inp.value = ''; inp.dispatchEvent(new Event('input', { bubbles: true })); } return; }
+    /* The Candidates notice: Today, at Not told yet. */
+    if ((el = at('[data-goto-told]'))) { go({}); const t = byId('notToldYet'); if (t) t.scrollIntoView({ block: 'start' }); return; }
     if ((el = at('[data-asmt]'))) { go({ asmt: val('data-asmt') }); return; }
     /* The card's amber line: the page, at How good is this test. */
     if ((el = at('[data-asmt-review]'))) { go({ asmt: val('data-asmt-review') }); const t = byId('asmtReview'); if (t) t.scrollIntoView({ block: 'start' }); return; }

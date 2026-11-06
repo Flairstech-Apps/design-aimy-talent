@@ -2012,3 +2012,4 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-notice-body p + p { margin-top: 2px; color: var(--d100); }
 .t-notice-act { flex: none; align-self: center; }
 @media (max-width: 560px) { .t-notice { flex-wrap: wrap; } .t-notice-act { margin-left: 28px; } }
+#notToldYet { scroll-margin-top: 16px; }
