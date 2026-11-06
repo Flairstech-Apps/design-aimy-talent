@@ -994,12 +994,15 @@ body.is-portal .aimy-overlay { display: none !important; }
    briefing; the approval sits above the draft it is about. */
 /* Distilled 5 Nov: plain lines on the card's own ground, on the card's
    14px edge, no box; only the figure that is late turns amber. */
-.t-fc { display: grid; gap: 4px; margin: 12px 14px 0; }
-.t-fc-row { display: grid; grid-template-columns: 92px auto minmax(0, 1fr); align-items: baseline; gap: 8px; font-size: var(--fs-2xs); }
-.t-fc-cap { color: var(--ink-muted); }
-.t-fc-n { color: var(--d50); font-size: var(--fs-xs); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
-.t-fc-say { color: var(--ink-muted); }
-.t-fc-row.is-late .t-fc-n { color: var(--warn-text, var(--warn)); }
+.t-fc { display: grid; gap: 4px; margin: 12px 0 0; }
+/* The date story: sentences in the facts' size; the dates in the full ink,
+   a late one in the warning ink. */
+.t-fc-line { color: var(--ink-muted); }
+.t-fc-line b { color: var(--d50); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
+.t-fc-line b.is-late { color: var(--warn-text, var(--warn)); }
+/* AiMY's note on the card's floor, so every card in a row ends level. */
+.t-reqcard > .b-aimy { margin-top: auto; }
+.t-reqcard > .t-fc { margin-bottom: 12px; }
 /* The requisition card's facts and its progress, at the candidate card's sizes. */
 .b-qcard .t-req-facts { padding-top: 6px; }
 .t-req-prog { margin: 0; padding: 12px 14px 0; font-size: var(--fs-xs); color: var(--d100); }
@@ -1012,8 +1015,6 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-appr { margin-bottom: 16px; }
 @media (max-width: 800px) {
   .t-starts { grid-template-columns: minmax(0, 1fr); }
-  .t-fc-row { grid-template-columns: 84px auto; }
-  .t-fc-say { grid-column: 2; }
 }
 
 /* ══ FIND: WHERE IT STARTS, AND WHAT IT READS AGAINST ═════════════════════

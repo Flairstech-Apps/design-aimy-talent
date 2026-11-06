@@ -2511,15 +2511,22 @@
       ? (q.state === 'filled' || q.state === 'started' ? plural(q.seats, 'seat') + ' filled, from ' + DB.byReq[q.id].length + ' candidates.' : 'Closed before anyone was hired.')
       : ws ? '<b>' + ws.m + ' of ' + ws.n + '</b> moved on after ' + esc(STAGE[ws.from].label) + ', the biggest drop here.'
       : 'Too early to say where people drop.';
-    return '<article class="type-card s-card b-qcard" data-open="req:' + q.id + '" style="--i:' + Math.min(i, 8) + '">' +
-      '<div class="tc-head">' + tag(st.label, st.tone) + '<span class="b-kind">' + esc(clock) + '</span>' +
+    /* REFINED (Engy, 6 Nov): the state Tag only when it needs attention (a
+       plain Open is what the cut above already says), the client on the
+       right; the dates as one story, said once, in the forecast lines; the
+       facts on one line of marks, as the candidate card; and AiMY's note on
+       the card's floor so a row ends level. A paused or closed one says so
+       in its Tag. */
+    const loud = wait || stateOf(q) !== 'open';
+    return '<article class="type-card s-card b-qcard t-reqcard" data-open="req:' + q.id + '" style="--i:' + Math.min(i, 8) + '">' +
+      '<div class="tc-head">' + (loud ? tag(st.label, st.tone) : '') + (h ? '' : '<span class="b-kind">' + esc(clock) + '</span>') +
         '<span class="tc-type b-fact">' + svg('acc') + '<span>' + esc(accOf(q).name) + '</span></span></div>' +
       /* Distilled 5 Nov, as the candidate card: the facts on one line with
          the hiring manager in it, progress at sentence size, the forecast as
          plain lines, AiMY's note without its source line (the library leaves
          it off on a board card), and no Open it: the card opens itself. */
       '<button class="tc-title s-card-title" type="button" data-req="' + q.id + '">' + esc(q.title || 'Untitled draft') + '</button>' +
-      '<p class="b-qcard-where t-req-facts">' + fact('goal', plural(q.seats, 'seat') + ' · ' + (q.kind === 'replacement' ? 'a replacement' : 'a new role') + ' · ' + q.level) + fact('user', hmOf(q).name) + '</p>' +
+      '<p class="b-qcard-where t-req-facts">' + fact('job', q.level) + fact('users', plural(q.seats, 'seat')) + fact('loop', q.kind === 'replacement' ? 'Replacement' : 'New role') + fact('user', hmOf(q).name) + '</p>' +
       '<p class="t-req-prog">' + (CLOSED[q.state] ? 'Opened ' + sayDay(q.opened)
         : '<b>' + act.length + '</b> in progress' + (sent ? ', <b>' + sent + '</b> with the client' : '')) + '</p>' +
       (h && !isClient() ? forecastHtml(q, h) : '') +
@@ -8963,16 +8970,22 @@
      based, the same arithmetic as at risk: the usual days from the furthest
      person's stage to an accepted offer. */
   const FIRST_TARGET = 7;
+  /* THE DATES AS ONE STORY (Engy, 6 Nov): the target once, how long is
+     left, and where this pace lands, in one line; the first profile in the
+     next. The late part is in the warning ink, said in words too. */
   function forecastHtml(q, h) {
     const gap = h.left - h.need;
-    const rows = [['At this pace', sayDay(h.need), h.risk ? days(-gap) + ' after the ' + sayDay(q.target) + ' target' : gap ? days(gap) + ' before the ' + sayDay(q.target) + ' target' : 'on the target', h.risk]];
+    const pace = h.risk ? '<b class="is-late">' + esc(sayDay(h.need)) + ', ' + esc(days(-gap)) + ' late</b>'
+      : '<b>' + esc(sayDay(h.need)) + '</b>' + (gap ? ', ' + esc(days(gap)) + ' early' : ', on time');
+    const left = h.left >= 0 ? days(h.left) + ' left' : days(-h.left) + ' past it';
+    const lines = ['<p class="b-qcard-where t-fc-line">' + '<span class="b-fact">' + svg('cal') + '<span>Target ' + esc(sayDay(q.target)) + ', ' + esc(left) + '. At this pace ' + pace + '.</span></span></p>'];
     if (rank(q, 'sent') >= 0) {
       const sd = sentDays(q), age = -q.opened;
-      rows.push(sd != null ? ['First profile', 'Day ' + sd, sd <= FIRST_TARGET ? 'inside the ' + FIRST_TARGET + '-day target' : days(sd - FIRST_TARGET) + ' past the ' + FIRST_TARGET + '-day target', sd > FIRST_TARGET]
-        : ['First profile', 'Not yet', 'day ' + age + (age > FIRST_TARGET ? ', ' + days(age - FIRST_TARGET) + ' past the ' + FIRST_TARGET + '-day target' : ' of ' + FIRST_TARGET), age > FIRST_TARGET]);
+      lines.push('<p class="b-qcard-where t-fc-line">' + '<span class="b-fact">' + svg('send') + '<span>' + (sd != null
+        ? 'First profile on ' + (sd > FIRST_TARGET ? '<b class="is-late">day ' + sd + '</b>' : '<b>day ' + sd + '</b>') + ' of ' + FIRST_TARGET
+        : 'No profile yet, ' + (age > FIRST_TARGET ? '<b class="is-late">day ' + age + '</b>' : '<b>day ' + age + '</b>') + ' of ' + FIRST_TARGET) + '.</span></span></p>');
     }
-    return '<div class="t-fc">' + rows.map((r) => '<div class="t-fc-row' + (r[3] ? ' is-late' : '') + '"><span class="t-fc-cap">' + esc(r[0]) + '</span><b class="t-fc-n">' + esc(r[1]) + '</b>' +
-      '<span class="t-fc-say">' + esc(r[2]) + '</span></div>').join('') + '</div>';
+    return '<div class="t-fc">' + lines.join('') + '</div>';
   }
 
   /* AiMY drafts the description and the success profile from the title,
