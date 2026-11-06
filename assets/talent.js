@@ -2433,13 +2433,8 @@
         '<div class="b-cuts b-cuts-row">' + QCUTS.map((x) => '<button class="filter-chip' + (x.k === cut ? ' active' : '') + '" type="button" aria-pressed="' + (x.k === cut) + '"' + keep({ q: x.k === 'all' ? undefined : x.k }) + '>' +
           esc(x.label) + '<span class="b-cut-n">' + n(x.k) + '</span></button>').join('') +
         '</div>' +
-        /* NOT TOLD YET IS WORK OWED, NOT A CUT (Engy, 6 Nov): AiMY UI's
-           Notice under the cuts, made quiet (6 Nov: "less dominant"): one
-           line, the warning icon and the count in the tone's ink, and a link
-           to Today, where the answers are sent. */
-        (owed.length ? '<p class="t-notice is-quiet" role="status">' + svg('tri', 14) +
-          '<span><b>' + plural(owed.length, 'person', 'people') + '</b> out and not told yet' + (owed.some((x) => x.since >= TELL_DAYS) ? ', the oldest past the ' + TELL_DAYS + '-day limit.' : ', to tell by ' + esc(sayDay(Math.min.apply(null, owed.map((x) => TELL_DAYS - x.since)))) + '.') + ' ' +
-          '<button class="t-inline-link" type="button" data-goto-told>Send the answers on Today</button></span></p>' : '') +
+        /* Not told yet lives on Today only (Engy, 6 Nov): the people owed an
+           answer are not in this list, and they are sent from there. */
         (narrowed ? '<p class="b-vfoot t-cf-on">Showing ' + (rqQ ? 'the people on ' + esc(rqQ.title) + ', ' + esc(accOf(rqQ).name) : stK ? 'everyone on your open requisitions' : 'everyone') +
           (stK ? ' at the ' + esc(lower(STAGE[stK].label)) + ' now' : '') + (S.find ? ' matching “' + esc(S.find) + '”' : '') + '. ' + clear + '</p>' : '') +
         (cut === 'new' && list.length ? trustCard(list.filter((c) => /^Found on/.test(c.source) && !c.contactOk)) : '') +
@@ -9597,8 +9592,6 @@
     }
     if ((el = at('[data-acc]'))) { go({ acc: val('data-acc') }); return; }
     if ((el = at('[data-find-clear]'))) { const inp = document.querySelector('[data-find]'); if (inp) { inp.value = ''; inp.dispatchEvent(new Event('input', { bubbles: true })); } return; }
-    /* The Candidates notice: Today, at Not told yet. */
-    if ((el = at('[data-goto-told]'))) { go({}); const t = byId('notToldYet'); if (t) t.scrollIntoView({ block: 'start' }); return; }
     if ((el = at('[data-asmt]'))) { go({ asmt: val('data-asmt') }); return; }
     /* The card's amber line: the page, at How good is this test. */
     if ((el = at('[data-asmt-review]'))) { go({ asmt: val('data-asmt-review') }); const t = byId('asmtReview'); if (t) t.scrollIntoView({ block: 'start' }); return; }

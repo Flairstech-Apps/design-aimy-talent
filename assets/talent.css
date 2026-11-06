@@ -2000,16 +2000,3 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-cands-head #rqMenu { left: auto; right: 0; transform-origin: top right; max-width: calc(100vw - 32px); }
 @media (max-width: 719.98px) { .t-cands-head #rqMenu { left: 0; right: auto; transform-origin: top left; } }
 
-/* AiMY UI's Notice (warn): a tinted ground with its icon and words, a title
-   in the tone's ink and the one action that resolves it; never a stripe. */
-.t-notice { display: flex; align-items: flex-start; gap: 12px; margin: 0 0 14px; padding: 12px 16px; border-radius: var(--r-lg); color: var(--d50); font-size: var(--fs-xs); line-height: var(--lh-snug); }
-.t-notice > svg { flex: none; margin-top: 2px; }
-.t-notice.is-warn { background: var(--warn-bg); }
-.t-notice.is-warn > svg { color: var(--warn-text, var(--warn)); }
-#notToldYet { scroll-margin-top: 16px; }
-/* The quiet notice: one line under the cuts, no ground. The icon and the
-   count carry the warning; the rest reads as a note with its link. */
-.t-notice.is-quiet { align-items: center; gap: 8px; margin: -2px 0 14px; padding: 0; background: none; color: var(--ink-secondary); font-size: var(--fs-2xs); }
-.t-notice.is-quiet > svg { margin-top: 0; color: var(--warn-text, var(--warn)); }
-.t-notice.is-quiet b { color: var(--warn-text, var(--warn)); font-weight: var(--fw-semibold); }
-.t-notice.is-quiet .t-inline-link { font-size: inherit; }
