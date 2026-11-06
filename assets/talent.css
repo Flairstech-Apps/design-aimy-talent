@@ -1950,13 +1950,8 @@ body.is-portal .aimy-overlay { display: none !important; }
 /* Every card's track the same height, so it sits at the same place in a row:
    room for a two-line name and the days under it, whichever card has them. */
 .b-qcard .t-prog .t-trk-step { min-height: 74px; }
-/* A narrow card stacks its two foot actions full width rather than folding
-   one under the other at its own width, so every foot in a row is alike. */
-.b-qcard { container-type: inline-size; }
-@container (max-width: 340px) {
-  .b-qcard .b-qcard-foot { flex-direction: column; align-items: stretch; flex-wrap: nowrap; }
-  .b-qcard .b-qcard-foot > button, .b-qcard .b-qcard-foot > .b-kind { width: 100%; justify-content: center; text-align: center; margin-left: 0; }
-}
+/* The foot as AiMY UI's CardFoot: its one or two actions side by side, the
+   secondary on the left and the main one on the right (6 Nov). */
 /* The card's facts, as AiMY UI's CardFacts: one block of rows under the
    summary, each a fact with its icon, 12px, one colour, 4px apart. */
 .b-qcard .t-cfacts { display: flex; flex-direction: column; gap: 4px; padding: 8px 14px 0; }
@@ -2000,3 +1995,5 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-cands-head #rqMenu { left: auto; right: 0; transform-origin: top right; max-width: calc(100vw - 32px); }
 @media (max-width: 719.98px) { .t-cands-head #rqMenu { left: 0; right: auto; transform-origin: top left; } }
 
+/* The main action takes the room the secondary leaves, so it ends the row; when a narrow card has no room for both, it takes its own line (the library's rule when space runs out). */
+.b-qcard .b-qcard-foot > .s-insight-lnk.primary { flex: 1 0 auto; justify-content: center; }
