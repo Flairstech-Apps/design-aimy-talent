@@ -599,7 +599,9 @@ body.is-portal .aimy-overlay { display: none !important; }
 
 /* Candidates queue (Sales's Contacts): "Not told yet" sits apart from the
    cuts that add up to All, the way Sales keeps its Accounts chip apart. */
-.t-cut-apart { margin-inline-start: auto; }
+.t-cut-apart { margin-inline-start: 0; }
+/* The library's vertical Divider between the cuts and Not told yet. */
+.t-cut-sep { align-self: center; width: 1px; height: 16px; margin: 0 4px; background: var(--card-border-hover); }
 
 /* ══ CARDS, A LITTLE SEE-THROUGH ═══════════════════════════════════════════
    Engy, 28 Oct: Sales's colours, the cards a little transparent. Each
@@ -1986,3 +1988,17 @@ body.is-portal .aimy-overlay { display: none !important; }
   .b-qcard .t-trk.is-fit { grid-template-columns: repeat(var(--n), minmax(0, 1fr)); }
   .b-qcard .t-trk.is-fit .t-trk-step { padding: 22px 0 0; }
 }
+
+/* THE CANDIDATES HEAD (6 Nov): the title on the left, the search and the
+   requisition picker on the right; below 720 the tools take their own
+   full-width line under the title. */
+.t-cands-head { align-items: center; margin-bottom: 14px; }
+.t-cands-head > .t-cfilters { margin: 0; flex-wrap: nowrap; }
+.t-cands-head > .t-cfilters .b-find { width: 320px; flex: 0 1 320px; }
+@media (max-width: 719.98px) {
+  .t-cands-head > .t-cfilters { flex: 1 1 100%; flex-wrap: wrap; }
+  .t-cands-head > .t-cfilters .b-find { flex: 1 1 200px; width: auto; max-width: none; }
+}
+/* In the head the picker sits on the right, so its menu opens from its right edge. */
+.t-cands-head #rqMenu { left: auto; right: 0; transform-origin: top right; max-width: calc(100vw - 32px); }
+@media (max-width: 719.98px) { .t-cands-head #rqMenu { left: 0; right: auto; transform-origin: top left; } }

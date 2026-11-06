@@ -2409,8 +2409,11 @@
     const clear = '<button class="t-inline-link" type="button" data-cfclear>Show everyone</button>';
     return '<div class="s-home">' +
       '<section class="s-block s-block-wide">' +
-        '<div class="s-camp-list-head">' + switcher('cands') + '</div>' +
-        '<p class="b-tocall"><b>' + n('me') + '</b> waiting on you, ' + (rqQ ? 'on ' + esc(rqQ.title) + ' for ' + esc(accOf(rqQ).name) : 'across ' + plural(myOpen().length, 'open requisition')) + '</p>' +
+        /* TWO ROWS (Engy, 6 Nov): the title with its tools on the right, as
+           Sales puts its find box in the list head, then the cuts. The
+           sentence went: its numbers are on the cuts, and the picker says how
+           many requisitions. */
+        '<div class="s-camp-list-head t-cands-head">' + switcher('cands') +
         '<div class="t-cfilters">' +
           /* AiMY UI's SearchField (box): a clear button only when there is
              text, and Escape clears (6 Nov). */
@@ -2418,16 +2421,20 @@
             '<input type="search" data-find value="' + esc(S.find || '') + '" placeholder="Find a name, a skill or a requisition" spellcheck="false" aria-label="Find a name, a skill or a requisition">' +
             (S.find ? '<button class="t-find-clear" type="button" data-find-clear aria-label="Clear search">' + svg('x', 12) + '</button>' : '') + '</div>' +
           '<span class="b-menu-wrap"><button class="t-rq-btn" type="button" data-pickopen="rqMenu" aria-haspopup="menu" aria-expanded="false">' +
-            '<span class="t-rq-label">' + esc(rqQ ? rqQ.title + ', ' + accOf(rqQ).name : 'All requisitions') + '</span>' + svg('down', 14) + '</button>' +
+            '<span class="t-rq-label">' + esc(rqQ ? rqQ.title + ', ' + accOf(rqQ).name : 'All ' + plural(myOpen().length, 'requisition')) + '</span>' + svg('down', 14) + '</button>' +
             '<div class="b-menu" id="rqMenu" role="menu" hidden><span class="b-menu-cap">Requisition</span>' +
               '<button class="b-menu-item" type="button" role="menuitem" data-rq=""' + (rqQ ? '' : ' aria-current="true"') + '><span class="b-menu-name">All requisitions</span><span class="tel-menu-cc">' + everyone.concat(owedAll).length + '</span></button>' +
               reqsIn.map((x) => '<button class="b-menu-item" type="button" role="menuitem" data-rq="' + x.q.id + '"' + (rqQ === x.q ? ' aria-current="true"' : '') + '>' +
                 '<span class="t-rq-item"><span class="b-menu-name">' + esc(x.q.title) + '</span><span class="t-crow-sub">' + esc(accOf(x.q).name) + '</span></span><span class="tel-menu-cc">' + x.n + '</span></button>').join('') +
             '</div></span>' +
         '</div>' +
+        '</div>' +
         '<div class="b-cuts b-cuts-row">' + QCUTS.map((x) => '<button class="filter-chip' + (x.k === cut ? ' active' : '') + '" type="button" aria-pressed="' + (x.k === cut) + '"' + keep({ q: x.k === 'all' ? undefined : x.k }) + '>' +
           esc(x.label) + '<span class="b-cut-n">' + n(x.k) + '</span></button>').join('') +
-          /* A toggle (Engy, 5 Nov): pressed again, it goes back to All. */
+          /* A toggle (Engy, 5 Nov): pressed again, it goes back to All. It
+             answers another question, so a divider sets it after the cuts
+             rather than flinging it to the far edge (6 Nov). */
+          '<span class="t-cut-sep" aria-hidden="true"></span>' +
           '<button class="filter-chip t-cut-apart' + (cut === 'untold' ? ' active' : '') + '" type="button" aria-pressed="' + (cut === 'untold') + '"' + keep({ q: cut === 'untold' ? undefined : 'untold' }) + '>Not told yet<span class="b-cut-n">' + owed.length + '</span></button>' +
         '</div>' +
         (narrowed ? '<p class="b-vfoot t-cf-on">Showing ' + (rqQ ? 'the people on ' + esc(rqQ.title) + ', ' + esc(accOf(rqQ).name) : stK ? 'everyone on your open requisitions' : 'everyone') +
