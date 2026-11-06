@@ -2018,3 +2018,11 @@ body.is-portal .aimy-overlay { display: none !important; }
 }
 /* With no news to say, the block is the track alone, from its top. */
 .t-lead-quiet .t-trk-wrap { margin-top: 0; }
+/* In a narrow window the way to reach them is one compact block: the
+   number, the email and the calls on one wrapping line, its buttons beside. */
+.t-cand-about.is-narrow > .b-cmeta-part:first-child .b-cmeta-say { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
+.t-cand-about.is-narrow > .b-cmeta-part:first-child .b-cmeta-p { margin: 0; }
+.t-cand-about.is-narrow > .b-cmeta-part:first-child .t-cand-acts { flex: 1 1 100%; margin-top: 8px; }
+/* The profile's stage names break between words only, never inside one;
+   in a window too narrow for every stage the track scrolls inside itself. */
+.t-trk:not(.is-fit):not(.is-plan) .t-trk-k { overflow-wrap: normal; }

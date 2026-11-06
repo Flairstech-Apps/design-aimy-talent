@@ -5361,7 +5361,13 @@
           phActs + '</div>' +
         '<p class="b-qcard-where t-ph-facts">' + fact('req', q.title + (isClient() ? '' : ', ' + accOf(q).name)) + fact('pin', c.place) +
           (isClient() ? '' : fact('user', c.source + ', ' + sayWhen(c.applied != null ? c.applied : -3))) +
-          (isClient() || !before(c) ? '' : fact('hist', 'Applied before for ' + reqOf(before(c)).title)) + '</p>' +
+          /* Their other applications, each a link to it (6 Nov): the section
+             that listed them went. */
+          (isClient() ? '' : others.filter((x) => x.exit).map((x) => '<span class="b-fact">' + svg('hist') + '<span>Applied before for ' +
+            '<button class="t-inline-link" type="button" data-cand="' + x.id + '">' + esc(reqOf(x).title) + '</button>, ' + esc(lower(EXIT[x.exit].label)) + '</span></span>').join('') +
+            (function () { const on = others.filter((x) => !x.exit); if (!on.length) return '';
+              const ln = (x) => '<button class="t-inline-link" type="button" data-cand="' + x.id + '">' + esc(reqOf(x).title) + '</button>';
+              return '<span class="b-fact">' + svg('req') + '<span>Also on ' + (on.length === 1 ? ln(on[0]) : on.slice(0, -1).map(ln).join(', ') + ' and ' + ln(on[on.length - 1])) + '</span></span>'; })()) + '</p>' +
       '</section>' +
       /* THE WORK LEFT, ABOUT THEM RIGHT (Engy, 5 Nov). The decision was a
          screen down, under eight blocks of reference. Now the left column
@@ -5371,7 +5377,10 @@
       '<div class="t-cand-grid s-block-wide">' +
       /* Too narrow for two columns, About them folds to one line under the
          name (the phone number), so the decision is still near the top. */
-      '<aside class="t-cand-about" aria-label="About them">' + (candNarrow() ? '<details class="t-cand-fold"><summary class="t-cand-more-sum">About them' + (c.phone && !isClient() ? ' · ' + esc(c.phone) : '') + '</summary><div class="t-cand-fold-in">' : '') +
+      /* CONTACT ALWAYS IN VIEW (Engy, 6 Nov): in a narrow window the way to
+         reach them stays open at the top of the column; only who they are
+         folds under it. */
+      '<aside class="t-cand-about' + (candNarrow() ? ' is-narrow' : '') + '" aria-label="About them">' +
         (isClient() ? '' : part('Reach them', p('<b>' + esc(c.phone || 'No phone yet') + '</b>') + p(esc(c.email || '')) +
           p(esc(c.dnc ? 'Asked not to be called again.' : c.badNumber ? 'This number did not work.' : c.callback != null && c.callback <= 0 ? 'Asked to be called back today' + (c.cbWin ? ', ' + winSay(c.cbWin) : '') + '.' : plural(calls.length, 'call') + ' so far.')) +
           /* Call is beside the decision, in Where they are; not twice. */
@@ -5380,6 +5389,7 @@
             (isRec() ? '<button class="b-ghost" type="button" data-draft-chat="' + c.id + '">Write with AiMY</button>' : '') +
             (isRec() && needsBook(c) ? '<button class="b-ghost" type="button" data-book-chat="' + c.id + '">Book the interview</button>' : '') +
             '<button class="b-ghost" type="button"' + goAttr({ on: 'calls', lg: c.id }) + '>Log a call from elsewhere</button></div>' : ''))) +
+        (candNarrow() ? '<details class="t-cand-fold"><summary class="t-cand-more-sum">More about ' + esc(first(c.name)) + '</summary><div class="t-cand-fold-in">' : '') +
         part('Now', p(esc(c.at)) + p(esc(plural(c.years, 'year')) + ' of experience')) +
         (isClient() ? '' : part('Said on calls', c.notice || c.salary ? (c.notice ? p(esc(c.notice.charAt(0).toUpperCase() + c.notice.slice(1))) : '') +
           (c.salary ? p('Expects ' + esc(c.salary)) : '') : '<p class="b-cmeta-p b-draft-none">Nothing yet. The phone screen asks.</p>')) +
@@ -5417,7 +5427,6 @@
       (works && /^Found on/.test(c.source) && c.stage === 'sourced' ? trustCard([c], first(c.name) + ', a web prospect', c) : '') +
       sendoutCard(c) +
       fitCard(c, v) +
-      (others.length ? appsBlock(c, others) : '') +
       (isClient() ? '' : asmtBlock(c)) +
       ivBlock(c) +
       (isClient() ? '' : offerBlock(c)) +
@@ -5444,15 +5453,6 @@
       '</div></div></section>';
   }
   /* Every other application this person has made, or been put on. */
-  function appsBlock(c, others) {
-    return '<section class="s-block s-block-wide" aria-label="Other applications">' +
-      '<div class="s-camp-list-head"><h2 class="s-block-h">Their other applications</h2><span class="s-block-say">' + others.length + '</span></div>' +
-      '<div class="b-log">' + others.map((x, i) => logRow({ tone: '', ico: svg('req'), who: reqOf(x).title,
-        meta: logMeta([accOf(reqOf(x)).name, x.exit ? EXIT[x.exit].label : STAGE[x.stage].label, x.source]),
-        act: 'data-cand="' + x.id + '"', go: 'Open' }, i)).join('') + '</div>' +
-    '</section>';
-  }
-
   /* ── The assessment on this application ── */
   function asmtBlock(c) {
     const q = reqOf(c);
@@ -5649,7 +5649,11 @@
     const TONE = { apply: 'brand', call: 'brand', asmt: 'acc', iv: 'acc', offer: 'ok', move: 'ok', out: 'err', note: 'mute', msg: 'brand', wa: 'brand' };
     let day = null;
     const sug = c.histSug ? DB.events.filter((e) => e.id === c.histSug)[0] : null;
-    const tabs = '<div class="b-cuts t-hist-tabs" role="group" aria-label="What to show">' + HIST_TABS.map((x) =>
+    /* Only the tabs with something in them (Engy, 6 Nov): no Calls 0 or
+       WhatsApp 0. All always shows with its count; with nothing else to
+       pick, the row goes. */
+    const shownTabs = HIST_TABS.filter((x) => x[0] === 'all' || n[x[0]] > 0 || x[0] === tab);
+    const tabs = shownTabs.length < 2 ? '' : '<div class="b-cuts t-hist-tabs" role="group" aria-label="What to show">' + shownTabs.map((x) =>
       '<button class="filter-chip' + (tab === x[0] ? ' active' : '') + '" type="button" data-hist-tab="' + x[0] + '" aria-pressed="' + (tab === x[0]) + '">' + esc(x[1]) + '<span class="b-cut-n">' + n[x[0]] + '</span></button>').join('') + '</div>';
     const rows = tab === 'calls' ? (calls.length ? '<div class="b-log">' + logDays(calls, (t, i) => callRow(t, i, false)) + '</div>' : '<p class="b-vfoot">No calls yet.</p>')
       : tab === 'wa' ? (ms.length ? '<div class="t-wa">' + ms.slice().reverse().map((m) => '<div class="t-wa-m ' + (m.dir === 'out' ? 'is-out' : 'is-in') + '"><p class="t-wa-text">' + esc(m.text) + '</p>' +
