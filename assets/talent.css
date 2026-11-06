@@ -2031,3 +2031,28 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-ph-sum + .t-ph-facts { padding-top: 6px; }
 .t-ph-facts:empty { display: none; }
 @media (max-width: 719.98px) { .t-ph-sum { order: 1; } .t-ph-facts { order: 2; } .t-ph-acts { order: 3; } }
+
+/* ══ ONE ICON SIZE RULE (Engy, 6 Nov: "all the icons are too small") ════════
+   An icon is sized from the text it sits beside, not set part by part: a
+   quarter larger than the text, rounded down to the AiMY UI scale's even
+   steps, never under 12px. So 12px text takes a 14px icon, 14px text 16px,
+   16px text 20px, 20px text 24px. Lucide at stroke 2 throughout.
+     --ic-ratio  how much larger than the text (1.25)
+     --ic        the size, worked out where the icon is
+   Facts keep their centring on the first line (bdr.css .b-fact > svg reads
+   --mark). Icon-only buttons, the rail's tabs, AiMY's mark and the track's
+   dots keep their own fixed sizes: they are not set beside a line of text. */
+:root { --ic-ratio: 1.25; }
+.b-fact > svg, .tc-type.b-fact > svg, .b-qcard-where .b-fact > svg, .t-cv-facts .b-fact > svg {
+  --mark: calc(1em * var(--ic-ratio));
+  --mark: max(12px, round(down, calc(1em * var(--ic-ratio)), 2px));
+}
+.btn > svg, .b-ghost > svg, .s-insight-lnk > svg, .s-inline-btn > svg, .t-rq-btn > svg, .filter-chip > svg, .chip > svg,
+.b-menu-item > svg, .t-crumb-link > svg, .b-find > svg, .t-qe-more > svg, .t-qe-add > svg, .b-door-go > svg, .t-inline-link > svg,
+.rc .btn > svg, .rc .chip > svg {
+  --ic: calc(1em * var(--ic-ratio));
+  --ic: max(12px, round(down, calc(1em * var(--ic-ratio)), 2px));
+  width: var(--ic); height: var(--ic); flex: none;
+}
+/* The search box is sized by its own text (14px), not the page's. */
+.t-cfilters .b-find { font-size: var(--fs-xs); }
