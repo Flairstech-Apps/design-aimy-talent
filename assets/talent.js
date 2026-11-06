@@ -2826,7 +2826,10 @@
          the body (AiMY's read, the track), then the foot. */
       '<div class="t-cfacts">' +
       '<p class="b-qcard-where">' + fact('job', plural(c.years, 'year')) + fact('pin', c.place) + fact('lang', c.langs.join(', ')) + '</p>' +
-      (was ? '<p class="b-qcard-where t-before">' + fact('hist', beforeSay(was)) + '</p>' : '') +
+      /* For scanning, the signal and not the detail (Engy, 6 Nov): that they
+         are back, and why it stopped last time. The role and the outcome are
+         on the profile. */
+      (was ? '<p class="b-qcard-where t-before">' + fact('hist', 'Returning · last time: ' + (was.outWhy && was.exit === 'out' ? lower(OUT_K[was.outWhy.why].label) : was.decline ? lower(DECLINE_K[was.decline.why].label) : lower(EXIT[was.exit].label))) + '</p>' : '') +
       /* The line under the steps says only what they do not (Engy, 6 Nov):
          an interview's time or result, a way out, a score, a nudge. When
          the steps show, the days are on them; with none to show, the line
