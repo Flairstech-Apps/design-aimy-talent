@@ -2817,10 +2817,11 @@
       '<div class="tc-head">' + (pick1 ? selBox('sourced', c.id, c.name) : owedTell ? selBox('tell', c.id, c.name) : '') + (prog ? '' : stageTag(c)) + '<span class="b-kind">' + esc(c.source) + '</span></div>' +
       '<div class="b-qcard-top"><button class="tc-title s-card-title" type="button" data-cand="' + c.id + '">' + esc(c.name) + '</button>' + (isClient() ? '' : whySay(c, false, true)) + '</div>' +
       '<p class="tc-summary b-qcard-role">' + esc(c.at) + '</p>' +
-      /* Who they are stays together under the name (Engy, 5 Nov), then
-         AiMY's read of why they fit (4 Nov). */
+      /* AS AiMY UI'S CARD (Engy, 6 Nov): head, title, summary, then the facts
+         as one block of rows (who they are, applied before, the news), then
+         the body (AiMY's read, the track), then the foot. */
+      '<div class="t-cfacts">' +
       '<p class="b-qcard-where">' + fact('job', plural(c.years, 'year')) + fact('pin', c.place) + fact('lang', c.langs.join(', ')) + '</p>' +
-      whySay(c) +
       (was ? '<p class="b-qcard-where t-before">' + fact('hist', beforeSay(was)) + '</p>' : '') +
       /* The line under the steps says only what they do not (Engy, 6 Nov):
          an interview's time or result, a way out, a score, a nudge. When
@@ -2833,7 +2834,8 @@
         const ndg = c.stage === 'sent' && !c.exit && slowAt(c) && (isRec() || isHR()) ? (c.nudged == null ? ' <button class="s-inline-btn" type="button" data-nudge="' + c.id + '">' + esc(nudgeSay(c)) + '</button>' : ' <span class="b-kind">Nudged ' + esc(sayWhen(c.nudged)) + '</span>') : '';
         const txt = prog && !news ? sc : say + (!prog && slowAt(c) ? ' Usually ' + days(STAGE[c.stage].exp) + '.' : '') + (sc ? ' ' + sc : '');
         return txt || ndg ? '<p class="b-qcard-where t-cnow">' + (txt ? fact('clock', txt) : '') + ndg + '</p>' : '';
-      })() +
+      })() + '</div>' +
+      whySay(c) +
       (c.stage === 'sent' || (isClient() && c.exit === 'clientno') ? sendout(c) : '') +
       /* The track sits last, on the card's floor above the foot, so it is at
          the same height on every card in a row (Engy, 6 Nov). */

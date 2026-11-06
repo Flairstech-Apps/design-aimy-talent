@@ -1953,3 +1953,9 @@ body.is-portal .aimy-overlay { display: none !important; }
   .b-qcard .b-qcard-foot { flex-direction: column; align-items: stretch; flex-wrap: nowrap; }
   .b-qcard .b-qcard-foot > button, .b-qcard .b-qcard-foot > .b-kind { width: 100%; justify-content: center; text-align: center; margin-left: 0; }
 }
+/* The card's facts, as AiMY UI's CardFacts: one block of rows under the
+   summary, each a fact with its icon, 12px, one colour, 4px apart. */
+.b-qcard .t-cfacts { display: flex; flex-direction: column; gap: 4px; padding: 8px 14px 0; }
+.b-qcard .t-cfacts > .b-qcard-where { padding: 0; margin: 0; color: var(--ink-muted); }
+.b-qcard .t-cfacts > .t-before, .b-qcard .t-cfacts > .t-cnow { margin-top: 0; color: var(--ink-muted); }
+.b-qcard .t-cfacts + .b-aimy { margin-top: 12px; }
