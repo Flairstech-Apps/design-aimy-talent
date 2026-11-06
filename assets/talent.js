@@ -2431,12 +2431,14 @@
         '</div>' +
         '<div class="b-cuts b-cuts-row">' + QCUTS.map((x) => '<button class="filter-chip' + (x.k === cut ? ' active' : '') + '" type="button" aria-pressed="' + (x.k === cut) + '"' + keep({ q: x.k === 'all' ? undefined : x.k }) + '>' +
           esc(x.label) + '<span class="b-cut-n">' + n(x.k) + '</span></button>').join('') +
-          /* A toggle (Engy, 5 Nov): pressed again, it goes back to All. It
-             answers another question, so a divider sets it after the cuts
-             rather than flinging it to the far edge (6 Nov). */
-          '<span class="t-cut-sep" aria-hidden="true"></span>' +
-          '<button class="filter-chip t-cut-apart' + (cut === 'untold' ? ' active' : '') + '" type="button" aria-pressed="' + (cut === 'untold') + '"' + keep({ q: cut === 'untold' ? undefined : 'untold' }) + '>Not told yet<span class="b-cut-n">' + owed.length + '</span></button>' +
         '</div>' +
+        /* NOT TOLD YET IS WORK OWED, NOT A CUT (Engy, 6 Nov): AiMY UI's
+           Notice (warn) under the cuts, with the one action that resolves
+           it. In that view it says so and leads back to everyone. */
+        (owed.length ? '<div class="t-notice is-warn" role="status">' + svg('tri', 16) +
+          '<div class="t-notice-body"><p class="t-notice-h">' + (cut === 'untold' ? 'Showing the ' + plural(owed.length, 'person', 'people') + ' not told yet' : plural(owed.length, 'person is', 'people are') + ' out and not told yet') + '</p>' +
+            '<p>' + (owed.some((x) => x.since >= TELL_DAYS) ? 'The oldest is past the ' + TELL_DAYS + '-day limit.' : 'Tell them by ' + esc(sayDay(Math.min.apply(null, owed.map((x) => TELL_DAYS - x.since)))) + '.') + '</p></div>' +
+          '<button class="b-ghost t-notice-act" type="button"' + keep({ q: cut === 'untold' ? undefined : 'untold' }) + '>' + (cut === 'untold' ? 'Back to everyone' : 'Review the ' + owed.length) + '</button></div>' : '') +
         (narrowed ? '<p class="b-vfoot t-cf-on">Showing ' + (rqQ ? 'the people on ' + esc(rqQ.title) + ', ' + esc(accOf(rqQ).name) : stK ? 'everyone on your open requisitions' : 'everyone') +
           (stK ? ' at the ' + esc(lower(STAGE[stK].label)) + ' now' : '') + (S.find ? ' matching “' + esc(S.find) + '”' : '') + '. ' + clear + '</p>' : '') +
         /* Where the volume is, select many and act once (Batch bar, M7); the

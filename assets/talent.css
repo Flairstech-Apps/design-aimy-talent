@@ -599,9 +599,6 @@ body.is-portal .aimy-overlay { display: none !important; }
 
 /* Candidates queue (Sales's Contacts): "Not told yet" sits apart from the
    cuts that add up to All, the way Sales keeps its Accounts chip apart. */
-.t-cut-apart { margin-inline-start: 0; }
-/* The library's vertical Divider between the cuts and Not told yet. */
-.t-cut-sep { align-self: center; width: 1px; height: 16px; margin: 0 4px; background: var(--card-border-hover); }
 
 /* ══ CARDS, A LITTLE SEE-THROUGH ═══════════════════════════════════════════
    Engy, 28 Oct: Sales's colours, the cards a little transparent. Each
@@ -2002,3 +1999,16 @@ body.is-portal .aimy-overlay { display: none !important; }
 /* In the head the picker sits on the right, so its menu opens from its right edge. */
 .t-cands-head #rqMenu { left: auto; right: 0; transform-origin: top right; max-width: calc(100vw - 32px); }
 @media (max-width: 719.98px) { .t-cands-head #rqMenu { left: 0; right: auto; transform-origin: top left; } }
+
+/* AiMY UI's Notice (warn): a tinted ground with its icon and words, a title
+   in the tone's ink and the one action that resolves it; never a stripe. */
+.t-notice { display: flex; align-items: flex-start; gap: 12px; margin: 0 0 14px; padding: 12px 16px; border-radius: var(--r-lg); color: var(--d50); font-size: var(--fs-xs); line-height: var(--lh-snug); }
+.t-notice > svg { flex: none; margin-top: 2px; }
+.t-notice.is-warn { background: var(--warn-bg); }
+.t-notice.is-warn > svg, .t-notice.is-warn .t-notice-h { color: var(--warn-text, var(--warn)); }
+.t-notice-body { flex: 1; min-width: 0; }
+.t-notice-body p { margin: 0; }
+.t-notice-h { font-weight: var(--fw-semibold); }
+.t-notice-body p + p { margin-top: 2px; color: var(--d100); }
+.t-notice-act { flex: none; align-self: center; }
+@media (max-width: 560px) { .t-notice { flex-wrap: wrap; } .t-notice-act { margin-left: 28px; } }
