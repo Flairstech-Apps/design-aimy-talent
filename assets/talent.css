@@ -2026,3 +2026,8 @@ body.is-portal .aimy-overlay { display: none !important; }
 /* The profile's stage names break between words only, never inside one;
    in a window too narrow for every stage the track scrolls inside itself. */
 .t-trk:not(.is-fit):not(.is-plan) .t-trk-k { overflow-wrap: normal; }
+/* The application in one line under the name, a step above the facts. */
+.t-ph-sum { margin: 6px 0 0; padding: 0; font-size: var(--fs-sm); color: var(--d100); }
+.t-ph-sum + .t-ph-facts { padding-top: 6px; }
+.t-ph-facts:empty { display: none; }
+@media (max-width: 719.98px) { .t-ph-sum { order: 1; } .t-ph-facts { order: 2; } .t-ph-acts { order: 3; } }

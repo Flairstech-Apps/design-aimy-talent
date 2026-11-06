@@ -5359,7 +5359,11 @@
         '<div class="t-ph-top"><div class="t-ph-name"><h1 class="s-rec-name">' + esc(c.name) + '</h1>' +
           (c.exit ? tag(EXIT[c.exit].label, 'neutral') : '') + (isClient() ? '' : whySay(c, false, true)) + '</div>' +
           phActs + '</div>' +
-        '<p class="b-qcard-where t-ph-facts">' + fact('req', q.title + (isClient() ? '' : ', ' + accOf(q).name)) + fact('pin', c.place) +
+        /* SUMMARY, THEN HISTORY (Engy, 6 Nov): the application on one line a
+           step larger (the library's Card summary), then their story in
+           small facts: where they came from, and their other applications. */
+        '<p class="tc-summary t-ph-sum">' + esc(q.title) + (isClient() ? '' : ' at ' + esc(accOf(q).name)) + ' · ' + esc(c.place) + '</p>' +
+        '<p class="b-qcard-where t-ph-facts">' +
           (isClient() ? '' : fact('user', c.source + ', ' + sayWhen(c.applied != null ? c.applied : -3))) +
           /* Their other applications, each a link to it (6 Nov): the section
              that listed them went. */
