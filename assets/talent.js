@@ -2412,9 +2412,12 @@
         '<div class="s-camp-list-head">' + switcher('cands') + '</div>' +
         '<p class="b-tocall"><b>' + n('me') + '</b> waiting on you, ' + (rqQ ? 'on ' + esc(rqQ.title) + ' for ' + esc(accOf(rqQ).name) : 'across ' + plural(myOpen().length, 'open requisition')) + '</p>' +
         '<div class="t-cfilters">' +
-          '<label class="b-find">' + svg('find', 14) +
-            '<input type="text" data-find value="' + esc(S.find || '') + '" placeholder="Find a name, a skill or a requisition" spellcheck="false" aria-label="Find a name, a skill or a requisition"></label>' +
-          '<span class="b-menu-wrap"><button class="b-ghost t-rq-btn" type="button" data-pickopen="rqMenu" aria-haspopup="menu" aria-expanded="false">' +
+          /* AiMY UI's SearchField (box): a clear button only when there is
+             text, and Escape clears (6 Nov). */
+          '<div class="b-find">' + svg('find', 14) +
+            '<input type="search" data-find value="' + esc(S.find || '') + '" placeholder="Find a name, a skill or a requisition" spellcheck="false" aria-label="Find a name, a skill or a requisition">' +
+            (S.find ? '<button class="t-find-clear" type="button" data-find-clear aria-label="Clear search">' + svg('x', 12) + '</button>' : '') + '</div>' +
+          '<span class="b-menu-wrap"><button class="t-rq-btn" type="button" data-pickopen="rqMenu" aria-haspopup="menu" aria-expanded="false">' +
             '<span class="t-rq-label">' + esc(rqQ ? rqQ.title + ', ' + accOf(rqQ).name : 'All requisitions') + '</span>' + svg('down', 14) + '</button>' +
             '<div class="b-menu" id="rqMenu" role="menu" hidden><span class="b-menu-cap">Requisition</span>' +
               '<button class="b-menu-item" type="button" role="menuitem" data-rq=""' + (rqQ ? '' : ' aria-current="true"') + '><span class="b-menu-name">All requisitions</span><span class="tel-menu-cc">' + everyone.concat(owedAll).length + '</span></button>' +
@@ -2422,7 +2425,7 @@
                 '<span class="t-rq-item"><span class="b-menu-name">' + esc(x.q.title) + '</span><span class="t-crow-sub">' + esc(accOf(x.q).name) + '</span></span><span class="tel-menu-cc">' + x.n + '</span></button>').join('') +
             '</div></span>' +
         '</div>' +
-        '<div class="b-cuts b-cuts-row">' + QCUTS.map((x) => '<button class="filter-chip' + (x.k === cut ? ' active' : '') + '" type="button"' + keep({ q: x.k === 'all' ? undefined : x.k }) + '>' +
+        '<div class="b-cuts b-cuts-row">' + QCUTS.map((x) => '<button class="filter-chip' + (x.k === cut ? ' active' : '') + '" type="button" aria-pressed="' + (x.k === cut) + '"' + keep({ q: x.k === 'all' ? undefined : x.k }) + '>' +
           esc(x.label) + '<span class="b-cut-n">' + n(x.k) + '</span></button>').join('') +
           /* A toggle (Engy, 5 Nov): pressed again, it goes back to All. */
           '<button class="filter-chip t-cut-apart' + (cut === 'untold' ? ' active' : '') + '" type="button" aria-pressed="' + (cut === 'untold') + '"' + keep({ q: cut === 'untold' ? undefined : 'untold' }) + '>Not told yet<span class="b-cut-n">' + owed.length + '</span></button>' +
@@ -2751,17 +2754,19 @@
     const late = slowAt(c);
     const name = (k) => JY_SHORT[k] || STAGE[k].label;
     const prev = cur > 0 ? t[cur - 1] : null, nx = c.exit ? null : t[cur + 1];
-    const step = (cls, dot, label) => '<span class="t-st ' + cls + '"><span class="t-st-dot" aria-hidden="true">' + dot + '</span><span class="t-st-k">' + label + '</span></span>';
-    const steps = '<span class="t-steps">' +
-      (prev ? step('is-done', svg('check', 9), esc(name(prev))) : step('is-start', '', 'Start')) + '<span class="t-st-ln"></span>' +
-      (c.exit ? step('is-out', '', esc(EXIT[c.exit].label) + ' · ' + esc(name(c.stage)))
-        /* The days in the stage ride on the step itself (Engy, 6 Nov), so no
-           line under it says the stage again; past its usual time the step
-           turns amber and says how long it usually takes. */
-        : step('is-now' + (late ? ' is-late' : ''), '', esc(name(c.stage)) + ' · ' + days(c.since) +
-          (late ? '<span class="sr-only">, usually ' + days(STAGE[c.stage].exp) + '</span>' : ''))) +
-      (nx ? '<span class="t-st-ln is-ahead"></span>' + step('is-next', '', esc(name(nx))) : '') + '</span>';
-    return '<div class="t-prog" title="' + esc((c.exit ? EXIT[c.exit].label + ' ' + exitAt(c) : STAGE[c.stage].label + ', ' + days(c.since) + (late ? ', usually ' + days(STAGE[c.stage].exp) : '')) + ', stage ' + (cur + 1) + ' of ' + t.length) + '">' + steps + '</div>';
+    /* THE PROFILE'S TRACK, THREE STEPS WIDE (Engy, 6 Nov: the parts sat at
+       different heights card to card, and the names were cut). Each step a
+       third of the card, its name under its dot so it is never cut, the
+       days on a line of their own under the step they are at (amber with
+       how long it usually takes once past it). */
+    const li = (cls, label, sub) => '<li class="t-trk-step ' + cls + '"' + (cls.indexOf('is-now') >= 0 ? ' aria-current="step"' : '') + '><span class="t-trk-dot" aria-hidden="true"></span>' +
+      '<span class="t-trk-k">' + label + '</span>' + (sub ? '<span class="t-trk-t">' + sub + '</span>' : '') + '</li>';
+    const steps = '<ol class="t-trk' + (late ? ' tone-warn' : '') + '" style="--n:3" aria-label="' + esc('Where they are on ' + reqOf(c).title) + '">' +
+      (prev ? li('is-done', esc(name(prev))) : li('is-start', 'Start')) +
+      (c.exit ? li('is-out', esc(EXIT[c.exit].label), 'at ' + esc(name(c.stage)))
+        : li('is-now', esc(name(c.stage)), days(c.since) + (late ? ', usually ' + days(STAGE[c.stage].exp) : ''))) +
+      (nx ? li('', esc(name(nx))) : '') + '</ol>';
+    return '<div class="t-prog t-trk-wrap" title="' + esc((c.exit ? EXIT[c.exit].label + ' ' + exitAt(c) : STAGE[c.stage].label + ', ' + days(c.since) + (late ? ', usually ' + days(STAGE[c.stage].exp) : '')) + ', stage ' + (cur + 1) + ' of ' + t.length) + '">' + steps + '</div>';
   }
 
   /* One candidate, as the same card. */
@@ -2817,7 +2822,6 @@
       '<p class="b-qcard-where">' + fact('job', plural(c.years, 'year')) + fact('pin', c.place) + fact('lang', c.langs.join(', ')) + '</p>' +
       whySay(c) +
       (was ? '<p class="b-qcard-where t-before">' + fact('hist', beforeSay(was)) + '</p>' : '') +
-      prog +
       /* The line under the steps says only what they do not (Engy, 6 Nov):
          an interview's time or result, a way out, a score, a nudge. When
          the steps show, the days are on them; with none to show, the line
@@ -2831,6 +2835,9 @@
         return txt || ndg ? '<p class="b-qcard-where t-cnow">' + (txt ? fact('clock', txt) : '') + ndg + '</p>' : '';
       })() +
       (c.stage === 'sent' || (isClient() && c.exit === 'clientno') ? sendout(c) : '') +
+      /* The track sits last, on the card's floor above the foot, so it is at
+         the same height on every card in a row (Engy, 6 Nov). */
+      prog +
       /* AT THE SCREEN, THE CALL IS THE MOVE. Someone who applied or is due a
          phone screen moves forward by being called and the call being
          logged, so the card's one verb is Call, not a stage button. */
@@ -9579,6 +9586,7 @@
       return;
     }
     if ((el = at('[data-acc]'))) { go({ acc: val('data-acc') }); return; }
+    if ((el = at('[data-find-clear]'))) { const inp = document.querySelector('[data-find]'); if (inp) { inp.value = ''; inp.dispatchEvent(new Event('input', { bubbles: true })); } return; }
     if ((el = at('[data-asmt]'))) { go({ asmt: val('data-asmt') }); return; }
     /* The card's amber line: the page, at How good is this test. */
     if ((el = at('[data-asmt-review]'))) { go({ asmt: val('data-asmt-review') }); const t = byId('asmtReview'); if (t) t.scrollIntoView({ block: 'start' }); return; }
@@ -10140,6 +10148,8 @@
       return;
     }
     if (!e.target.matches('[data-find]')) return;
+    /* The search's own clear button and Escape both land here with an empty
+       value, so the clear button comes and goes with the text. */
     const v = e.target.value, pos = e.target.selectionStart;
     S.find = v || undefined;
     history.replaceState(null, '', urlOf(S));
@@ -10158,6 +10168,8 @@
     else if (t.id === 'liveIn') TAKE.paste[liveAt().i] = true;
   });
   document.addEventListener('visibilitychange', () => { if (TAKE && TAKE.t0 && document.hidden) TAKE.away = (TAKE.away || 0) + 1; });
+  /* Escape empties the search, as AiMY UI's SearchField does (6 Nov). */
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && e.target.matches && e.target.matches('[data-find]') && e.target.value) { e.preventDefault(); e.target.value = ''; e.target.dispatchEvent(new Event('input', { bubbles: true })); } });
   document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'critNew') { e.preventDefault(); const b = document.querySelector('[data-crit-add]'); if (b) b.click(); } });
   byId('floatInput').addEventListener('keydown', (e) => {
     if (e.key !== 'Enter') return;

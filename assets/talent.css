@@ -1631,21 +1631,15 @@ body.is-portal .aimy-overlay { display: none !important; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 /* ══ THE CARD'S PROGRESS: THE STEPS EITHER SIDE (4 Nov) ═══════════════════ */
-.t-prog { display: flex; flex-direction: column; gap: 8px; margin: 12px 14px 0; }
-.t-steps { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.t-st { display: inline-flex; align-items: center; gap: 5px; min-width: 0; font-size: var(--fs-2xs); color: var(--ink-muted); }
-.t-st-k { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.t-st-dot { flex: none; display: grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; border: 1.5px dashed var(--d500, #637280); color: #fff; }
-.t-st.is-done .t-st-dot { border: 0; background: var(--accent); }
-.t-st.is-now .t-st-dot { border: 2px solid var(--accent); box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.18); }
-.t-st.is-now .t-st-k { color: var(--d50); font-weight: var(--fw-semibold); }
-.t-st.is-late .t-st-dot { border-color: var(--warn); box-shadow: 0 0 0 3px rgba(var(--warn-rgb), 0.18); }
-.t-st.is-late .t-st-k { color: var(--warn-text, var(--warn)); }
-.t-st.is-out .t-st-dot { border: 2px solid var(--err-text, var(--err)); }
-.t-st.is-out .t-st-k { color: var(--err-text, var(--err)); font-weight: var(--fw-semibold); }
-.t-st.is-now, .t-st.is-out, .t-st.is-late { flex: 0 1 auto; }
-.t-st-ln { flex: 0 0 14px; height: 2px; background: var(--accent); }
-.t-st-ln.is-ahead { background: repeating-linear-gradient(90deg, var(--d500, #637280) 0 3px, transparent 3px 6px); }
+/* The card's track: the profile's, three steps wide, on the card's floor
+   (6 Nov). No pulse on a card; the exit in red, said in words too. */
+.b-qcard .t-prog { margin: auto 14px 0; padding-top: 14px; overflow: visible; }
+.b-qcard .t-prog .t-trk { padding: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.b-qcard .t-prog .t-trk-step.is-now .t-trk-dot { animation: none; }
+.b-qcard .t-prog + .b-qcard-foot, .b-qcard .t-prog + .tc-gov { margin-top: 12px; }
+.t-trk-step.is-out .t-trk-dot { border-color: var(--err-text, var(--err)); }
+.t-trk-step.is-out .t-trk-k { color: var(--err-text, var(--err)); }
+.t-trk-step.is-start .t-trk-k { color: var(--ink-muted); }
 @media (prefers-reduced-motion: reduce) { .t-trk-step.is-now .t-trk-dot { animation: none; } }
 
 /* ══ DECIDING, ONE AT A TIME (5 Nov) ══════════════════════════════════════
@@ -1916,4 +1910,46 @@ body.is-portal .aimy-overlay { display: none !important; }
 }
 @media (max-width: 560px) {
   .t-esec-r { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ══ THE CANDIDATES FILTERS, AS AiMY UI DRAWS THEM (6 Nov) ═══════════════
+   SearchField (box): 32px, the card's edge and ground, the brand edge while
+   typing, a clear button only when there is text. Select: a pill with an
+   inset ring, the brand ring while open, the chevron turning. Chip: 28px,
+   12px semibold, an edge because you can press it; the words stay readable
+   unselected (ink-secondary), the chosen one in the accent. One height for
+   the search and the picker so the row lines up. */
+.t-cfilters { gap: 8px; margin: 4px 0 12px; }
+.t-cfilters .b-find { min-height: 32px; padding: 0 6px 0 10px; gap: 8px; border-radius: var(--r-lg); background: var(--card-bg); transition: border-color var(--t-fast) ease-out; }
+.t-cfilters .b-find:focus-within { border-color: var(--brand); }
+.t-cfilters .b-find input { height: 30px; }
+.t-cfilters .b-find input::-webkit-search-cancel-button { display: none; }
+.t-find-clear { display: grid; place-items: center; width: 20px; height: 20px; flex: none; padding: 0; border: 0; border-radius: 999px; background: transparent; color: var(--ink-secondary); cursor: pointer; transition: background-color var(--t-fast) ease-out, color var(--t-fast) ease-out; }
+.t-find-clear:hover { background: rgba(255, 255, 255, 0.07); color: var(--d50); }
+.t-find-clear:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+.t-rq-btn { min-height: 32px; padding: 4px 8px 4px 12px; gap: 6px; border: 0; border-radius: 999px; background: transparent; color: var(--ink-secondary); font: inherit; font-size: var(--fs-xs); font-weight: var(--fw-semibold); cursor: pointer; box-shadow: inset 0 0 0 1px var(--card-border-hover); transition: background-color var(--t-fast) ease-out, box-shadow var(--t-fast) ease-out, color var(--t-fast) ease-out; }
+.t-rq-btn:hover { background: var(--card-bg-raised); color: var(--d50); }
+.t-rq-btn[aria-expanded="true"], .b-menu-wrap:has(.b-menu:not([hidden])) .t-rq-btn { color: var(--d50); box-shadow: inset 0 0 0 1px var(--brand); }
+.t-rq-btn svg { transition: transform var(--t-fast) ease-out; }
+.t-rq-btn[aria-expanded="true"] svg, .b-menu-wrap:has(.b-menu:not([hidden])) .t-rq-btn svg { transform: rotate(180deg); }
+.t-rq-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.b-cuts-row .filter-chip { min-height: 28px; padding: 0 14px; gap: 6px; font-size: var(--fs-2xs); font-weight: var(--fw-semibold); line-height: 16px; white-space: nowrap; color: var(--ink-secondary); background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.08); transition: background-color var(--t-fast) ease-out, border-color var(--t-fast) ease-out, color var(--t-fast) ease-out, transform 100ms ease-out; }
+.b-cuts-row .filter-chip:hover { background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 255, 255, 0.08); color: var(--d50); }
+.b-cuts-row .filter-chip:active { transform: scale(0.97); }
+.b-cuts-row .filter-chip.active { background: var(--accent-dim); border-color: color-mix(in srgb, var(--accent) 30%, transparent); color: var(--accent-text, var(--accent)); }
+.b-cuts-row .filter-chip .b-cut-n { margin-left: 0; color: inherit; opacity: 1; }
+.b-cuts-row .filter-chip:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+:root[data-theme="light"] .b-cuts-row .filter-chip { background: rgba(0, 0, 0, 0.03); border-color: rgba(0, 0, 0, 0.1); }
+:root[data-theme="light"] .b-cuts-row .filter-chip:hover { background: rgba(0, 0, 0, 0.06); }
+:root[data-theme="light"] .b-cuts-row .filter-chip.active { background: var(--accent-dim); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+@media (prefers-reduced-motion: reduce) { .b-cuts-row .filter-chip, .t-rq-btn svg { transition: none; } .b-cuts-row .filter-chip:active { transform: none; } }
+/* Every card's track the same height, so it sits at the same place in a row:
+   room for a two-line name and the days under it, whichever card has them. */
+.b-qcard .t-prog .t-trk-step { min-height: 74px; }
+/* A narrow card stacks its two foot actions full width rather than folding
+   one under the other at its own width, so every foot in a row is alike. */
+.b-qcard { container-type: inline-size; }
+@container (max-width: 340px) {
+  .b-qcard .b-qcard-foot { flex-direction: column; align-items: stretch; flex-wrap: nowrap; }
+  .b-qcard .b-qcard-foot > button, .b-qcard .b-qcard-foot > .b-kind { width: 100%; justify-content: center; text-align: center; margin-left: 0; }
 }
