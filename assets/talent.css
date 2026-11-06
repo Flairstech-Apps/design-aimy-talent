@@ -1136,26 +1136,21 @@ body.is-portal .aimy-overlay { display: none !important; }
 }
 .t-cv[hidden] { display: none; }
 .t-cv p { margin: 0; }
-.t-cv-who { display: flex; flex-direction: column; gap: 4px; }
-.t-cv-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.t-cv-name { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--d50); }
-.t-cv-role { color: var(--ink-secondary); font-weight: var(--fw-medium); }
-.t-cv .t-cv-facts { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 4px; font-size: var(--fs-2xs); color: var(--ink-muted); }
-.t-cv-facts .b-fact > svg { --mark: 10px; }
+.t-cv-name { margin: 0; font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--d50); }
 .t-cv-sec { display: flex; flex-direction: column; gap: 6px; }
 .t-cv-cap { font-weight: var(--fw-semibold); color: var(--d50); }
-.t-cv-foot { font-size: var(--fs-2xs); color: var(--ink-muted); }
 /* Each must-have: its mark, the must-have, the CV's line under it, and what
    an interview found. Full purple for shown, a dot for partly, a question
    for silent, as on the card. */
 .t-cv-musts { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.t-cv-must { display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 8px; align-items: start; }
+.t-cv-must { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 8px; align-items: start; }
+/* A must-have that differs in an interview is said in red, with a cross, never a tick. */
+.t-cv-must.is-x > svg { color: var(--err-text, var(--err)); }
+.t-cv-must.is-p > svg { color: var(--warn-text, var(--warn)); }
 .t-cv-must > svg { margin-top: 2px; color: var(--purple, #8b4ff4); }
 .t-cv-must.is-n > svg { color: var(--ink-muted); }
 .t-cv-mhead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .t-cv-must b { font-weight: var(--fw-medium); color: var(--d50); }
-.t-cv-line { display: block; color: var(--d100); }
-.t-cv-must.is-n .t-cv-line { color: var(--ink-muted); }
 .t-cv-iv { flex: none; font-size: var(--fs-2xs); font-weight: var(--fw-medium); color: var(--ink-muted); }
 .t-cv-iv.is-ok { color: var(--ok-text, var(--ok)); }
 .t-cv-iv.is-warn { color: var(--warn-text, var(--warn)); }
@@ -2043,7 +2038,7 @@ body.is-portal .aimy-overlay { display: none !important; }
    --mark). Icon-only buttons, the rail's tabs, AiMY's mark and the track's
    dots keep their own fixed sizes: they are not set beside a line of text. */
 :root { --ic-ratio: 1.25; }
-.b-fact > svg, .tc-type.b-fact > svg, .b-qcard-where .b-fact > svg, .t-cv-facts .b-fact > svg {
+.b-fact > svg, .tc-type.b-fact > svg, .b-qcard-where .b-fact > svg {
   --mark: calc(1em * var(--ic-ratio));
   --mark: max(12px, round(down, calc(1em * var(--ic-ratio)), 2px));
 }

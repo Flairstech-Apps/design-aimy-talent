@@ -5700,19 +5700,29 @@
      reading; a click on the name is still the profile. A mouse rests, and
      keyboard focus shows it too; a touch screen has no hover, so there the
      name is the profile as before. */
-  const CV_NAMES = '.tc-title[data-cand], .t-row-open, h4 > [data-cand]';
+  /* Not on a candidate card (Engy, 6 Nov): the card already is the preview,
+     and the hover covered the next one. Names in rows and lists keep it. */
+  const CV_NAMES = '.tc-title[data-cand]:not(.b-qcard .tc-title), .t-row-open, h4 > [data-cand]';
   let CV_T = null, CV_ON = null;
   const CV_EV = { m: ['check', 'is-m'], p: ['dot', 'is-p'], n: ['qc', 'is-n'] };
   const CV_IV = { ok: 't-cv-iv is-ok', warn: 't-cv-iv is-warn', err: 't-cv-iv is-err' };
+  /* SLIMMED (Engy, 6 Nov: "do we need all of this?"). Only what a row
+     cannot show: each must-have on one line with one plain status (what an
+     interview found, else what the CV shows), what they said on calls, and
+     the last thing that happened. The role, the facts, the stage, the skills
+     and where they came from are on the row and the profile. */
   function cvCard(c) {
     const q = reqOf(c), inside = !isClient();
     const sec = (cap, body) => '<div class="t-cv-sec"><span class="t-cv-cap">' + cap + '</span>' + body + '</div>';
     const v = verified(c);
-    const musts = (q.must || []).length ? sec('The CV, against the must-haves', '<ul class="t-cv-musts">' + q.must.map((m, i) => {
-      const e = c.ev[i], st = v[i].seen[0] ? FIT_ST[v[i].state] : null;
-      return '<li class="t-cv-must ' + CV_EV[e][1] + '">' + svg(CV_EV[e][0], 12) + '<span><span class="t-cv-mhead"><b>' + esc(m) + '</b>' +
-        (st ? '<span class="' + (CV_IV[st[1]] || 't-cv-iv') + '" title="What the interview found">' + esc(st[0]) + '</span>' : '') + '</span>' +
-        '<span class="t-cv-line">' + (e === 'n' ? 'Not on the CV, so not known yet' : '“' + esc(cvSays(c, m)) + '”') + '</span></span></li>';
+    const CV_SAY = { m: ['Shown in the CV', 'ok'], p: ['Partly shown', 'warn'], n: ['Not shown yet', ''] };
+    const CV_TONE = { ok: ['check', 'is-m'], warn: ['dot', 'is-p'], err: ['x', 'is-x'], '': ['qc', 'is-n'] };
+    const musts = (q.must || []).length ? sec('The must-haves', '<ul class="t-cv-musts">' + q.must.map((m, i) => {
+      const st = v[i].seen[0] ? FIT_ST[v[i].state] : null;
+      const say = st ? [st[0] + ' in an interview', st[1]] : CV_SAY[c.ev[i]];
+      const t = CV_TONE[say[1]] || CV_TONE[''];
+      return '<li class="t-cv-must ' + t[1] + '">' + svg(t[0], 14) + '<span class="t-cv-mhead"><b>' + esc(m) + '</b>' +
+        '<span class="' + (CV_IV[say[1]] || 't-cv-iv') + '">' + esc(say[0]) + '</span></span></li>';
     }).join('') + '</ul>') : '';
     /* What the phone screen got, and how the last call went. */
     const last = lastCall(c), n = callsOf(c.id).length;
@@ -5720,22 +5730,11 @@
       : last ? plural(n, 'call') + ', the last ' + dayLabel(last.day).replace(/^[TY]/, (x) => x.toLowerCase()) + ': ' + (last.missed ? 'got nobody' : lower(OUTCOME[last.outcome].label)) + '.'
       : 'Not called yet.';
     const said = [c.notice ? c.notice.charAt(0).toUpperCase() + c.notice.slice(1) : '', c.salary ? 'Expects ' + c.salary : ''].filter(Boolean).join(' · ');
-    const calls = inside ? sec('On calls', '<p>' + (c.phone && !c.dnc ? '<b>' + esc(c.phone) + '</b> · ' : '') + esc(reach) + '</p>' +
-      '<p class="' + (said ? '' : 't-cv-none') + '">' + esc(said || 'Notice and salary not asked yet.') + '</p>') : '';
-    /* The newest thing that happened, calls apart since they are above
-       and applying apart since the foot says where they came from. */
+    const calls = inside ? sec('On calls', '<p>' + esc(said || 'Notice and salary not asked yet.') + '</p><p class="t-cv-none">' + esc(reach) + '</p>') : '';
     const lately = inside ? historyOf(c).filter((x) => x.kind !== 'call' && x.kind !== 'apply').slice(0, 1) : [];
-    const was = inside ? before(c) : null;
-    /* Distilled 5 Nov, as the card: who they are as one group, then each
-       section by space alone, no rules between them and no chips. */
-    return '<div class="t-cv-who"><div class="t-cv-head"><span class="t-cv-name">' + esc(c.name) + '</span>' + stageTag(c) + '</div>' +
-      '<p class="t-cv-role">' + esc(c.at) + '</p>' +
-      '<p class="t-cv-facts">' + fact('job', plural(c.years, 'year')) + fact('pin', c.place) + fact('lang', c.langs.join(', ')) + '</p></div>' +
-      musts +
-      ((c.skills || []).length ? sec('Skills', '<p>' + esc(c.skills.join(' · ')) + '</p>') : '') +
-      calls +
-      (lately.length ? sec('Lately', lately.map((x) => '<p class="t-cv-event"><span>' + esc(dayLabel(x.day)) + '</span>' + esc(x.text) + '</p>').join('')) : '') +
-      '<p class="t-cv-foot">' + esc(c.source) + ' · for ' + esc(q.title) + (was ? '<br>' + esc(beforeSay(was)) + '.' : '') + '</p>';
+    return '<p class="t-cv-name">' + esc(c.name) + '</p>' +
+      musts + calls +
+      (lately.length ? sec('Lately', lately.map((x) => '<p class="t-cv-event"><span>' + esc(dayLabel(x.day)) + '</span>' + esc(x.text) + '</p>').join('')) : '');
   }
   /* Under the name, or over it when the window has no room below. The page
      sits inside the shell's zoom, so the name's box is read back into it. */
