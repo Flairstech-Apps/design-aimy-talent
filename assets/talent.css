@@ -1997,3 +1997,24 @@ body.is-portal .aimy-overlay { display: none !important; }
 
 /* The main action takes the room the secondary leaves, so it ends the row; when a narrow card has no room for both, it takes its own line (the library's rule when space runs out). */
 .b-qcard .b-qcard-foot > .s-insight-lnk.primary { flex: 1 0 auto; justify-content: center; }
+
+/* ══ THE PROFILE'S HEADER, SAID ONCE (6 Nov) ═════════════════════════════
+   The name with its fit Tag on the left, the next move on the right (as
+   Workable and Homerun put it), one line of facts under them. */
+.t-ph { padding-bottom: 4px; }
+.t-ph-top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+.t-ph-name { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-width: 0; }
+.t-ph-name .s-rec-name { margin: 0; }
+.t-ph-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-left: auto; }
+.t-ph-facts { padding: 8px 0 0; gap: 4px 16px; color: var(--ink-muted); }
+.t-ph-menu { left: auto; right: 0; transform-origin: top right; min-width: 260px; }
+@media (max-width: 719.98px) {
+  /* On a phone: who they are first, then the facts, then the move. */
+  .t-ph { display: flex; flex-direction: column; }
+  .t-ph-top { display: contents; }
+  .t-ph-facts { order: 1; padding-top: 6px; }
+  .t-ph-acts { order: 2; margin: 12px 0 0; width: 100%; }
+  .t-ph-menu { left: 0; right: auto; transform-origin: top left; }
+}
+/* With no news to say, the block is the track alone, from its top. */
+.t-lead-quiet .t-trk-wrap { margin-top: 0; }

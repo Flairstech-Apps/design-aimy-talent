@@ -5329,21 +5329,39 @@
     const others = apps(c).filter((x) => x.id !== c.id);
     const part = (cap, body) => '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">' + esc(cap) + '</h2><div class="b-cmeta-say">' + body + '</div></div>';
     const p = (t) => '<p class="b-cmeta-p">' + t + '</p>';
+    /* THE NEXT MOVE BY THE NAME (Engy, 6 Nov): Call and the stage's verb, Not
+       progressing, and More (Edit, and Add to another requisition) as one
+       menu. While a reason is being picked or a note written, those open in
+       the block under the header instead. */
+    const picking = works && !c.exit && ((passOpen(c) && c.sentDay == null) || outPicking(c) || writeOpen(c));
+    const addTo = DB.reqs.filter((x) => isOpen(x) && !apps(c).some((y) => y.req === x.id) && (isHR() || x.rec === DESK)).slice(0, 12);
+    const more = works ? '<span class="b-menu-wrap"><button class="t-rq-btn" type="button" data-pickopen="more' + c.id + '" aria-haspopup="menu" aria-expanded="false">More' + svg('down', 14) + '</button>' +
+      '<div class="b-menu t-ph-menu" id="more' + c.id + '" role="menu" hidden>' +
+        '<button class="b-menu-item" type="button" role="menuitem" data-edit-cand="' + c.id + '"><span class="b-menu-name">Edit their details</span></button>' +
+        (addTo.length ? '<span class="b-menu-cap">Add to another requisition</span>' + addTo.map((x) =>
+          '<button class="b-menu-item" type="button" role="menuitem" data-add-app="' + c.id + '|' + x.id + '"><span class="b-menu-name">' + esc(x.title) + '</span><span class="tel-menu-cc">' + esc(accOf(x).name) + '</span></button>').join('') : '') +
+      '</div></span>' : '';
+    const phActs = !works ? '' : '<div class="t-ph-acts">' + (c.exit || picking ? '' :
+        (isRec() && canCall(c) ? '<button class="s-insight-lnk' + (early ? ' primary' : '') + '" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call ' + esc(first(c.name)) + '</button>' : '') +
+        (nx && !early && (w === 'me' || w === 'client' || w === 'candidate') && c.stage !== 'offer' ? '<button class="s-insight-lnk primary" type="button" data-move="' + c.id + '|' + nx + '">' + esc(goSay(c)) + '</button>' : '') +
+        exitBtn(c, outK)) + more + '</div>';
+    /* The sentence under the header says only news the track cannot: a way
+       out, an interview, the client's turn. Otherwise the track says it. */
+    const news = c.exit || isClient() || (MEETS[c.stage] && c.meet != null) || c.stage === 'sent';
     return '<div class="s-home">' +
-      '<div class="b-topbar s-block-wide"><button class="s-back" type="button" data-req="' + q.id + '">' + svg('back', 14) + 'Back to ' + esc(q.title) + '</button>' +
-        (works ? '<span class="b-draft-acts"><button class="b-ghost" type="button" data-edit-cand="' + c.id + '">Edit</button>' +
-          '<span class="b-menu-wrap"><button class="b-ghost b-menu-open" type="button" data-pickopen="addTo' + c.id + '" aria-haspopup="menu">Add to another requisition' + svg('down', 14) + '</button>' +
-            '<div class="b-menu" id="addTo' + c.id + '" role="menu" hidden><span class="b-menu-cap">Open requisitions</span>' +
-              DB.reqs.filter((x) => isOpen(x) && !apps(c).some((y) => y.req === x.id) && (isHR() || x.rec === DESK)).slice(0, 12).map((x) =>
-                '<button class="b-menu-item" type="button" role="menuitem" data-add-app="' + c.id + '|' + x.id + '"><span class="b-menu-name">' + esc(x.title) + '</span><span class="tel-menu-cc">' + esc(accOf(x).name) + '</span></button>').join('') +
-            '</div></span></span>' : '') + '</div>' +
-      '<section class="s-rec-head s-block-wide">' +
-        '<span class="s-rec-kind b-kinds">' + fact('user', 'Candidate') + fact('req', q.title) + (isClient() ? '' : fact('acc', accOf(q).name)) + fact('pin', c.place) + '</span>' +
-        '<div class="s-rec-title"><h1 class="s-rec-name">' + esc(c.name) + '</h1>' +
-          '<span class="s-meta-st tone-' + (c.exit ? 'neutral' : 'ok') + '">' + esc(c.exit ? EXIT[c.exit].label : STAGE[c.stage].label) + '</span>' +
-          (isClient() || !before(c) ? '' : tag('Returning', 'info')) +
-          (isClient() ? '' : '<span class="b-kind">' + esc(c.source) + ', ' + esc(sayWhen(c.applied != null ? c.applied : -3)) + '</span>') + '</div>' +
-          (isClient() || !before(c) ? '' : '<p class="b-cmeta-p t-before">' + fact('hist', beforeSay(before(c))) + '</p>') +
+      '<div class="b-topbar s-block-wide"><button class="s-back" type="button" data-req="' + q.id + '">' + svg('back', 14) + 'Back to ' + esc(q.title) + '</button></div>' +
+      /* ONE HEADER, SAID ONCE (Engy, 6 Nov; after Workable and Homerun on
+         Mobbin). The name with its fit, the next move beside it, and one
+         line of facts: the role, where, where they came from and the earlier
+         application. The stage is the track's to say, so no tag, label row
+         or sentence repeats it. A way out keeps its state Tag. */
+      '<section class="s-rec-head s-block-wide t-ph">' +
+        '<div class="t-ph-top"><div class="t-ph-name"><h1 class="s-rec-name">' + esc(c.name) + '</h1>' +
+          (c.exit ? tag(EXIT[c.exit].label, 'neutral') : '') + (isClient() ? '' : whySay(c, false, true)) + '</div>' +
+          phActs + '</div>' +
+        '<p class="b-qcard-where t-ph-facts">' + fact('req', q.title + (isClient() ? '' : ', ' + accOf(q).name)) + fact('pin', c.place) +
+          (isClient() ? '' : fact('user', c.source + ', ' + sayWhen(c.applied != null ? c.applied : -3))) +
+          (isClient() || !before(c) ? '' : fact('hist', 'Applied before for ' + reqOf(before(c)).title)) + '</p>' +
       '</section>' +
       /* THE WORK LEFT, ABOUT THEM RIGHT (Engy, 5 Nov). The decision was a
          screen down, under eight blocks of reference. Now the left column
@@ -5376,12 +5394,12 @@
         '</details>' : '') +
       (candNarrow() ? '</div></details>' : '') + '</aside>' +
       '<div class="t-cand-work">' +
-      '<section class="s-insight is-lead s-block-wide" aria-label="Where they are">' +
-        '<div class="s-lead-mark"><svg class="s-insight-mark" viewBox="0 0 18 20" width="14" height="14" aria-hidden="true"><use href="#aimy-logo-small"/></svg>' +
-          '<span class="work-state ws-detected">Read off the record</span></div>' +
-        '<p class="s-lead-deck">' + esc(c.exit ? exitSay(c).charAt(0).toUpperCase() + exitSay(c).slice(1) + '.' +
+      '<section class="s-insight is-lead s-block-wide' + (news ? '' : ' t-lead-quiet') + '" aria-label="Where they are">' +
+        (news ? '<div class="s-lead-mark"><svg class="s-insight-mark" viewBox="0 0 18 20" width="14" height="14" aria-hidden="true"><use href="#aimy-logo-small"/></svg>' +
+          '<span class="work-state ws-detected">Read off the record</span></div>' : '') +
+        (!news ? '' : '<p class="s-lead-deck">' + esc(c.exit ? exitSay(c).charAt(0).toUpperCase() + exitSay(c).slice(1) + '.' +
             (c.told === false && !isClient() ? ' Not told yet; they hear by ' + sayDay(hearBy(c)) + '.' : c.told ? ' They have been told.' : '')
-          : isClient() && c.stage === 'sent' ? 'Waiting on your answer since ' + sayDay(c.sentDay != null ? c.sentDay : -c.since) + '.' : candSay(c)) + '</p>' +
+          : isClient() && c.stage === 'sent' ? 'Waiting on your answer since ' + sayDay(c.sentDay != null ? c.sentDay : -c.since) + '.' : candSay(c)) + '</p>') +
         /* The move straight under the sentence that is its reason, the path
            after it (5 Nov): on a phone the path runs down the screen and
            pushed the buttons a screen away. */
@@ -5392,11 +5410,7 @@
         (isClient() && !c.exit && c.stage === 'sent' ? (passOpen(c) ? passPicker(c) : '<div class="s-lead-acts"><button class="s-insight-lnk primary" type="button" data-move="' + c.id + '|client">Meet them</button>' +
           '<button class="b-ghost" type="button" data-pass-open="' + c.id + '">Pass</button></div>') : '') +
         /* With a sendout, the reasons open inside its card instead. */
-        (c.exit || !works ? '' : passOpen(c) && c.sentDay == null ? passPicker(c) : outPicking(c) ? outPicker(c) : writeOpen(c) ? writeBox(c) : '<div class="s-lead-acts">' +
-          (isRec() && canCall(c) ? '<button class="s-insight-lnk' + (early ? ' primary' : '') + '" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call ' + esc(first(c.name)) + '</button>' : '') +
-          (nx && !early && (w === 'me' || w === 'client' || w === 'candidate') && c.stage !== 'offer' ? '<button class="s-insight-lnk primary" type="button" data-move="' + c.id + '|' + nx + '">' + esc(goSay(c)) + '</button>' : '') +
-          exitBtn(c, outK) +
-        '</div>') +
+        (c.exit || !works ? '' : passOpen(c) && c.sentDay == null ? passPicker(c) : outPicking(c) ? outPicker(c) : writeOpen(c) ? writeBox(c) : '') +
         storyTrack(c) +
       '</section>' +
       ivTodayBlock(c) +
