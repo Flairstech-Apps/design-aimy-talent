@@ -2434,12 +2434,12 @@
           esc(x.label) + '<span class="b-cut-n">' + n(x.k) + '</span></button>').join('') +
         '</div>' +
         /* NOT TOLD YET IS WORK OWED, NOT A CUT (Engy, 6 Nov): AiMY UI's
-           Notice (warn) under the cuts. The answers are sent from Today
-           only, so its one action takes you there. */
-        (owed.length ? '<div class="t-notice is-warn" role="status">' + svg('tri', 16) +
-          '<div class="t-notice-body"><p class="t-notice-h">' + plural(owed.length, 'person is', 'people are') + ' out and not told yet</p>' +
-            '<p>' + (owed.some((x) => x.since >= TELL_DAYS) ? 'The oldest is past the ' + TELL_DAYS + '-day limit.' : 'Tell them by ' + esc(sayDay(Math.min.apply(null, owed.map((x) => TELL_DAYS - x.since)))) + '.') + '</p></div>' +
-          '<button class="b-ghost t-notice-act" type="button" data-goto-told>Send the answers on Today</button></div>' : '') +
+           Notice under the cuts, made quiet (6 Nov: "less dominant"): one
+           line, the warning icon and the count in the tone's ink, and a link
+           to Today, where the answers are sent. */
+        (owed.length ? '<p class="t-notice is-quiet" role="status">' + svg('tri', 14) +
+          '<span><b>' + plural(owed.length, 'person', 'people') + '</b> out and not told yet' + (owed.some((x) => x.since >= TELL_DAYS) ? ', the oldest past the ' + TELL_DAYS + '-day limit.' : ', to tell by ' + esc(sayDay(Math.min.apply(null, owed.map((x) => TELL_DAYS - x.since)))) + '.') + ' ' +
+          '<button class="t-inline-link" type="button" data-goto-told>Send the answers on Today</button></span></p>' : '') +
         (narrowed ? '<p class="b-vfoot t-cf-on">Showing ' + (rqQ ? 'the people on ' + esc(rqQ.title) + ', ' + esc(accOf(rqQ).name) : stK ? 'everyone on your open requisitions' : 'everyone') +
           (stK ? ' at the ' + esc(lower(STAGE[stK].label)) + ' now' : '') + (S.find ? ' matching “' + esc(S.find) + '”' : '') + '. ' + clear + '</p>' : '') +
         (cut === 'new' && list.length ? trustCard(list.filter((c) => /^Found on/.test(c.source) && !c.contactOk)) : '') +
