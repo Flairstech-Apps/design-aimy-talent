@@ -87,6 +87,7 @@ const MARKERS = {
   'el-file': 'the recording box on a call made elsewhere, read by the change listener',
   'dr-text': 'the message draft in the chat, read by the input listener',
   'crit-ed': 'which criterion a Find box rewrites, read by the input listener',
+  'find-reqq': 'the requisition picker’s search box on Find, read by the input listener',
 };
 
 /* ── 1 & 2. CONTROLS AND HANDLERS, BOTH DIRECTIONS ───────────────────────── */

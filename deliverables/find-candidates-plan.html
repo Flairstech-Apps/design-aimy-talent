@@ -1,0 +1,546 @@
+<title>Find Candidates Redesign</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a reading column for the plan, with full-width product mockups
+   drawn in AiMY Talent's own dark look so each direction reads as the app. */
+:root {
+  color-scheme: dark;
+  --bg: #0e1319;
+  --surface: #141b24;
+  --raised: #1a2330;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-2: rgba(255, 255, 255, 0.14);
+  --ink: #eef2f6;
+  --ink-2: #d8e0e8;
+  --mute: #9aa8b6;
+  --accent: #8b4ff4;
+  --accent-ink: #b896ff;
+  --accent-soft: rgba(139, 79, 244, 0.14);
+  --accent-line: rgba(139, 79, 244, 0.38);
+  --brand: #3369ff;
+  --ai: #61adf1;
+  --ok: #4ed6a1;
+  --ok-soft: rgba(78, 214, 161, 0.12);
+  --warn: #f7c95c;
+  --warn-soft: rgba(247, 201, 92, 0.12);
+  --err: #ff8a80;
+  --err-soft: rgba(255, 138, 128, 0.12);
+  --font: "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r: 14px;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink-2); font-family: var(--font); font-size: 15px; line-height: 1.6;
+  background-image: radial-gradient(900px 500px at 15% -10%, rgba(51, 105, 255, 0.10), transparent 60%), radial-gradient(800px 500px at 100% 10%, rgba(139, 79, 244, 0.08), transparent 60%);
+}
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 48px 96px; }
+.col { max-width: 720px; }
+h1, h2, h3 { color: var(--ink); text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(28px, 4.2vw, 40px); line-height: 1.15; font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 24px; line-height: 1.25; font-weight: 600; letter-spacing: -0.01em; }
+h3 { font-size: 17px; line-height: 1.35; font-weight: 600; }
+p { margin: 0; }
+.lede { margin-top: 14px; font-size: 17px; color: var(--ink-2); max-width: 62ch; }
+.meta { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--mute); }
+.meta b { color: var(--ink-2); font-weight: 500; }
+section { margin-top: 64px; }
+.sec-head { display: grid; gap: 8px; margin-bottom: 22px; }
+.sec-head p { color: var(--mute); max-width: 64ch; }
+.cap { font-size: 11.5px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; color: var(--mute); }
+
+/* Problems */
+.probs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 12px; }
+.prob { padding: 16px 18px; border: 1px solid var(--line); border-radius: var(--r); background: rgba(20, 27, 36, 0.6); display: grid; gap: 6px; align-content: start; }
+.prob h3 { font-size: 15px; }
+.prob p { font-size: 14px; color: var(--mute); }
+.sev { justify-self: start; font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: 999px; }
+.sev.bug { background: var(--err-soft); color: var(--err); }
+.sev.hi { background: var(--warn-soft); color: var(--warn); }
+.sev.mid { background: rgba(97, 173, 241, 0.12); color: var(--ai); }
+
+/* Plan */
+.principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 12px; margin-top: 4px; }
+.pr { padding: 16px 18px; border-left: 0; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); }
+.pr b { display: block; color: var(--ink); font-weight: 600; margin-bottom: 4px; }
+.pr span { font-size: 14px; color: var(--mute); }
+.flow { margin-top: 18px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13.5px; }
+.flow .st { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--ink-2); }
+.flow .st.key { border-color: var(--accent-line); background: var(--accent-soft); color: var(--ink); }
+.flow .ar { color: var(--mute); }
+
+/* Direction frames */
+.dir { margin-top: 56px; }
+.dir-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 14px; margin-bottom: 8px; }
+.dir-tag { font-size: 12px; font-weight: 600; color: var(--accent-ink); background: var(--accent-soft); padding: 2px 10px; border-radius: 999px; }
+.dir-tag.rec { color: var(--ok); background: var(--ok-soft); }
+.dir-say { color: var(--mute); max-width: 66ch; margin-bottom: 18px; }
+.stage { border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(180deg, rgba(20, 27, 36, 0.9), rgba(14, 19, 25, 0.9)); padding: 22px; overflow: hidden; }
+.app-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+.app-h { font-size: 19px; font-weight: 600; color: var(--ink); }
+.ghost { font: inherit; font-size: 12.5px; font-weight: 600; color: var(--ink); background: transparent; border: 1px solid var(--line-2); border-radius: 999px; padding: 6px 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.ghost:hover { border-color: rgba(255, 255, 255, 0.26); }
+.primary { font: inherit; font-size: 13px; font-weight: 600; color: #fff; background: var(--brand); border: 0; border-radius: 999px; padding: 8px 16px; cursor: pointer; white-space: nowrap; }
+.primary:hover { filter: brightness(1.1); }
+button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+.prosncons { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 12px; margin-top: 14px; }
+.pc { font-size: 14px; color: var(--mute); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--line); }
+.pc b { color: var(--ink-2); font-weight: 600; display: block; margin-bottom: 4px; }
+.pc ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+
+/* ── A: the brief ── */
+.brief { font-size: clamp(17px, 2.2vw, 21px); line-height: 1.9; color: var(--ink-2); }
+.tok { font: inherit; color: var(--ink); background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 10px; padding: 1px 10px 2px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; line-height: 1.5; }
+.tok svg { width: 14px; height: 14px; opacity: 0.8; }
+.tok:hover { background: rgba(139, 79, 244, 0.22); }
+.brief-sub { margin-top: 6px; font-size: 13px; color: var(--mute); }
+.needs { margin-top: 22px; border-top: 1px solid var(--line); }
+.need { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px 14px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.need-t { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; min-width: 0; }
+.need-t span:first-child { color: var(--ink); font-size: 15px; }
+.need-n { font-size: 12.5px; color: var(--mute); }
+.need-n.thin { color: var(--warn); }
+.seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 999px; padding: 2px; }
+.seg button { font: inherit; font-size: 12px; font-weight: 600; color: var(--mute); background: transparent; border: 0; border-radius: 999px; padding: 4px 11px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--raised); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-2); }
+.x { font: inherit; background: transparent; border: 0; color: var(--mute); cursor: pointer; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; }
+.x:hover { background: var(--raised); color: var(--ink); }
+.x svg { width: 15px; height: 15px; }
+.addneed { display: flex; gap: 8px; padding: 12px 0 2px; }
+.addneed input { flex: 1; min-width: 0; font: inherit; font-size: 14px; color: var(--ink); background: transparent; border: 0; border-bottom: 1px dashed var(--line-2); padding: 6px 2px; }
+.addneed input::placeholder { color: var(--mute); }
+.addneed input:focus { outline: none; border-bottom-color: var(--accent-ink); }
+.where { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; font-size: 13.5px; }
+.where .lab { color: var(--mute); margin-right: 2px; }
+.sw { font: inherit; font-size: 13px; color: var(--ink-2); background: transparent; border: 1px solid var(--line-2); border-radius: 999px; padding: 5px 12px 5px 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+.sw i { width: 26px; height: 15px; border-radius: 999px; background: rgba(255, 255, 255, 0.16); position: relative; flex: none; transition: background 0.15s; }
+.sw i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%; background: #fff; transition: transform 0.15s; }
+.sw[aria-pressed="true"] { border-color: var(--accent-line); color: var(--ink); }
+.sw[aria-pressed="true"] i { background: var(--accent); }
+.sw[aria-pressed="true"] i::after { transform: translateX(11px); }
+.where .note { flex-basis: 100%; font-size: 12.5px; color: var(--mute); }
+.bar { margin: 22px -22px -22px; padding: 14px 22px; border-top: 1px solid var(--line); background: rgba(13, 17, 22, 0.85); display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.bar-say { flex: 1 1 280px; min-width: 0; font-size: 13.5px; color: var(--ink-2); }
+.bar-say b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.bar-say small { display: block; font-size: 12.5px; color: var(--mute); }
+.bar-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.menu-pop { margin-top: 10px; display: none; max-width: 460px; border: 1px solid var(--line-2); border-radius: 12px; background: var(--raised); padding: 6px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35); }
+.menu-pop.open { display: block; }
+.menu-pop .srch { width: 100%; font: inherit; font-size: 13.5px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; margin-bottom: 4px; }
+.menu-pop .srch::placeholder { color: var(--mute); }
+.mi { width: 100%; text-align: left; font: inherit; font-size: 13.5px; color: var(--ink-2); background: transparent; border: 0; border-radius: 8px; padding: 7px 10px; cursor: pointer; display: flex; justify-content: space-between; gap: 12px; }
+.mi:hover, .mi.on { background: var(--accent-soft); color: var(--ink); }
+.mi small { color: var(--mute); font-size: 12px; white-space: nowrap; }
+.mi-g { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mute); padding: 8px 10px 4px; }
+
+/* ── B: split ── */
+.split { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 18px; }
+.pane { border: 1px solid var(--line); border-radius: var(--r); padding: 16px; min-width: 0; }
+.pane h4 { margin: 0 0 10px; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mute); }
+.from { display: grid; gap: 6px; }
+.from-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); font-size: 13.5px; color: var(--ink); }
+.from-row small { color: var(--mute); font-size: 12px; }
+.chk { display: grid; gap: 2px; margin-top: 14px; }
+.chk label { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0 10px; font-size: 13.5px; color: var(--ink-2); padding: 6px 0; cursor: pointer; }
+.chk input { accent-color: var(--accent); margin-top: 4px; }
+.chk em { font-style: normal; font-size: 11.5px; color: var(--mute); flex-basis: 100%; padding-left: 23px; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: -4px 0 12px; flex-wrap: wrap; }
+.tab { font: inherit; font-size: 13.5px; font-weight: 500; color: var(--mute); background: transparent; border: 0; border-bottom: 2px solid transparent; padding: 8px 12px; cursor: pointer; }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tab b { margin-left: 6px; font-size: 12px; color: var(--mute); font-weight: 500; }
+.person { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 0; border-top: 1px solid var(--line); }
+.person:first-child { border-top: 0; }
+.av { width: 36px; height: 36px; border-radius: 50%; background: var(--raised); display: grid; place-items: center; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+.av.web { background: rgba(97, 173, 241, 0.12); color: var(--ai); }
+.pn { min-width: 0; }
+.pn b { color: var(--ink); font-weight: 600; font-size: 14px; }
+.pn span { display: block; font-size: 12.5px; color: var(--mute); }
+.fit { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+.fit.ok { background: var(--ok-soft); color: var(--ok); }
+.fit.part { background: var(--warn-soft); color: var(--warn); }
+.fit.pro { background: transparent; color: var(--mute); border: 1px dashed var(--line-2); }
+.live { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ok); }
+.live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px var(--ok-soft); }
+.webcta { display: grid; gap: 10px; justify-items: start; padding: 18px; border: 1px dashed var(--line-2); border-radius: 12px; font-size: 13.5px; color: var(--mute); }
+.stream { font-size: 12.5px; color: var(--ai); }
+
+/* ── C: AiMY drafts ── */
+.aimy { border: 1px solid rgba(139, 79, 244, 0.26); background: rgba(139, 79, 244, 0.06); border-radius: var(--r); padding: 18px 20px; display: grid; gap: 12px; }
+.aimy-h { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ai); }
+.aimy-h svg { width: 16px; height: 16px; }
+.aimy p { color: var(--ink-2); font-size: 15px; max-width: 70ch; }
+.aimy p b { color: var(--ink); font-weight: 600; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: inherit; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--line-2); border-radius: 999px; padding: 5px 12px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.chip .k { font-size: 11px; font-weight: 600; color: var(--accent-ink); }
+.chip.pref .k { color: var(--mute); }
+.faces { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--mute); }
+.faces .av { width: 30px; height: 30px; font-size: 11px; margin-left: -8px; border: 2px solid var(--bg); }
+.faces .av:first-child { margin-left: 0; }
+.entry { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 10px; margin-top: 16px; }
+.entry div { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; font-size: 13.5px; color: var(--mute); }
+.entry b { display: block; color: var(--ink-2); font-weight: 600; font-size: 13.5px; }
+
+/* Recommendation + phases */
+.rec { border: 1px solid rgba(78, 214, 161, 0.3); background: rgba(78, 214, 161, 0.05); border-radius: 18px; padding: 22px; display: grid; gap: 12px; }
+.rec p { max-width: 70ch; }
+.phases { display: grid; gap: 0; margin-top: 4px; border-top: 1px solid rgba(78, 214, 161, 0.18); }
+.rec .ph { border-bottom-color: rgba(78, 214, 161, 0.14); }
+.rec .ph:last-child { border-bottom: 0; padding-bottom: 0; }
+.ph { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.ph-n { font-size: 12.5px; font-weight: 600; color: var(--accent-ink); padding-top: 2px; }
+.ph h3 { font-size: 15.5px; }
+.ph p { font-size: 14px; color: var(--mute); margin-top: 4px; max-width: 70ch; }
+.ph code { font-family: ui-monospace, "Cascadia Code", Menlo, monospace; font-size: 12.5px; color: var(--ink-2); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 0 5px; }
+.foot { margin-top: 56px; font-size: 13px; color: var(--mute); }
+
+@media (max-width: 760px) {
+  .split { grid-template-columns: minmax(0, 1fr); }
+  .stage { padding: 16px; }
+  .bar { margin: 18px -16px -16px; padding: 14px 16px; }
+  .need { grid-template-columns: minmax(0, 1fr) auto; }
+  .need .seg { grid-column: 1; justify-self: start; }
+  .need .x { grid-column: 2; grid-row: 1; }
+  .ph { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="col">
+    <p class="cap">AiMY Talent · Find candidates</p>
+    <h1 style="margin-top:10px">A new plan for the search</h1>
+    <p class="lede">The Find page asks three questions in three rows of identical chips, then puts the part that decides the results, what the person must have, last. This plan turns it into one sentence you can read back, the needs right under it, and a count of who already fits before you press anything.</p>
+    <div class="meta"><span>For <b>Omar</b> (recruiter) and <b>Dina</b> (HR Manager)</span><span>Page: <b>?on=find</b></span><span>9 Nov 2026</span></div>
+  </header>
+
+  <section>
+    <div class="sec-head col">
+      <h2>What gets in the way today</h2>
+      <p>Read off the live page and its code (<code style="font-size:13px">findPage()</code>, <code style="font-size:13px">critBlock()</code>, <code style="font-size:13px">FIND_SOURCES</code>).</p>
+    </div>
+    <div class="probs">
+      <div class="prob"><span class="sev bug">Bug</span><h3>The Find button sits under the AiMY bar</h3><p>The only action on the page is at the bottom left, and the floating “Ask AiMY” composer covers it at common window heights.</p></div>
+      <div class="prob"><span class="sev hi">Hierarchy</span><h3>Every choice looks the same</h3><p>“Start from”, the requisitions under it, and “Where to look” are all the same chip. The answer row reads as a fourth question, and the chosen chip is only a faint purple.</p></div>
+      <div class="prob"><span class="sev hi">Scale</span><h3>A wall of requisitions</h3><p>Omar has 5 open requisitions; Dina sees 13, three of them “Bilingual Technical Support (German)”. A chip per requisition wraps into rows and can’t tell the three apart.</p></div>
+      <div class="prob"><span class="sev hi">Focus</span><h3>The needs come last</h3><p>“Read against” decides who comes back, yet it is the fourth block. Required and Preferred sit 900px to the right of the line they belong to.</p></div>
+      <div class="prob"><span class="sev mid">Feedback</span><h3>No idea what you’ll get</h3><p>Nothing says how many people in the pool already fit until you search. Making a need required or preferred changes nothing you can see.</p></div>
+      <div class="prob"><span class="sev mid">Concepts</span><h3>Sources mix two ideas</h3><p>Apollo doesn’t find anyone; it adds a work email to people the web search found. SignalHire is shown only to say it’s off.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head col">
+      <h2>The plan</h2>
+      <p>Four rules every direction below follows.</p>
+    </div>
+    <div class="principles">
+      <div class="pr"><b>Say the search as a sentence</b><span>Who it’s like, which role, where to look, written as one line you can read back and change in place.</span></div>
+      <div class="pr"><b>The needs are the centre</b><span>Four to six lines, each with Required or Preferred right beside it, and how many in the pool show it.</span></div>
+      <div class="pr"><b>Count before you search</b><span>The pool is ours, so the count of who fits updates as you edit. The web costs time, so it runs on the button.</span></div>
+      <div class="pr"><b>One action, always visible</b><span>A bar pinned to the bottom of the search, above AiMY’s composer, with the count and Find candidates.</span></div>
+    </div>
+    <div class="flow" aria-label="The flow">
+      <span class="st">Start from (who left, a requisition, or text)</span><span class="ar">→</span>
+      <span class="st key">The needs, with live pool count</span><span class="ar">→</span>
+      <span class="st">Where to look</span><span class="ar">→</span>
+      <span class="st key">Find candidates</span><span class="ar">→</span>
+      <span class="st">Pool first, then web prospects</span><span class="ar">→</span>
+      <span class="st">Add to the requisition, or save the search</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head col">
+      <h2>Three directions</h2>
+      <p>Each is drawn with real data from the prototype. The controls work: change a need, a source or a tab and the mockup answers.</p>
+    </div>
+
+    <!-- A -->
+    <div class="dir" id="dir-a">
+      <div class="dir-head"><h3>A · The brief</h3><span class="dir-tag rec">Recommended base</span></div>
+      <p class="dir-say">The three chip rows become one sentence with three pickers. Each picker is a short searchable menu, so 13 requisitions fit and the three German ones show their account and date. The needs follow as a list, and a bar at the bottom says how many already fit.</p>
+      <div class="stage">
+        <div class="app-top"><span class="app-h">Find candidates</span><span class="bar-acts"><button class="ghost" type="button">Recent searches</button><button class="ghost" type="button">Ask AiMY instead</button></span></div>
+        <p class="brief">Find people like
+          <button class="tok" type="button" data-pop="popLike" aria-expanded="false"><span id="tokLike">Nour Gamal</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+          for
+          <button class="tok" type="button" data-pop="popReq" aria-expanded="false"><span id="tokReq">Bilingual Technical Support (German)</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+          in <button class="tok" type="button" data-scroll="whereA"><span id="tokWhere">our pool and the public web</span></button>
+        </p>
+        <p class="brief-sub" id="briefSub">Nour left in August: the client ended the project. Whoever you add goes on Bilingual Technical Support (German) · Northwind, opened 21 Oct.</p>
+        <div class="menu-pop" id="popLike" role="menu">
+          <p class="mi-g">Who left, on your accounts</p>
+          <button class="mi on" type="button" role="menuitem" data-like="Nour Gamal|Bilingual Technical Support (German)|the client ended the project">Nour Gamal <small>Bilingual Technical Support · Northwind</small></button>
+          <button class="mi" type="button" role="menuitem" data-like="Salma Fouad|L3 Support Engineer|left for a higher salary elsewhere">Salma Fouad <small>L3 Support Engineer · Northwind</small></button>
+          <button class="mi" type="button" role="menuitem" data-like="Karim Wahba|Accounts Receivable Specialist|moved abroad">Karim Wahba <small>Accounts Receivable · Northwind</small></button>
+          <button class="mi" type="button" role="menuitem" data-like="Shaimaa Adel|General Accountant|did not pass probation">Shaimaa Adel <small>General Accountant · Northwind</small></button>
+          <p class="mi-g">Or</p>
+          <button class="mi" type="button" role="menuitem" data-like="">Nobody, start from the requisition <small></small></button>
+        </div>
+        <div class="menu-pop" id="popReq" role="menu">
+          <input class="srch" type="text" id="reqSearch" placeholder="Search 13 open requisitions" aria-label="Search open requisitions">
+          <div id="reqList"></div>
+        </div>
+
+        <div class="needs" id="needsA" aria-label="What they need"></div>
+        <form class="addneed" id="addNeedA"><input id="newNeedA" type="text" placeholder="Add a need, like Arabic and English" aria-label="Add a need"><button class="ghost" type="submit">Add</button></form>
+
+        <div class="where" id="whereA">
+          <span class="lab">Where to look</span>
+          <button class="sw" type="button" aria-pressed="true" data-src="pool"><i></i>Our talent pool</button>
+          <button class="sw" type="button" aria-pressed="true" data-src="web"><i></i>Public web pages</button>
+          <button class="sw" type="button" aria-pressed="true" data-src="apollo" id="swApollo"><i></i>Add work emails (Apollo)</button>
+          <span class="note">Public pages only, never LinkedIn scraping. People found there are prospects until they reply. SignalHire stays off until decision D10.</span>
+        </div>
+
+        <div class="bar">
+          <p class="bar-say" id="barA"></p>
+          <span class="bar-acts"><button class="ghost" type="button">Save this search</button><button class="primary" type="button" id="goA">Find candidates</button></span>
+        </div>
+      </div>
+      <div class="prosncons">
+        <div class="pc"><b>Good at</b><ul><li>Reads back as one line: you can check the search at a glance.</li><li>Scales to any number of requisitions and leavers.</li><li>Fixes the hidden button with the pinned bar.</li></ul></div>
+        <div class="pc"><b>Watch for</b><ul><li>“Describe or paste” needs its own picker state: the sentence becomes “Find people who…” with a text box.</li><li>The per-need counts must come from the pool only, never the web.</li></ul></div>
+      </div>
+    </div>
+
+    <!-- B -->
+    <div class="dir" id="dir-b">
+      <div class="dir-head"><h3>B · Search beside its results</h3><span class="dir-tag">For wide screens</span></div>
+      <p class="dir-say">The setup becomes a narrow column on the left and the results fill the right, so you change a need and watch the pool list change. Public pages are a second tab that runs only when you ask, because it takes about a minute.</p>
+      <div class="stage">
+        <div class="split">
+          <div class="pane">
+            <h4>Start from</h4>
+            <div class="from">
+              <div class="from-row">Nour Gamal <small>who left</small></div>
+              <div class="from-row">Bilingual Technical Support (German) <small>Northwind</small></div>
+            </div>
+            <h4 style="margin-top:16px">What they need</h4>
+            <div class="chk" id="chkB">
+              <label><input type="checkbox" checked data-b="0">German at C1 or above <em>required</em></label>
+              <label><input type="checkbox" checked data-b="1">Fluent English <em>required</em></label>
+              <label><input type="checkbox" checked data-b="2">1+ year of software support <em>required</em></label>
+              <label><input type="checkbox" data-b="3">Calm with escalations on the phone <em>preferred · most CVs are silent on it</em></label>
+            </div>
+          </div>
+          <div class="pane">
+            <div class="tabs" role="tablist">
+              <button class="tab" type="button" role="tab" aria-selected="true" data-tab="pool">In your pool<b id="nPool">7</b></button>
+              <button class="tab" type="button" role="tab" aria-selected="false" data-tab="web">Web prospects<b id="nWeb">not run</b></button>
+            </div>
+            <p style="margin:0 0 6px"><span class="live">Updates as you change the needs</span></p>
+            <div id="listB"></div>
+          </div>
+        </div>
+      </div>
+      <div class="prosncons">
+        <div class="pc"><b>Good at</b><ul><li>Tuning is instant: untick a need and see who it was keeping out.</li><li>The cost of the web is visible and on demand.</li></ul></div>
+        <div class="pc"><b>Watch for</b><ul><li>Needs 1100px or more; below that it stacks into direction A.</li><li>Live results tempt people to over-tune; keep the four-to-six advice in view.</li></ul></div>
+      </div>
+    </div>
+
+    <!-- C -->
+    <div class="dir" id="dir-c">
+      <div class="dir-head"><h3>C · AiMY drafts it, you adjust</h3><span class="dir-tag">How you arrive</span></div>
+      <p class="dir-say">Most searches start from somewhere: a requisition’s Find candidates button, the Today tile, a chat. Instead of an empty form, AiMY opens with the search already drafted and says where each part came from. One press runs it; Change it opens direction A, filled in.</p>
+      <div class="stage">
+        <div class="aimy">
+          <div class="aimy-h"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8z"/></svg>AiMY drafted this search</div>
+          <p>For <b>Bilingual Technical Support (German)</b> at Northwind, from its success profile and from <b>Nour Gamal</b>, who held the role until August. I left out phone escalations as a must: most CVs don’t mention it, so it would hide good people. The phone screen asks.</p>
+          <div class="chips" id="chipsC">
+            <button class="chip" type="button"><span class="k">REQUIRED</span>German at C1 or above</button>
+            <button class="chip" type="button"><span class="k">REQUIRED</span>Fluent English</button>
+            <button class="chip" type="button"><span class="k">REQUIRED</span>1+ year of software support</button>
+            <button class="chip pref" type="button"><span class="k">PREFERRED</span>Calm with escalations on the phone</button>
+          </div>
+          <div class="faces"><span class="av">ME</span><span class="av">YH</span><span class="av">SR</span><span class="av">+4</span><span><b style="color:var(--ink-2);font-weight:600">7 people in your pool</b> already fit the required three, Mai Ezz first. The public web runs when you search.</span></div>
+          <div class="bar-acts"><button class="primary" type="button">Run it</button><button class="ghost" type="button">Change it</button><button class="ghost" type="button">Search for someone else</button></div>
+        </div>
+        <div class="entry">
+          <div><b>From a requisition</b>Find candidates on the requisition opens this, drafted from its success profile.</div>
+          <div><b>From Today</b>The Find people tile drafts from the requisition most at risk.</div>
+          <div><b>From the chat</b>“Find me someone like Nour” lands here with the same card.</div>
+        </div>
+      </div>
+      <div class="prosncons">
+        <div class="pc"><b>Good at</b><ul><li>Zero setup for the common case: 82% of requests replace someone.</li><li>AiMY explains its choices, so the recruiter trusts and corrects them.</li></ul></div>
+        <div class="pc"><b>Watch for</b><ul><li>Not a page on its own: it needs A behind Change it.</li><li>Must never run the web search without the press.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="rec">
+      <h2>Recommendation</h2>
+      <p><b style="color:var(--ink)">Build A as the page, open it the way C does, and add B’s side-by-side results on wide screens.</b> A fixes the bug and the hierarchy on every screen size. C removes the setup for the common case without adding a second form. B is a layout of A, not a separate design, so it can come last.</p>
+    <div class="sec-head" style="margin:18px 0 0"><h3>Build order</h3><p>Each step ships on its own and leaves the page better than before.</p></div>
+    <div class="phases">
+      <div class="ph"><span class="ph-n">Step 1</span><div><h3>Pin the action bar</h3><p>Move Find candidates, Save this search and the count into a bar at the bottom of the search block, sitting above AiMY’s composer. Fixes the hidden button. In <code>findPage()</code>, the <code>t-acts</code> row becomes the bar.</p></div></div>
+      <div class="ph"><span class="ph-n">Step 2</span><div><h3>The sentence with pickers</h3><p>Replace the Start from chips and the requisition and leaver chip rows with the brief: three tokens, each opening a searchable menu. “Describe or paste” turns the sentence into “Find people who…” with the text box under it.</p></div></div>
+      <div class="ph"><span class="ph-n">Step 3</span><div><h3>Needs with their counts</h3><p>In <code>critBlock()</code>, put Required or Preferred beside each line and show how many in the pool show it, amber when it’s fewer than five. Use the pool data only.</p></div></div>
+      <div class="ph"><span class="ph-n">Step 4</span><div><h3>Sources as switches</h3><p>Pool and public web as two switches; Apollo as “Add work emails” that only enables with the web. SignalHire leaves the row and moves to the footnote. <code>FIND_SOURCES</code> keeps its keys.</p></div></div>
+      <div class="ph"><span class="ph-n">Step 5</span><div><h3>Arrive drafted</h3><p>The requisition’s Find candidates, the Today tile and the chat open the AiMY card first, with Run it and Change it.</p></div></div>
+      <div class="ph"><span class="ph-n">Step 6</span><div><h3>Results beside the search</h3><p>At 1100px and up, the results card sits right of the search and the pool tab updates live. Below that, it stays under the search as now.</p></div></div>
+    </div>
+    </div>
+    <p class="foot">The counts in the mockups are illustrative, worked from the prototype’s sample pool. No fit percentages anywhere: each person shows how many of the needs they meet, with Why behind it.</p>
+  </section>
+</div>
+
+<script>
+(function () {
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+
+  /* ── A ── share = how much of the pool shows each need (sample pool of 140). */
+  const POOL = 140;
+  const ROLE = {
+    'Bilingual Technical Support (German)': [['German at C1 or above', 0.11, 1], ['Fluent English', 0.82, 1], ['1+ year of software support', 0.55, 1], ['Calm with escalations on the phone', 0.06, 0]],
+    'L3 Support Engineer': [['4+ years in software support, 2 at L3', 0.16, 1], ['Reads stack traces and logs', 0.3, 1], ['SQL and one scripting language', 0.34, 1], ['Fluent English', 0.82, 1]],
+    'Accounts Receivable Specialist': [['2+ years in accounts receivable', 0.18, 1], ['Collections with overseas clients', 0.2, 1], ['NetSuite or a similar ERP', 0.22, 0], ['Fluent English', 0.82, 1]],
+    'General Accountant': [['3+ years of general ledger work', 0.2, 1], ['Month-end close', 0.26, 1], ['Bank reconciliations', 0.3, 1], ['Advanced Excel', 0.5, 0]],
+    'Technical Support Engineer': [['2+ years of L2 software support', 0.24, 1], ['Ticketing tools (Zendesk or Freshdesk)', 0.31, 1], ['SQL to read logs and data', 0.34, 0], ['Fluent English, spoken and written', 0.8, 1]],
+    'AI Business Analyst': [['3+ years as a business analyst', 0.12, 1], ['Writes requirements engineers build from', 0.14, 1], ['Has worked with AI or data teams', 0.08, 0], ['Fluent English', 0.82, 1]],
+    'Customer Support Agent': [['Fluent English', 0.82, 1], ['Typing and written replies', 0.5, 1], ['Shift work, including weekends', 0.4, 0]],
+    'Operations Specialist': [['2+ years in operations or back office', 0.25, 1], ['Process documentation', 0.2, 0], ['Advanced Excel', 0.5, 1], ['Fluent English', 0.82, 1]],
+  };
+  const REQS = [
+    ['Bilingual Technical Support (German)', 'Northwind · opened 21 Oct'], ['Bilingual Technical Support (German)', 'Northwind · opened 2 Nov'], ['Bilingual Technical Support (German)', 'Northwind · opened 6 Nov'],
+    ['L3 Support Engineer', 'Northwind'], ['Technical Support Engineer', 'Halcyon Mobile'], ['Technical Support Engineer', 'Fernhill'], ['AI Business Analyst', 'FlairsTech'],
+    ['Accounts Receivable Specialist', 'Northwind'], ['General Accountant', 'Northwind'], ['General Accountant', 'Halcyon Mobile'], ['Customer Support Agent', 'Halcyon Mobile'],
+    ['Customer Support Agent', 'Fernhill'], ['Operations Specialist', 'FlairsTech'],
+  ];
+  const st = { like: { name: 'Nour Gamal', why: 'the client ended the project' }, req: 0, needs: ROLE['Bilingual Technical Support (German)'].map((n) => ({ t: n[0], s: n[1], need: !!n[2] })), src: { pool: true, web: true, apollo: true } };
+
+  function drawNeeds() {
+    $('#needsA').innerHTML = st.needs.map((n, i) => {
+      const c = Math.round(POOL * n.s);
+      return '<div class="need"><div class="need-t"><span>' + esc(n.t) + '</span><span class="need-n' + (c < 5 ? ' thin' : '') + '">' +
+        (c < 5 ? 'only ' + c + ' in your pool show it; most CVs are silent' : c + ' in your pool show it') + '</span></div>' +
+        '<span class="seg" role="group" aria-label="How much it matters">' +
+          '<button type="button" data-need="' + i + '|1" aria-pressed="' + n.need + '">Required</button>' +
+          '<button type="button" data-need="' + i + '|0" aria-pressed="' + !n.need + '">Preferred</button></span>' +
+        '<button class="x" type="button" data-del="' + i + '" aria-label="Remove ' + esc(n.t) + '">' + X + '</button></div>';
+    }).join('');
+    drawBar();
+  }
+  function fits() {
+    const req = st.needs.filter((n) => n.need);
+    if (!req.length) return POOL;
+    return Math.max(0, Math.round(POOL * req.reduce((p, n) => p * n.s, 1)));
+  }
+  function drawBar() {
+    const n = st.src.pool ? fits() : null;
+    const reqN = st.needs.filter((x) => x.need).length;
+    const many = st.needs.length > 6;
+    let say = n == null ? 'Your pool is off, so nothing to count yet.' : '<b>' + n + (n === 1 ? ' person' : ' people') + '</b> in your pool meet all ' + reqN + ' required ' + (reqN === 1 ? 'need' : 'needs') + '.';
+    let sub = st.src.web ? 'Public pages add prospects when you search, in about a minute' + (st.src.apollo ? ', with work emails from Apollo.' : '.') : 'Public pages are off: only people we already know.';
+    if (many) sub = st.needs.length + ' needs. Past six, most profiles are silent on enough of them that the strongest people read as weak.';
+    $('#barA').innerHTML = say + '<small>' + sub + '</small>';
+    const where = [st.src.pool && 'our pool', st.src.web && 'the public web'].filter(Boolean);
+    $('#tokWhere').textContent = where.length ? where.join(' and ') : 'nowhere yet';
+  }
+  function drawReqs(q) {
+    const f = (q || '').toLowerCase();
+    const rows = REQS.map((r, i) => [r, i]).filter((x) => !f || (x[0][0] + ' ' + x[0][1]).toLowerCase().includes(f));
+    $('#reqList').innerHTML = rows.length ? rows.map((x) => '<button class="mi' + (x[1] === st.req ? ' on' : '') + '" type="button" role="menuitem" data-req="' + x[1] + '">' + esc(x[0][0]) + '<small>' + esc(x[0][1]) + '</small></button>').join('')
+      : '<p class="mi-g" style="text-transform:none;letter-spacing:0">No open requisition matches.</p>';
+  }
+  function setReq(i) {
+    st.req = i;
+    const r = REQS[i];
+    $('#tokReq').textContent = r[0];
+    st.needs = (ROLE[r[0]] || []).map((n) => ({ t: n[0], s: n[1], need: !!n[2] }));
+    drawSub();
+    drawNeeds();
+  }
+  function drawSub() {
+    const r = REQS[st.req];
+    $('#briefSub').textContent = (st.like ? st.like.name.split(' ')[0] + ' left: ' + st.like.why + '. ' : 'Read against the requisition’s success profile. ') + 'Whoever you add goes on ' + r[0] + ' · ' + r[1] + '.';
+  }
+  function closePops(except) { $$('.menu-pop').forEach((p) => { if (p.id !== except) { p.classList.remove('open'); const b = $('[data-pop="' + p.id + '"]'); if (b) b.setAttribute('aria-expanded', 'false'); } }); }
+
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('button');
+    if (!t) { if (!e.target.closest('.menu-pop')) closePops(); return; }
+    if (t.dataset.pop) { const p = $('#' + t.dataset.pop); const open = !p.classList.contains('open'); closePops(); p.classList.toggle('open', open); t.setAttribute('aria-expanded', String(open)); if (open && t.dataset.pop === 'popReq') { drawReqs(''); $('#reqSearch').value = ''; $('#reqSearch').focus(); } return; }
+    if (t.dataset.like != null) {
+      const v = t.dataset.like;
+      $$('[data-like]').forEach((b) => b.classList.toggle('on', b === t));
+      if (!v) { st.like = null; $('#tokLike').textContent = 'nobody in particular'; }
+      else { const [name, role, why] = v.split('|'); st.like = { name, why }; $('#tokLike').textContent = name; const i = REQS.findIndex((r) => r[0] === role); if (i >= 0) { setReq(i); } }
+      drawSub(); closePops(); return;
+    }
+    if (t.dataset.req != null) { setReq(Number(t.dataset.req)); closePops(); return; }
+    if (t.dataset.scroll) { $('#' + t.dataset.scroll).scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    if (t.dataset.need) { const [i, v] = t.dataset.need.split('|'); st.needs[i].need = v === '1'; drawNeeds(); return; }
+    if (t.dataset.del) { st.needs.splice(Number(t.dataset.del), 1); drawNeeds(); return; }
+    if (t.dataset.src) {
+      const k = t.dataset.src;
+      if (k === 'apollo' && !st.src.web) return;
+      st.src[k] = !st.src[k];
+      if (k === 'web' && !st.src.web) st.src.apollo = false;
+      $$('[data-src]').forEach((b) => b.setAttribute('aria-pressed', String(!!st.src[b.dataset.src])));
+      $('#swApollo').disabled = !st.src.web; $('#swApollo').style.opacity = st.src.web ? '' : '0.45';
+      drawBar(); return;
+    }
+    if (t.id === 'goA') { t.textContent = 'Searching…'; setTimeout(() => { t.textContent = 'Find candidates'; }, 1400); return; }
+    if (t.dataset.tab) { tabB = t.dataset.tab; $$('[data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b === t))); drawB(); return; }
+    if (t.id === 'runWeb') { runWeb(); return; }
+  });
+  $('#reqSearch').addEventListener('input', (e) => drawReqs(e.target.value));
+  $('#addNeedA').addEventListener('submit', (e) => { e.preventDefault(); const v = $('#newNeedA').value.trim(); if (!v) return; st.needs.push({ t: v, s: 0.3, need: false }); $('#newNeedA').value = ''; drawNeeds(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePops(); });
+
+  /* ── B ── each person: which of the four needs they show (m met, p partly, n silent). */
+  const PEOPLE = [
+    ['Mai Ezz', 'Support agent, 2 yrs · applied in June, reached the client interview', 'mmmp'],
+    ['Youssef Hany', 'L1 support at a telecom · applied in March, not progressing', 'mmmn'],
+    ['Salma Reda', 'Customer success, 3 yrs · client declined in April', 'mmmn'],
+    ['Omar Lotfy', 'Helpdesk, 1 yr · withdrew in May', 'mmpn'],
+    ['Nadine Fawzy', 'Translator moving into support · applied in July', 'mpmn'],
+    ['Hana Mostafa', 'Support engineer · asked to hear about other roles', 'mmmn'],
+    ['Tarek Samir', 'Sales support, German B2 · applied in February', 'pmmn'],
+    ['Lina Adel', 'Bookkeeper, fluent German · applied in January', 'mmnn'],
+    ['Karim Sobhy', 'IT support, English only · applied in May', 'nmmn'],
+  ];
+  const WEB = [['Jana K.', 'Support Engineer at a payments startup · public GitHub', 'mmmn'], ['Felix A.', 'Technical Support Lead at a telecom · speaker page', 'mmmp'], ['Rana M.', 'Helpdesk Engineer at a bank · company team page', 'mmpn'], ['Mostafa E.', 'Customer Success Specialist at a SaaS company · portfolio', 'pmmn']];
+  let tabB = 'pool', webState = 'idle', webN = 0;
+  const on = () => $$('#chkB input').map((x) => x.checked);
+  function verdict(ev, want) {
+    const idx = want.map((w, i) => (w ? i : -1)).filter((i) => i >= 0);
+    const met = idx.filter((i) => ev[i] === 'm').length, part = idx.filter((i) => ev[i] === 'p').length;
+    return { met, part, all: idx.length, keep: idx.every((i) => ev[i] !== 'n') };
+  }
+  function row(p, web) {
+    const v = verdict(p[2], on());
+    const cls = web ? 'pro' : v.met === v.all ? 'ok' : 'part';
+    const say = (web ? 'Prospect · ' : '') + v.met + ' of ' + v.all + ' met' + (v.part ? ', ' + v.part + ' partly' : '');
+    return '<div class="person"><span class="av' + (web ? ' web' : '') + '">' + p[0].split(' ').map((w) => w[0]).join('').slice(0, 2) + '</span><span class="pn"><b>' + esc(p[0]) + '</b><span>' + esc(p[1]) + '</span></span><span class="fit ' + cls + '">' + say + '</span></div>';
+  }
+  function drawB() {
+    const want = on();
+    const pool = PEOPLE.filter((p) => verdict(p[2], want).keep);
+    $('#nPool').textContent = pool.length;
+    $('#nWeb').textContent = webState === 'done' ? WEB.length : webState === 'run' ? webN + '…' : 'not run';
+    if (tabB === 'pool') { $('#listB').innerHTML = pool.length ? pool.map((p) => row(p, false)).join('') : '<p class="pn"><span>Nobody in your pool shows every ticked need. Untick one to see who it keeps out.</span></p>'; return; }
+    if (webState === 'idle') { $('#listB').innerHTML = '<div class="webcta">Public pages are searched only when you ask: about a minute, each person’s page named, never LinkedIn scraping.<button class="primary" type="button" id="runWeb">Search public pages</button></div>'; return; }
+    const shown = WEB.slice(0, webState === 'done' ? WEB.length : webN);
+    $('#listB').innerHTML = (webState === 'run' ? '<p class="stream">Reading public pages… ' + webN + ' found so far</p>' : '') + shown.map((p) => row(p, true)).join('');
+  }
+  function runWeb() {
+    webState = 'run'; webN = 0; drawB();
+    const tick = () => { webN++; if (webN >= WEB.length) { webState = 'done'; drawB(); return; } drawB(); setTimeout(tick, 650); };
+    setTimeout(tick, 650);
+  }
+  $('#chkB').addEventListener('change', drawB);
+
+  drawNeeds(); drawReqs(''); drawB();
+})();
+</script>

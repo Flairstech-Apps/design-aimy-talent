@@ -604,7 +604,6 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-scope { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 12px; font-size: var(--fs-sm); color: var(--d100); }
 .t-rule { display: flex; gap: 6px; align-items: flex-start; color: var(--accent-text); }
 .t-rule svg { flex-shrink: 0; margin-top: 4px; }
-.t-parked { opacity: 0.55; cursor: not-allowed; }
 
 /* English or Arabic on the pages candidates see (M9). */
 .t-lang { margin-left: auto; display: inline-flex; border: 1px solid var(--card-border); border-radius: 999px; overflow: hidden; }
@@ -1044,7 +1043,6 @@ body.is-portal .aimy-overlay { display: none !important; }
    The criteria are shown before the search, one row each: the words (a box
    you can change), Required or Preferred, and a way to take it out, with a
    box to add one. Wrong data's reasons open under the web row they are on. */
-.t-find-mode { margin-bottom: 4px; }
 .t-crit { margin: 12px 0 4px; padding: 12px 14px; border: 1px solid var(--card-border); border-radius: var(--r-lg); display: grid; gap: 6px; }
 .t-crit-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin-bottom: 4px; }
 .t-crit-cap { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--d50); }
@@ -2158,3 +2156,74 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 }
 /* The search box is sized by its own text (14px), not the page's. */
 .t-cfilters .b-find { font-size: var(--fs-xs); }
+
+/* ══ FIND, AS ONE SENTENCE (Engy, 9 Nov) ═══════════════════════════════════
+   deliverables/find-candidates-plan.html, the recommendation. The search said
+   as one sentence with two pickers, the needs under it with their pool counts,
+   the sources as switches, and the one action pinned above AiMY's composer
+   (it sat under it). Results sit beside the search when there is room. */
+.t-find-brief { margin: 2px 0 0; font-size: 19px; line-height: 2; color: var(--d100); text-wrap: pretty; }
+.t-tok-wrap { vertical-align: baseline; }
+.t-tok { font: inherit; color: var(--d50); background: rgba(var(--accent-rgb), 0.12); border: 1px solid rgba(var(--accent-rgb), 0.34); border-radius: 10px;
+  padding: 0 8px 0 11px; display: inline-flex; align-items: center; gap: 4px; line-height: 1.6; cursor: pointer; text-align: left; }
+.t-tok:hover, .t-tok[aria-expanded="true"] { background: rgba(var(--accent-rgb), 0.2); }
+.t-tok:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.t-tok > svg { width: 0.8em; height: 0.8em; flex: none; opacity: 0.75; }
+.t-find-look { color: var(--d50); }
+.t-tok-menu { min-width: 300px; max-width: min(460px, 86vw); font-size: var(--fs-sm); line-height: var(--lh-base); }
+.t-tok-g { margin: 6px 8px 2px; font-size: var(--t-micro); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+.t-tok-q { width: 100%; margin: 0 0 4px; }
+.t-tok-menu .b-menu-item.is-on { background: rgba(var(--accent-rgb), 0.12); }
+.t-tok-menu .b-menu-item { flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; }
+.t-tok-menu .tel-menu-cc { margin: 0; font-size: var(--fs-xs); color: var(--ink-muted); }
+.t-tok-menu .b-menu-item[hidden] { display: none; }
+.t-find-sub { margin: 2px 0 0; font-size: var(--fs-xs); color: var(--ink-muted); max-width: 76ch; }
+.t-find-form #wrapFind { margin-top: 12px; }
+.t-find-form .t-crit { margin: 18px 0 0; padding: 0; border: 0; border-top: 1px solid var(--card-border); border-radius: 0; gap: 0; }
+.t-find-form .t-crit-head { margin: 0; padding: 14px 0 6px; }
+.t-find-form .t-crit-row { grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 8px 14px; padding: 6px 0; border-bottom: 1px solid var(--card-border); }
+.t-find-form .t-crit-add { grid-template-columns: minmax(0, 1fr) auto; border-bottom: 0; }
+.t-crit-n { font-size: var(--fs-xs); color: var(--ink-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.t-crit-n.is-thin { color: var(--warn-text, var(--warn)); }
+.t-where { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 16px; }
+.t-where-lab { margin-right: 2px; font-size: var(--fs-xs); color: var(--ink-muted); }
+.t-sw { font: inherit; font-size: var(--fs-xs); color: var(--d100); background: transparent; border: 1px solid var(--card-border-hover); border-radius: var(--r-pill);
+  padding: 5px 12px 5px 7px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.t-sw-k { position: relative; flex: none; width: 26px; height: 15px; border-radius: 999px; background: color-mix(in srgb, var(--ink-muted) 45%, transparent); transition: background var(--t-fast, 150ms); }
+.t-sw-k::after { content: ""; position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%; background: #fff; transition: transform var(--t-fast, 150ms) var(--ease-out, ease-out); }
+.t-sw[aria-pressed="true"] { color: var(--d50); border-color: rgba(var(--accent-rgb), 0.45); }
+.t-sw[aria-pressed="true"] .t-sw-k { background: var(--accent); }
+.t-sw[aria-pressed="true"] .t-sw-k::after { transform: translateX(11px); }
+.t-sw:disabled { opacity: 0.45; cursor: default; }
+.t-sw:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.t-where-note { flex-basis: 100%; margin: 2px 0 0; font-size: var(--fs-xs); color: var(--ink-muted); }
+.t-find-bar { position: sticky; bottom: 86px; z-index: 5; margin: 20px 0 0; padding: 12px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+  border: 1px solid var(--card-border-hover); border-radius: 14px; background: var(--panel-bg); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28); }
+.t-find-bar-say { flex: 1 1 280px; min-width: 0; margin: 0; font-size: var(--fs-sm); color: var(--d100); }
+.t-find-bar-say b { color: var(--d50); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
+.t-find-bar-say small { display: block; font-size: var(--fs-xs); color: var(--ink-muted); }
+.t-find-bar .t-acts { margin: 0; }
+.t-find-draft { margin: 4px 0 0; }
+.t-draft-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; }
+.t-draft-chip { display: inline-flex; align-items: baseline; gap: 7px; padding: 4px 12px; border: 1px solid var(--card-border-hover); border-radius: var(--r-pill); font-size: var(--fs-sm); color: var(--d50); }
+.t-draft-k { font-size: 10.5px; font-weight: var(--fw-semibold); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-label, var(--accent)); }
+.t-draft-chip.is-pref .t-draft-k { color: var(--ink-muted); }
+.t-draft-n { margin: 12px 0 0; font-size: var(--fs-sm); color: var(--d100); }
+.t-draft-n b { color: var(--d50); font-weight: var(--fw-semibold); }
+/* Results beside the search when the page has room for both. */
+.t-find-split { container-type: inline-size; }
+.t-find-cols { display: grid; gap: 32px; }
+.t-find-cols > * { grid-column: auto; min-width: 0; margin: 0; padding-top: 0; }
+@container (min-width: 1040px) { .t-find-cols { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-items: start; } }
+.t-find-form { container-type: inline-size; }
+@container (max-width: 640px) {
+  /* The line full width, its remove beside it; Required or Preferred and the count under it. */
+  .t-find-form .t-crit-row { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "in in x" "need n n"; }
+  .t-find-form .t-crit-row > .t-crit-in { grid-area: in; }
+  .t-find-form .t-crit-row > .t-crit-x { grid-area: x; }
+  .t-find-form .t-crit-row > .t-crit-n { grid-area: n; white-space: normal; }
+  .t-find-form .t-crit-row > .t-crit-need { grid-area: need; }
+  .t-find-form .t-crit-add { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: none; }
+  .t-find-form .t-crit-row.t-crit-add > * { grid-area: auto; }
+  .t-find-brief { font-size: 17px; }
+}
