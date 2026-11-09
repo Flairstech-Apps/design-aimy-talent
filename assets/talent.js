@@ -2578,13 +2578,12 @@
           '<span class="s-meta-st tone-' + st.tone + '">' + esc(st.label) + '</span>' +
           (h ? '<span class="b-kind">' + (h.left >= 0 ? days(h.left) + ' left' : days(-h.left) + ' past the target') + '</span>' : '') + '</div>' +
         '<div class="b-cmeta t-facts">' +
-          '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">The need</h2><div class="b-cmeta-say">' +
+          '<div class="b-cmeta-part t-f-need"><h2 class="b-cmeta-cap">The need</h2><div class="b-cmeta-say">' +
             '<p class="b-cmeta-p">' + esc(plural(q.seats, 'seat')) + ', ' + (q.kind === 'replacement' ? 'a replacement' : 'a new role') + ', ' + esc(q.level.toLowerCase()) + '.</p>' +
             '<p class="b-cmeta-p">' + (q.billable ? 'Billable to the client.' : 'Not billable.') + '</p></div></div>' +
-          '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Hiring manager</h2><div class="b-cmeta-say"><p class="b-cmeta-p"><b>' + esc(hmOf(q).name) + '</b></p></div></div>' +
+          '<div class="b-cmeta-part t-f-hm"><h2 class="b-cmeta-cap">Hiring manager</h2><div class="b-cmeta-say"><p class="b-cmeta-p"><b>' + esc(hmOf(q).name) + '</b></p></div></div>' +
           (isClient() ? '' : reqWho(q)) +
-          /* The stages as the track the edit page draws (9 Nov), not a sentence of arrows. */
-          '<div class="b-cmeta-part t-wide"><h2 class="b-cmeta-cap">Stages</h2>' + planTrack(t.filter((k) => k !== 'joined'), true) + '</div>' +
+          '<div class="b-cmeta-part t-f-st"><h2 class="b-cmeta-cap">Stages</h2>' + stageSnake(t.filter((k) => k !== 'joined')) + '</div>' +
         '</div>' +
         '<div class="b-cmeta b-said t-two">' +
           '<div class="b-cmeta-part"><div class="b-draft-caprow"><span class="b-cmeta-cap">Success profile</span></div><div class="b-cmeta-say">' +
@@ -2708,15 +2707,44 @@
      story-so-far track with nobody on it yet. Every stage ahead, each with
      how long it usually takes, and the dashed mark where the decision
      passes to the client or the hiring manager. */
-  function planTrack(t, row) {
+  function planTrack(t) {
     const hi = t.indexOf('sent') >= 0 ? t.indexOf('sent') : t.indexOf('mgr');
     const name = (k) => JY_SHORT[k] || STAGE[k].label;
-    return '<div class="t-trk-wrap' + (row ? ' is-row' : '') + '"><ol class="t-trk is-plan" style="--n:' + t.length + '" aria-label="The stages, in order">' + t.map((k, i) =>
+    return '<div class="t-trk-wrap"><ol class="t-trk is-plan" style="--n:' + t.length + '" aria-label="The stages, in order">' + t.map((k, i) =>
       '<li class="t-trk-step' + (i === hi ? ' is-hand' : '') + '" title="' + esc(STAGE[k].label + (STAGE[k].exp ? ', usually ' + days(STAGE[k].exp) : '')) + '">' +
         '<span class="t-trk-dot" aria-hidden="true"></span><span class="t-trk-k">' + esc(name(k)) + '</span>' +
         (STAGE[k].exp && i < t.length - 1 ? '<span class="t-trk-t">usually ' + days(STAGE[k].exp) + '</span>' : '') +
         (i === hi ? '<span class="t-trk-split" aria-hidden="true"><span>' + (t[hi] === 'sent' ? 'the client decides' : 'the hiring manager decides') + '</span></span>' : '') + '</li>').join('') +
       '</ol></div>';
+  }
+  /* THE STAGES, FOLDED (Engy, 9 Nov): one line through every stage, laid in
+     rows so it fits a column. Odd rows run back the other way, and each row's
+     end turns into the next on a round bend, so it still reads as one path.
+     Each step carries its place for four to a row and for three (a narrow
+     head), and what its line does next: on along the row, back along it, a
+     bend on the right or the left (s4-* and s3-*), or nothing at the end. From the hand-over
+     on, the line is dashed: that part is the client's (or the manager's). */
+  /* Written out whole, so the audit can pair each class with its rule. */
+  const SNK4 = { on: 's4-on', back: 's4-back', br: 's4-br', bl: 's4-bl' };
+  const SNK3 = { on: 's3-on', back: 's3-back', br: 's3-br', bl: 's3-bl' };
+  function stageSnake(t) {
+    const hi = t.indexOf('sent') >= 0 ? t.indexOf('sent') : t.indexOf('mgr');
+    const name = (k) => JY_SHORT[k] || STAGE[k].label;
+    const at = (i, per) => {
+      const r = Math.floor(i / per), k = i % per, back = r % 2 === 1;
+      const go = i === t.length - 1 ? 'end' : k === per - 1 ? (back ? 'bl' : 'br') : back ? 'back' : 'on';
+      return { r: r + 1, c: back ? per - k : k + 1, go: go };
+    };
+    return '<ol class="t-snk" aria-label="The stages, in order">' + t.map((k, i) => {
+      const w = at(i, 4), n = at(i, 3);
+      return '<li class="t-snk-step' + (hi >= 0 && i >= hi ? ' is-theirs' : '') + (SNK4[w.go] ? ' ' + SNK4[w.go] : '') + (SNK3[n.go] ? ' ' + SNK3[n.go] : '') + '"' +
+        ' style="--r4:' + w.r + ';--c4:' + w.c + ';--r3:' + n.r + ';--c3:' + n.c + '"' +
+        ' title="' + esc(STAGE[k].label + (STAGE[k].exp ? ', usually ' + days(STAGE[k].exp) : '')) + '">' +
+        '<span class="t-trk-dot" aria-hidden="true"></span><span class="t-trk-k">' + esc(name(k)) + '</span>' +
+        (STAGE[k].exp && i < t.length - 1 ? '<span class="t-trk-t">usually ' + days(STAGE[k].exp) + '</span>' : '') + '</li>';
+    }).join('') + '</ol>' +
+      (hi >= 0 ? '<p class="t-snk-key"><span class="t-snk-dash" aria-hidden="true"></span>' +
+        (t[hi] === 'sent' ? 'From the profile on, the client decides' : 'From the managerial interview on, the hiring manager decides') + '</p>' : '');
   }
   function storyTrack(c) {
     const q = reqOf(c), t = tplOf(q);
@@ -9059,11 +9087,11 @@
   function reqWho(q) {
     const a = q.asmt ? asmtOf(q.asmt) : null;
     const rec = RECRUITERS.filter((x) => x.id === q.rec)[0];
-    return '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Recruiter</h2><div class="b-cmeta-say">' +
+    return '<div class="b-cmeta-part t-f-rec"><h2 class="b-cmeta-cap">Recruiter</h2><div class="b-cmeta-say">' +
           '<p class="b-cmeta-p"><b>' + esc(rec ? rec.name : 'Not assigned') + '</b></p>' +
           (isHR() ? '<p class="b-cmeta-p t-acts">' + assignMenu(q) + '</p>' : '') +
         '</div></div>' +
-        (a ? '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Assessment</h2><div class="b-cmeta-say">' +
+        (a ? '<div class="b-cmeta-part t-f-asmt"><h2 class="b-cmeta-cap">Assessment</h2><div class="b-cmeta-say">' +
           '<p class="b-cmeta-p"><button class="t-inline-link" type="button" data-asmt="' + a.id + '">' + esc(a.title) + '</button></p>' +
           '<p class="b-cmeta-p">' + (a.kind === 'live' ? 'A live interview with the AiMY agent' : 'A questionnaire') + ', before the phone screen. Pass ' + esc(passSayOf(a)) + '.</p>' +
         '</div></div>' : '');
