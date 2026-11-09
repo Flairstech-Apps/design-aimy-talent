@@ -277,18 +277,22 @@ textarea.dial-input.t-area { height: auto; padding: 10px 12px; }
    one narrow column. The strip below holds what you can do to it, state first,
    then the posting, two columns with their verbs on one row each. */
 .t-strip { margin-top: 0; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); padding-top: 22px; border-top: 1px solid var(--card-border); }
-/* Four short facts at 200px a column, and the same 48px gap as the two-column
-   rows, so the third fact starts where the second column below does. */
 .s-block.t-strip-sec { padding-top: 0; }
+/* The facts and the stages, each in Sales's card frame (9 Nov): the card's
+   colour let through at 85% with the 12px blur (--card-see, as the record
+   cards), its hairline border and its 14px corner. Side by side, the same
+   height; one above the other when the head is narrow. The facts sit 2 x 2
+   inside theirs. The stages frame is its own container, so the folded line
+   picks four or three to a row from the room it actually has. */
 .s-rec-head { container-type: inline-size; }
-.b-cmeta.t-facts { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-areas: "need hm st st" "rec asmt st st"; align-items: start; max-width: none; }
-.t-f-need { grid-area: need; }
-.t-f-hm { grid-area: hm; }
-.t-f-st { grid-area: st; }
-.t-f-rec { grid-area: rec; }
-.t-f-asmt { grid-area: asmt; }
-@container (max-width: 860px) { .b-cmeta.t-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "need hm" "rec asmt" "st st"; } }
-@container (max-width: 520px) { .b-cmeta.t-facts { grid-template-columns: minmax(0, 1fr); grid-template-areas: "need" "hm" "rec" "asmt" "st"; } }
+.t-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 22px 0 0; }
+.t-frame { min-width: 0; padding: 20px 22px; border: 1px solid var(--card-border); border-radius: var(--r-xl, 14px);
+  background: var(--card-see); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04); }
+.b-cmeta.t-f-left { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; row-gap: 24px; align-content: start; margin: 0; max-width: none; }
+.t-f-st { container-type: inline-size; }
+@container (max-width: 860px) { .t-facts { grid-template-columns: minmax(0, 1fr); } }
+@container (max-width: 520px) { .t-frame { padding: 16px; } .b-cmeta.t-f-left { grid-template-columns: minmax(0, 1fr); } }
 .b-said.t-two { grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); column-gap: 48px; }
 .b-cmeta-p .t-inline-link { text-align: left; }
 
@@ -1638,11 +1642,11 @@ body.is-portal .aimy-overlay { display: none !important; }
 }
 
 /* ══ THE STAGES, FOLDED (Engy, 9 Nov) ═════════════════════════════════════
-   The requisition head's stages: one line, laid in rows of four (three in a
-   narrow head) so it fits beside the facts. Rows alternate direction and each
+   The requisition head's stages: one line, laid in rows of four (two in a
+   narrow frame) so it fits beside the facts. Rows alternate direction and each
    end bends round into the next, so the eye follows a single path. Places and
    bends come from stageSnake() as --r4/--c4 and s4-* (four to a row), and
-   --r3/--c3 and s3-* (three). The side padding is the bend's room, half a
+   --r2/--c2 and s2-* (two). The side padding is the bend's room, half a
    row high, so each bend is a half circle (an oval
    when the rows are taller). Dashed from the hand-over on. */
 .t-snk { --snk-r: 31px; --snk-rh: 60px; --snk-ink: rgba(var(--accent-rgb), 0.5); --snk-line: var(--snk-ink); --snk-bs: solid;
@@ -1654,21 +1658,20 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-snk .t-trk-dot { z-index: 1; border-color: rgba(var(--accent-rgb), 0.7); }
 .t-snk .t-trk-k { color: var(--d100); overflow-wrap: normal; }
 .t-snk .t-trk-t { white-space: nowrap; }
-@container (min-width: 521px) {
+@container (min-width: 441px) {
   .t-snk-step.s4-on::after { top: 6.5px; left: 7.5px; width: 100%; height: 2px; background: var(--snk-line); }
   .t-snk-step.s4-back::after { top: 6.5px; right: calc(100% - 7.5px); width: 100%; height: 2px; background: var(--snk-line); }
   .t-snk-step.s4-br::after { top: 6.5px; left: 7.5px; right: calc(-1 * var(--snk-r)); height: calc(var(--snk-rh) + 2px); border: 2px var(--snk-bs) var(--snk-ink); border-left: 0; border-radius: 0 var(--snk-r) var(--snk-r) 0 / 0 50% 50% 0; }
   .t-snk-step.s4-bl::after { top: 6.5px; left: calc(-1 * var(--snk-r)); width: calc(var(--snk-r) + 7.5px); height: calc(var(--snk-rh) + 2px); border: 2px var(--snk-bs) var(--snk-ink); border-right: 0; border-radius: var(--snk-r) 0 0 var(--snk-r) / 50% 0 0 50%; }
 }
-@container (max-width: 520px) {
-  /* Three to a row, a name can take two lines: a taller row, and the bend an
-     oval so it still fits the side padding. */
-  .t-snk { --snk-rh: 76px; --snk-r: 24px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .t-snk-step { grid-row: var(--r3); grid-column: var(--c3); }
-  .t-snk-step.s3-on::after { top: 6.5px; left: 7.5px; width: 100%; height: 2px; background: var(--snk-line); }
-  .t-snk-step.s3-back::after { top: 6.5px; right: calc(100% - 7.5px); width: 100%; height: 2px; background: var(--snk-line); }
-  .t-snk-step.s3-br::after { top: 6.5px; left: 7.5px; right: calc(-1 * var(--snk-r)); height: calc(var(--snk-rh) + 2px); border: 2px var(--snk-bs) var(--snk-ink); border-left: 0; border-radius: 0 var(--snk-r) var(--snk-r) 0 / 0 50% 50% 0; }
-  .t-snk-step.s3-bl::after { top: 6.5px; left: calc(-1 * var(--snk-r)); width: calc(var(--snk-r) + 7.5px); height: calc(var(--snk-rh) + 2px); border: 2px var(--snk-bs) var(--snk-ink); border-right: 0; border-radius: var(--snk-r) 0 0 var(--snk-r) / 50% 0 0 50%; }
+@container (max-width: 440px) {
+  /* Two to a row on a phone, so every name and its usual time keep one line. */
+  .t-snk { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .t-snk-step { grid-row: var(--r2); grid-column: var(--c2); }
+  .t-snk-step.s2-on::after { top: 6.5px; left: 7.5px; width: 100%; height: 2px; background: var(--snk-line); }
+  .t-snk-step.s2-back::after { top: 6.5px; right: calc(100% - 7.5px); width: 100%; height: 2px; background: var(--snk-line); }
+  .t-snk-step.s2-br::after { top: 6.5px; left: 7.5px; right: calc(-1 * var(--snk-r)); height: calc(var(--snk-rh) + 2px); border: 2px var(--snk-bs) var(--snk-ink); border-left: 0; border-radius: 0 var(--snk-r) var(--snk-r) 0 / 0 50% 50% 0; }
+  .t-snk-step.s2-bl::after { top: 6.5px; left: calc(-1 * var(--snk-r)); width: calc(var(--snk-r) + 7.5px); height: calc(var(--snk-rh) + 2px); border: 2px var(--snk-bs) var(--snk-ink); border-right: 0; border-radius: var(--snk-r) 0 0 var(--snk-r) / 50% 0 0 50%; }
 }
 .t-snk-key { display: flex; align-items: center; gap: 8px; margin: 12px 0 0; color: var(--ink-muted); font-size: 11.5px; }
 .t-snk-dash { flex: none; width: 22px; height: 2px; background: repeating-linear-gradient(90deg, rgba(var(--accent-rgb), 0.5) 0 4px, transparent 4px 8px); }
