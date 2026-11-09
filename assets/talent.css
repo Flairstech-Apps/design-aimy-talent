@@ -1955,6 +1955,26 @@ body.is-portal .aimy-overlay { display: none !important; }
 .b-qcard .t-cfacts > .t-before, .b-qcard .t-cfacts > .t-cnow { margin-top: 0; color: var(--ink-muted); }
 .b-qcard .t-cfacts + .b-aimy { margin-top: 12px; }
 
+/* ══ THE CARD READS IN FOUR LEVELS (Engy, 9 Nov) ═════════════════════════
+   The role, the facts and AiMY's read all sat in one grey, so nothing said
+   which was which, and the facts were too small to read without effort.
+     1  the name       18 / 600, the brightest ink
+     2  the role       14 / 500, --d100 (Sales sets --ink-secondary to
+                       --d200, the facts' ink), tucked under the name
+     3  the facts      13 / 400, the floor ink, their marks a step quieter
+                       than their words so the words carry the line
+     4  AiMY's read    in its own ground, after a wider gap
+   Returning is a fact that changes what you do next, so it is the one fact
+   with a coloured mark and its first word set a weight up: seen when you
+   scan, without a chip of its own. */
+article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
+.b-qcard .t-cfacts { gap: 6px; padding-top: 10px; }
+.b-qcard .t-cfacts > .b-qcard-where { font-size: 13px; font-weight: var(--fw-medium); line-height: 1.45; letter-spacing: 0.005em; }
+.b-qcard .t-cfacts .b-fact > svg { color: color-mix(in srgb, var(--ink-muted) 72%, transparent); }
+.b-qcard .t-cfacts > .t-before .b-fact > svg { color: var(--info); }
+.b-qcard .t-before b { font-weight: var(--fw-semibold); color: var(--d100); }
+.b-qcard .t-cfacts + .b-aimy { margin-top: 14px; }
+
 /* ══ THE CARD'S TRACK, FULL WIDTH (Engy, 6 Nov) ══════════════════════════
    The first dot on the card's left edge, the last on its right, the middle
    one centred; one line under them, dashed for the path ahead, solid accent
