@@ -278,17 +278,17 @@ textarea.dial-input.t-area { height: auto; padding: 10px 12px; }
    then the posting, two columns with their verbs on one row each. */
 .t-strip { margin-top: 0; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); padding-top: 22px; border-top: 1px solid var(--card-border); }
 .s-block.t-strip-sec { padding-top: 0; }
-/* The facts and the stages, each in Sales's card frame (9 Nov): the card's
-   colour let through at 85% with the 12px blur (--card-see, as the record
-   cards), its hairline border and its 14px corner. Side by side, the same
+/* The facts and the stages, each in a frame (9 Nov): Sales's card outline
+   and 14px corner with nothing filled in (Engy: "make the frames
+   transparent"), so the page shows through and only the edge groups them.
+   The border is the card's hover weight, as a bare outline at the resting
+   weight all but vanishes on the page's glow. Side by side, the same
    height; one above the other when the head is narrow. The facts sit 2 x 2
    inside theirs. The stages frame is its own container, so the folded line
    picks four or three to a row from the room it actually has. */
 .s-rec-head { container-type: inline-size; }
 .t-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 22px 0 0; }
-.t-frame { min-width: 0; padding: 20px 22px; border: 1px solid var(--card-border); border-radius: var(--r-xl, 14px);
-  background: var(--card-see); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04); }
+.t-frame { min-width: 0; padding: 20px 22px; border: 1px solid var(--card-border-hover); border-radius: var(--r-xl, 14px); background: transparent; }
 .b-cmeta.t-f-left { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; row-gap: 24px; align-content: start; margin: 0; max-width: none; }
 .t-f-st { container-type: inline-size; }
 @container (max-width: 860px) { .t-facts { grid-template-columns: minmax(0, 1fr); } }

@@ -155,6 +155,12 @@
     hist: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
     shield: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
     msg: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+    /* WhatsApp's own mark (9 Nov: Engy, "make the WhatsApp icon actually
+       WhatsApp"), wherever WhatsApp is meant; msg stays the plain bubble for
+       messages in general. Simple Icons' glyph (CC0), filled rather than
+       stroked because the mark is a fill, set inside Lucide's 2-22 box so it
+       sits at its neighbours' size. */
+    wa: '<g transform="translate(2 2) scale(0.8333)"><path fill="currentColor" stroke="none" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></g>',
     doc: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
     send: '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
     info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
@@ -3387,7 +3393,7 @@
     const wa = c.wa ? ['ok', 'Opted in ' + sayWhen(c.waDay != null ? c.waDay : 0) + '. Updates can go there', 'Allowed'] : ['err', 'No opt-in. Messages go by email', 'Blocked'];
     const rec = ['ok', 'Notice in the invite, said again on the call; they can opt out', 'Asked'];
     /* Each permission as a .gate row of the trust card, with its date. */
-    return '<div class="rc rc-flat">' + [['user', 'CV and details', cv], ['msg', 'WhatsApp', wa], ['mic', 'Recording', rec]].map((x, i) =>
+    return '<div class="rc rc-flat">' + [['user', 'CV and details', cv], ['wa', 'WhatsApp', wa], ['mic', 'Recording', rec]].map((x, i) =>
       rcGate(x[0], x[2][0], esc(x[1]), esc(x[2][1]), x[2][0] === 'err' ? rcChip(x[2][2], 'err', 'ban') : x[2][0] === 'warn' ? rcChip(x[2][2], 'dash') : rcChip(x[2][2], 'ok'))).join('') + '</div>';
   }
   /* ── 10. TRUST AND LAW (trust-consent-gates) ── where first contact and
@@ -3400,7 +3406,7 @@
       '<div class="errbox">' + svg('tri', 14) + '<span><b>Egypt Law 151/2020:</b> the grace period ends around 1 Nov 2026. Licence, data protection officer and transfer permit are with legal.</span></div>',
       '<div class="card" style="margin-top:12px"><h4>First contact · ' + esc(who || plural(n, 'web prospect')) + '</h4>' +
         '<div class="gate" style="border-top:0;margin-top:6px"><span class="ico ok">' + svg('mail', 18) + '</span><div><b>Email with a privacy notice</b><div class="sub">Says where we found them; one click to object and be deleted</div></div>' + rcChip('Allowed', 'ok') + '</div>' +
-        rcGate('msg', 'err', 'WhatsApp', 'Needs their opt-in to FlairsTech first. Bought numbers don’t count', rcChip('Blocked', 'err', 'ban')) +
+        rcGate('wa', 'err', 'WhatsApp', 'Needs their opt-in to FlairsTech first. Bought numbers don’t count', rcChip('Blocked', 'err', 'ban')) +
         rcGate('globe', 'err', 'Scrape LinkedIn', 'Against LinkedIn’s user agreement', rcChip('Never', 'err', 'ban')) +
         (c ? '<div class="row between" style="margin-top:10px;flex-wrap:wrap"><span class="sub">' + svg('trash', 12) + ' If ' + esc(first(c.name)) + ' objects, by the link in the email or by reply, delete them. One line stays so no search finds them again.</span>' +
           rcBtn('Delete at their request', 'data-forget="' + c.id + '"', 'small', 'trash') + '</div>' : '') +
@@ -4863,9 +4869,9 @@
   const waFill = (t, c) => t.split('{first}').join(first(c.name)).split('{me}').join(first(me().name)).split('{role}').join(reqOf(c).title);
   function msgRow(m, i, inbox) {
     const c = DB.byId[m.cand];
-    return logRow({ tone: '', ico: svg('msg'), who: c.name,
+    return logRow({ tone: '', ico: svg('wa'), who: c.name,
       meta: logMeta(['WhatsApp', m.dir === 'in' ? 'they wrote' : 'you wrote', m.time, reqOf(c).title]),
-      say: '“' + esc(m.text) + '”', act: goAttr({ on: 'calls', th: c.id }).trim(), go: inbox ? 'Reply' : 'Open', goIco: inbox ? svg('msg', 14) : '' }, i);
+      say: '“' + esc(m.text) + '”', act: goAttr({ on: 'calls', th: c.id }).trim(), go: inbox ? 'Reply' : 'Open', goIco: inbox ? svg('wa', 14) : '' }, i);
   }
 
   /* ONE WHATSAPP THREAD (?on=calls&th=): their messages left, yours right,
@@ -4890,7 +4896,7 @@
     const adding = WA_ADD === c.id;
     const ownBox = '<div class="t-wa-box"><textarea class="input t-wa-in" id="waText" rows="3" placeholder="Write to ' + esc(first(c.name)) + '…" aria-label="Your message to ' + esc(c.name) + '"></textarea>' +
         '<div class="t-wa-end"><p class="t-wa-win">Opens WhatsApp with this message on your own number; it is logged here when you press it.</p>' +
-        '<button class="s-insight-lnk primary" type="button" data-wa-open="' + c.id + '">' + svg('send', 14) + 'Open in WhatsApp</button></div>' +
+        '<button class="s-insight-lnk primary" type="button" data-wa-open="' + c.id + '">' + svg('wa', 14) + 'Open in WhatsApp</button></div>' +
         (adding ? '<div class="t-wa-add"><textarea class="input t-wa-in" id="waReply" rows="2" placeholder="Paste what ' + esc(first(c.name)) + ' wrote" aria-label="Their reply"></textarea>' +
           '<p class="t-acts"><button class="b-ghost" type="button" data-wa-add="">Cancel</button><button class="s-insight-lnk" type="button" data-wa-addgo="' + c.id + '">Add their reply</button></p></div>'
           : '<p class="t-acts t-wa-done"><button class="b-ghost" type="button" data-wa-add="' + c.id + '">Add their reply</button></p>') + '</div>';
@@ -5463,7 +5469,7 @@
           p(esc(c.dnc ? 'Asked not to be called again.' : c.badNumber ? 'This number did not work.' : c.callback != null && c.callback <= 0 ? 'Asked to be called back today' + (c.cbWin ? ', ' + winSay(c.cbWin) : '') + '.' : plural(calls.length, 'call') + ' so far.')) +
           /* Call is beside the decision, in Where they are; not twice. */
           (works ? '<div class="t-cand-acts">' +
-            (c.wa ? '<button class="b-ghost" type="button"' + goAttr({ on: 'calls', th: c.id }) + '>' + svg('msg', 14) + 'WhatsApp' + (msgsOf(c.id).length ? ' (' + msgsOf(c.id).length + ')' : '') + '</button>' : '') +
+            (c.wa ? '<button class="b-ghost" type="button"' + goAttr({ on: 'calls', th: c.id }) + '>' + svg('wa', 14) + 'WhatsApp' + (msgsOf(c.id).length ? ' (' + msgsOf(c.id).length + ')' : '') + '</button>' : '') +
             (isRec() ? '<button class="b-ghost" type="button" data-draft-chat="' + c.id + '">Write with AiMY</button>' : '') +
             (isRec() && needsBook(c) ? '<button class="b-ghost" type="button" data-book-chat="' + c.id + '">Book the interview</button>' : '') +
             '<button class="b-ghost" type="button"' + goAttr({ on: 'calls', lg: c.id }) + '>Log a call from elsewhere</button></div>' : ''))) +
@@ -5723,7 +5729,7 @@
     const n = { all: all.length, calls: calls.length, wa: ms.length, iv: pick.iv.length, note: pick.note.length };
     const tab = HIST_TAB;
     const h = tab === 'calls' || tab === 'wa' ? [] : pick[tab];
-    const ICO = { apply: 'user', call: 'phone', asmt: 'goal', iv: 'users', offer: 'job', move: 'go', out: 'go', note: 'req', msg: 'msg', wa: 'msg' };
+    const ICO = { apply: 'user', call: 'phone', asmt: 'goal', iv: 'users', offer: 'job', move: 'go', out: 'go', note: 'req', msg: 'msg', wa: 'wa' };
     const TONE = { apply: 'brand', call: 'brand', asmt: 'acc', iv: 'acc', offer: 'ok', move: 'ok', out: 'err', note: 'mute', msg: 'brand', wa: 'brand' };
     let day = null;
     const sug = c.histSug ? DB.events.filter((e) => e.id === c.histSug)[0] : null;
@@ -5751,7 +5757,7 @@
         const head = x.day !== day ? '<div class="divider">' + esc(dayLabel(x.day)) + '</div>' : '';
         day = x.day;
         const meta = [x.time, x.by && DESKS[x.by] ? DESKS[x.by].name : null].filter(Boolean).join(' · ');
-        return head + '<div class="crit" style="border-top:0;padding:8px 0"><span class="' + (RC_ICO[TONE[x.kind]] || 'ico mute') + '">' + svg(ICO[x.kind] || 'req', 18) + '</span>' +
+        return head + '<div class="crit" style="border-top:0;padding:8px 0"><span class="' + (RC_ICO[TONE[x.kind]] || 'ico mute') + '">' + svg(x.kind === 'msg' && /WhatsApp/.test(x.text) ? 'wa' : ICO[x.kind] || 'req', 18) + '</span>' +
           '<div><b>' + esc(x.text) + '</b>' + (meta ? rcSay(esc(meta)) : '') + '</div><span></span></div>';
       }).join('') + '</div>') });
   }
