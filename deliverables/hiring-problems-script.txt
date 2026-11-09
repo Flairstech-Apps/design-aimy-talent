@@ -1,0 +1,210 @@
+AiMY Talent · Hiring problems, solved · presentation script
+Follows the deck slide by slide · about 11 minutes
+[DO] = what to do on screen · everything else is what you say
+
+
+1 · Title  (0:00 · 20 s)
+
+Hiring keeps running into the same few problems. Today I'll go through fourteen of them. For each one I'll show what AiMY Talent does about it, using a real screen from the clickable prototype.
+
+It's sample data, so nobody you'll see is a real person.
+
+[DO] Press → to go to the next slide.
+
+
+2 · Why it matters  (0:20 · 40 s)
+
+First, why this matters now.
+
+Applications per job have roughly doubled, from 116 to 244. Over the same time, recruiting teams shrank by more than half. So every recruiter has much more to get through.
+
+And candidates feel it. 61% say they've been ghosted after an interview.
+
+These are industry figures from Greenhouse. Take them as a direction, not exact numbers.
+
+
+3 · The path of a hire  (1:00 · 20 s)
+
+I'll follow one hire from start to finish, in seven steps. It starts with a recruiter's morning, goes through finding people, testing, interviews and the offer, and ends with the HR Manager running the team.
+
+
+4 · A recruiter's day: where to start  (1:20 · 40 s)
+
+The problem: there are more applications and fewer people, so it's hard to know where to start each morning.
+
+[DO] Point at the four lines of the briefing.
+
+Talent opens the day with a short briefing. Four results are waiting on my call, and the oldest has waited three days. Two interviews today. Clients owe an answer on two candidates. And one person called and got nobody.
+
+[DO] Point at the four Start tiles.
+
+Under it are four ways to start: decide the oldest one, send profiles, call the next one, or find people. One press and you're working.
+
+
+5 · A recruiter's day: what's already done  (2:00 · 35 s)
+
+The problem: it's hard to tell what's already been done for you, and what's due today.
+
+[DO] Point at the Done for you card.
+
+The briefing also says what AiMY did for you. Here it booked two interviews and sent an assessment, under rules a person approved, and each one can be undone.
+
+The other cards are things AiMY noticed that need you, like four people waiting on your yes before anyone contacts them.
+
+
+6 · A recruiter's day: one candidate, one story  (2:35 · 35 s)
+
+The problem: understanding one candidate means piecing together emails, notes and calls.
+
+Open any candidate and there's one history. Calls, WhatsApp, interviews, tests and notes, newest first.
+
+[DO] Point at the tabs: All, Calls, Interviews.
+
+You can narrow it with the tabs, and add a line yourself, like "the client interviewed them on Teams".
+
+
+7 · Finding people: people we already know  (3:10 · 40 s)
+
+The problem: good candidates are already in our database, but search can't find them, and the same person shows up twice.
+
+Here I started from someone who left, Nour Gamal, and Talent searched for people like her.
+
+[DO] Point at the In your pool tab.
+
+People we already know come first: seven of them. Each one says how far they got last time, like "not progressing" or "client declined", and that they agreed to hear about other roles.
+
+People found on the web wait separately. They aren't candidates until they reply.
+
+
+8 · Finding people: no percentages  (3:50 · 40 s)
+
+The problem: a match score says "72%" but not why, so good people get skipped over a number.
+
+Talent has no percentages. For each must-have, it quotes what the CV says, and then what the interview found.
+
+[DO] Point at the two rows marked Differs.
+
+Where the CV and the interview disagree, it says so. Here the CV says German, but the interview found she knows it and hasn't owned it yet. That's a lot more useful than 72%.
+
+
+9 · Testing: nobody rejected by the system  (4:30 · 35 s)
+
+The problem: a borderline score or a copied answer could decide someone's chances automatically.
+
+Nobody is rejected by the system. Unclear or flagged results go to a person.
+
+[DO] Point at Waiting on a person.
+
+Six results are waiting for a person to score or review them. An integrity flag is shown apart, and it never changes a score on its own.
+
+
+10 · Testing: a bad question  (5:05 · 40 s)
+
+The problem: one badly written question quietly drags a whole test down.
+
+This is the hiring manager's view of the same test.
+
+[DO] Point at the Q5 row.
+
+Only 26% got Q5 right, and it predicts nothing about who the client accepts. AiMY already has a better wording. The hiring manager sends it to HR to approve, or keeps the question as it is.
+
+
+11 · Keeping candidates in the loop: nobody left waiting  (5:45 · 40 s)
+
+The problem: candidates wait days for news, or never hear back after an interview.
+
+AiMY sends the routine updates. For the hard ones, it reminds the recruiter.
+
+[DO] Point at "8 people owed an answer".
+
+Eight people are owed an answer, and four are past the five-day limit. The message is HR's approved template, shown once. But a person always sends the "no". The recruiter presses Send.
+
+
+12 · Keeping candidates in the loop: approve once  (6:25 · 40 s)
+
+The problem: approving every single message slows everything down, but not everyone wants WhatsApp.
+
+This is the HR Manager's page. For each kind of action, she chooses how far AiMY may go: it suggests, it does it with Undo, or it does it and tells you.
+
+[DO] Point at "First message to a sourced prospect".
+
+A first message to someone new still waits for a person. Trust only goes up when a person moves it.
+
+[DO] Point at How Talent reaches candidates.
+
+And WhatsApp is only for people who opted in. Everyone else gets email.
+
+
+13 · Interviews: booking and chasing  (7:05 · 35 s)
+
+The problem: booking interviews and chasing feedback eats days of back and forth.
+
+The Diary books on Outlook, and only offers a time that's free in both calendars.
+
+[DO] Point at Results not in.
+
+Below it are the interviews that happened with no result yet, oldest first. One press nudges the interviewer on Teams.
+
+
+14 · Interviews: feedback in two minutes  (7:40 · 40 s)
+
+Same problem, the other half: getting the feedback itself.
+
+[DO] Point at Open the debrief.
+
+From the candidate's page, Open the debrief opens the interviewer's own page.
+
+AiMY has already read the recording against each must-have, so the interviewer just checks it, rates, and says proceed or not. About two minutes.
+
+[DO] Point at the line at the bottom.
+
+And other interviewers' feedback stays hidden until you've given yours, so nobody just agrees with the first person.
+
+
+15 · Interviews: hiring managers see less  (8:20 · 30 s)
+
+The problem: hiring managers get flooded with candidates who haven't been screened.
+
+This is the hiring manager's Today. She sees candidates only once the recruiter moves them on. Until then they're just a count. And she sees the few things that need her answer.
+
+
+16 · Offers: both approvers at once  (8:50 · 40 s)
+
+The problem: an offer waits on one approver, then the next, and the salary gap shows up late.
+
+[DO] Point at the salary and the budget.
+
+On the candidate's page, the salary sits right next to the budget, and next to what she expects.
+
+[DO] Point at the two approvers.
+
+The hiring manager approves the fit and the BU director approves the budget, both on the same offer, at the same time. Rania has approved, and Hesham is still to answer. Change the salary and both are asked again. A person sends the offer.
+
+
+17 · Running the team: roles at risk  (9:30 · 40 s)
+
+The problem: a role is going to miss its date and nobody knows until it does, and pushing the deadline hides it.
+
+This is the HR Manager's Today. Roles are listed by their risk of missing the date.
+
+[DO] Point at one row's reason.
+
+Each one says why, in plain words: how far the furthest candidate has got, and how long an offer usually takes from there. If someone is overloaded, Reassign is right there.
+
+
+18 · Running the team: AiMY only suggests  (10:10 · 40 s)
+
+The problem: an AI that changes its own rules can drift without anyone noticing.
+
+AiMY only suggests changes. Here it noticed that 7 of Northwind's last 18 declines mention spoken language. So it proposes checking spoken language on the phone screen before a profile goes to Northwind.
+
+[DO] Point at Approve and Not now.
+
+It shows the rule now next to the proposed one. Nothing changes until the HR Manager approves it, and the version before is kept.
+
+
+19 · See it for yourself  (10:50 · 20 s)
+
+Every screen you saw is in the clickable prototype. Each slide says which desk it's on and how to get there. You switch desks with Looking as, in the panel at the bottom right.
+
+Thanks. Happy to click through any of it live.

@@ -1,0 +1,362 @@
+<title>Hiring Problems Solved</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+  /* Layout: a fixed 1600×900 stage scaled to the window; problem and fix on the left, the prototype's own screen on the right.
+     Single dark look on purpose: it matches AiMY's dark product and the screenshots inside it. */
+  :root {
+    color-scheme: dark;
+    --bg: #0b0f15; --stage: #0d1117; --card: #141b24; --raised: #1c2630;
+    --line: rgba(255,255,255,0.08); --line2: rgba(255,255,255,0.14);
+    --fg: #eef2f6; --fg2: #c8d2dc; --fg3: #8b9aaa; --fg4: #637280;
+    --accent: #8b4ff4; --accent-rgb: 139,79,244; --accent-text: #b18cff;
+    --warn: #f7c95c; --warn-rgb: 247,201,92; --ok: #4ed6a1;
+    --font: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--fg2); font-family: var(--font); overflow: hidden; }
+  a { color: var(--accent-text); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 3px; border-radius: 6px; }
+
+  /* ── The stage ── */
+  .viewport { position: fixed; inset: 0; display: grid; place-items: center; }
+  .stage { width: 1600px; height: 900px; position: relative; flex: none; transform-origin: center center; }
+  .slide { position: absolute; inset: 0; background: var(--stage); border-radius: 4px; overflow: hidden;
+    display: none; padding: 60px 72px 84px; }
+  .slide.on { display: grid; animation: in 260ms ease-out; }
+  @keyframes in { from { opacity: 0.4; transform: translateX(10px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .slide.on { animation: none; } }
+  .slide::after { /* the faint AiMY glow, top right, as in the product */
+    content: ""; position: absolute; width: 900px; height: 900px; right: -380px; top: -460px; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(var(--accent-rgb), 0.16), transparent); }
+  .slide > * { position: relative; z-index: 1; }
+
+  .foot { position: absolute; left: 72px; right: 72px; bottom: 30px; display: flex; align-items: center; gap: 16px;
+    font-size: 15px; color: var(--fg4); z-index: 2; }
+  .foot .mark { display: flex; align-items: center; gap: 8px; color: var(--fg3); font-weight: 500; }
+  .foot .mark img { width: 20px; height: 20px; display: block; }
+  .foot .num { font-variant-numeric: tabular-nums; color: var(--fg3); }
+
+  .eyebrow { font-size: 15px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-text); }
+
+  /* ── Title ── */
+  .s-title { align-content: center; gap: 28px; }
+  .s-title h1 { margin: 0; font-size: 76px; line-height: 1.06; letter-spacing: -2px; color: var(--fg); font-weight: 600; max-width: 17ch; text-wrap: balance; }
+  .s-title h1 em { font-style: normal; color: var(--accent-text); }
+  .s-title p { margin: 0; font-size: 26px; color: var(--fg2); max-width: 46ch; line-height: 1.5; }
+  .s-title .small { font-size: 17px; color: var(--fg3); }
+
+  /* ── Why it matters ── */
+  .s-why { align-content: center; gap: 40px; }
+  .s-why h2, .s-map h2, .s-end h2 { margin: 0; font-size: 52px; line-height: 1.12; letter-spacing: -1px; color: var(--fg); font-weight: 600; text-wrap: balance; }
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .fact { padding: 36px 40px; border-radius: 20px; background: var(--card); border: 1px solid var(--line); }
+  .fact b { display: block; font-size: 72px; line-height: 1; letter-spacing: -2px; color: var(--fg); font-weight: 600; font-variant-numeric: tabular-nums; margin-bottom: 16px; }
+  .fact span { font-size: 23px; line-height: 1.5; color: var(--fg2); }
+  .src { font-size: 16px; color: var(--fg4); margin: 0; }
+
+  /* ── The map of steps ── */
+  .s-map { align-content: center; gap: 36px; }
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 24px; }
+  .steps li { display: flex; align-items: baseline; gap: 18px; padding: 20px 26px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); }
+  .steps .n { font-size: 15px; font-weight: 600; color: var(--fg4); font-variant-numeric: tabular-nums; width: 22px; }
+  .steps .t { font-size: 25px; color: var(--fg); font-weight: 500; }
+  .steps .w { font-size: 16px; color: var(--fg3); display: block; font-weight: 400; margin-top: 2px; }
+  .steps .c { margin-left: auto; font-size: 16px; color: var(--accent-text); white-space: nowrap; }
+
+  /* ── A problem and its fix ── */
+  .s-pair { grid-template-columns: 500px minmax(0, 1fr); gap: 52px; }
+  .left { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+  .who { font-size: 16px; color: var(--fg3); margin-top: -10px; }
+  .prob, .fix { border-radius: 18px; padding: 24px 28px; }
+  .prob { background: var(--card); border: 1px solid var(--line); margin-top: 10px; }
+  .fix { background: rgba(var(--accent-rgb), 0.11); border: 1px solid rgba(var(--accent-rgb), 0.32); }
+  .cap { display: block; font-size: 15px; font-weight: 600; margin-bottom: 8px; letter-spacing: 0.02em; }
+  .prob .cap { color: var(--warn); }
+  .fix .cap { color: var(--accent-text); }
+  .prob p { margin: 0; font-size: 25px; line-height: 1.42; color: var(--fg2); }
+  .fix p { margin: 0; font-size: 22px; line-height: 1.5; color: var(--fg); }
+  .down { display: grid; place-items: center; color: var(--fg4); height: 18px; margin: -6px 0; }
+  .down svg { width: 22px; height: 22px; }
+  .where { margin-top: auto; display: flex; flex-direction: column; gap: 6px; font-size: 16px; color: var(--fg3); }
+  .where b { color: var(--ok); font-weight: 500; }
+  .where a { font-size: 16px; font-weight: 500; }
+  .where .path { color: var(--fg2); }
+
+  .right { min-width: 0; min-height: 0; display: flex; align-items: center; }
+  .frame { flex: 1; min-height: 0; max-height: 100%; border-radius: 18px; background: #11161d; border: 1px solid var(--line2);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.45); overflow: hidden; display: flex; flex-direction: column; }
+  .bar { flex: none; height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 16px; border-bottom: 1px solid var(--line); background: var(--card); }
+  .bar span { font-size: 14px; color: var(--fg3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shot { flex: none; min-height: 0; display: grid; place-items: center; padding: 22px; position: relative; }
+  .shot img { width: 100%; height: auto; max-height: 668px; object-fit: contain; display: block; border-radius: 8px; }
+  .shot.lead { display: flex; flex-direction: column; align-items: center; gap: 10px; height: 712px; overflow: hidden; padding-bottom: 0; }
+  .shot.lead .anno { align-self: flex-start; font-size: 14px; font-weight: 500; color: var(--fg3); }
+  .shot.lead .leadimg { width: 720px; max-height: none; flex: none; }
+  .tallwrap { position: relative; flex: 1; min-height: 0; width: 100%; overflow: hidden; display: flex; justify-content: center; }
+  .tallwrap > img { width: 470px; height: auto; max-height: none; align-self: flex-start; }
+  .tallwrap::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 200px; background: linear-gradient(transparent, #11161d 70%); pointer-events: none; }
+  .tallwrap .inset { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); width: 560px; z-index: 1; border-radius: 12px; border: 1px solid var(--line2); box-shadow: 0 -20px 50px rgba(0,0,0,0.6); background: #11161d; }
+  .tallwrap .inset img { width: 100%; max-height: none; }
+  .shot.stack { display: flex; flex-direction: column; gap: 14px; }
+  .shot.stack img { max-height: none; }
+  /* The debrief is a tall form: its top, then its last lines laid over the bottom. */
+  .shot.tall { place-items: start center; padding-bottom: 0; height: 712px; overflow: hidden; }
+  .shot.tall > img { max-height: none; width: 560px; }
+  .shot.tall .inset { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); width: 600px; border-radius: 12px;
+    border: 1px solid var(--line2); box-shadow: 0 -20px 50px rgba(0,0,0,0.6); background: #11161d; }
+  .shot.tall .inset img { width: 100%; max-height: none; }
+  .shot.tall::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 240px;
+    background: linear-gradient(transparent, #11161d 70%); pointer-events: none; }
+  .shot.tall .inset { z-index: 1; }
+
+  /* ── End ── */
+  .s-end { align-content: center; gap: 30px; }
+  .s-end p { margin: 0; font-size: 24px; max-width: 52ch; line-height: 1.5; }
+  .live { display: inline-flex; align-items: center; gap: 12px; font-size: 24px; font-weight: 500; padding: 16px 26px; border-radius: 999px;
+    background: rgba(var(--accent-rgb), 0.14); border: 1px solid rgba(var(--accent-rgb), 0.4); width: max-content; max-width: 100%; }
+  .live:hover { text-decoration: none; background: rgba(var(--accent-rgb), 0.22); }
+  .desks { display: flex; flex-wrap: wrap; gap: 10px; }
+  .desks span { font-size: 17px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line2); color: var(--fg2); }
+
+  /* ── Controls ── */
+  .ctrl { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    display: flex; gap: 6px; z-index: 20; opacity: 0.35; transition: opacity 150ms ease-out; }
+  .ctrl:hover, .ctrl:focus-within { opacity: 1; }
+  .ctrl button { font: 500 13px var(--font); color: var(--fg2); background: var(--card); border: 1px solid var(--line2);
+    border-radius: 999px; height: 34px; min-width: 34px; padding: 0 12px; cursor: pointer; }
+  .ctrl button:hover { color: var(--fg); border-color: rgba(var(--accent-rgb), 0.5); }
+  .progress { position: fixed; left: 0; top: 0; height: 3px; background: var(--accent); z-index: 20; transition: width 200ms ease-out; }
+  .notes { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(60px + env(safe-area-inset-bottom, 0px)); width: min(760px, calc(100% - 32px));
+    padding: 16px 20px; border-radius: 14px; background: rgba(20,27,36,0.96); border: 1px solid var(--line2); z-index: 20;
+    font-size: 16px; line-height: 1.55; color: var(--fg); box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .notes b { display: block; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-text); margin-bottom: 4px; }
+  .help { font-size: 12px; color: var(--fg4); align-self: center; margin-right: 6px; white-space: nowrap; }
+
+  /* ── Narrow screens: no stage, the slides read down the page ── */
+  @media (max-width: 760px) {
+    body { overflow: auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 16px; }
+    .viewport { position: static; display: block; }
+    .stage { width: auto; height: auto; transform: none !important; display: grid; gap: 16px; }
+    .slide, .slide.on { position: relative; display: grid; animation: none; padding: 28px 20px 56px; border-radius: 16px; border: 1px solid var(--line); }
+    .slide::after { width: 400px; height: 400px; right: -200px; top: -220px; }
+    .foot { left: 20px; right: 20px; bottom: 18px; font-size: 13px; }
+    .s-title h1 { font-size: 36px; letter-spacing: -0.8px; }
+    .s-title p, .s-end p { font-size: 18px; }
+    .s-why h2, .s-map h2, .s-end h2 { font-size: 28px; }
+    .facts, .steps { grid-template-columns: 1fr; }
+    .fact { padding: 22px; } .fact b { font-size: 44px; } .fact span { font-size: 17px; }
+    .steps .t { font-size: 18px; }
+    .s-pair { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+    .prob p { font-size: 18px; } .fix p { font-size: 17px; }
+    .shot { padding: 12px; }
+    .shot.tall > img { width: 100%; }
+    .shot.lead { height: auto; max-height: 640px; } .shot.lead .leadimg { width: 100%; } .tallwrap { min-height: 300px; } .tallwrap > img { width: 90%; } .tallwrap .inset { width: calc(100% - 24px); bottom: 12px; }
+    .shot.tall { max-height: 520px; overflow: hidden; }
+    .shot.tall .inset { width: calc(100% - 24px); bottom: 12px; }
+    .live { font-size: 17px; }
+    .ctrl, .progress, .notes { display: none !important; }
+  }
+</style>
+
+<div class="progress" id="progress"></div>
+<div class="viewport" id="viewport"><div class="stage" id="stage"></div></div>
+<div class="notes" id="notes" hidden><b>Speaker notes</b><span id="notesText"></span></div>
+<div class="ctrl" aria-label="Slide controls">
+  <span class="help">← → to move · N notes · F full screen</span>
+  <button type="button" id="bNotes" aria-pressed="false">Notes</button>
+  <button type="button" id="bFull">Full screen</button>
+  <button type="button" id="bPrev" aria-label="Previous slide">←</button>
+  <button type="button" id="bNext" aria-label="Next slide">→</button>
+</div>
+
+<script>
+(function () {
+  var LIVE = 'https://design-aimy-talent.aimy.flairstech.com/';
+  var MARK = '<img src="aimy-mark.svg" alt="" width="20" height="20">';
+  var DOWN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  var STEPS = [
+    ['A recruiter’s day', 'For recruiters'],
+    ['Finding the right people', 'For recruiters'],
+    ['Testing language and skills', 'For recruiters, hiring managers and candidates'],
+    ['Keeping candidates in the loop', 'For recruiters and candidates'],
+    ['Interviews and decisions', 'For recruiters and hiring managers'],
+    ['Offers', 'For recruiters and hiring managers'],
+    ['Running the team', 'For the HR manager and recruiters']
+  ];
+
+  /* Only what the clickable prototype shows. Problem and fix wording is the edge-cases page's. */
+  var PAIRS = [
+    { s: 0, img: '01-briefing', path: 'Recruiter (Omar) → Today, at the top', screen: 'Today · the recruiter’s desk', q: '',
+      prob: 'With more applications and fewer people, it’s hard to know where to start each morning.',
+      fix: 'A daily briefing opens with the decisions waiting on you and how long the oldest has waited, then only what’s stuck or clashing, each with a suggested next step you approve in one tap.',
+      note: 'This is the first thing Omar sees. Four lines say what is waiting and for how long, and the Start tiles each open a run he works through one at a time.' },
+    { s: 0, img: '02-noticed', path: 'Recruiter (Omar) → Today → What AiMY noticed', screen: 'Today · What AiMY noticed', q: '',
+      prob: 'It’s hard to tell what’s already been done for you, and what’s due today.',
+      fix: 'The briefing lists what AiMY did for you since yesterday, and today’s interviews and promises.',
+      note: 'Look at the Done for you card: AiMY booked two interviews and sent an assessment under rules a person approved, and each one can be undone.' },
+    { s: 0, img: '03-timeline', path: 'Recruiter (Omar) → Candidates → Mai Ezz → History', screen: 'A candidate’s page · History', q: '?cand=k20',
+      prob: 'Understanding one candidate means piecing together emails, notes and calls.',
+      fix: 'Open any candidate to see one timeline: what happened, the evidence behind it, what was promised, and what should happen next.',
+      note: 'Calls, WhatsApp, interviews, tests and notes sit in one history, newest first, with tabs to narrow it down.' },
+    { s: 1, img: '04-find', path: 'Recruiter (Omar) → Requisitions → Bilingual Technical Support (German) → Find candidates → Like the person who left → Nour Gamal → Find candidates', screen: 'Find candidates · people in your pool', q: '?on=find',
+      prob: 'Good candidates are already in our database, but search can’t find them, and the same person can show up twice.',
+      fix: 'One clean record per person, searchable in plain words. Strong matches from people we already know come up for each open role, with what happened last time.',
+      note: 'Here the search starts from someone who left. People who applied before come up first, with how far they got last time and whether they agreed to hear about other roles.' },
+    { s: 1, img: '05-whyfit', path: 'Recruiter (Omar) → Candidates → Mai Ezz → Why Mai fits', screen: 'A candidate’s page · Why they fit', q: '?cand=k20',
+      prob: 'A match score says “72%” but not why, so good people get skipped over a number.',
+      fix: 'No percentages. Talent shows what the CV proves for each must-have, and what simply isn’t known yet.',
+      note: 'Each must-have shows what the CV says, quoted, and then what the interview found. Where they disagree, it says so.' },
+    { s: 2, img: '06-waiting', path: 'Recruiter (Omar) → Assessments → Support troubleshooting and written English', screen: 'An assessment · Waiting on a person', q: '?asmt=a1',
+      prob: 'A borderline score or a copied answer could decide someone’s chances automatically.',
+      fix: 'Nobody is rejected by the system. Unclear or flagged results go to a person, who sees who’s waiting at a glance.',
+      note: 'Six results are waiting for a person to score or review. An integrity flag is kept apart and never changes a score by itself.' },
+    { s: 2, img: '07-question', path: 'Hiring manager (Rania) → Assessments → Support troubleshooting and written English', screen: 'An assessment · How good is this test (hiring manager)', q: '?asmt=a1&as=rania',
+      prob: 'One badly written question quietly drags a whole test down.',
+      fix: 'It spots the questions nearly everyone gets wrong and suggests a better wording for HR to approve.',
+      note: 'Only 26% get Q5 right, and it predicts nothing about who the client accepts. AiMY has a rewording ready, and the hiring manager sends it to HR to approve.' },
+    { s: 3, img: '08-nottold', path: 'Recruiter (Omar) → Today → Not told yet', screen: 'Today · Not told yet', q: '',
+      prob: 'Candidates wait days for news, or never hear back after an interview.',
+      fix: 'AiMY sends the routine updates and reminds the recruiter when someone is owed an answer. A person always sends the “no”.',
+      note: 'Eight people are owed an answer, four past the five-day limit. The HR-approved message is shown once, and the recruiter presses Send.' },
+    { s: 3, img: '09-trust', path: 'HR Manager (Dina) → Templates → the bottom of the page', screen: 'Templates · What AiMY may do (HR Manager)', q: '?on=templates&as=dina',
+      prob: 'Approving every single message slows everything down, but not everyone wants WhatsApp.',
+      fix: 'Approve a kind of message once and AiMY handles the rest, asking only before a first contact or a reply it wrote itself. WhatsApp only with permission, email otherwise.',
+      note: 'The HR Manager sets each kind of action to Suggests, Does with Undo, or Does and tells. Trust only goes up when a person moves it.' },
+    { s: 4, img: '10-diary-head', more: '10-diary-notin', path: 'Recruiter (Omar) → Diary in the rail → Open, then scroll to Results not in', screen: 'Diary · booking and results not in', q: '?on=diary',
+      prob: 'Booking interviews and chasing feedback eats days of back and forth.',
+      fix: 'AiMY books from the calendar and chases feedback.',
+      note: 'The Diary books on Outlook and only offers a time that is free in both calendars. Below it, every interview without a result, oldest first, with a nudge to the interviewer on Teams.' },
+    { s: 4, img: '10-debrief', lead: '10-interview-row', inset: '10b-debrief', path: 'Recruiter (Omar) → Requisitions → L3 Support Engineer → Adham Sabry → Interviews → Open the debrief', screen: 'Adham Sabry’s page · Interviews, and the debrief it opens', q: '?cand=k4',
+      prob: 'Booking interviews and chasing feedback eats days of back and forth.',
+      fix: 'Feedback is a two-minute chat, and each interviewer answers before seeing the others.',
+      note: 'Open the debrief opens the interviewer’s own page, outside the app. The transcript has already been read against each must-have, so Mostafa checks it and rates. Other interviewers’ feedback stays hidden until his is in.' },
+    { s: 4, img: '11-hmhome', path: 'Hiring manager (Rania) → Today', screen: 'Today · the hiring manager’s desk', q: '?as=rania',
+      prob: 'Hiring managers get flooded with candidates who haven’t been screened.',
+      fix: 'They see only the people the recruiter has put forward, and the few things that need their answer.',
+      note: 'Rania sees candidates once the recruiter moves them on. Until then they are only a count.' },
+    { s: 5, img: '12-offer', path: 'Recruiter (Omar) → Requisitions → Technical Support Engineer → Yara Mansour → Offer', screen: 'A candidate’s page · Offer', q: '?cand=k233',
+      prob: 'An offer waits on one approver, then the next, and the salary gap shows up late.',
+      fix: 'Both approvers sign off the same offer at the same time, with the salary asked for shown next to the budget. A person sends it.',
+      note: 'On Yara’s page the offer shows the salary inside the budget and what she expects. Rania has approved the fit, Hesham is still to approve the budget, and both approve the same packet at the same time.' },
+    { s: 6, img: '13-risk', path: 'HR Manager (Dina) → Today, the first list', screen: 'Today · the HR Manager’s desk', q: '?as=dina',
+      prob: 'A role is going to miss its date and nobody knows until it does, and pushing the deadline hides it.',
+      fix: 'Roles are ranked by their risk of missing the date, with plain reasons such as too few people on the shortlist or slow interviewers.',
+      note: 'Each row says why: how far the furthest candidate has got, and how long an offer usually takes from there. Reassign is one menu away.' },
+    { s: 6, img: '14-proposal', path: 'HR Manager (Dina) → Today → Learning proposals, at the bottom', screen: 'Today · Learning proposals (HR Manager)', q: '?as=dina',
+      prob: 'An AI that changes its own rules can drift without anyone noticing.',
+      fix: 'AiMY only suggests changes. Nothing changes until the HR manager approves it.',
+      note: 'Seven of Northwind’s eighteen declines mention spoken language, so AiMY proposes checking it on the phone screen. It shows the rule now next to the proposed one, and the HR Manager approves it or says Not now.' }
+  ];
+
+  var html = [];
+  function foot(i) { return '<div class="foot"><span class="mark">' + MARK + 'AiMY Talent</span><span>Hiring problems, solved</span>' + (i ? '<span class="num">' + i + '</span>' : '') + '</div>'; }
+
+  html.push('<section class="slide s-title" data-note="Fourteen everyday hiring problems, and for each one the screen in the clickable prototype that deals with it.">' +
+    '<div class="eyebrow">AiMY Talent</div>' +
+    '<h1>What gets in the way of hiring, and <em>how Talent fixes it</em></h1>' +
+    '<p>The everyday problems recruiters, hiring managers, HR and candidates run into, each with the prototype screen that solves it.</p>' +
+    '<p class="small">14 problems, all shown in the clickable prototype. Internal use.</p>' + foot('') + '</section>');
+
+  html.push('<section class="slide s-why" data-note="This is why it matters now. Twice the volume with half the team, and most candidates never hear back.">' +
+    '<div class="eyebrow">Why it matters</div><h2>More applications, fewer recruiters, and candidates left waiting</h2>' +
+    '<div class="facts"><div class="fact"><b>116 → 244</b><span>Applications per job have roughly doubled, while recruiting teams shrank by more than half.</span></div>' +
+    '<div class="fact"><b>61%</b><span>of candidates say they’ve been ghosted after an interview.</span></div></div>' +
+    '<p class="src">Industry figures (Greenhouse benchmarks), a direction rather than exact numbers.</p>' + foot('') + '</section>');
+
+  var counts = STEPS.map(function (_, i) { var seen = {}; PAIRS.forEach(function (p) { if (p.s === i) seen[p.prob] = 1; }); return Object.keys(seen).length; });
+  html.push('<section class="slide s-map" data-note="We follow a hire from the recruiter’s morning to the HR Manager running the team.">' +
+    '<div class="eyebrow">The path of a hire</div><h2>Seven steps, fourteen problems</h2><ol class="steps">' +
+    STEPS.map(function (s, i) { return '<li><span class="n">' + (i + 1) + '</span><span class="t">' + s[0] + '<span class="w">' + s[1] + '</span></span><span class="c">' + counts[i] + (counts[i] === 1 ? ' problem' : ' problems') + '</span></li>'; }).join('') +
+    '</ol>' + foot('') + '</section>');
+
+  PAIRS.forEach(function (p, i) {
+    var st = STEPS[p.s];
+    var shot = p.lead
+      ? '<div class="shot lead"><span class="anno">In the app, on the candidate’s page</span><img class="leadimg" src="shots/' + p.lead + '.webp" alt="The interview row with Open the debrief"><span class="anno">Open the debrief opens the interviewer’s own page</span><div class="tallwrap"><img src="shots/' + p.img + '.webp" alt="The interviewer’s debrief page"><div class="inset"><img src="shots/' + p.inset + '.webp" alt="The end of the same form"></div></div></div>'
+      : p.more
+      ? '<div class="shot stack"><img src="shots/' + p.img + '.webp" alt="' + p.screen + ' in the prototype"><img src="shots/' + p.more + '.webp" alt="Results not in, further down the same page"></div>'
+      : p.tall
+      ? '<div class="shot tall"><img src="shots/' + p.img + '.webp" alt="' + p.screen + ' in the prototype"><div class="inset"><img src="shots/' + p.inset + '.webp" alt="The end of the same form"></div></div>'
+      : '<div class="shot"><img src="shots/' + p.img + '.webp" alt="' + p.screen + ' in the prototype"></div>';
+    html.push('<section class="slide s-pair" data-note="' + p.note.replace(/"/g, '&quot;') + '">' +
+      '<div class="left"><div class="eyebrow">' + st[0] + '</div><div class="who">' + st[1] + '</div>' +
+      '<div class="prob"><span class="cap">The problem</span><p>' + p.prob + '</p></div>' +
+      '<div class="down">' + DOWN + '</div>' +
+      '<div class="fix"><span class="cap">What Talent does</span><p>' + p.fix + '</p></div>' +
+      '<div class="where"><span><b>In the prototype</b> · ' + p.screen + '</span><span class="path">Looking as ' + p.path + '</span><a href="' + LIVE + p.q + '" target="_blank" rel="noopener">Open this screen live ↗</a></div></div>' +
+      '<div class="right"><div class="frame"><div class="bar"><span>' + p.screen + '</span></div>' + shot + '</div></div>' +
+      foot((i + 1) + ' of ' + PAIRS.length) + '</section>');
+  });
+
+  html.push('<section class="slide s-end" data-note="Everything you saw is clickable. Switch desks from the panel at the bottom right of the prototype.">' +
+    '<div class="eyebrow">See it for yourself</div><h2>Every screen here is in the clickable prototype</h2>' +
+    '<p>Each slide says which desk it is on. Switch desks with Looking as, in the prototype panel behind the button at the bottom right, then follow the path on the slide.</p>' +
+    '<div class="desks"><span>Recruiter</span><span>Hiring manager</span><span>BU director</span><span>HR Manager</span><span>Client</span></div>' +
+    '<a class="live" href="' + LIVE + '" target="_blank" rel="noopener">design-aimy-talent.aimy.flairstech.com ↗</a>' + foot('') + '</section>');
+
+  var stage = document.getElementById('stage');
+  stage.innerHTML = html.join('');
+  var slides = stage.querySelectorAll('.slide');
+  var cur = 0, notesOn = false;
+
+  function fit() {
+    if (window.innerWidth <= 760) { stage.style.transform = ''; return; }
+    var s = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
+    stage.style.transform = 'scale(' + s + ')';
+  }
+  function show(i, fromHash) {
+    cur = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach(function (el, k) { el.classList.toggle('on', k === cur); });
+    document.getElementById('progress').style.width = ((cur + 1) / slides.length * 100) + '%';
+    document.getElementById('notesText').textContent = slides[cur].getAttribute('data-note') || '';
+    if (!fromHash) { try { history.replaceState(null, '', '#' + (cur + 1)); } catch (e) { location.hash = '#' + (cur + 1); } }
+  }
+  function fromHash() { var n = parseInt((location.hash || '').slice(1), 10); show(isNaN(n) ? 0 : n - 1, true); }
+  function toggleNotes() {
+    notesOn = !notesOn;
+    document.getElementById('notes').hidden = !notesOn;
+    document.getElementById('bNotes').setAttribute('aria-pressed', String(notesOn));
+  }
+  function full() {
+    try {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else { var p = document.documentElement.requestFullscreen(); if (p && p.catch) p.catch(function () {}); }
+    } catch (e) {}
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter' || k === 'ArrowDown') { if (k === 'Enter' && /^(A|BUTTON)$/.test(e.target.tagName)) return; e.preventDefault(); show(cur + 1); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'ArrowUp' || k === 'Backspace') { e.preventDefault(); show(cur - 1); }
+    else if (k === 'Home') show(0);
+    else if (k === 'End') show(slides.length - 1);
+    else if (k === 'n' || k === 'N') toggleNotes();
+    else if (k === 'f' || k === 'F') full();
+  });
+  stage.addEventListener('click', function (e) {
+    if (window.innerWidth <= 760 || e.target.closest('a,button')) return;
+    var r = stage.getBoundingClientRect();
+    show(e.clientX < r.left + r.width / 3 ? cur - 1 : cur + 1);
+  });
+  var tx = null;
+  stage.addEventListener('touchstart', function (e) { tx = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) {
+    if (tx === null || window.innerWidth <= 760) return;
+    var dx = e.changedTouches[0].clientX - tx; tx = null;
+    if (Math.abs(dx) > 40) show(dx < 0 ? cur + 1 : cur - 1);
+  });
+  document.getElementById('bPrev').addEventListener('click', function () { show(cur - 1); });
+  document.getElementById('bNext').addEventListener('click', function () { show(cur + 1); });
+  document.getElementById('bNotes').addEventListener('click', toggleNotes);
+  document.getElementById('bFull').addEventListener('click', full);
+  window.addEventListener('resize', fit);
+  window.addEventListener('hashchange', fromHash);
+  fit(); fromHash();
+})();
+</script>

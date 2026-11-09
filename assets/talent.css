@@ -271,7 +271,18 @@ textarea.dial-input.t-area { height: auto; padding: 10px 12px; }
 .t-step { display: inline-flex; align-items: center; gap: 8px; }
 .t-step .b-ghost { min-width: 32px; justify-content: center; }
 .t-step-n { min-width: 10ch; text-align: center; color: var(--d50); font-variant-numeric: tabular-nums; }
-.t-strip { margin-top: 12px; }
+/* THE REQUISITION HEAD, AS ONE RECORD (9 Nov). The short facts share one row
+   (the need, the hiring manager, the recruiter, the test), the stages run under
+   them, and the two pieces of prose sit side by side instead of stacking down
+   one narrow column. The strip below holds what you can do to it, state first,
+   then the posting, two columns with their verbs on one row each. */
+.t-strip { margin-top: 0; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); padding-top: 22px; border-top: 1px solid var(--card-border); }
+/* Four short facts at 200px a column, and the same 48px gap as the two-column
+   rows, so the third fact starts where the second column below does. */
+.s-block.t-strip-sec { padding-top: 0; }
+.b-cmeta.t-facts { grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); max-width: none; }
+.b-said.t-two { grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); column-gap: 48px; }
+.b-cmeta-p .t-inline-link { text-align: left; }
 
 /* A list of short lines with a mark first: test answers, agenda items, the
    success profile against a CV, onboarding steps. */
@@ -1605,17 +1616,22 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-trk-exit { display: flex; align-items: center; gap: 8px; margin: 14px 0 0; color: var(--d100); font-size: var(--fs-xs); }
 .t-trk-branch { width: 22px; height: 14px; border-left: 2px solid currentColor; border-bottom: 2px solid currentColor; border-radius: 0 0 0 8px; transform: translateY(-4px); color: var(--ink-muted); }
 .t-trk-exit.tone-err .t-trk-branch, .t-trk-exit.tone-err b { color: var(--err-text, var(--err)); }
+/* A track in a row of facts (the requisition head, 9 Nov) gives each stage room
+   for its name and its usual time, and on a phone stays a row that scrolls
+   sideways: stacked, eleven stages would be the whole first screen. */
+.t-trk-wrap.is-row { margin-top: 2px; }
+.t-trk-wrap.is-row .t-trk { grid-template-columns: repeat(var(--n), minmax(88px, 1fr)); }
 @media (max-width: 640px) {
-  .t-trk { grid-template-columns: 1fr; padding-top: 0; }
-  .t-trk-wrap { overflow: visible; }
-  .t-trk-step { padding: 0 0 14px 28px; }
-  .t-trk-step::before, .t-trk-step:first-child::before, .t-trk-step:last-child::before { top: 15px; bottom: -2px; left: 6px; right: auto; width: 3px; height: auto; }
-  .t-trk-step:last-child::before { display: none; }
+  :where(.t-trk-wrap:not(.is-row)) .t-trk { grid-template-columns: 1fr; padding-top: 0; }
+  .t-trk-wrap:not(.is-row) { overflow: visible; }
+  :where(.t-trk-wrap:not(.is-row)) .t-trk-step { padding: 0 0 14px 28px; }
+  :where(.t-trk-wrap:not(.is-row)) .t-trk-step::before, :where(.t-trk-wrap:not(.is-row)) .t-trk-step:first-child::before, :where(.t-trk-wrap:not(.is-row)) .t-trk-step:last-child::before { top: 15px; bottom: -2px; left: 6px; right: auto; width: 3px; height: auto; }
+  :where(.t-trk-wrap:not(.is-row)) .t-trk-step:last-child::before { display: none; }
   /* Stacked, the path ahead is dashed downwards, not faded (6 Nov). */
-  .t-trk-step:not(.is-done):not(.is-start)::before { background: repeating-linear-gradient(180deg, var(--d500, #637280) 0 4px, transparent 4px 8px); width: 2px; margin-left: 0.5px; }
-  .t-trk-step.is-hand { margin-top: 18px; }
-  .t-trk-split { top: -14px; bottom: auto; left: 0; right: 0; border-left: 0; border-top: 1px dashed var(--d500, #637280); }
-  .t-trk-split span { top: -9px; left: 28px; padding: 0 6px; background: var(--card-bg); }
+  :where(.t-trk-wrap:not(.is-row)) .t-trk-step:not(.is-done):not(.is-start)::before { background: repeating-linear-gradient(180deg, var(--d500, #637280) 0 4px, transparent 4px 8px); width: 2px; margin-left: 0.5px; }
+  :where(.t-trk-wrap:not(.is-row)) .t-trk-step.is-hand { margin-top: 18px; }
+  :where(.t-trk-wrap:not(.is-row)) .t-trk-split { top: -14px; bottom: auto; left: 0; right: 0; border-left: 0; border-top: 1px dashed var(--d500, #637280); }
+  :where(.t-trk-wrap:not(.is-row)) .t-trk-split span { top: -9px; left: 28px; padding: 0 6px; background: var(--card-bg); }
 }
 
 /* ══ AiMY'S READ, FIRST ON THE CARD (4 Nov; the library's, 5 Nov) ══════════
@@ -1891,7 +1907,11 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-trk.is-plan .t-trk-dot { border-color: rgba(var(--accent-rgb), 0.6); }
 .t-trk.is-plan .t-trk-k { color: var(--d100); }
 /* Eleven stages fit the section's column: narrower steps, names that break between words. */
-.t-trk.is-plan { grid-template-columns: repeat(var(--n), minmax(60px, 1fr)); }
+/* 78px is the narrowest a stage keeps "Assessment" off its neighbour (9 Nov:
+   at 60px the names ran into each other on the edit page). Eleven stages in a
+   narrow column scroll sideways inside .t-trk-wrap instead. */
+.t-trk.is-plan { grid-template-columns: repeat(var(--n), minmax(78px, 1fr)); }
+.t-trk-wrap:not(.is-row) > .t-trk.is-plan .t-trk-step { padding-right: 10px; }
 .t-trk.is-plan .t-trk-k { overflow-wrap: normal; hyphens: auto; }
 
 /* ══ THE REQUISITION EDITOR IN THREE SECTIONS (6 Nov; after Wellfound and
@@ -1965,15 +1985,39 @@ body.is-portal .aimy-overlay { display: none !important; }
                        than their words so the words carry the line
      4  AiMY's read    in its own ground, after a wider gap
    Returning is a fact that changes what you do next, so it is the one fact
-   with a coloured mark and its first word set a weight up: seen when you
-   scan, without a chip of its own. */
+   that is set apart: its mark and its first word in blue and a weight up,
+   the reason in the facts' ink (Engy, 9 Nov: this over a blue band, which
+   made a second filled shape above AiMY's read). Not a Tag: the card keeps
+   one Tag, the fit. */
 article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .b-qcard .t-cfacts { gap: 6px; padding-top: 10px; }
 .b-qcard .t-cfacts > .b-qcard-where { font-size: 13px; font-weight: var(--fw-medium); line-height: 1.45; letter-spacing: 0.005em; }
-.b-qcard .t-cfacts .b-fact > svg { color: color-mix(in srgb, var(--ink-muted) 72%, transparent); }
+/* The data line is plain text: no icons, the facts held whole, the dots a step
+   quieter than the words. Only the signals under it keep an icon. */
+.b-qcard .t-cfacts > .t-facts-plain { display: block; }
+.t-facts-plain > span:not(.t-dot):not(.sr-only) { white-space: nowrap; }
+.t-facts-plain .t-dot { margin-left: 0.35em; color: var(--d400); }
 .b-qcard .t-cfacts > .t-before .b-fact > svg { color: var(--info); }
-.b-qcard .t-before b { font-weight: var(--fw-semibold); color: var(--d100); }
+.b-qcard .t-before b, .b-qcard .t-cnow b { font-weight: var(--fw-semibold); color: var(--info); }
 .b-qcard .t-cfacts + .b-aimy { margin-top: 14px; }
+
+/* ══ LESS WHITE ON THE PAGE (Engy, 9 Nov: a recruiter was "lost in all that
+   white/grey writing") ══════════════════════════════════════════════════════
+   67 words a card, nearly all in four whites the eye cannot tell apart. The
+   ink band stays as Sales has it (muted type tested badly), so the fix is
+   fewer words (the short read, whySay) and colour that means something:
+   - AiMY's read takes its own voice, a lavender drawn from its mark, and the
+     must-haves it found stay the brightest runs, so they read on their own.
+   - The track speaks only where they are now; the stages either side step
+     back. Its labels and days come up to the 12px floor.
+   - The card has one loud action: Not progressing steps back to the facts'
+     ink until it is hovered. */
+.b-qcard .b-aimy.t-fit .b-aimy-say { color: color-mix(in srgb, var(--accent-label) 30%, var(--d200)); }
+.b-qcard .b-aimy.t-fit .b-aimy-say :is(b, em) { color: var(--d50); font-weight: var(--fw-semibold); }
+.b-qcard .t-trk-k, .b-qcard .t-trk-t { font-size: var(--fs-2xs); }
+.b-qcard .t-trk-step:not(.is-now):not(.is-out) .t-trk-k { color: var(--d400); }
+.b-qcard .b-qcard-foot .b-ghost { color: var(--d200); }
+.b-qcard .b-qcard-foot .b-ghost:hover, .b-qcard .b-qcard-foot .b-ghost:focus-visible { color: var(--text-strong); }
 
 /* ══ THE CARD'S TRACK, FULL WIDTH (Engy, 6 Nov) ══════════════════════════
    The first dot on the card's left edge, the last on its right, the middle

@@ -2577,15 +2577,16 @@
         '<div class="s-rec-title"><h1 class="s-rec-name">' + esc(q.title) + '</h1>' +
           '<span class="s-meta-st tone-' + st.tone + '">' + esc(st.label) + '</span>' +
           (h ? '<span class="b-kind">' + (h.left >= 0 ? days(h.left) + ' left' : days(-h.left) + ' past the target') + '</span>' : '') + '</div>' +
-        '<div class="b-cmeta">' +
+        '<div class="b-cmeta t-facts">' +
           '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">The need</h2><div class="b-cmeta-say">' +
             '<p class="b-cmeta-p">' + esc(plural(q.seats, 'seat')) + ', ' + (q.kind === 'replacement' ? 'a replacement' : 'a new role') + ', ' + esc(q.level.toLowerCase()) + '.</p>' +
             '<p class="b-cmeta-p">' + (q.billable ? 'Billable to the client.' : 'Not billable.') + '</p></div></div>' +
           '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Hiring manager</h2><div class="b-cmeta-say"><p class="b-cmeta-p"><b>' + esc(hmOf(q).name) + '</b></p></div></div>' +
-          '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Stages</h2><div class="b-cmeta-say"><p class="b-cmeta-p">' +
-            esc(t.filter((k) => k !== 'joined').map((k) => STAGE[k].label).join(' → ')) + '</p></div></div>' +
+          (isClient() ? '' : reqWho(q)) +
+          /* The stages as the track the edit page draws (9 Nov), not a sentence of arrows. */
+          '<div class="b-cmeta-part t-wide"><h2 class="b-cmeta-cap">Stages</h2>' + planTrack(t.filter((k) => k !== 'joined'), true) + '</div>' +
         '</div>' +
-        '<div class="b-cmeta b-said">' +
+        '<div class="b-cmeta b-said t-two">' +
           '<div class="b-cmeta-part"><div class="b-draft-caprow"><span class="b-cmeta-cap">Success profile</span></div><div class="b-cmeta-say">' +
             q.must.map((m) => '<p class="b-cmeta-p">' + esc(m) + '</p>').join('') +
             (accRule(q.acc) && !isClient() ? '<p class="b-cmeta-p t-rule">' + mark(10) + '<span>Learned from ' + esc(accOf(q).name) + '’s declines: ' + esc(accRule(q.acc).rule) + '</span></p>' : '') + '</div></div>' +
@@ -2707,10 +2708,10 @@
      story-so-far track with nobody on it yet. Every stage ahead, each with
      how long it usually takes, and the dashed mark where the decision
      passes to the client or the hiring manager. */
-  function planTrack(t) {
+  function planTrack(t, row) {
     const hi = t.indexOf('sent') >= 0 ? t.indexOf('sent') : t.indexOf('mgr');
     const name = (k) => JY_SHORT[k] || STAGE[k].label;
-    return '<div class="t-trk-wrap"><ol class="t-trk is-plan" style="--n:' + t.length + '" aria-label="The stages, in order">' + t.map((k, i) =>
+    return '<div class="t-trk-wrap' + (row ? ' is-row' : '') + '"><ol class="t-trk is-plan" style="--n:' + t.length + '" aria-label="The stages, in order">' + t.map((k, i) =>
       '<li class="t-trk-step' + (i === hi ? ' is-hand' : '') + '" title="' + esc(STAGE[k].label + (STAGE[k].exp ? ', usually ' + days(STAGE[k].exp) : '')) + '">' +
         '<span class="t-trk-dot" aria-hidden="true"></span><span class="t-trk-k">' + esc(name(k)) + '</span>' +
         (STAGE[k].exp && i < t.length - 1 ? '<span class="t-trk-t">usually ' + days(STAGE[k].exp) + '</span>' : '') +
@@ -2832,11 +2833,16 @@
          as one block of rows (who they are, applied before, the news), then
          the body (AiMY's read, the track), then the foot. */
       '<div class="t-cfacts">' +
-      '<p class="b-qcard-where">' + fact('job', plural(c.years, 'year')) + fact('pin', c.place) + fact('lang', c.langs.join(', ')) + '</p>' +
+      /* Data in one plain line, icons kept for the signals (Engy, 9 Nov,
+         iteration 1 of deliverables/card-facts-iterations.html): an icon on
+         every fact made Returning look like years and place. Each fact holds
+         together, so a narrow card wraps between facts, never inside one. */
+      '<p class="b-qcard-where t-facts-plain">' + [plural(c.years, 'year'), c.place, c.langs.join(', ')].filter(Boolean)
+        .map((t) => '<span>' + esc(t) + '</span>').join('<span class="t-dot" aria-hidden="true">·</span><span class="sr-only">, </span> ') + '</p>' +
       /* For scanning, the signal and not the detail (Engy, 6 Nov): that they
          are back, and why it stopped last time. The role and the outcome are
          on the profile. */
-      (was ? '<p class="b-qcard-where t-before"><span class="b-fact">' + svg('hist') + '<span><b>Returning</b> · last time: ' + esc(was.outWhy && was.exit === 'out' ? lower(OUT_K[was.outWhy.why].label) : was.decline ? lower(DECLINE_K[was.decline.why].label) : lower(EXIT[was.exit].label)) + '</span></span></p>' : '') +
+      (was ? '<p class="b-qcard-where t-before"><span class="b-fact">' + svg('hist') + '<span><b>Returning</b> · ' + esc(lastTime(was)) + '</span></span></p>' : '') +
       /* The line under the steps says only what they do not (Engy, 6 Nov):
          an interview's time or result, a way out, a score, a nudge. When
          the steps show, the days are on them; with none to show, the line
@@ -2847,7 +2853,11 @@
         /* A client past the usual time is nudged from here (5 Nov). */
         const ndg = c.stage === 'sent' && !c.exit && slowAt(c) && (isRec() || isHR()) ? (c.nudged == null ? ' <button class="s-inline-btn" type="button" data-nudge="' + c.id + '">' + esc(nudgeSay(c)) + '</button>' : ' <span class="b-kind">Nudged ' + esc(sayWhen(c.nudged)) + '</span>') : '';
         const txt = prog && !news ? sc : say + (!prog && slowAt(c) ? ' Usually ' + days(STAGE[c.stage].exp) + '.' : '') + (sc ? ' ' + sc : '');
-        return txt || ndg ? '<p class="b-qcard-where t-cnow">' + (txt ? fact('clock', txt) : '') + ndg + '</p>' : '';
+        /* No icon; its first sentence leads in blue, as Returning does (Engy,
+           9 Nov): "Interviewed 3 days ago." is the news, the rest its detail. */
+        const cut = txt.indexOf('. ') + 1;
+        const lead = !txt ? '' : '<span><b>' + esc(cut ? txt.slice(0, cut) : txt) + '</b>' + (cut ? esc(txt.slice(cut)) : '') + '</span>';
+        return txt || ndg ? '<p class="b-qcard-where t-cnow">' + lead + ndg + '</p>' : '';
       })() + '</div>' +
       whySay(c) +
       (c.stage === 'sent' || (isClient() && c.exit === 'clientno') ? sendout(c) : '') +
@@ -2894,6 +2904,17 @@
      before and left it. The card says so, with what stopped them, so
      nobody screens them twice for the same thing. */
   const before = (c) => apps(c).filter((x) => x.id !== c.id && x.exit)[0] || null;
+  /* What stopped it last time, as a short clause and not a list label (Engy,
+     9 Nov): "last time: salary" left the reader to guess whose salary and who
+     said no, and the full sentence wrapped to two lines on a narrow card. A
+     few words, "… last time", so the line fits a card four to a row. */
+  const LAST_OUT = { must: 'missed a must-have', lang: 'language fell short', salary: 'over budget', notice: 'notice too long',
+    iv: 'interview didn’t go well', reach: 'couldn’t reach them', other: 'we stopped' };
+  const LAST_DECLINE = { lang: 'client: language', exp: 'client: experience', salary: 'client: over budget', notice: 'client: notice too long',
+    skills: 'client: skills gap', other: 'client said no' };
+  const LAST_EXIT = { out: 'we stopped', withdrew: 'they withdrew', clientno: 'client said no', offerno: 'turned the offer down' };
+  const lastTime = (x) => (x.outWhy && x.exit === 'out' ? LAST_OUT[x.outWhy.why]
+    : x.decline ? LAST_DECLINE[x.decline.why] : LAST_EXIT[x.exit]) + ' last time';
 
   /* ══ THE RESEARCH COMPONENTS (30 Research/UI/source/components.html) ═════
      The eleven component cards drawn for the research, built from that
@@ -3133,6 +3154,17 @@
     const check = unk.map((m) => fluent(m) ? 'how fluent their ' + fluent(m) + ' is' : short(m));
     const say = fit + (near ? (met.length || part.length ? ', and lives close to the office.' : ', but lives close to the office.') : '.') +
       (check.length ? ' I’d check ' + esc(and(check)) + '.' : '');
+    /* ON THE CARD, THE SHORT READ (Engy, 9 Nov: a recruiter was "lost in all
+       that white/grey writing"). What the CV shows, then what to check, about
+       13 words where the sentence took 30; each must-have it found is its own
+       bright run, so they can be read without the sentence. The profile and
+       the hover keep the full sentence. */
+    const bold = (l, t) => and(l.map((m) => '<' + t + '>' + esc(m) + '</' + t + '>'));
+    const shows = met.length ? 'Shows ' + bold(met, 'b') + (part.length ? ', partly ' + bold(part, 'em') : '')
+      : part.length ? 'Partly shows ' + bold(part, 'em') : 'CV doesn’t show the must-haves yet';
+    /* With nothing shown, the list to check is every must-have: say how many. */
+    const sayCard = shows + (near ? (met.length || part.length ? ', lives nearby.' : '. Lives nearby.') : '.') +
+      (!check.length ? '' : met.length || part.length ? ' Check ' + esc(and(unk.map((m) => fluent(m) || short(m)))) + '.' : ' Check all ' + unk.length + '.');
     /* AiMY'S INSIGHT, FIRST ON THE CARD (Engy, 4 Nov: "the most important is
        the AiMY insights"; variation 4 of deliverables/candidate-card-progress
        .html). A verdict in words, never a score (29 Oct): Strong where the CV
@@ -3149,7 +3181,7 @@
     const heard = verified(c).some((x) => x.seen.length);
     if (tagOnly) return tag(v[0], v[1]);
     /* The Tag sits beside the name, not inside the sentence (Engy, 5 Nov). */
-    return aimyNote(say, withFrom ? (heard ? 'the CV and the interviews, against the must-haves' : 'the CV, against the must-haves') : null,
+    return aimyNote(withFrom ? say : sayCard, withFrom ? (heard ? 'the CV and the interviews, against the must-haves' : 'the CV, against the must-haves') : null,
       'AiMY’s read of the CV' + (heard ? ' and the interviews' : '') + ', against the must-haves');
   }
   /* The fit verdict as a library Tag: the state's name, both words capitalised. */
@@ -9022,22 +9054,26 @@
   }
   const jobLink = (q) => 'talent.flairstech.com/jobs/' + q.id;
 
-  /* Where the requisition is posted, what state it is in, and who works it. */
-  function reqStrip(q) {
-    const closed = !!CLOSED[q.state];
+  /* Who works the requisition and the test it sets: they sit in the head's
+     row of facts beside the need and the hiring manager (9 Nov). */
+  function reqWho(q) {
     const a = q.asmt ? asmtOf(q.asmt) : null;
     const rec = RECRUITERS.filter((x) => x.id === q.rec)[0];
-    return '<section class="s-block s-block-wide" aria-label="Posting and state">' +
-      '<div class="b-cmeta t-strip">' +
-        '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">On the careers page</h2><div class="b-cmeta-say">' +
-          (q.published
-            ? '<p class="b-cmeta-p"><b class="t-link-text">' + esc(jobLink(q)) + '</b></p><p class="b-cmeta-p">Anyone with the link can read it and apply. Post it on LinkedIn as it is.</p>' +
-              '<p class="b-cmeta-p t-acts"><button class="s-insight-lnk" type="button" data-copy="' + esc('https://' + jobLink(q)) + '">Copy the link</button>' +
-              '<button class="s-insight-lnk" type="button"' + goAttr({ apply: q.id }) + '>Open the page</button>' +
-              (closed ? '' : '<button class="b-ghost" type="button" data-publish="' + q.id + '">Unpublish</button>') + '</p>'
-            : '<p class="b-cmeta-p">Not published. Nobody outside the team can see it.</p>' +
-              (closed ? '' : '<p class="b-cmeta-p t-acts"><button class="s-insight-lnk primary" type="button" data-publish="' + q.id + '">Publish it</button></p>')) +
+    return '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Recruiter</h2><div class="b-cmeta-say">' +
+          '<p class="b-cmeta-p"><b>' + esc(rec ? rec.name : 'Not assigned') + '</b></p>' +
+          (isHR() ? '<p class="b-cmeta-p t-acts">' + assignMenu(q) + '</p>' : '') +
         '</div></div>' +
+        (a ? '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Assessment</h2><div class="b-cmeta-say">' +
+          '<p class="b-cmeta-p"><button class="t-inline-link" type="button" data-asmt="' + a.id + '">' + esc(a.title) + '</button></p>' +
+          '<p class="b-cmeta-p">' + (a.kind === 'live' ? 'A live interview with the AiMY agent' : 'A questionnaire') + ', before the phone screen. Pass ' + esc(passSayOf(a)) + '.</p>' +
+        '</div></div>' : '');
+  }
+  /* What can be done to it: its state, and where it is posted. Two columns,
+     each with its verbs on one row under it (9 Nov). */
+  function reqStrip(q) {
+    const closed = !!CLOSED[q.state];
+    return '<section class="s-block s-block-wide t-strip-sec" aria-label="State and posting">' +
+      '<div class="b-cmeta t-strip">' +
         '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">State</h2><div class="b-cmeta-say">' +
           '<p class="b-cmeta-p"><b>' + esc(REQ_STATE[q.state].label) + '</b>' + (q.state === 'open' ? ' since ' + esc(sayDay(q.opened)) : '') + '</p>' +
           (canEditReq(q) ? '<p class="b-cmeta-p t-acts">' +
@@ -9049,14 +9085,15 @@
                   '<button class="b-menu-item" type="button" role="menuitem" data-req-state="' + q.id + '|' + x[0] + '"><span class="b-menu-name">' + x[1] + '</span></button>').join('') +
               '</div></span>' : '') + '</p>' : '') +
         '</div></div>' +
-        '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Recruiter</h2><div class="b-cmeta-say">' +
-          '<p class="b-cmeta-p"><b>' + esc(rec ? rec.name : 'Not assigned') + '</b></p>' +
-          (isHR() ? '<p class="b-cmeta-p t-acts">' + assignMenu(q) + '</p>' : '') +
+        '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">On the careers page</h2><div class="b-cmeta-say">' +
+          (q.published
+            ? '<p class="b-cmeta-p"><b class="t-link-text">' + esc(jobLink(q)) + '</b></p><p class="b-cmeta-p">Anyone with the link can read it and apply. Post it on LinkedIn as it is.</p>' +
+              '<p class="b-cmeta-p t-acts"><button class="b-ghost" type="button" data-copy="' + esc('https://' + jobLink(q)) + '">Copy the link</button>' +
+              '<button class="b-ghost" type="button"' + goAttr({ apply: q.id }) + '>Open the page</button>' +
+              (closed ? '' : '<button class="b-ghost" type="button" data-publish="' + q.id + '">Unpublish</button>') + '</p>'
+            : '<p class="b-cmeta-p">Not published. Nobody outside the team can see it.</p>' +
+              (closed ? '' : '<p class="b-cmeta-p t-acts"><button class="s-insight-lnk primary" type="button" data-publish="' + q.id + '">Publish it</button></p>')) +
         '</div></div>' +
-        (a ? '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Assessment</h2><div class="b-cmeta-say">' +
-          '<p class="b-cmeta-p"><button class="t-inline-link" type="button" data-asmt="' + a.id + '">' + esc(a.title) + '</button></p>' +
-          '<p class="b-cmeta-p">' + (a.kind === 'live' ? 'A live interview with the AiMY agent' : 'A questionnaire') + ', before the phone screen. Pass ' + esc(passSayOf(a)) + '.</p>' +
-        '</div></div>' : '') +
       '</div>' +
     '</section>';
   }

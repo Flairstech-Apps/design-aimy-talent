@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Card Facts Iterations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<!-- The app's own sheets, so every card here is the card as it ships. -->
+<link rel="stylesheet" href="../assets/aimy-ds.css">
+<link rel="stylesheet" href="../assets/sales.css">
+<link rel="stylesheet" href="../assets/bdr.css">
+<link rel="stylesheet" href="../assets/talent.css">
+<style>
+  /* The sheet's own frame, drawn from the app's tokens so it follows the theme. */
+  html, body { height: auto !important; overflow: auto !important; zoom: 1 !important; }
+  body { margin: 0; background: var(--d950); color: var(--d100); font-family: 'Poppins', system-ui, sans-serif; }
+  ::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); }
+  .sheet { max-width: 1160px; margin: 0 auto; padding: 48px 24px 96px; }
+  .sheet h1 { margin: 0 0 10px; font-size: 32px; line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; color: var(--d50); text-wrap: balance; }
+  .sheet .lead { max-width: 74ch; margin: 0; font-size: 15px; line-height: 1.6; color: var(--d200); }
+  .sheet .lead b { color: var(--d50); font-weight: 600; }
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 22px; }
+  .bar button { font: 500 13px/1 'Poppins', sans-serif; padding: 8px 14px; border-radius: 999px; cursor: pointer;
+    border: 1px solid color-mix(in srgb, var(--d50) 14%, transparent); background: transparent; color: var(--d200); }
+  .bar button[aria-pressed="true"] { background: var(--accent-dim); border-color: color-mix(in srgb, var(--accent) 45%, transparent); color: var(--d50); }
+  .bar button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+  .bar .hint { font-size: 12.5px; color: var(--d400); }
+
+  .it { margin-top: 56px; padding-top: 28px; border-top: 1px solid color-mix(in srgb, var(--d50) 9%, transparent); }
+  .it-h { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 0 0 6px; font-size: 21px; font-weight: 600; color: var(--d50); }
+  .it-n { font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 600; color: var(--d400); min-width: 1.4em; }
+  .it-rec { font-size: 12px; font-weight: 600; color: var(--ok-text, var(--ok)); }
+  .it-say { max-width: 78ch; margin: 0; font-size: 14px; line-height: 1.6; color: var(--d200); }
+  .stage { display: grid; grid-template-columns: repeat(3, 330px); gap: 12px; margin-top: 18px; padding: 18px; border-radius: 16px;
+    background: var(--d900); overflow-x: auto; }
+  @media (max-width: 1100px) { .stage { grid-template-columns: repeat(3, minmax(300px, 330px)); } }
+  .stage .b-qcard { animation: none !important; opacity: 1 !important; transform: none !important; }
+  .notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+  @media (max-width: 860px) { .notes { grid-template-columns: 1fr; } }
+  .note { padding: 12px 14px; border-radius: 12px; background: var(--d900); font-size: 13px; line-height: 1.55; color: var(--d200); }
+  .note h3 { margin: 0 0 4px; font-size: 12.5px; font-weight: 600; color: var(--d50); }
+  .note p { margin: 0; }
+  .rules { margin-top: 56px; padding-top: 28px; border-top: 1px solid color-mix(in srgb, var(--d50) 9%, transparent); }
+  .rules h2 { margin: 0 0 10px; font-size: 21px; font-weight: 600; color: var(--d50); }
+  .rules ul { margin: 0; padding-left: 18px; max-width: 86ch; font-size: 14px; line-height: 1.65; color: var(--d200); }
+  .rules li b { color: var(--d50); font-weight: 600; }
+
+  /* ── The iterations. Only the facts block changes; the rest is the card. ── */
+  .x-plain { display: block !important; }
+  .x-sep { padding: 0 7px; color: var(--d400); }
+  /* 2 · no icons at all */
+  .v2 .t-cfacts .b-fact > svg { display: none; }
+  /* 4 · the eyebrow goes; where they came from sits with their history */
+  .x-src { color: var(--d400) !important; }
+  .x-src b { color: var(--info); font-weight: var(--fw-semibold); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true" focusable="false">
+  <defs>
+    <radialGradient id="aimy-rg" cx="75.72" cy="73.83" fx="75.72" fy="73.83" r="70.54" gradientUnits="userSpaceOnUse">
+      <stop offset=".26" stop-color="#8c4ff4"/>
+      <stop offset=".36" stop-color="#8250f4"/>
+      <stop offset=".51" stop-color="#6954f6"/>
+      <stop offset=".7" stop-color="#3f5bf9"/>
+      <stop offset=".92" stop-color="#0764fe"/>
+      <stop offset=".95" stop-color="#06f"/>
+    </radialGradient>
+    
+    <symbol id="aimy-logo-small" viewBox="0 0 151.43 147.66">
+      <path fill="var(--aimy-mark, url(#aimy-rg))" d="m84.2,6.76c1.09-2.9,3.26-3.67,6.2-3.46,3.04.21,6.12-.04,9.17.09,3.09.13,4.19,1.99,2.72,4.73-2.8,5.23-5.69,10.4-8.64,15.54-.91,1.59-1.31,2.9-.3,4.69,1.09,1.94,1.68,4.16,2.47,6.27.56,1.48,1.14,2.9,3.1,2.84,2.03-.06,2.38-1.54,2.71-3.11,1.1-5.1,2.22-10.19,3.39-15.28.66-2.88,1.64-3.2,3.7-1.18,3.15,3.08,6.22,6.25,9.37,9.33,1.29,1.26,1.36,2.4.1,3.7-1.25,1.29-2.47,2.62-3.66,3.97-.61.69-1.13,1.49-.46,2.42.68.94,1.55.61,2.42.27,4.51-1.8,9.04-3.53,13.53-5.39,1.83-.76,3.32-.47,4.67.87,2.49,2.47,5.04,4.9,7.42,7.47,2.54,2.73,1.91,4.74-1.77,5.82-5.69,1.67-11.39,3.26-17.1,4.85-1.37.38-2.26.89-2.75,2.47-.76,2.47-2.02,4.8-3.1,7.17-.61,1.35-.72,2.59.51,3.68,1.25,1.11,2.44.75,3.68-.05,4.53-2.92,9.07-5.83,13.64-8.69,2.5-1.57,3.33-1.08,3.36,1.91.04,4.22-.08,8.45.05,12.67.07,2.39-.98,3.24-3.21,3.2-1.53-.03-3.06.06-4.59.14-1.02.06-2.06.26-2.2,1.52-.13,1.15.81,1.46,1.65,1.82,4.29,1.85,8.54,3.8,12.88,5.53,2.16.86,3.1,2.23,3.06,4.5-.06,3.33.02,6.65-.04,9.98-.08,3.82-1.88,4.89-5.2,3.07-5.2-2.84-10.38-5.72-15.53-8.66-1.34-.76-2.38-1.03-3.92-.2-2.28,1.22-4.82,1.95-7.26,2.86-1.4.53-2.29,1.38-2.17,3,.13,1.67,1.24,2.19,2.69,2.5,5.27,1.12,10.53,2.27,15.78,3.49,2.92.67,3.16,1.56,1.07,3.69-3.09,3.14-6.26,6.21-9.33,9.38-1.27,1.3-2.36,1.38-3.66.09-1.27-1.27-2.63-2.45-3.98-3.65-.69-.62-1.48-1.14-2.42-.5-.97.66-.64,1.53-.29,2.4,1.76,4.42,3.43,8.88,5.28,13.26.95,2.24.47,3.9-1.24,5.51-2.23,2.09-4.32,4.33-6.51,6.47-3.13,3.06-5.22,2.5-6.45-1.76-1.58-5.52-3.13-11.05-4.64-16.59-.4-1.48-1.02-2.39-2.66-2.9-2.39-.74-4.62-1.97-6.92-3.01-1.43-.65-2.78-.8-3.9.57-1.05,1.29-.54,2.46.25,3.69,2.88,4.45,5.73,8.92,8.55,13.41,1.65,2.62,1.17,3.48-1.98,3.52-4.14.05-8.28-.06-12.41.06-2.47.07-3.33-1.01-3.38-3.37-.04-1.94.39-3.96-.55-5.82-1.74-2.18-2.36-.35-2.92.91-1.76,3.94-3.56,7.87-5.08,11.9-1.11,2.96-2.92,4.25-6.1,4.03-2.77-.2-5.57-.01-8.36-.06-4.27-.07-5.4-1.95-3.37-5.63,2.74-4.95,5.49-9.9,8.31-14.8.9-1.56,1.33-2.86.29-4.67-1.15-2-1.75-4.32-2.56-6.51-.53-1.44-1.25-2.6-3.04-2.53-1.83.08-2.32,1.31-2.64,2.85-1.1,5.18-2.24,10.36-3.44,15.52-.67,2.88-1.65,3.17-3.72,1.13-3.08-3.02-6.08-6.14-9.19-9.14-1.49-1.44-1.54-2.68-.06-4.1,1.1-1.06,2.11-2.22,3.13-3.36.73-.81,1.57-1.72.72-2.83-.76-1-1.8-.44-2.72-.08-4.27,1.69-8.56,3.31-12.78,5.1-2.23.95-3.93.54-5.56-1.18-2.29-2.42-4.75-4.67-7.02-7.1-2.34-2.51-1.78-4.64,1.49-5.62,5.6-1.67,11.22-3.27,16.86-4.79,1.77-.48,2.96-1.11,3.53-3.1.67-2.31,1.91-4.45,2.9-6.66.65-1.44.72-2.79-.65-3.89-1.32-1.05-2.45-.47-3.67.32-4.36,2.84-8.76,5.65-13.17,8.41-2.76,1.73-3.71,1.23-3.74-1.95-.04-4.14.09-8.28-.03-12.41-.06-2.34.89-3.26,3.18-3.21,1.7.04,3.41-.17,5.12-.3.87-.06,1.62-.4,1.76-1.36.15-1-.58-1.41-1.36-1.75-4.37-1.89-8.7-3.87-13.12-5.63-2.25-.9-3.23-2.35-3.19-4.71.06-3.33-.07-6.66.04-9.98.12-3.56,2.07-4.64,5.2-2.93,5.13,2.79,10.23,5.62,15.3,8.52,1.5.86,2.72,1.22,4.44.29,2.12-1.15,4.5-1.81,6.77-2.67,1.47-.55,2.53-1.38,2.37-3.15-.15-1.68-1.35-2.16-2.76-2.46-5.19-1.13-10.37-2.25-15.55-3.44-2.86-.66-3.17-1.67-1.16-3.73,3.02-3.09,6.14-6.07,9.13-9.19,1.44-1.51,2.67-1.53,4.1-.06,1.07,1.09,2.21,2.12,3.36,3.12.8.7,1.66,1.64,2.81.74,1-.78.45-1.8.08-2.71-1.69-4.27-3.3-8.56-5.1-12.78-.97-2.26-.48-3.92,1.19-5.56,2.24-2.2,4.29-4.6,6.51-6.82,2.52-2.52,5.28-1.85,6.29,1.53,1.68,5.69,3.31,11.4,4.86,17.13.42,1.53,1.09,2.38,2.7,2.9,2.47.8,4.79,2.05,7.17,3.11,1.38.61,2.62.55,3.64-.69.98-1.19.61-2.32-.13-3.46-2.82-4.38-5.65-8.75-8.42-13.17-.58-.93-1.69-1.87-.93-3.15.68-1.15,1.94-.76,2.97-.77,4.13-.04,8.27.06,12.4-.03,2.07-.04,2.97.78,2.95,2.84-.01,1.71.14,3.41.26,5.12.07.94.34,1.85,1.47,1.96.98.1,1.41-.63,1.73-1.42,1.76-4.23,3.52-8.46,5.28-12.68Zm-22.36,61.41c-3.34,1.86-6.31,1.33-9.12-1.21-2.13-1.92-4.4-3.7-6.68-5.44-1.37-1.05-5.46-.12-5.88,1.48-.4,1.51,1.45,1.62,2.35,2.26,2.26,1.62,2.42,2.82.44,4.99-1.2,1.31-1.86,2.77-.81,4.36,1.07,1.61,2.68,2.01,4.5,1.25,1.66-.69,3.35-1.31,4.95-2.11,3.35-1.67,6.39-1.47,9.13,1.21,2.48,5.78.4,9.43-5.84,10.19-2.94.36-5.9.59-8.84.99-1.71.24-3.72,3.37-3.04,4.99.74,1.75,2.14.27,3.18.13,2.82-.39,3.74.25,3.89,3.17.09,1.76.6,3.29,2.48,3.69,2.06.43,3.44-.64,4.21-2.52.82-1.99,1.6-4,2.44-5.99,1.06-2.53,2.86-4.12,5.72-4.2,2.6-.07,4.55,1.12,5.68,3.4,1.22,2.48.87,4.87-.94,7.03-1.56,1.86-3.06,3.77-4.61,5.63-2.97,3.57-2.9,4.91.52,8.4.47-.79.92-1.56,1.38-2.32,1.77-2.93,2.86-3.11,5.4-.87,1.35,1.19,2.84,1.7,4.39.59,1.5-1.08,1.78-2.66,1.12-4.34-.89-2.26-1.96-4.45-2.77-6.73-1.32-3.73.56-7.35,4.17-8.3,3.57-.94,7.08,1.37,7.7,5.21.4,2.48.6,5,.8,7.5.41,4.94.97,5.53,5.99,5.97.04.05.08.11.13.14.01,0,.07-.05.11-.08-.09,0-.19,0-.28,0,.48-1.21-.26-2.26-.46-3.37-.48-2.69.29-3.75,2.95-3.8,1.88-.03,3.52-.5,3.93-2.51.45-2.19-.81-3.54-2.79-4.32-2.01-.78-4.01-1.57-5.99-2.42-2.45-1.05-3.89-2.93-3.98-5.6-.08-2.55,1.12-4.54,3.41-5.68,2.38-1.18,4.72-.92,6.82.76,1.9,1.51,3.77,3.05,5.64,4.6,3.87,3.21,4.66,3.2,8.75-.27-1.04-.61-2.07-1.14-3.02-1.79-2.24-1.53-2.4-2.82-.54-4.79,1.28-1.36,2.12-2.83.94-4.56-1.2-1.75-2.96-1.85-4.82-1.09-2.08.86-4.11,1.83-6.22,2.59-3.73,1.35-7.49-.5-8.38-4.02-.96-3.81,1.3-7.23,5.33-7.83,2.48-.37,5-.59,7.51-.78,4.75-.36,5.44-1.05,5.77-6.3-1.15.29-2.24.62-3.35.82-2.62.49-3.71-.35-3.78-3.03-.05-1.89-.52-3.49-2.57-3.85-2.07-.36-3.39.78-4.14,2.67-.83,2.09-1.62,4.2-2.57,6.23-1.68,3.6-5.57,4.91-8.76,3.05-3.36-1.96-4.18-6.1-1.75-9.32,1.57-2.08,3.27-4.06,4.93-6.07,2.94-3.56,2.89-4.57-.43-8.15-.08.02-.2.01-.23.06-.3.44-.6.89-.88,1.35-2.3,3.81-2.75,3.89-6.21,1.3-1.24-.93-2.61-1.34-3.97-.31-1.33,1.02-1.89,2.42-1.26,4.06.84,2.18,1.74,4.33,2.67,6.47,1.16,2.67.88,5.12-1.13,7.24-1.79,1.89-4.12,2.26-6.47,1.44-2.61-.91-3.96-2.91-4.18-5.72-.25-3.13-.61-6.26-1.01-9.38-.24-1.92-3.07-4.03-5.03-3.37-2.01.68-.22,2.24-.11,3.34.27,2.74-.36,3.64-3.35,3.81-1.79.1-3.25.69-3.58,2.6-.31,1.81.57,3.15,2.24,3.88,1.73.76,3.5,1.42,5.24,2.15,5.82,2.41,6.87,6.44,2.99,11.41Z"/>
+    </symbol>
+    <symbol id="aimy-logo-full" viewBox="0 0 418.18 147.66">
+      <g fill="#0366ff">
+        <path d="m209.6,97.25h-25.58l-4.1,12.11h-17.48l24.8-68.54h19.33l24.8,68.54h-17.67l-4.1-12.11Zm-4.3-12.89l-8.49-25.09-8.4,25.09h16.89Z"/>
+        <path d="m255.58,40.82v68.54h-16.7V40.82h16.7Z"/>
+        <path d="m345.31,40.82v68.54h-16.7v-41.1l-15.33,41.1h-13.47l-15.43-41.2v41.2h-16.7V40.82h19.72l19.23,47.45,19.04-47.45h19.63Z"/>
+        <path d="m416.1,40.82l-23.73,45.89v22.65h-16.7v-22.65l-23.73-45.89h18.94l13.28,28.71,13.18-28.71h18.75Z"/>
+      </g>
+      <path fill="url(#aimy-rg)" d="m81.08,8.02c1.09-2.9,3.26-3.67,6.2-3.46,3.04.21,6.12-.04,9.17.09,3.09.13,4.19,1.99,2.72,4.73-2.8,5.23-5.69,10.4-8.64,15.54-.91,1.59-1.31,2.9-.3,4.69,1.09,1.94,1.68,4.16,2.47,6.27.56,1.48,1.14,2.9,3.1,2.84,2.03-.06,2.38-1.54,2.71-3.11,1.1-5.1,2.22-10.19,3.39-15.28.66-2.88,1.64-3.2,3.7-1.18,3.15,3.08,6.22,6.25,9.37,9.33,1.29,1.26,1.36,2.4.1,3.7-1.25,1.29-2.47,2.62-3.66,3.97-.61.69-1.13,1.49-.46,2.42.68.94,1.55.61,2.42.27,4.51-1.8,9.04-3.53,13.53-5.39,1.83-.76,3.32-.47,4.67.87,2.49,2.47,5.04,4.9,7.42,7.47,2.54,2.73,1.91,4.74-1.77,5.82-5.69,1.67-11.39,3.26-17.1,4.85-1.37.38-2.26.89-2.75,2.47-.76,2.47-2.02,4.8-3.1,7.17-.61,1.35-.72,2.59.51,3.68,1.25,1.11,2.44.75,3.68-.05,4.53-2.92,9.07-5.83,13.64-8.69,2.5-1.57,3.33-1.08,3.36,1.91.04,4.22-.08,8.45.05,12.67.07,2.39-.98,3.24-3.21,3.2-1.53-.03-3.06.06-4.59.14-1.02.06-2.06.26-2.2,1.52-.13,1.15.81,1.46,1.65,1.82,4.29,1.85,8.54,3.8,12.88,5.53,2.16.86,3.1,2.23,3.06,4.5-.06,3.33.02,6.65-.04,9.98-.08,3.82-1.88,4.89-5.2,3.07-5.2-2.84-10.38-5.72-15.53-8.66-1.34-.76-2.38-1.03-3.92-.2-2.28,1.22-4.82,1.95-7.26,2.86-1.4.53-2.29,1.38-2.17,3,.13,1.67,1.24,2.19,2.69,2.5,5.27,1.12,10.53,2.27,15.78,3.49,2.92.67,3.16,1.56,1.07,3.69-3.09,3.14-6.26,6.21-9.33,9.38-1.27,1.3-2.36,1.38-3.66.09-1.27-1.27-2.63-2.45-3.98-3.65-.69-.62-1.48-1.14-2.42-.5-.97.66-.64,1.53-.29,2.4,1.76,4.42,3.43,8.88,5.28,13.26.95,2.24.47,3.9-1.24,5.51-2.23,2.09-4.32,4.33-6.51,6.47-3.13,3.06-5.22,2.5-6.45-1.76-1.58-5.52-3.13-11.05-4.64-16.59-.4-1.48-1.02-2.39-2.66-2.9-2.39-.74-4.62-1.97-6.92-3.01-1.43-.65-2.78-.8-3.9.57-1.05,1.29-.54,2.46.25,3.69,2.88,4.45,5.73,8.92,8.55,13.41,1.65,2.62,1.17,3.48-1.98,3.52-4.14.05-8.28-.06-12.41.06-2.47.07-3.33-1.01-3.38-3.37-.04-1.94.39-3.96-.55-5.82-1.74-2.18-2.36-.35-2.92.91-1.76,3.94-3.56,7.87-5.08,11.9-1.11,2.96-2.92,4.25-6.1,4.03-2.77-.2-5.57-.01-8.36-.06-4.27-.07-5.4-1.95-3.37-5.63,2.74-4.95,5.49-9.9,8.31-14.8.9-1.56,1.33-2.86.29-4.67-1.15-2-1.75-4.32-2.56-6.51-.53-1.44-1.25-2.6-3.04-2.53-1.83.08-2.32,1.31-2.64,2.85-1.1,5.18-2.24,10.36-3.44,15.52-.67,2.88-1.65,3.17-3.72,1.13-3.08-3.02-6.08-6.14-9.19-9.14-1.49-1.44-1.54-2.68-.06-4.1,1.1-1.06,2.11-2.22,3.13-3.36.73-.81,1.57-1.72.72-2.83-.76-1-1.8-.44-2.72-.08-4.27,1.69-8.56,3.31-12.78,5.1-2.23.95-3.93.54-5.56-1.18-2.29-2.42-4.75-4.67-7.02-7.1-2.34-2.51-1.78-4.64,1.49-5.62,5.6-1.67,11.22-3.27,16.86-4.79,1.77-.48,2.96-1.11,3.53-3.1.67-2.31,1.91-4.45,2.9-6.66.65-1.44.72-2.79-.65-3.89-1.32-1.05-2.45-.47-3.67.32-4.36,2.84-8.76,5.65-13.17,8.41-2.76,1.73-3.71,1.23-3.74-1.95-.04-4.14.09-8.28-.03-12.41-.06-2.34.89-3.26,3.18-3.21,1.7.04,3.41-.17,5.12-.3.87-.06,1.62-.4,1.76-1.36.15-1-.58-1.41-1.36-1.75-4.37-1.89-8.7-3.87-13.12-5.63-2.25-.9-3.23-2.35-3.19-4.71.06-3.33-.07-6.66.04-9.98.12-3.56,2.07-4.64,5.2-2.93,5.13,2.79,10.23,5.62,15.3,8.52,1.5.86,2.72,1.22,4.44.29,2.12-1.15,4.5-1.81,6.77-2.67,1.47-.55,2.53-1.38,2.37-3.15-.15-1.68-1.35-2.16-2.76-2.46-5.19-1.13-10.37-2.25-15.55-3.44-2.86-.66-3.17-1.67-1.16-3.73,3.02-3.09,6.14-6.07,9.13-9.19,1.44-1.51,2.67-1.53,4.1-.06,1.07,1.09,2.21,2.12,3.36,3.12.8.7,1.66,1.64,2.81.74,1-.78.45-1.8.08-2.71-1.69-4.27-3.3-8.56-5.1-12.78-.97-2.26-.48-3.92,1.19-5.56,2.24-2.2,4.29-4.6,6.51-6.82,2.52-2.52,5.28-1.85,6.29,1.53,1.68,5.69,3.31,11.4,4.86,17.13.42,1.53,1.09,2.38,2.7,2.9,2.47.8,4.79,2.05,7.17,3.11,1.38.61,2.62.55,3.64-.69.98-1.19.61-2.32-.13-3.46-2.82-4.38-5.65-8.75-8.42-13.17-.58-.93-1.69-1.87-.93-3.15.68-1.15,1.94-.76,2.97-.77,4.13-.04,8.27.06,12.4-.03,2.07-.04,2.97.78,2.95,2.84-.01,1.71.14,3.41.26,5.12.07.94.34,1.85,1.47,1.96.98.1,1.41-.63,1.73-1.42,1.76-4.23,3.52-8.46,5.28-12.68Zm-22.36,61.41c-3.34,1.86-6.31,1.33-9.12-1.21-2.13-1.92-4.4-3.7-6.68-5.44-1.37-1.05-5.46-.12-5.88,1.48-.4,1.51,1.45,1.62,2.35,2.26,2.26,1.62,2.42,2.82.44,4.99-1.2,1.31-1.86,2.77-.81,4.36,1.07,1.61,2.68,2.01,4.5,1.25,1.66-.69,3.35-1.31,4.95-2.11,3.35-1.67,6.39-1.47,9.13,1.21,2.48,5.78.4,9.43-5.84,10.19-2.94.36-5.9.59-8.84.99-1.71.24-3.72,3.37-3.04,4.99.74,1.75,2.14.27,3.18.13,2.82-.39,3.74.25,3.89,3.17.09,1.76.6,3.29,2.48,3.69,2.06.43,3.44-.64,4.21-2.52.82-1.99,1.6-4,2.44-5.99,1.06-2.53,2.86-4.12,5.72-4.2,2.6-.07,4.55,1.12,5.68,3.4,1.22,2.48.87,4.87-.94,7.03-1.56,1.86-3.06,3.77-4.61,5.63-2.97,3.57-2.9,4.91.52,8.4.47-.79.92-1.56,1.38-2.32,1.77-2.93,2.86-3.11,5.4-.87,1.35,1.19,2.84,1.7,4.39.59,1.5-1.08,1.78-2.66,1.12-4.34-.89-2.26-1.96-4.45-2.77-6.73-1.32-3.73.56-7.35,4.17-8.3,3.57-.94,7.08,1.37,7.7,5.21.4,2.48.6,5,.8,7.5.41,4.94.97,5.53,5.99,5.97.04.05.08.11.13.14.01,0,.07-.05.11-.08-.09,0-.19,0-.28,0,.48-1.21-.26-2.26-.46-3.37-.48-2.69.29-3.75,2.95-3.8,1.88-.03,3.52-.5,3.93-2.51.45-2.19-.81-3.54-2.79-4.32-2.01-.78-4.01-1.57-5.99-2.42-2.45-1.05-3.89-2.93-3.98-5.6-.08-2.55,1.12-4.54,3.41-5.68,2.38-1.18,4.72-.92,6.82.76,1.9,1.51,3.77,3.05,5.64,4.6,3.87,3.21,4.66,3.2,8.75-.27-1.04-.61-2.07-1.14-3.02-1.79-2.24-1.53-2.4-2.82-.54-4.79,1.28-1.36,2.12-2.83.94-4.56-1.2-1.75-2.96-1.85-4.82-1.09-2.08.86-4.11,1.83-6.22,2.59-3.73,1.35-7.49-.5-8.38-4.02-.96-3.81,1.3-7.23,5.33-7.83,2.48-.37,5-.59,7.51-.78,4.75-.36,5.44-1.05,5.77-6.3-1.15.29-2.24.62-3.35.82-2.62.49-3.71-.35-3.78-3.03-.05-1.89-.52-3.49-2.57-3.85-2.07-.36-3.39.78-4.14,2.67-.83,2.09-1.62,4.2-2.57,6.23-1.68,3.6-5.57,4.91-8.76,3.05-3.36-1.96-4.18-6.1-1.75-9.32,1.57-2.08,3.27-4.06,4.93-6.07,2.94-3.56,2.89-4.57-.43-8.15-.08.02-.2.01-.23.06-.3.44-.6.89-.88,1.35-2.3,3.81-2.75,3.89-6.21,1.3-1.24-.93-2.61-1.34-3.97-.31-1.33,1.02-1.89,2.42-1.26,4.06.84,2.18,1.74,4.33,2.67,6.47,1.16,2.67.88,5.12-1.13,7.24-1.79,1.89-4.12,2.26-6.47,1.44-2.61-.91-3.96-2.91-4.18-5.72-.25-3.13-.61-6.26-1.01-9.38-.24-1.92-3.07-4.03-5.03-3.37-2.01.68-.22,2.24-.11,3.34.27,2.74-.36,3.64-3.35,3.81-1.79.1-3.25.69-3.58,2.6-.31,1.81.57,3.15,2.24,3.88,1.73.76,3.5,1.42,5.24,2.15,5.82,2.41,6.87,6.44,2.99,11.41Z"/>
+    </symbol>
+  </defs>
+</svg>
+<main class="sheet">
+  <h1>The card's facts, four ways to calm them</h1>
+  <p class="lead">A recruiter said they were lost in the card's white and grey writing. The facts block is where it bunches up: on a card four to a row it runs to <b>three or four lines with four icons</b>, the languages wrap onto a line of their own, and the icons mark plain data (years, place) exactly as they mark the one thing that changes what you do (Returning). Each iteration below changes only that block, on three real cards at the 4-column width.</p>
+  <div class="bar" role="group" aria-label="Theme">
+    <button type="button" data-theme-set="dark" aria-pressed="true">Dark</button>
+    <button type="button" data-theme-set="light" aria-pressed="false">Light</button>
+    <span class="hint">Cards are drawn with Talent's own CSS.</span>
+  </div>
+  <div id="its"></div>
+  <section class="rules">
+    <h2>What the iterations are held to</h2>
+    <ul>
+      <li><b>Icons mark meaning, not data</b> (ui-ux-pro-max: an icon earns its place when it carries meaning; impeccable craft floor: no decoration standing in for content). Years and place read without a drawing; Returning and the interview news are the signals.</li>
+      <li><b>Group by proximity, separate by space</b> (ui-ux-pro-max, layout): one line of data, then a line of signal, not a ragged wrap that splits a fact from its neighbours.</li>
+      <li><b>No eyebrow above a heading</b> (impeccable craft floor). "From the talent pool" sits above the name; iteration 4 tries it without.</li>
+      <li><b>Contrast and size floor</b>: every run stays at 13px or more and 4.5:1 or better in both themes; the dots are separators, a step quieter than the words (web interface guidelines; AiMY's ink band).</li>
+      <li><b>Real copy at the real width</b>: the long place name ("6th of October") and the two-language list are the cases that wrap, so they are in every row.</li>
+    </ul>
+  </section>
+</main>
+<script>
+(function () {
+  var IC = {
+    job: '<path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/>',
+    pin: '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
+    lang: '<path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>',
+    hist: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
+    clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+    phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>'
+  };
+  var svg = function (k, px) { return '<svg viewBox="0 0 24 24"' + (px ? ' width="' + px + '" height="' + px + '"' : '') + ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + IC[k] + '</svg>'; };
+  var fact = function (k, t) { return '<span class="b-fact">' + svg(k) + '<span>' + t + '</span></span>'; };
+
+  /* Three people as the app shows them on Candidates and Accounts Receivable. */
+  var P = [
+    { src: 'From the talent pool', srcShort: 'From the talent pool', name: 'Hossam Ezz', fit: ['Strong Fit', 'ok'], role: 'Finance Associate at a logistics company',
+      years: '3 years', place: '6th of October', langs: 'Arabic, English', back: 'over budget last time',
+      read: 'Shows <b>accounts receivable</b> and <b>NetSuite</b>, partly <em>overseas collections</em>. Check English.',
+      trk: [['Sourced', 'is-done'], ['Applied', 'is-now', '1 day'], ['Assessment', '']], tone: '', walked: 0.5,
+      foot: '<button class="b-ghost" type="button">Not progressing</button><button class="s-insight-lnk primary" type="button">' + svg('phone', 14) + 'Call Hossam</button>' },
+    { src: 'Applied through the link', name: 'Karim Ibrahim', fit: ['Partly Fits', 'warn'], role: 'Helpdesk Analyst at a bank',
+      years: '7 years', place: 'Mansoura', langs: 'Arabic, English',
+      read: 'Partly shows <em>reading stack traces</em>. Check software support, SQL and scripting, and English.',
+      trk: [['Sourced', 'is-done'], ['Applied', 'is-now', '3 days, usually 2 days'], ['Assessment', '']], tone: 'tone-warn', walked: 0.5,
+      foot: '<button class="b-ghost" type="button">Not progressing</button><button class="s-insight-lnk primary" type="button">' + svg('phone', 14) + 'Call Karim</button>' },
+    { src: 'Applied through the link', name: 'Mohamed Ibrahim', fit: ['Strong Fit', 'ok'], role: 'Back-office Analyst at a bank',
+      years: '6 years', place: 'Nasr City', langs: 'Arabic, English', news: 'Interviewed 3 days ago. The result is in: proceed.',
+      read: 'Shows <b>writing requirements</b> and <b>fluent English</b>, partly <em>business analysis</em> and <em>working with AI or data teams</em>.',
+      trk: [['Technical', 'is-done'], ['Managerial', 'is-now', '3 days'], ['Offer', '']], tone: '', walked: 0.5,
+      foot: '<button class="b-ghost" type="button">Not progressing</button><button class="s-insight-lnk primary" type="button">Passed managerial</button>' }
+  ];
+
+  var plain = function (p) { return '<p class="b-qcard-where x-plain">' + [p.years, p.place, p.langs].join('<span class="x-sep" aria-hidden="true">·</span>') + '</p>'; };
+  var iconFacts = function (p) { return '<p class="b-qcard-where">' + fact('job', p.years) + fact('pin', p.place) + fact('lang', p.langs) + '</p>'; };
+  var back = function (p) { return p.back ? '<p class="b-qcard-where t-before">' + fact('hist', '<b>Returning</b> · ' + p.back) + '</p>' : ''; };
+  var news = function (p) { return p.news ? '<p class="b-qcard-where t-cnow">' + fact('clock', p.news) + '</p>' : ''; };
+
+  var IT = [
+    { n: 0, h: 'Now', say: 'As the card ships today: an icon on every fact, the signals in their own lines under them.',
+      facts: function (p) { return iconFacts(p) + back(p) + news(p); },
+      notes: ['Four icons for three facts and a signal; on a narrow card the languages wrap alone onto a second line.', 'Every fact looks the same weight, so the eye has to read all of it to find the one that matters.', 'Faithful to Sales: there, the icon is what separates one fact from the next.'] },
+    { n: 1, rec: true, h: 'Signals keep their icons', say: 'Years, place and languages become one plain line with quiet dots between them. Only the signals (Returning, the interview news) keep an icon, so the icon now means "look here".',
+      facts: function (p) { return plain(p) + back(p) + news(p); },
+      notes: ['Three lines with four icons become two lines with one; the data line fits the 4-column card.', 'An icon that appears on one line in three is noticed; four of them are not.', 'Leaves Sales\'s icon-per-fact rule for this card only. The dots carry the separation the icons did.'] },
+    { n: 2, h: 'No icons at all', say: 'The same plain line, and the signals lose their icons too: the blue "Returning" and the news sentence stand on their words.',
+      facts: function (p) { return plain(p) + back(p) + news(p); },
+      notes: ['The quietest block: nothing but text.', 'Returning still reads as a signal through its colour and weight; the interview news loses its marker and blends into the facts.', 'Colour becomes the only cue for Returning (with weight); that is the weakest of the five for scanning.'] },
+    { n: 3, h: 'The signal first', say: 'Iteration 1, with the signal moved above the data: name, role, then what changed, then the plain facts.',
+      facts: function (p) { return back(p) + news(p) + plain(p); },
+      notes: ['The thing that changes what you do sits right under who they are.', 'Order follows importance: Returning and a result in outrank years and place.', 'Cards without a signal start straight with the facts, so the facts line moves between cards and no longer sits at one height across a row.'] },
+    { n: 4, h: 'No line above the name', say: 'Iteration 1 without the eyebrow. "From the talent pool" leaves the top of the card and joins their history in one quiet line: where they came from, and whether they are back.',
+      head: false,
+      facts: function (p) { return plain(p) + news(p) + '<p class="b-qcard-where x-src' + (p.back ? ' t-before' : '') + '">' + (p.back ? fact('hist', '<b>Returning</b> · ' + p.back) : esc(p.src)) + '</p>'; },
+      notes: ['The name is the first thing on the card; the fit Tag sits beside it as before.', 'Where they came from closes the facts in the quietest ink; someone returning is in the pool already, so their line says Returning and nothing more.', 'Moves away from Sales\'s card head, which always carries a type label first. The source is quieter, so a recruiter sorting by source finds it slower.'] }
+  ];
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  function card(p, it) {
+    var trk = '<div class="t-prog t-trk-wrap"><ol class="t-trk is-fit ' + p.tone + '" style="--n:3;--walked:' + p.walked + '">' +
+      p.trk.map(function (s) { return '<li class="t-trk-step ' + s[1] + '"' + (s[1] === 'is-now' ? ' aria-current="step"' : '') + '><span class="t-trk-dot" aria-hidden="true"></span><span class="t-trk-k">' + s[0] + '</span>' + (s[2] ? '<span class="t-trk-t">' + s[2] + '</span>' : '') + '</li>'; }).join('') + '</ol></div>';
+    return '<article class="type-card s-card b-qcard">' +
+      (it.head === false ? '' : '<div class="tc-head"><span class="b-kind">' + esc(p.src) + '</span></div>') +
+      '<div class="b-qcard-top"><button class="tc-title s-card-title" type="button">' + esc(p.name) + '</button><span class="tag tag-' + p.fit[1] + '">' + p.fit[0] + '</span></div>' +
+      '<p class="tc-summary b-qcard-role">' + esc(p.role) + '</p>' +
+      '<div class="t-cfacts">' + it.facts(p) + '</div>' +
+      '<div class="b-aimy t-fit"><svg class="b-aimy-mark" width="13" height="15" viewBox="0 0 18 20" aria-hidden="true"><use href="#aimy-logo-small"/></svg><span class="b-aimy-say">' + p.read + '</span></div>' +
+      trk + '<div class="tc-gov b-qcard-foot">' + p.foot + '</div></article>';
+  }
+
+  document.getElementById('its').innerHTML = IT.map(function (it) {
+    return '<section class="it v' + it.n + '" aria-labelledby="it' + it.n + '">' +
+      '<h2 class="it-h" id="it' + it.n + '"><span class="it-n">' + it.n + '</span>' + it.h + (it.rec ? '<span class="it-rec">Recommended</span>' : '') + '</h2>' +
+      '<p class="it-say">' + it.say + '</p>' +
+      '<div class="stage">' + P.map(function (p) { return card(p, it); }).join('') + '</div>' +
+      '<div class="notes">' + ['What changes', 'Why it reads better', 'What it costs'].map(function (t, i) { return '<div class="note"><h3>' + t + '</h3><p>' + it.notes[i] + '</p></div>'; }).join('') + '</div></section>';
+  }).join('');
+
+  var btns = document.querySelectorAll('[data-theme-set]');
+  btns.forEach(function (b) { b.addEventListener('click', function () {
+    var t = b.getAttribute('data-theme-set');
+    if (t === 'light') document.documentElement.setAttribute('data-theme', 'light'); else document.documentElement.removeAttribute('data-theme');
+    btns.forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+  }); });
+})();
+</script>
+</body>
+</html>

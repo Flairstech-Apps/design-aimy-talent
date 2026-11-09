@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Hiring Problems Solved</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+  /* AiMY's dark tokens (aimy-ds.css), as on the assessment card sheet. */
+  :root {
+    color-scheme: dark;
+    --bg: #0d1117; --card: #141b24; --raised: #1c2630; --line: rgba(255,255,255,0.07); --line2: rgba(255,255,255,0.12);
+    --d50: #eef2f6; --d100: #d8e0e8; --d200: #c8d2dc; --d300: #b0bcca; --d400: #8b9aaa; --d500: #637280;
+    --accent: #8b4ff4; --accent-rgb: 139,79,244; --accent-text: #b18cff; --brand: #3369ff;
+    --ok: #4ed6a1; --ok-rgb: 78,214,161; --warn: #f7c95c; --warn-rgb: 247,201,92;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: 'Poppins', system-ui, sans-serif; color: var(--d100); font-size: 16px; line-height: 1.55; }
+  ::selection { background: rgba(var(--accent-rgb), 0.35); color: var(--d50); }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 56px 24px 96px; }
+
+  h1 { font-size: 40px; line-height: 1.12; letter-spacing: -0.8px; color: var(--d50); margin: 0 0 14px; max-width: 30ch; text-wrap: balance; }
+  .lead { font-size: 18px; color: var(--d200); max-width: 62ch; margin: 0; }
+  .note { margin: 14px 0 0; font-size: 13px; color: var(--d400); }
+
+  /* Why it matters: two facts, said as sentences */
+  .why { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .why p { margin: 0; padding: 20px 22px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); font-size: 17px; color: var(--d200); }
+  .why b { display: block; font-size: 28px; line-height: 1.15; letter-spacing: -0.4px; color: var(--d50); font-weight: 600; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+  .why .why-src { grid-column: 1 / -1; padding: 0; background: none; border: 0; border-radius: 0; font-size: 12.5px; color: var(--d500); }
+
+  /* One step of hiring, then its problems and what Talent does */
+  section.step { margin-top: 64px; }
+  h2 { font-size: 26px; line-height: 1.2; letter-spacing: -0.3px; color: var(--d50); margin: 0 0 4px; }
+  .who { margin: 0 0 18px; font-size: 14px; color: var(--d400); }
+  .pairs { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .pair { display: grid; grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1.1fr); align-items: stretch; }
+  .prob, .fix { padding: 18px 22px; border-radius: 16px; }
+  .prob { background: var(--card); border: 1px solid var(--line); }
+  .fix { background: rgba(var(--accent-rgb), 0.10); border: 1px solid rgba(var(--accent-rgb), 0.28); }
+  .cap { display: block; margin-bottom: 4px; font-size: 13px; font-weight: 600; }
+  .prob .cap { color: var(--warn); }
+  .fix .cap { color: var(--accent-text); }
+  .pair p { margin: 0; }
+  .prob p { color: var(--d200); font-size: 17px; }
+  .fix p { color: var(--d50); font-size: 17px; }
+  .arrow { display: grid; place-items: center; color: var(--d500); }
+  .arrow svg { width: 20px; height: 20px; }
+  .seen { display: inline-block; margin-top: 10px; font-size: 13px; color: var(--ok); }
+  .soon { display: inline-block; margin-top: 10px; font-size: 13px; color: var(--d300); }
+
+  /* What is still being worked out, said plainly */
+  .later { margin-top: 64px; padding: 24px 26px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); }
+  .later h2 { font-size: 22px; margin-bottom: 12px; }
+  .later ul { margin: 0; padding-left: 20px; color: var(--d200); }
+  .later li { margin: 6px 0; }
+  .foot { margin-top: 40px; font-size: 12.5px; color: var(--d500); }
+
+  @media (max-width: 760px) {
+    .wrap { padding: 36px 16px 72px; }
+    h1 { font-size: 28px; }
+    .lead { font-size: 16px; }
+    .why { grid-template-columns: 1fr; margin-top: 28px; }
+    .why b { font-size: 24px; }
+    section.step { margin-top: 48px; }
+    h2 { font-size: 22px; }
+    .pairs { gap: 28px; }
+    .pair { grid-template-columns: minmax(0, 1fr); }
+    .arrow { height: 30px; }
+    .arrow svg { transform: rotate(90deg); }
+    .prob, .fix { padding: 16px 18px; }
+    .prob p, .fix p { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>What gets in the way of hiring, and how AiMY Talent fixes it</h1>
+  <p class="lead">The everyday problems recruiters, hiring managers, HR and candidates run into, each with what Talent does about it.</p>
+  <p class="note">Most of this is in the clickable prototype; the rest is planned. Internal use.</p>
+
+  <div class="why">
+    <p><b>Twice the applications</b>Applications per job have roughly doubled, from 116 to 244, while recruiting teams shrank by more than half.</p>
+    <p><b>61% hear nothing back</b>Most candidates say they've been ghosted after an interview.</p>
+    <p class="why-src">Industry figures (Greenhouse benchmarks), a direction rather than exact numbers.</p>
+  </div>
+
+  <!-- Arrow used between each problem and its fix -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="to" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
+
+  <section class="step" aria-labelledby="h-day">
+    <h2 id="h-day">A recruiter's day</h2>
+    <p class="who">For recruiters</p>
+    <ul class="pairs">
+      <li class="pair">
+        <div class="prob"><span class="cap">The problem</span><p>With more applications and fewer people, it's hard to know where to start each morning.</p></div>
+        <div class="arrow" aria-hidden="true"><svg><use href="#to"/></svg></div>
+        <div class="fix"><span class="cap">What Talent does</span><p>A daily briefing opens with the decisions waiting on you and how long the oldest has waited, then only what's stuck or clashing, each with a suggested next step you approve in one tap.</p><span class="seen">Shown in the prototype</span></div>
+      </li>
+      <li class="pair">
+        <div class="prob"><span class="cap">The problem</span><p>Recruiters drag every candidate across a board, so nothing moves unless they move it.</p></div>
+        <div class="arrow" aria-hidden="true"><svg><use href="#to"/></svg></div>
+        <div class="fix"><span class="cap">What Talent does</span><p>There's no board. AiMY keeps every application up to date from what actually happens: a booked interview or a piece of feedback moves it on by itself.</p><span class="soon">Planned</span></div>
+      </li>
+      <li class="pair">
+        <div class="prob"><span class="cap">The problem</span><p>It's hard to tell what's already been done for you, and what's due today.</p></div>
+        <div class="arrow" aria-hidden="true"><svg><use href="#to"/></svg></div>
+        <div class="fix"><span class="cap">What Talent does</span><p>The briefing lists what AiMY did for you since yesterday, and today's interviews and promises.</p><span class="seen">Shown in the prototype</span></div>
+      </li>
+      <li class="pair">
+        <div class="prob"><span class="cap">The problem</span><p>Understanding one candidate means piecing together emails, notes and calls.</p></div>
+        <div class="arrow" aria-hidden="true"><svg><use href="#to"/></svg></div>
+        <div class="fix"><span class="cap">What Talent does</span><p>Open any candidate to see one timeline: what happened, the evidence behind it, what was promised, and what should happen next.</p><span class="seen">Shown in the prototype</span></div>
+      </li>
+    </ul>
+  </section>
+
+  <section class="step" aria-labelledby="h-find">
+    <h2 id="h-find">Finding the right people</h2>
+    <p class="who">For recruiters</p>
+    <ul class="pairs">
+      <li class="pair">
+        <div class="prob"><span class="cap">The problem</span><p>Good candidates are already in our database, but search can't find them, and the same person can show up twice.</p></div>
+        <div class="arrow" aria-hidden="true"><svg><use href="#to"/></svg></div>
+        <div class="fix"><span class="cap">What Talent does</span><p>One clean record per person, searchable in plain words. Strong matches from people we already know come up for each open role, with what happened last time.</p><span class="seen">Shown in the prototype</span></div>
+      </li>
+      <li class="pair">
+        <div class="prob"><span class="cap">The problem</span><p>CV uploads fail, and applications arrive in different places, so some applicants never get in.</p></div>
+        <div class="arrow" aria-hidden="true"><svg><use href="#to"/></svg></div>
+        <div class="fix"><span class="cap">What Talent does</span><p>Every application lands in one place, whether it came from the website, the chat on our site, email or an upload.</p><span class="soon">Planned</span></div>
+      </li>
+      <li class="pair">
+        <div class="prob"><span class="cap">The problem</span><p>A match score says “72%” but not why, so good people get skipped over a number.</p></div>
+        <div class="arrow" aria-hidden="true"><svg><use href="#to"/></svg></div>
+        <div class="fix"><span class="cap">What Talent does</span><p>No percentages. Talent shows what the CV proves for each must-have, and what simply isn't known yet.</p><span class="seen">Shown in the prototype</span></div>
+      </li>
+    </ul>
+  </section>
+
+  <section class="step" aria-labelledby="h-test">
+    <h2 id="h-test">Testing language and skills</h2>
+    <p class="who">For recruiters, hiring managers and candidates</p>
+    <ul class="pairs">
+      <li class="pair">
+        <div class="prob"><span class="cap">The problem</span><p>Candidates who already have an IELTS or TOEFL result are tested all over again.</p></div>
+        <div class="arrow" aria-hidden="true"><svg><use href="#to"/></svg></div>
+        <div class="fix"><span class="cap">What Talent does</span><p>It reads the certificate and only tests what's still missing.</p><span class="soon">Planned</span></div>
+      </li>
+      <li class="pair">
+        <div class="prob"><span class="cap">The problem</span><p>Tests can feel unfair: pitched at the wrong level, or marked down for an accent.</p></div>
+        <div class="arrow" aria-hidden="true"><svg><use href="#to"/></svg></div>
+        <div class="fix"><span class="cap">What Talent does</span><p>The test adjusts to each person's level, and speaking is judged on being understood, never on accent.</p><span class="soon">Planned</span></div>
+      </li>
+      <li class="pair">
+        <div class="prob"><span class="cap">The problem</span><p>A borderline score or a copied answer could decide someone's chances automatically.</p></div>
+        <div class="arrow" aria-hidden="true"><svg><use href="#to"/></svg></div>
+        <div class="fix"><span class="cap">What Talent does</span><p>Nobody is rejected by the system. Unclear or flagged results go to a person, who sees who's waiting at a glance.</p><span class="seen">Shown in the prototype</span></div>
+      </li>
+      <li class="pair">
+        <div class="prob"><span class="cap">The problem</span><p>Seeing “Fail” puts people off, even when they'd suit another role.</p></div>
+        <div class="arrow" aria-hidden="true"><svg><use href="#to"/></svg></div>
+        <div class="fix"><span class="cap">What Talent does</span><p>Candidates see “Not yet”, and Talent suggests other roles they qualify for.</p><span class="soon">Planned</span></div>
+      </li>
+      <li class="pair">
+        <div class="prob"><span class="cap">The problem</span><p>One badly written question quietly drags a whole test down.</p></div>
+        <div class="arrow" aria-hidden="true"><svg><use href="#to"/></svg></div>
+        <div class="fix"><span class="cap">What Talent does</span><p>It spots the questions nearly everyone gets wrong and suggests a better wording for HR to approve.</p><span class="seen">Shown in the prototype</span></div>
+      </li>
+    </ul>
+  </section>
+
+  <section class="step" aria-labelledby="h-talk">
+    <h2 id="h-talk">Keeping candidates in the loop</h2>
+    <p class="who">For recruiters and candidates</p>
+    <ul class="pairs">
+      <li class="pair">
+        <div class="prob"><span class="cap">The problem</span><p>Candidates wait days for news, or never hear back after an interview.</p></div>
+        <div class="arrow" aria-hidden="true"><svg><use href="#to"/></svg></div>
+        <div class="fix"><span class="cap">What Talent does</span><p>AiMY sends the routine updates and reminds the recruiter when someone is owed an answer. A person always sends the “no”.</p><span class="seen">Shown in the prototype</span></div>
+      </li>
+      <li class="pair">
+        <div class="prob"><span class="cap">The problem</span><p>Approving every single message slows everything down, but not everyone wants WhatsApp.</p></div>
+        <div class="arrow" aria-hidden="true"><svg><use href="#to"/></svg></div>
+        <div class="fix"><span class="cap">What Talent does</span><p>Approve a kind of message once and AiMY handles the rest, asking only before a first contact or a reply it wrote itself. WhatsApp only with permission, email otherwise.</p><span class="seen">Shown in the prototype</span></div>
+      </li>
+    </ul>
+  </section>
+
+  <section class="step" aria-labelledby="h-interview">
+    <h2 id="h-interview">Interviews and decisions</h2>
+    <p class="who">For recruiters and hiring managers</p>
+    <ul class="pairs">
+      <li class="pair">
+        <div class="prob"><span class="cap">The problem</span><p>Booking interviews and chasing feedback eats days of back and forth.</p></div>
+        <div class="arrow" aria-hidden="true"><svg><use href="#to"/></svg></div>
+        <div class="fix"><span class="cap">What Talent does</span><p>AiMY books from the calendar and chases feedback. Feedback is a two-minute chat, and each interviewer answers before seeing the others.</p><span class="seen">Shown in the prototype</span></div>
+      </li>
+      <li class="pair">
+        <div class="prob"><span class="cap">The problem</span><p>Hiring managers get flooded with candidates who haven't been screened.</p></div>
+        <div class="arrow" aria-hidden="true"><svg><use href="#to"/></svg></div>
+        <div class="fix"><span class="cap">What Talent does</span><p>They see only the people the recruiter has put forward, and the few things that need their answer.</p><span class="seen">Shown in the prototype</span></div>
+      </li>
+    </ul>
+  </section>
+
+  <section class="step" aria-labelledby="h-offer">
+    <h2 id="h-offer">Offers and the first 90 days</h2>
+    <p class="who">For recruiters, hiring managers and new hires</p>
+    <ul class="pairs">
+      <li class="pair">
+        <div class="prob"><span class="cap">The problem</span><p>An offer waits on one approver, then the next, and the salary gap shows up late.</p></div>
+        <div class="arrow" aria-hidden="true"><svg><use href="#to"/></svg></div>
+        <div class="fix"><span class="cap">What Talent does</span><p>Both approvers sign off the same offer at the same time, with the salary asked for shown next to the budget. A person sends it.</p><span class="seen">Shown in the prototype</span></div>
+      </li>
+      <li class="pair">
+        <div class="prob"><span class="cap">The problem</span><p>Getting a new hire set up, from laptop to access, is done by hand.</p></div>
+        <div class="arrow" aria-hidden="true"><svg><use href="#to"/></svg></div>
+        <div class="fix"><span class="cap">What Talent does</span><p>An accepted offer starts an onboarding plan, including the request to IT.</p><span class="soon">Planned</span></div>
+      </li>
+      <li class="pair">
+        <div class="prob"><span class="cap">The problem</span><p>Early feedback about a new hire could be used against them.</p></div>
+        <div class="arrow" aria-hidden="true"><svg><use href="#to"/></svg></div>
+        <div class="fix"><span class="cap">What Talent does</span><p>The 30- and 90-day check-ins only help us hire better overall. They're never used in anyone's probation.</p><span class="soon">Planned</span></div>
+      </li>
+    </ul>
+  </section>
+
+  <section class="step" aria-labelledby="h-lead">
+    <h2 id="h-lead">Running the team</h2>
+    <p class="who">For the HR manager and recruiters</p>
+    <ul class="pairs">
+      <li class="pair">
+        <div class="prob"><span class="cap">The problem</span><p>A role is going to miss its date and nobody knows until it does, and pushing the deadline hides it.</p></div>
+        <div class="arrow" aria-hidden="true"><svg><use href="#to"/></svg></div>
+        <div class="fix"><span class="cap">What Talent does</span><p>Roles are ranked by their risk of missing the date, with plain reasons such as too few people on the shortlist or slow interviewers. Next: showing how often each date was moved.</p><span class="seen">Shown in the prototype</span></div>
+      </li>
+      <li class="pair">
+        <div class="prob"><span class="cap">The problem</span><p>An AI that changes its own rules can drift without anyone noticing.</p></div>
+        <div class="arrow" aria-hidden="true"><svg><use href="#to"/></svg></div>
+        <div class="fix"><span class="cap">What Talent does</span><p>AiMY only suggests changes. Nothing changes until the HR manager approves it.</p><span class="seen">Shown in the prototype</span></div>
+      </li>
+    </ul>
+  </section>
+
+  <section class="later" aria-labelledby="h-later">
+    <h2 id="h-later">Still being worked out</h2>
+    <ul>
+      <li>Moving our old candidate records into Talent, and when the old systems switch off.</li>
+      <li>A legal check before AiMY could ever decline a candidate on its own.</li>
+      <li>The language level each role needs, and proving the AI scores match human scorers.</li>
+      <li>Who approves an offer when an approver is away.</li>
+      <li>Predicting which roles will miss their date from past hires, once that history has been checked.</li>
+    </ul>
+  </section>
+
+  <p class="foot">Based on the AiMY Talent product overview (24 Oct 2026), the recruiter briefing design (Oct 2026) and the language assessment pack (29 Oct 2026). Internal use.</p>
+</main>
+</body>
+</html>

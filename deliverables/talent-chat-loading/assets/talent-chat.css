@@ -1,0 +1,740 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   talent-chat.css — AiMY Talent, the chat
+
+   The live product's look (Urbanist, the neutral slate surfaces, the blue
+   brand and the Talent violet) in one file. Every colour is a token on :root
+   and redefined for light, so the theme switch is one attribute.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --bg:            #1b1e23;
+  --bg-side:       #1a1d21;
+  --surface:       #262a31;
+  --surface-hover: #2d323a;
+  --surface-sunk:  #20242a;
+  --line:          #30353d;
+  --line-strong:   #464c55;
+
+  --ink:           #eef1f5;
+  --ink-2:         #c9ced6;
+  --ink-3:         #9aa1ab;
+  --ink-4:         #767d88;
+
+  --brand:         #0366ff;
+  --brand-ink:     #4c8dff;
+  --talent:        #8b4ff4;
+  --talent-ink:    #a478f7;
+  --talent-dim:    rgba(139, 79, 244, 0.14);
+  --talent-line:   rgba(139, 79, 244, 0.32);
+  --ok:            #22c55e;
+  --warn:          #f5a524;
+  --warn-dim:      rgba(245, 165, 36, 0.10);
+
+  /* Card and suggestion colours: the AiMY QA dashboard's "Since your
+     last visit" panel (.slv), value for value: a violet-to-blue wash at
+     10% / 4%, a 20% violet hairline, near-white bold on grey-blue text, and
+     the dashboard's AI blue (--ai-text) for the things you can act on. */
+  --card-wash:     linear-gradient(120deg, rgba(139, 79, 244, 0.10), rgba(0, 102, 255, 0.04));
+  --card-line:     rgba(139, 79, 244, 0.20);
+  --card-line-soft:rgba(139, 79, 244, 0.12);
+  --tag-bg:        rgba(0, 102, 255, 0.10);
+  --tag-ink:       #61adf1;
+  --tag-bg-soft:   rgba(139, 79, 244, 0.06);
+  --glass:         linear-gradient(120deg, rgba(139, 79, 244, 0.10), rgba(0, 102, 255, 0.04));
+  --edge-light:    rgba(120, 130, 255, 0.45);
+  --edge-glow:     rgba(76, 110, 255, 0.12);
+  --panel-text:    #a8b5c5;
+  --panel-strong:  #f5f7fb;
+  /* Sampled from the rendered QA panel (screenshot pixels, not guessed):
+     fill runs violet-navy rgb(36,36,57) at the left into slate and
+     navy-blue rgb(29,39,53) / rgb(26,43,78) across; the border is indigo,
+     violet rgb(58,46,97) at the left into blue-indigo rgb(49,51,111). */
+  --card-fill:     linear-gradient(120deg, rgb(37, 35, 60) 0%, rgb(32, 40, 64) 50%, rgb(28, 40, 62) 100%);
+  --card-edge:     linear-gradient(120deg, rgba(139, 79, 244, 0.14) 0%, rgba(51, 105, 255, 0.12) 100%);
+  --card-edge-hi:  linear-gradient(120deg, rgba(139, 79, 244, 0.30) 0%, rgba(51, 105, 255, 0.26) 100%);
+  --score-rest:    rgba(255, 255, 255, 0.16);
+  --card-glass:    linear-gradient(120deg, rgba(139, 79, 244, 0.12) 0%, rgba(96, 92, 250, 0.09) 50%, rgba(51, 105, 255, 0.08) 100%);
+  --card-base:      #171a1c;
+  --card-shadow:    0 14px 32px rgba(0, 0, 0, 0.38);
+
+  --glow-a:        rgba(76, 141, 255, 0.10);
+  --glow-b:        rgba(139, 79, 244, 0.08);
+
+  --shadow:        0 8px 24px rgba(0, 0, 0, 0.28);
+  --r-sm: 6px; --r-md: 8px; --r-lg: 10px; --r-xl: 12px; --r-pill: 9999px;
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+
+  --side-w: 16.25rem;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --top-h: 3.3rem;
+  --chat-w: 72rem;
+  --card-size: 16.5rem;
+
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg:            #f6f7f9;
+  --bg-side:       #ffffff;
+  --surface:       #ffffff;
+  --surface-hover: #f1f3f6;
+  --surface-sunk:  #eef0f3;
+  --line:          #e2e5ea;
+  --line-strong:   #c9ced6;
+
+  --ink:           #111827;
+  --ink-2:         #374151;
+  --ink-3:         #5b6472;
+  --ink-4:         #7b8491;
+
+  --brand-ink:     #0257d6;
+  --talent-ink:    #6d28d9;
+  --talent-dim:    rgba(109, 40, 217, 0.08);
+  --talent-line:   rgba(109, 40, 217, 0.26);
+  --warn:          #a15c00;
+  --warn-dim:      rgba(161, 92, 0, 0.08);
+
+  --card-wash:     linear-gradient(120deg, rgba(139, 79, 244, 0.07), rgba(0, 102, 255, 0.03));
+  --card-line:     rgba(139, 79, 244, 0.18);
+  --card-line-soft:rgba(139, 79, 244, 0.10);
+  --tag-bg:        rgba(31, 95, 208, 0.08);
+  --tag-ink:       #1f5fd0;
+  --tag-bg-soft:   rgba(139, 79, 244, 0.04);
+  --glass:         linear-gradient(120deg, rgba(139, 79, 244, 0.07), rgba(0, 102, 255, 0.03));
+  --edge-light:    rgba(139, 79, 244, 0.35);
+  --edge-glow:     rgba(139, 79, 244, 0.08);
+  --panel-text:    #3a4653;
+  --panel-strong:  #10151b;
+  --card-fill:     linear-gradient(120deg, #f4f0fe 0%, #f0f2fe 50%, #edf3fe 100%);
+  --card-edge:     linear-gradient(120deg, rgba(139, 79, 244, 0.12) 0%, rgba(51, 105, 255, 0.10) 100%);
+  --card-edge-hi:  linear-gradient(120deg, rgba(139, 79, 244, 0.28) 0%, rgba(51, 105, 255, 0.24) 100%);
+  --score-rest:    rgba(15, 23, 42, 0.14);
+  --card-glass:    linear-gradient(120deg, rgba(139, 79, 244, 0.07) 0%, rgba(96, 92, 250, 0.05) 50%, rgba(51, 105, 255, 0.05) 100%);
+  --card-base:      #ffffff;
+  --card-shadow:    0 14px 32px rgba(15, 23, 42, 0.10);
+
+  --glow-a:        rgba(3, 102, 255, 0.07);
+  --glow-b:        rgba(139, 79, 244, 0.06);
+
+  --shadow:        0 8px 24px rgba(15, 23, 42, 0.08);
+
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: 'Urbanist', system-ui, -apple-system, sans-serif;
+  font-size: 1rem; line-height: 1.5;
+  color: var(--ink); background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; background: none; border: 0; padding: 0; }
+a { color: inherit; }
+svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+:focus-visible { outline: 2px solid var(--brand-ink); outline-offset: 2px; }
+
+/* ══ SHELL ══════════════════════════════════════════════════════════════ */
+.tc-app {
+  display: grid; height: 100dvh;
+  grid-template-columns: var(--side-w) minmax(0, 1fr);
+  grid-template-rows: var(--top-h) minmax(0, 1fr);
+  grid-template-areas: "side top" "side main";
+  overflow: hidden;
+}
+
+/* ══ SIDEBAR ════════════════════════════════════════════════════════════ */
+.tc-side {
+  grid-area: side; display: flex; flex-direction: column; min-height: 0;
+  background: var(--bg-side); border-right: 1px solid var(--line);
+}
+.tc-brand {
+  height: var(--top-h); display: flex; align-items: center; padding: 0 0.9rem;
+  border-bottom: 1px solid var(--line);
+}
+.tc-brand img { display: block; height: 1.95rem; width: auto; }
+.tc-side-actions { padding: 0.9rem 0.9rem 0.5rem; display: flex; flex-direction: column; gap: 0.6rem; }
+.tc-newchat {
+  display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0.5rem;
+  border-radius: var(--r-md); font-size: 0.9rem; font-weight: 600; color: var(--ink);
+  transition: background 150ms var(--ease);
+}
+.tc-newchat svg { width: 1rem; height: 1rem; color: var(--ink-3); }
+.tc-newchat:hover { background: var(--surface-sunk); }
+.tc-search {
+  display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.6rem;
+  border: 1px solid var(--line-strong); border-radius: var(--r-md); background: var(--surface-sunk);
+}
+.tc-search svg { width: 0.95rem; height: 0.95rem; color: var(--ink-3); flex: none; }
+.tc-search input {
+  border: 0; outline: 0; background: none; min-width: 0; width: 100%;
+  font-size: 0.875rem; color: var(--ink);
+}
+.tc-search input::placeholder { color: var(--ink-3); }
+.tc-search:focus-within { border-color: var(--brand-ink); }
+
+.tc-side-label {
+  margin: 0.75rem 0 0.25rem; padding: 0 0.9rem;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2);
+}
+.tc-chats {
+  flex: 1; min-height: 0; overflow-y: auto; padding: 0.25rem 0.5rem 0.75rem;
+  display: flex; flex-direction: column; gap: 0.125rem;
+  scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent;
+}
+.tc-chat {
+  display: flex; align-items: center; gap: 0.7rem; width: 100%; text-align: left;
+  padding: 0.55rem 0.5rem; border-radius: var(--r-md);
+  font-size: 0.875rem; line-height: 1.35; color: var(--ink-2);
+  transition: background 150ms var(--ease), color 150ms var(--ease);
+}
+.tc-chat img { width: 1.1rem; height: 1.1rem; flex: none; }
+.tc-chat span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.tc-chat:hover { background: var(--surface-sunk); color: var(--ink); }
+.tc-chat.is-active { background: var(--surface); color: var(--ink); }
+.tc-chats-empty { padding: 0.5rem; font-size: 0.85rem; color: var(--ink-4); }
+
+.tc-console {
+  display: flex; align-items: center; gap: 0.7rem; padding: 0.8rem 0.9rem;
+  border-top: 1px solid var(--line); text-decoration: none;
+  transition: background 150ms var(--ease);
+}
+.tc-console:hover { background: var(--surface-sunk); }
+.tc-console svg { width: 0.95rem; height: 0.95rem; color: var(--ink-3); flex: none; }
+.tc-console span { display: flex; flex-direction: column; line-height: 1.25; }
+.tc-console b { font-size: 0.85rem; font-weight: 600; }
+.tc-console small { font-size: 0.7rem; color: var(--ink-3); }
+
+/* ══ TOP BAR ════════════════════════════════════════════════════════════ */
+.tc-top {
+  grid-area: top; position: relative;
+  display: flex; align-items: center; gap: 0.75rem; padding: 0 1rem 0 2rem;
+  border-bottom: 1px solid var(--line); background: var(--bg);
+}
+.tc-icon-btn.tc-menu { display: none; }
+.tc-call {
+  display: inline-flex; align-items: center; height: 2.25rem;
+  border-radius: var(--r-pill); background: var(--surface);
+}
+.tc-call-btn, .tc-call-more { display: grid; place-items: center; height: 100%; color: var(--ink-2); }
+.tc-call-btn { width: 2.4rem; border-radius: var(--r-pill); }
+.tc-call-btn svg { width: 1.15rem; height: 1.15rem; }
+.tc-call-more { width: 1.8rem; padding-right: 0.3rem; color: var(--ink-4); }
+.tc-call-more svg { width: 0.85rem; height: 0.85rem; }
+.tc-call-btn:hover, .tc-call-more:hover { color: var(--ink); }
+
+.tc-tabs {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: flex; align-items: center; gap: 0.25rem; padding: 0.3rem 0.5rem;
+  border: 1px solid var(--line-strong); border-radius: var(--r-pill); background: var(--bg);
+}
+.tc-tab {
+  padding: 0.3rem 0.7rem; border-radius: var(--r-pill);
+  font-size: 0.78rem; font-weight: 500; color: var(--ink-2); text-decoration: none;
+  transition: color 150ms var(--ease), background 150ms var(--ease);
+}
+.tc-tab:hover { color: var(--ink); background: var(--surface-sunk); }
+.tc-tab.is-active { color: var(--talent-ink); font-weight: 600; }
+.tc-tab.is-active:hover { background: none; }
+
+.tc-top-right { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; }
+.tc-icon-btn {
+  display: grid; place-items: center; width: 2.1rem; height: 2.1rem;
+  border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface-sunk); color: var(--ink-2);
+  transition: color 150ms var(--ease), border-color 150ms var(--ease);
+}
+.tc-icon-btn:hover { color: var(--ink); border-color: var(--line-strong); }
+.tc-icon-btn svg { width: 1rem; height: 1rem; }
+.i-moon { display: none; }
+:root[data-theme="light"] .i-sun { display: none; }
+:root[data-theme="light"] .i-moon { display: block; }
+
+.tc-user {
+  display: flex; align-items: center; gap: 0.55rem; padding: 0.25rem 0.6rem 0.25rem 0.25rem;
+  border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--surface-sunk);
+}
+.tc-avatar {
+  display: grid; place-items: center; width: 1.85rem; height: 1.85rem; border-radius: 50%;
+  background: linear-gradient(135deg, #6d4cff, #3b6cff); color: #fff;
+  font-size: 0.62rem; font-weight: 700;
+}
+.tc-user-info { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
+.tc-user-name { font-size: 0.78rem; font-weight: 700; }
+.tc-user-status { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.66rem; color: var(--ink-4); }
+.tc-user-status i { width: 0.4rem; height: 0.4rem; border-radius: 50%; background: var(--ink-4); }
+.tc-user-chev { width: 0.8rem; height: 0.8rem; color: var(--ink-4); }
+
+/* ══ MAIN ═══════════════════════════════════════════════════════════════ */
+.tc-main {
+  grid-area: main; position: relative; min-height: 0;
+  display: flex; flex-direction: column;
+  background:
+    radial-gradient(40rem 22rem at 50% 30%, var(--glow-a), transparent 70%),
+    radial-gradient(26rem 18rem at 58% 42%, var(--glow-b), transparent 70%),
+    var(--bg);
+}
+.tc-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 1.5rem; }
+
+/* ── Empty: eyebrow, title, line, then the box, then the prompts ── */
+.tc-hero {
+  max-width: 60rem; margin: 0 auto; padding: clamp(2.5rem, 13vh, 8rem) 0 0;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+}
+/* A mono eyebrow: the register of a technical search, not a marketing line. */
+.tc-eyebrow {
+  margin: 0 0 0.7rem; display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.3rem 0.8rem; border-radius: var(--r-pill);
+  background: var(--tag-bg-soft); border: 1px solid var(--card-line-soft);
+  font-family: var(--mono); font-size: 0.68rem; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--tag-ink);
+}
+.tc-eyebrow span { color: var(--brand-ink); letter-spacing: 0; }
+.tc-title {
+  margin: 0; font-size: clamp(2.25rem, 4vw, 3rem); font-weight: 600; line-height: 1.2;
+  background: linear-gradient(90deg, #2f7bff, #4c8dff 45%, #5b9bff);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.tc-sub { margin: 0.6rem 0 0; font-size: 1.15rem; font-weight: 300; color: var(--ink-2); text-wrap: balance; }
+
+/* ── Suggestions: under the box, as transparent blue glass pills ──
+   The same round shape as the box above them, so the pair reads as one
+   control: type, or pick. An arrow leans forward on hover. */
+.tc-suggest { flex: none; width: min(60rem, calc(100% - 3rem)); margin: 0 auto 1.5rem; }
+body[data-thread="active"] .tc-suggest { display: none; }
+.tc-faq {
+  width: 100%; display: grid; gap: 0.85rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.tc-faq-item {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: flex; align-items: center;
+  min-height: 3.4rem; padding: 0.7rem 3rem 0.7rem 1.5rem;
+  border-radius: var(--r-pill); text-align: left;
+  border: 1px solid transparent;
+  background: var(--card-fill) padding-box, var(--card-edge) border-box;
+  transition: transform 150ms var(--ease), box-shadow 200ms var(--ease);
+  animation: faq-in 380ms var(--ease) both; animation-delay: calc(var(--i, 0) * 45ms);
+}
+.tc-faq-item::before {
+  content: ""; position: absolute; z-index: -1; top: 0; left: 18%; right: 18%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--edge-light), transparent); opacity: 0.6;
+  transition: opacity 200ms var(--ease);
+}
+.tc-faq-q { font-size: 0.98rem; font-weight: 600; line-height: 1.35; color: var(--panel-strong); }
+.tc-faq-go {
+  position: absolute; right: 1.35rem; top: 50%; width: 1rem; height: 1rem; margin-top: -0.5rem;
+  color: var(--ink-4); transition: transform 200ms var(--ease), color 200ms var(--ease);
+}
+.tc-faq-item:hover { background: var(--card-fill) padding-box, var(--card-edge-hi) border-box; box-shadow: 0 0 22px var(--edge-glow); }
+.tc-faq-item:hover::before { opacity: 1; }
+.tc-faq-item:hover .tc-faq-go { color: var(--tag-ink); transform: translate(2px, -2px); }
+.tc-faq-item:active { transform: scale(0.98); }
+.tc-faq-item:focus-visible { outline: 2px solid var(--brand-ink); outline-offset: 2px; }
+@keyframes faq-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ── Composer ── */
+.tc-composer {
+  flex: none; width: min(60rem, calc(100% - 3rem)); margin: 0 auto 1.5rem;
+  display: flex; align-items: center; gap: 0.75rem; padding: 0.35rem 0.35rem 0.35rem 1.75rem;
+  border: 1px solid var(--line-strong); border-radius: var(--r-pill); background: var(--surface-sunk);
+  transition: border-color 150ms var(--ease);
+}
+.tc-composer:focus-within { border-color: var(--brand-ink); }
+.tc-composer-ico { width: 1rem; height: 1rem; color: var(--ink-3); flex: none; }
+.tc-composer input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font-size: 1.05rem; padding: 0.5rem 0; }
+.tc-composer input::placeholder { color: var(--ink-3); }
+.tc-send {
+  display: grid; place-items: center; width: 2.6rem; height: 2.6rem; flex: none;
+  border-radius: 50%; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink);
+  transition: background 150ms var(--ease), transform 150ms var(--ease);
+}
+.tc-send svg { width: 1.05rem; height: 1.05rem; }
+.tc-send:hover { background: var(--surface-hover); }
+.tc-send:active { transform: scale(0.94); }
+
+/* In the empty state the box sits under the title with the prompts below
+   it, and the whole column scrolls as one on a short screen; in a
+   conversation the box docks at the floor. */
+body[data-thread="empty"] .tc-main { justify-content: flex-start; overflow-y: auto; }
+body[data-thread="empty"] .tc-scroll { flex: none; overflow: visible; }
+body[data-thread="empty"] .tc-composer { margin: 1.6rem auto 1.1rem; }
+body[data-thread="active"] .tc-composer { width: min(var(--chat-w), calc(100% - 3rem)); }
+body[data-thread="active"] .tc-hero { display: none; }
+
+/* ══ THREAD ═════════════════════════════════════════════════════════════ */
+.tc-thread { max-width: var(--chat-w); margin: 0 auto; padding: 2rem 0 1rem; display: flex; flex-direction: column; gap: 1.5rem; }
+body[data-thread="empty"] .tc-thread { display: none; }
+
+.msg { display: flex; gap: 0.75rem; scroll-margin-top: 1.25rem; animation: msg-in 260ms var(--ease) both; }
+.msg-user { justify-content: flex-end; }
+.msg-user .msg-bubble {
+  max-width: 75%; padding: 0.65rem 1rem; border-radius: 1rem 1rem 0.25rem 1rem;
+  background: var(--surface); font-size: 0.98rem;
+}
+.msg-av { width: 2rem; height: 2rem; flex: none; display: grid; place-items: center; }
+.msg-av img { width: 1.6rem; height: 1.6rem; }
+.msg-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.9rem; padding-top: 0.25rem; }
+.msg-body p { margin: 0; color: var(--ink-2); line-height: 1.6; }
+.msg-body p strong { color: var(--ink); font-weight: 700; }
+@keyframes msg-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.typing { display: inline-flex; gap: 0.3rem; padding: 0.6rem 0; }
+.typing i { width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--ink-4); animation: dot 1s infinite ease-in-out; }
+.typing i:nth-child(2) { animation-delay: 0.15s; }
+.typing i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes dot { 0%, 80%, 100% { opacity: 0.3; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
+
+.note {
+  display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.7rem 0.9rem;
+  border-radius: var(--r-lg); border: 1px solid color-mix(in srgb, var(--warn) 25%, transparent);
+  background: var(--warn-dim); font-size: 0.88rem; color: var(--ink-2);
+}
+.note svg { width: 1rem; height: 1rem; color: var(--warn); flex: none; margin-top: 0.15rem; }
+.note strong { color: var(--ink); }
+
+.list { margin: 0; padding-left: 1.2rem; color: var(--ink-2); display: flex; flex-direction: column; gap: 0.35rem; }
+.list strong { color: var(--ink); }
+
+/* ══ CONTACT CARDS ══════════════════════════════════════════════════════
+   One square card per row of the Contacts table. The shell is a transparent
+   blue wash with a blue hairline; the location is the uppercase pill.
+   Missing facts are said in words (or in the label of a dimmed icon), never
+   as "N/A".
+
+   `.cand` is the shared shell (position cards use it too); `.contact-card` is
+   the square contact card in the grid. */
+.cards { display: grid; gap: 0.85rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); }
+.cand {
+  display: flex; flex-direction: column; gap: 0.6rem; min-width: 0;
+  padding: 0.95rem 1.05rem 0.85rem; border-radius: 0.875rem;
+  background: var(--card-wash); border: 1px solid var(--card-line);
+}
+.cand p { margin: 0; }
+.cand-av {
+  flex: none; display: grid; place-items: center;
+  width: 2.6rem; height: 2.6rem; border-radius: 50%;
+  background: var(--tag-bg); color: var(--tag-ink); border: 1px solid var(--card-line);
+  font-size: 0.82rem; font-weight: 700; letter-spacing: 0.03em;
+}
+.cand-tag {
+  flex: none; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  padding: 0.16rem 0.6rem; border-radius: var(--r-pill);
+  background: var(--tag-bg); color: var(--tag-ink);
+  font-size: 0.66rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
+}
+.cand-name {
+  min-width: 0; font-size: 1.1rem; font-weight: 700; color: var(--ink); line-height: 1.25;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cand-role { font-size: 0.9rem; font-weight: 600; color: var(--ink-2); }
+.cand-why {
+  font-size: 0.85rem; line-height: 1.45; color: var(--ink-3);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
+}
+.fact { display: inline-flex; align-items: center; gap: 0.35rem; min-width: 0; font-size: 0.78rem; font-weight: 500; color: var(--ink-2); }
+.fact svg { width: 0.78rem; height: 0.78rem; color: var(--ink-4); flex: none; }
+.fact.is-none { font-style: italic; color: var(--ink-4); }
+.fact a { color: var(--brand-ink); }
+.btn-profile {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font-size: 0.8rem; font-weight: 700; color: var(--tag-ink); text-decoration: none;
+  border-radius: var(--r-sm); transition: color 150ms var(--ease);
+}
+.btn-profile svg { width: 0.8rem; height: 0.8rem; }
+.btn-profile:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Position cards keep their footer row. */
+.cand-foot {
+  margin-top: auto; padding-top: 0.65rem; border-top: 1px solid var(--card-line-soft);
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.4rem 0.75rem;
+}
+.cand-foot .btn-profile { margin-left: auto; }
+
+/* ── The square card ──
+   Simple and a little futuristic: a violet-to-blue fill with a gradient
+   hairline border, a lit top edge, a clear blue disc for the initials,
+   mono keys for the ledger, and an index in the corner. No boxes inside
+   the box.
+
+   Bands: head · who · why · ledger · way out. */
+.k-sr {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+/* Transparent: the fill is a see-through violet-to-blue wash, so the page
+   and its glow show through the card. Over this page it lands on the same
+   colours as the opaque fill sampled from the QA panel. The faded gradient
+   border is drawn by ::after as a 1px ring (a masked layer), because the
+   padding-box / border-box trick would show the border gradient through a
+   transparent fill. */
+.contact-card {
+  position: relative; isolation: isolate;
+  aspect-ratio: 1 / 1; overflow: hidden;
+  /* Type scale inside the card, three steps and nothing between them:
+       17px  name, score            (identity)
+       12.5  role, why it fits, values, View profile   (reading)
+       10px  ledger labels, index   (labels, mono caps)
+     Groups (head, who, why, ledger, foot) sit 0.46rem apart; lines inside a
+     group sit close, so the eye reads five blocks, not eleven lines. */
+  gap: 0.46rem; padding: 0.8rem 0.95rem 0.68rem;
+  border-radius: 1rem; border: 0;
+  background: var(--card-glass);
+}
+/* The lit edge: a hairline of light along the top, brightest at the centre. */
+.contact-card::before {
+  content: ""; position: absolute; z-index: -1; top: 0; left: 14%; right: 14%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--edge-light), transparent);
+}
+/* The faded gradient border: a 1px ring, violet to blue at low alpha. */
+.contact-card::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px;
+  background: var(--card-edge);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Head: the initials in a clear blue disc, the index opposite. */
+.fc-head { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; min-width: 0; }
+.fc-av {
+  flex: none; display: grid; place-items: center; width: 1.95rem; height: 1.95rem; border-radius: 50%;
+  background: var(--tag-bg); border: 1px solid var(--card-line); color: var(--tag-ink);
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em;
+}
+
+.fc-index {
+  font-family: var(--mono); font-size: 0.625rem; font-weight: 500; letter-spacing: 0.06em;
+  color: var(--tag-ink);
+}
+.fc-index i { font-style: normal; color: var(--ink-4); }
+
+.fc-who { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; margin-top: -0.1rem; }
+.contact-card .cand-name {
+  font-size: 1.0625rem; font-weight: 700; line-height: 1.2; letter-spacing: -0.015em; color: var(--panel-strong);
+}
+.contact-card .cand-role {
+  font-size: 0.78rem; font-weight: 500; line-height: 1.3; color: var(--ink-3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Why it fits: AiMY's reasoning, set off by its spark and nothing else. */
+.fc-why {
+  display: flex; gap: 0.4rem; align-items: flex-start;
+  font-size: 0.78rem; line-height: 1.42; color: var(--panel-text); text-wrap: pretty;
+}
+.fc-why svg { flex: none; width: 0.66rem; height: 0.66rem; margin-top: 0.28rem; fill: var(--tag-ink); stroke: none; }
+.fc-why > span:last-child {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
+
+/* The ledger: four full-width rows, a fixed-width mono label beside each
+   value, so a whole email address fits on its line. */
+.fc-ledger {
+  margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.15rem;
+  padding-top: 0.45rem; border-top: 1px dashed var(--card-line-soft);
+}
+.fc-kv { min-width: 0; display: flex; align-items: baseline; gap: 0.6rem; }
+.fc-kv dt {
+  flex: none; width: 4.1rem;
+  font-family: var(--mono); font-size: 0.625rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-4);
+}
+.fc-kv dd {
+  margin: 0; min-width: 0; font-size: 0.75rem; font-weight: 600; line-height: 1.35; color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fc-kv dd a { color: var(--brand-ink); text-decoration: none; }
+.fc-kv dd a:hover { text-decoration: underline; }
+.fc-kv.is-none dd { color: var(--ink-4); font-weight: 500; }
+
+/* The way out: a plain link with an arrow that leans forward on hover. */
+.fc-link {
+  margin-top: auto; align-self: flex-start; display: inline-flex; align-items: center; gap: 0.3rem;
+  font-size: 0.78rem; font-weight: 700; color: var(--tag-ink); text-decoration: none;
+  border-radius: var(--r-sm);
+}
+.fc-link span { transition: transform 200ms var(--ease); }
+.fc-link:hover span { transform: translate(2px, -2px); }
+.fc-link:focus-visible { outline: 2px solid var(--brand-ink); outline-offset: 2px; }
+
+
+/* ── Position cards: the same shell, a role instead of a person ── */
+.pos-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
+.pos-title { font-size: 1.05rem; font-weight: 700; color: var(--ink); line-height: 1.3; }
+.pos-dept { font-size: 0.85rem; color: var(--ink-3); }
+.pill {
+  flex: none; padding: 0.15rem 0.55rem; border-radius: var(--r-pill);
+  font-size: 0.72rem; font-weight: 600; white-space: nowrap;
+  color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent);
+}
+.pill.is-warn { color: var(--warn); background: var(--warn-dim); }
+.pos-count { font-size: 0.85rem; color: var(--ink-2); }
+.pos-count strong { color: var(--ink); }
+
+/* ══ SMALL SCREENS ══════════════════════════════════════════════════════ */
+.tc-scrim { display: none; }
+@media (max-width: 64rem) {
+  .tc-tabs { position: static; transform: none; margin: 0 auto; }
+  .tc-user-info, .tc-user-chev { display: none; }
+  .tc-user { padding: 0.2rem; }
+}
+@media (max-width: 56rem) {
+  .tc-app { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "main"; }
+  .tc-side {
+    position: fixed; inset: 0 auto 0 0; width: min(var(--side-w), 85vw); z-index: 30;
+    transform: translateX(-100%); transition: transform 240ms var(--ease);
+  }
+  body[data-side="open"] .tc-side { transform: none; box-shadow: var(--shadow); }
+  body[data-side="open"] .tc-scrim { display: block; position: fixed; inset: 0; z-index: 20; background: rgba(0, 0, 0, 0.45); }
+  .tc-top { padding: 0 1rem; gap: 0.5rem; }
+  .tc-icon-btn.tc-menu { display: grid; }
+  .tc-call { display: none; }
+  .tc-tabs { overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+}
+@media (max-width: 40rem) {
+  .tc-faq { grid-template-columns: minmax(0, 1fr); gap: 0.6rem; }
+  .tc-faq-item { min-height: 3rem; padding: 0.6rem 2.3rem 0.6rem 1.1rem; }
+  .tc-faq-q { font-size: 0.86rem; }
+  .tc-faq-go { right: 1rem; width: 0.9rem; height: 0.9rem; margin-top: -0.45rem; }
+  .tc-suggest { width: calc(100% - 2rem); }
+  .tc-eyebrow { font-size: 0.6rem; letter-spacing: 0.1em; }
+  .tc-scroll { padding: 0 1rem; }
+  .tc-composer { width: calc(100% - 2rem); padding-left: 1rem; }
+  .tc-top-right .tc-icon-btn:not(#themeBtn) { display: none; }
+  .tc-tab { padding: 0.3rem 0.5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* ══ CARD GRID ══════════════════════════════════════════════════════════
+   The contacts as regular square cards at ONE fixed size, 16.5rem (264px),
+   on every screen. The grid never stretches a card to fill space: a wider
+   chat fits more cards per row (four in a wide chat, two in a narrow one,
+   one on a phone), and filling more of the page means adding cards, not
+   growing them. No carousel and no
+   motion; the only response is the border brightening under the pointer. */
+.card-grid {
+  display: grid; gap: 0.85rem;
+  grid-template-columns: repeat(auto-fill, var(--card-size));
+  justify-content: start;
+}
+.card-cell { display: flex; }
+.card-cell > .contact-card { width: var(--card-size); }
+.contact-card:hover { box-shadow: 0 0 22px var(--edge-glow); }
+.contact-card:hover::after { background: var(--card-edge-hi); }
+
+/* ══ MANY RESULTS ═══════════════════════════════════════════════════════
+   The answer opens on a preview, and one bar under it says how many there
+   are. "Show more" turns the cards into a scrollable frame in place: a fixed
+   height of about two and a half rows, the same cards at the same size, and
+   the top and bottom edges fading out while there is more to scroll (the
+   same faded-edge treatment the card fan had at its sides). "Show less"
+   folds it back. The frame does not contain overscroll, so at either end
+   the wheel carries on and scrolls the conversation. */
+.card-frame { position: relative; min-width: 0; }
+.card-frame.is-expanded .card-frame-scroll {
+  max-height: min(calc(var(--card-size) * 2.4 + 0.85rem * 2), 68vh);
+  overflow-y: auto; padding: 0.35rem 0;
+  /* No scrollbar: it would push the centred grid off the button's axis and
+     cost a column. The faded edges say there is more; wheel, swipe and the
+     keyboard (the frame takes focus) all still scroll it. */
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 2.25rem, #000 calc(100% - 2.75rem), transparent 100%);
+          mask-image: linear-gradient(180deg, transparent 0, #000 2.25rem, #000 calc(100% - 2.75rem), transparent 100%);
+}
+/* Only fade an edge that has something past it. */
+.card-frame.is-expanded.at-top .card-frame-scroll {
+  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 2.75rem), transparent 100%);
+          mask-image: linear-gradient(180deg, #000 calc(100% - 2.75rem), transparent 100%);
+}
+.card-frame.is-expanded.at-bottom .card-frame-scroll {
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 2.25rem);
+          mask-image: linear-gradient(180deg, transparent 0, #000 2.25rem);
+}
+.card-frame.is-expanded.at-top.at-bottom .card-frame-scroll { -webkit-mask-image: none; mask-image: none; }
+.card-frame-scroll::-webkit-scrollbar { display: none; }
+.card-frame-scroll:focus-visible { outline: 2px solid var(--brand-ink); outline-offset: 3px; border-radius: 1rem; }
+
+/* The toggle: centred under the cards, a single pill on a hairline that
+   fades out to both sides. The cards are centred on the same axis, so the
+   button always sits on the middle line of the grid above it. */
+.card-frame .card-grid { justify-content: center; }
+.results-more {
+  display: flex; align-items: center; gap: 0.9rem;
+  margin-top: 0.15rem;
+}
+.results-more::before, .results-more::after {
+  content: ""; flex: 1; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--card-line));
+}
+.results-more::after { background: linear-gradient(90deg, var(--card-line), transparent); }
+.results-more-btn {
+  flex: none; display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.55rem 1.1rem 0.55rem 1.25rem; border-radius: var(--r-pill);
+  font-size: 0.84rem; font-weight: 700; color: var(--tag-ink);
+  background: var(--card-glass); border: 1px solid var(--card-line);
+  transition: background 150ms var(--ease), border-color 150ms var(--ease), box-shadow 200ms var(--ease), transform 150ms var(--ease);
+}
+.results-more-chev { width: 1rem; height: 1rem; transition: transform 240ms var(--ease); }
+.results-more-btn[aria-expanded="true"] .results-more-chev { transform: rotate(180deg); }
+.results-more-btn:hover { background: var(--tag-bg); border-color: var(--tag-ink); box-shadow: 0 0 20px var(--edge-glow); }
+.results-more-btn:active { transform: scale(0.97); }
+.results-more-btn:focus-visible { outline: 2px solid var(--brand-ink); outline-offset: 3px; }
+
+@media (max-width: 40rem) {
+  .card-frame.is-expanded .card-frame-scroll { max-height: min(calc(var(--card-size) * 1.6 + 0.85rem), 62vh); }
+}
+
+/* ══ MATCH SCORE ════════════════════════════════════════════════════════
+   Top right of every contact card: the percentage in bold AI blue, and a
+   short bar under it, blue for the score and grey for the rest. No pill and no ring: the
+   number is the badge. The 01/32 index sits at the foot, opposite View
+   profile. */
+.fc-score {
+  display: inline-flex; flex-direction: column; align-items: flex-end; gap: 0.28rem;
+}
+.fc-score b {
+  font-size: 1.0625rem; font-weight: 800; line-height: 1; letter-spacing: -0.02em;
+  color: var(--tag-ink); font-variant-numeric: tabular-nums;
+}
+/* The number leads; the % sign steps down so it reads as a unit, not a digit. */
+.fc-score b small { font-size: 0.66em; font-weight: 700; margin-left: 0.06em; opacity: 0.85; }
+/* One short bar of fixed length: the blue part is the score, the grey part
+   is what is left of 100%, so 96% is nearly all blue with a small grey tip. */
+.fc-score-bar {
+  display: flex; width: 3.6rem; height: 4px; border-radius: var(--r-pill);
+  overflow: hidden; background: var(--score-rest);
+}
+.fc-score-bar i {
+  display: block; height: 100%; width: calc(var(--p) * 1%);
+  background: var(--tag-ink); border-radius: inherit;
+}
+.fc-end { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.fc-end .fc-link { margin-top: 0; }
+
+/* ══ SCROLL DOT (assets/aimy-scroll.css + .js, shared with AiMY QA) ══════
+   Every vertical scroller shows the AiMY scroll dot in place of the native
+   bar. The dot needs one colour, the AiMY purple as R, G, B. The chat
+   thread also gets the clickable track and the "Latest" pill, whose tokens
+   are mapped here onto this page's own. */
+:root {
+  --qa-accent-rgb: 139, 79, 244;
+  --card-bg-raised: var(--surface);
+  --d50: var(--ink);
+  --fs-xs: 0.75rem;
+  --fw-semibold: 600;
+  --elev-2: var(--shadow);
+}
+
+/* The sidebar chat list: its dot shows only while the list scrolls. It
+   appears at once, stays through the landing bounce, lingers half a second,
+   then fades. Hidden, it does not take the pointer. */
+.aimy-scroll.dot-on-scroll { opacity: 0; transition: opacity 260ms ease-out 500ms; }
+.aimy-scroll.dot-on-scroll:is(.is-moving, .is-landing, .is-dragging) { opacity: 1; transition-delay: 0s; transition-duration: 120ms; }
+.aimy-scroll.dot-on-scroll:not(.is-moving):not(.is-landing):not(.is-dragging) .aimy-scroll-head { pointer-events: none; }
