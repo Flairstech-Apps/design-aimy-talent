@@ -2589,8 +2589,10 @@
           '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">The need</h2><div class="b-cmeta-say">' +
             '<p class="b-cmeta-p">' + esc(plural(q.seats, 'seat')) + ', ' + (q.kind === 'replacement' ? 'a replacement' : 'a new role') + ', ' + esc(q.level.toLowerCase()) + '.</p>' +
             '<p class="b-cmeta-p">' + (q.billable ? 'Billable to the client.' : 'Not billable.') + '</p></div></div>' +
+          /* The test beside the need, the people under them (Engy, 9 Nov). */
+          (isClient() ? '' : reqWho(q)) +
           '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Hiring manager</h2><div class="b-cmeta-say"><p class="b-cmeta-p"><b>' + esc(hmOf(q).name) + '</b></p></div></div>' +
-          (isClient() ? '' : reqWho(q)) + '</div>' +
+          '</div>' +
           '<div class="t-frame b-cmeta-part t-f-st"><h2 class="b-cmeta-cap">Stages</h2>' + stageSnake(t.filter((k) => k !== 'joined')) + '</div>' +
         '</div>' +
         '<div class="b-cmeta b-said t-two">' +
@@ -9095,14 +9097,14 @@
   function reqWho(q) {
     const a = q.asmt ? asmtOf(q.asmt) : null;
     const rec = RECRUITERS.filter((x) => x.id === q.rec)[0];
-    return '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Recruiter</h2><div class="b-cmeta-say">' +
-          '<p class="b-cmeta-p"><b>' + esc(rec ? rec.name : 'Not assigned') + '</b></p>' +
-          (isHR() ? '<p class="b-cmeta-p t-acts">' + assignMenu(q) + '</p>' : '') +
-        '</div></div>' +
-        (a ? '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Assessment</h2><div class="b-cmeta-say">' +
+    return (a ? '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Assessment</h2><div class="b-cmeta-say">' +
           '<p class="b-cmeta-p"><button class="t-inline-link" type="button" data-asmt="' + a.id + '">' + esc(a.title) + '</button></p>' +
           '<p class="b-cmeta-p">' + (a.kind === 'live' ? 'A live interview with the AiMY agent' : 'A questionnaire') + ', before the phone screen. Pass ' + esc(passSayOf(a)) + '.</p>' +
-        '</div></div>' : '');
+        '</div></div>' : '') +
+        '<div class="b-cmeta-part"><h2 class="b-cmeta-cap">Recruiter</h2><div class="b-cmeta-say">' +
+          '<p class="b-cmeta-p"><b>' + esc(rec ? rec.name : 'Not assigned') + '</b></p>' +
+          (isHR() ? '<p class="b-cmeta-p t-acts">' + assignMenu(q) + '</p>' : '') +
+        '</div></div>';
   }
   /* What can be done to it: its state, and where it is posted. Two columns,
      each with its verbs on one row under it (9 Nov). */
