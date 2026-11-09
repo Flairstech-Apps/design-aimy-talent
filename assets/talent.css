@@ -2227,3 +2227,15 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
   .t-find-form .t-crit-row.t-crit-add > * { grid-area: auto; }
   .t-find-brief { font-size: 17px; }
 }
+
+/* ══ ASKING AiMY TO DO IT (Engy, 9 Nov) ═════════════════════════════════════
+   "Let me write it": AiMY offering, in its own voice, so the button wears
+   AiMY's glass (the briefing's blue-purple gradient, stronger, as a control
+   has to read as one) and its mark. */
+.t-aimy-btn { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 14px 0 11px; border-radius: var(--r-pill);
+  font: inherit; font-size: 12.5px; font-weight: var(--fw-semibold); color: var(--d50); white-space: nowrap; cursor: pointer;
+  background: linear-gradient(120deg, rgba(var(--accent-rgb), 0.24), rgba(0, 102, 255, 0.12)); border: 1px solid rgba(var(--accent-rgb), 0.4);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); transition: background var(--t-fast, 150ms), border-color var(--t-fast, 150ms); }
+.t-aimy-btn:hover { background: linear-gradient(120deg, rgba(var(--accent-rgb), 0.32), rgba(0, 102, 255, 0.18)); border-color: rgba(var(--accent-rgb), 0.58); }
+.t-aimy-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.t-aimy-btn > svg { flex: none; }

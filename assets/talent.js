@@ -1911,8 +1911,8 @@
     const sto = deskStory();
     if (!sto || sto.actual == null) return null;
     const late = sto.actual > SEND_TARGET;
-    return { state: 'Found', tone: late ? 'warn' : 'ok',
-      say: 'The first profile goes <b>' + days(sto.actual) + '</b> after a requisition opens; the target is <b>' + SEND_TARGET + '</b>.',
+    return { state: 'I found', tone: late ? 'warn' : 'ok',
+      say: 'The first profile goes out <b>' + days(sto.actual) + '</b> after a requisition opens, against a target of <b>' + SEND_TARGET + '</b>.',
       ev: sto.off ? [{ val: (sto.off.decided - sto.off.passed) + '/' + sto.off.decided, cap: sto.off.k === 'offer' ? 'offers turned down' : 'lost at ' + STEP_SAY[sto.off.k] }] : [],
       act: { label: 'Read the story', go: { on: 'reports', ch: 'speed' } } };
   }
@@ -1925,14 +1925,14 @@
     const qn = isHR() ? queue().length : 0;
     putRail(sideNav({
       '': isHR()
-        ? { state: 'Found', tone: risky.length ? 'err' : 'ok',
-            say: risky.length ? '<b>' + risky.length + ' of ' + open.length + '</b> open requisitions are likely to miss their date.' : 'Every open requisition is on course for its date.',
+        ? { state: 'I found', tone: risky.length ? 'err' : 'ok',
+            say: risky.length ? 'I see <b>' + risky.length + ' of ' + open.length + '</b> open requisitions likely to miss their date.' : 'Every open requisition is on course for its date.',
             act: risky.length ? { label: 'Show the ' + risky.length, start: 'risk' } : null }
         : a.length
-          ? { state: 'Awaiting you', tone: 'warn', say: '<b>' + plural(a.length, 'thing') + '</b> ' + (a.length === 1 ? 'waits' : 'wait') + ' on you. First: ' + esc(a[0].head) + '.', act: { label: a[0].verb || 'Open it', go: a[0].go } }
-          : { state: 'Done', tone: 'ok', say: 'Nothing waits on you.' },
-      cands: qn ? { state: 'Awaiting you', tone: 'warn', say: '<b>' + plural(qn, 'person', 'people') + '</b> on the open requisitions.', act: { label: 'Show who waits on you', go: { on: 'cands', q: 'me' } } } : null,
-      reqs: { state: 'Found', tone: 'ok', say: '<b>' + open.length + ' open</b>' + (isClient() ? '.' : ', and <b>' + filled + '</b> filled.') },
+          ? { state: 'Waiting on you', tone: 'warn', say: '<b>' + plural(a.length, 'thing') + '</b> ' + (a.length === 1 ? 'waits' : 'wait') + ' on you. First: ' + esc(a[0].head) + '.', act: { label: a[0].verb || 'Open it', go: a[0].go } }
+          : { state: 'All clear', tone: 'ok', say: 'Nothing is waiting on you.' },
+      cands: qn ? { state: 'Waiting on you', tone: 'warn', say: '<b>' + plural(qn, 'person', 'people') + '</b> on the open requisitions.', act: { label: 'Show who waits on you', go: { on: 'cands', q: 'me' } } } : null,
+      reqs: { state: 'I found', tone: 'ok', say: 'You have <b>' + open.length + ' open</b>' + (isClient() ? '.' : ' and <b>' + filled + '</b> filled.') },
       reports: isClient() ? null : railStory(),
     }) + (isHM() ? diaryDoor() : ''));
   }
@@ -1949,22 +1949,22 @@
     const me = queue().filter((c) => queueCut(c) === 'me').length;
     putRail(sideNav({
       '': d.length
-        ? { state: 'Awaiting you', tone: 'warn', say: '<b>' + plural(d.length, 'result') + '</b> ' + (d.length === 1 ? 'waits' : 'wait') + ' on your call, the oldest <b>' + days(d[0].since) + '</b>.',
+        ? { state: 'Waiting on you', tone: 'warn', say: 'You have <b>' + plural(d.length, 'result') + '</b> waiting on your call, the oldest for <b>' + days(d[0].since) + '</b>.',
             ev: [{ val: t.length, cap: t.length === 1 ? 'interview today' : 'interviews today' }], act: { label: 'Decide the oldest one', start: 'decide' } }
-        : { state: 'Done', tone: 'ok', say: 'Nothing waits on your call.', ev: [{ val: t.length, cap: t.length === 1 ? 'interview today' : 'interviews today' }] },
-      cands: { state: me ? 'Awaiting you' : 'Done', tone: me ? 'warn' : 'ok',
-        say: '<b>' + plural(me, 'person', 'people') + '</b> ' + (me === 1 ? 'waits' : 'wait') + ' on you, of <b>' + people + '</b> on your open requisitions.',
+        : { state: 'All clear', tone: 'ok', say: 'Nothing is waiting on your call.', ev: [{ val: t.length, cap: t.length === 1 ? 'interview today' : 'interviews today' }] },
+      cands: { state: me ? 'Waiting on you' : 'All clear', tone: me ? 'warn' : 'ok',
+        say: '<b>' + plural(me, 'person', 'people') + '</b> ' + (me === 1 ? 'is' : 'are') + ' waiting on you, out of <b>' + people + '</b> on your open requisitions.',
         act: me ? { label: 'Show the ' + me, go: { on: 'cands', q: 'me' } } : null },
-      reqs: { state: 'Found', tone: avg != null && avg > team ? 'warn' : 'ok',
-        say: '<b>' + open.length + ' open</b>' + (avg != null ? '; your first profile goes in <b>' + days(avg) + '</b>, the team’s in ' + days(team) + '.' : '.'),
+      reqs: { state: 'I found', tone: avg != null && avg > team ? 'warn' : 'ok',
+        say: 'You have <b>' + open.length + ' open</b>' + (avg != null ? ', and your first profile goes out in <b>' + days(avg) + '</b> against the team’s ' + days(team) + '.' : '.'),
         ev: client.length ? [{ val: client.length, cap: 'owed an answer by clients' }] : [],
         act: client.length ? { label: 'Show the ' + client.length + ' with clients', go: { on: 'reqs', q: 'client' } } : null },
       calls: tc.length || miss || wa
-        ? { state: 'Awaiting you', tone: 'warn', say: '<b>' + plural(tc.length, 'person', 'people') + '</b> to reach' +
+        ? { state: 'Waiting on you', tone: 'warn', say: 'You have <b>' + plural(tc.length, 'person', 'people') + '</b> to reach' +
             (miss || wa ? ', ' + listSay([miss ? '<b>' + plural(miss, 'missed call') + '</b>' : null, wa ? '<b>' + plural(wa, 'WhatsApp reply', 'WhatsApp replies') + '</b>' : null].filter(Boolean)) : '') + '.',
             ev: cb ? [{ val: cb, cap: cb === 1 ? 'callback due today' : 'callbacks due today' }] : [],
             act: miss || wa ? { label: 'Open the inbox', go: { on: 'calls', q: 'inbox' } } : { label: 'Call the next one', start: 'screen' } }
-        : { state: 'Done', tone: 'ok', say: 'Nobody is waiting on you to call or reply.' },
+        : { state: 'All clear', tone: 'ok', say: 'Nobody is waiting on you to call or reply.' },
       reports: railStory(),
     }) + diaryDoor());
   }
@@ -1984,8 +1984,8 @@
        "decisions wait on you": Candidates' "wait on you" counts everyone
        with a next step of yours, a different, larger set. */
     lines.push(d.length
-      ? '<b>' + plural(d.length, 'result') + '</b> ' + (d.length === 1 ? 'waits' : 'wait') + ' on your call, the oldest <b>' + days(oldest.since) + '</b>.'
-      : 'No result waits on your call.');
+      ? 'You have <b>' + plural(d.length, 'result') + '</b> waiting on your call, the oldest for <b>' + days(oldest.since) + '</b>.'
+      : 'Nothing is waiting on your call.');
     if (t.length) lines.push('<button class="slv-n" type="button"' + goAttr({ on: 'diary' }) + '>' + plural(t.length, 'interview') + '</button> today, the first at <b>' + esc(t[0].slot) + '</b> with ' + esc(t[0].name) + '.');
     if (client.length) {
       lines.push('Clients owe an answer on <button class="slv-n" type="button"' + goAttr({ on: 'reqs', q: 'client' }) + '>' + plural(client.length, 'candidate') + '</button>' +
@@ -2223,10 +2223,10 @@
     const fc = queue().filter((c) => c.stage === 'sourced' && !c.contactOk);
     if (fc.length) {
       const reqs = open.filter((q) => fc.some((c) => c.req === q.id)), wa = fc.filter(waAuto).length;
-      out.push(insightRow({ ws: 'staged', wsSay: 'Your yes',
-        say: '<b>' + plural(fc.length, 'person', 'people') + '</b> found ' + (fc.length === 1 ? 'is' : 'are') + ' waiting on your yes for first contact, on ' + plural(reqs.length, 'requisition') + '. ' + (connectOn() ? '<b>' + wa + '</b> opted in to WhatsApp; the rest get an email.' : 'Each gets an email.'),
+      out.push(insightRow({ ws: 'staged', wsSay: 'Waiting on your yes',
+        say: 'I found <b>' + plural(fc.length, 'person', 'people') + '</b> for first contact on ' + plural(reqs.length, 'requisition') + ', and they are waiting on your yes. ' + (connectOn() ? '<b>' + wa + '</b> opted in to WhatsApp, so I’ll email the rest.' : 'I’ll email each of them.'),
         q: 'Who is waiting on first contact?',
-        a: '<p>' + reqs.map((q) => '<b>' + esc(q.title) + '</b>: ' + esc(listSay(fc.filter((c) => c.req === q.id).map((c) => c.name))) + '.').join('<br>') + ' Each gets one short message naming the role, nothing about pay, once you approve.</p>',
+        a: '<p>' + reqs.map((q) => '<b>' + esc(q.title) + '</b>: ' + esc(listSay(fc.filter((c) => c.req === q.id).map((c) => c.name))) + '.').join('<br>') + ' Once you approve, I’ll send each one short message naming the role, nothing about pay.</p>',
         acts: [{ label: 'Open them', go: { on: 'cands', q: 'new' }, primary: true }] }));
     }
     /* Screening on the busiest requisition (standalone: lanes, not a ranking). */
@@ -2235,8 +2235,8 @@
     if (pick && pick.l.length >= 3) {
       const all = (c) => c.ev.every((e) => e === 'm'), unk = (c) => c.ev.filter((e) => e === 'n').length * 2 > c.ev.length;
       const strong = pick.l.filter(all), info = pick.l.filter((c) => !all(c) && unk(c)), talk = pick.l.filter((c) => !all(c) && !unk(c));
-      out.push(insightRow({ ws: 'recommended', wsSay: 'Screening',
-        say: 'On <b>' + esc(pick.q.title) + '</b>, ' + plural(pick.l.length, 'application') + ' ' + (pick.l.length === 1 ? 'is' : 'are') + ' under review: ' +
+      out.push(insightRow({ ws: 'recommended', wsSay: 'My read',
+        say: 'I read the ' + plural(pick.l.length, 'application') + ' on <b>' + esc(pick.q.title) + '</b>: ' +
           (strong.length ? '<b>' + strong.length + '</b> show every must-have, ' : 'none shows every must-have yet, ') + '<b>' + talk.length + '</b> answer half or more, and <b>' + info.length + '</b> leave most unknown.',
         q: 'Where do the ' + pick.q.title + ' applications stand?',
         a: '<p>' + (strong.length ? '<b>Every must-have shown:</b> ' + esc(listSay(strong.map((c) => c.name))) + '.<br>' : '') +
@@ -2247,25 +2247,25 @@
     /* What is on the careers page (standalone: published on the website). */
     const off = open.filter((q) => !q.published);
     out.push(insightRow({ ws: 'detected', wsSay: 'Careers page',
-      say: '<b>' + (open.length - off.length) + ' of ' + open.length + '</b> open requisitions are on the careers page.' + (off.length ? ' ' + esc(off[0].title) + (off.length > 1 ? ' and ' + plural(off.length - 1, 'other') + ' stay' : ' stays') + ' off; off is the default.' : ''),
+      say: 'I see <b>' + (open.length - off.length) + ' of ' + open.length + '</b> open requisitions on the careers page.' + (off.length ? ' ' + esc(off[0].title) + (off.length > 1 ? ' and ' + plural(off.length - 1, 'other') + ' stay' : ' stays') + ' off, since off is the default.' : ''),
       q: 'Which requisitions are off the careers page?',
       a: '<p>' + (off.length ? off.map((q) => '<b>' + esc(q.title) + '</b>, ' + esc(accOf(q).name)).join('<br>') + '<br>Off is the default; a client-linked replacement usually stays off.' : 'Every open requisition is on the careers page.') + '</p>',
       acts: [{ label: 'Open requisitions', go: { on: 'reqs' }, primary: true }] }));
     /* The reports' story, in one line, its chapters behind the question. */
     const sto = deskStory();
-    if (sto && sto.chapters.length) out.push(insightRow({ ws: 'detected', wsSay: 'Reports',
-      say: sto.head,
+    if (sto && sto.chapters.length) out.push(insightRow({ ws: 'detected', wsSay: 'From your reports',
+      say: 'I read your reports: ' + sto.head,
       q: 'What do my reports say?',
       a: '<p>' + sto.chapters.map((c) => '<b>' + esc(c.cap) + '.</b> ' + esc(c.title) + '.').join('<br>') + '</p>',
       acts: [{ label: 'Open the reports', go: { on: 'reports' }, primary: true }] }));
     /* What AiMY did without asking (standalone: the closing line). */
     const booked = DB.ivs.filter((v) => v.status === 'booked' && on(DB.byId[v.cand])).length;
     const tests = DB.sends.filter((x) => x.status === 'sent' && on(DB.byId[x.cand])).length;
-    if (booked + tests) out.push(insightRow({ ws: 'completed', wsSay: 'Done for you',
-      say: 'Under rules a person approved, AiMY has <b>' + plural(booked, 'interview') + '</b> booked with their kits' + (tests ? ' and <b>' + plural(tests, 'assessment') + '</b> out' : '') + '. Each has an undo.',
+    if (booked + tests) out.push(insightRow({ ws: 'completed', wsSay: 'I did this for you',
+      say: 'Under rules a person approved, I booked <b>' + plural(booked, 'interview') + '</b> with their kits' + (tests ? ' and sent <b>' + plural(tests, 'assessment') + '</b>' : '') + '. You can undo each one.',
       q: 'What did you do without asking me?',
-      a: '<p>' + plural(booked, 'interview') + ' booked inside the interviewers’ free slots, each with its kit sent' + (tests ? '; ' + plural(tests, 'assessment') + ' sent from the link on the requisition' : '') +
-        '. Nothing reached a candidate outside a rule ' + esc(DESKS.dina.name) + ' approved, and each can be undone from the record it sits on.</p>' }));
+      a: '<p>I booked ' + plural(booked, 'interview') + ' inside the interviewers’ free slots and sent each its kit' + (tests ? '; I sent ' + plural(tests, 'assessment') + ' from the link on the requisition' : '') +
+        '. Nothing reached a candidate outside a rule ' + esc(DESKS.dina.name) + ' approved, and you can undo each one from the record it sits on.</p>' }));
     return out;
   }
   function homePage() {
@@ -2277,9 +2277,9 @@
        briefing). Not told yet lost its "Reads" line, its explainer and the
        preview's own Send: the message shows once, the rows send, and one
        button sends to everyone. */
-    const noticed = ins.length ? '<section class="s-block s-block-wide" aria-label="What AiMY noticed">' +
-        '<div class="s-camp-list-head"><h2 class="s-block-h">What AiMY noticed</h2>' +
-          '<span class="s-block-say">each opens in the chat, with the record behind it</span></div>' +
+    const noticed = ins.length ? '<section class="s-block s-block-wide" aria-label="What I noticed for you">' +
+        '<div class="s-camp-list-head"><h2 class="s-block-h">What I noticed for you</h2>' +
+          '<span class="s-block-say">ask me about any of them, and I’ll show you the record behind it</span></div>' +
         '<div class="t-insights">' + ins.join('') + '</div>' +
       '</section>' : '';
     return '<div class="s-home">' +
@@ -2606,7 +2606,7 @@
       (isClient() ? '' : reqStrip(q)) +
       '<section class="s-insight is-lead s-block-wide" aria-label="Where this requisition is">' +
         '<div class="s-lead-mark"><svg class="s-insight-mark" viewBox="0 0 18 20" width="14" height="14" aria-hidden="true"><use href="#aimy-logo-small"/></svg>' +
-          '<span class="work-state ws-detected">Read off the record</span></div>' +
+          '<span class="work-state ws-detected">I read this off the record</span></div>' +
         '<div class="s-lead-line"><span class="s-lead-n">' + lead.n + '</span><span class="s-lead-say">of the <span class="s-lead-of">' + lead.of + '</span> ' + esc(lead.say) + '</span></div>' +
         '<p class="s-lead-deck">' + esc(deck) + '</p>' +
       '</section>' +
@@ -4912,7 +4912,7 @@
             '<button class="s-insight-lnk primary" type="button" data-wa-send="' + c.id + '">' + svg('send', 14) + 'Send the template</button></div></div>' : '') + '</div>';
     return '<div class="s-home">' +
       '<div class="b-topbar s-block-wide"><button class="s-back" type="button"' + goAttr({ on: 'calls', q: 'inbox' }) + '>' + svg('back', 14) + 'Interactions</button>' +
-        '<span class="b-draft-acts"><button class="b-ghost" type="button" data-draft-chat="' + c.id + '">Write it with AiMY</button>' + (canCall(c) ? '<button class="b-ghost" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call</button>' : '') +
+        '<span class="b-draft-acts"><button class="t-aimy-btn" type="button" data-draft-chat="' + c.id + '">' + mark(13) + 'Let me write it</button>' + (canCall(c) ? '<button class="b-ghost" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call</button>' : '') +
           '<button class="b-ghost" type="button"' + goAttr({ on: 'calls', lg: c.id }) + '>Log a call from elsewhere</button></span></div>' +
       '<section class="s-block s-block-wide" aria-label="WhatsApp with ' + esc(c.name) + '">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">' + esc(c.name) + '</h2>' +
@@ -5472,7 +5472,7 @@
           /* Call is beside the decision, in Where they are; not twice. */
           (works ? '<div class="t-cand-acts">' +
             (c.wa ? '<button class="b-ghost" type="button"' + goAttr({ on: 'calls', th: c.id }) + '>' + svg('wa', 14) + 'WhatsApp' + (msgsOf(c.id).length ? ' (' + msgsOf(c.id).length + ')' : '') + '</button>' : '') +
-            (isRec() ? '<button class="b-ghost" type="button" data-draft-chat="' + c.id + '">Write with AiMY</button>' : '') +
+            (isRec() ? '<button class="t-aimy-btn" type="button" data-draft-chat="' + c.id + '">' + mark(13) + 'Let me write it</button>' : '') +
             (isRec() && needsBook(c) ? '<button class="b-ghost" type="button" data-book-chat="' + c.id + '">Book the interview</button>' : '') +
             '<button class="b-ghost" type="button"' + goAttr({ on: 'calls', lg: c.id }) + '>Log a call from elsewhere</button></div>' : ''))) +
         (candNarrow() ? '<details class="t-cand-fold"><summary class="t-cand-more-sum">More about ' + esc(first(c.name)) + '</summary><div class="t-cand-fold-in">' : '') +
@@ -5492,7 +5492,7 @@
       '<div class="t-cand-work">' +
       '<section class="s-insight is-lead s-block-wide' + (news ? '' : ' t-lead-quiet') + '" aria-label="Where they are">' +
         (news ? '<div class="s-lead-mark"><svg class="s-insight-mark" viewBox="0 0 18 20" width="14" height="14" aria-hidden="true"><use href="#aimy-logo-small"/></svg>' +
-          '<span class="work-state ws-detected">Read off the record</span></div>' : '') +
+          '<span class="work-state ws-detected">I read this off the record</span></div>' : '') +
         (!news ? '' : '<p class="s-lead-deck">' + esc(c.exit ? exitSay(c).charAt(0).toUpperCase() + exitSay(c).slice(1) + '.' +
             (c.told === false && !isClient() ? ' Not told yet; they hear by ' + sayDay(hearBy(c)) + '.' : c.told ? ' They have been told.' : '')
           : isClient() && c.stage === 'sent' ? 'Waiting on your answer since ' + sayDay(c.sentDay != null ? c.sentDay : -c.since) + '.' : candSay(c)) + '</p>') +
@@ -6540,7 +6540,7 @@
     const kept = d.res.filter((x) => saved || d.keep[x.i] !== false);
     const pool = d.res.filter((x) => x.src === 'pool').length;
     const gate = !saved && LEAVE ? '<section class="s-insight is-lead b-lead-slim b-gate s-block-wide" aria-label="Not saved">' +
-      '<div class="s-lead-mark">' + mark(14) + '<span class="work-state ws-staged" data-work-state="staged">Awaiting You</span></div>' +
+      '<div class="s-lead-mark">' + mark(14) + '<span class="work-state ws-staged" data-work-state="staged">Waiting on you</span></div>' +
       '<p class="s-lead-deck">This shortlist is not saved. <b>' + plural(d.res.length, 'person', 'people') + '</b> came back and nobody is working them.</p>' +
       '<p class="b-gate-note">Leaving throws them away. Save it and it is yours; put it on a requisition and they join your queue.</p>' +
       '<div class="s-lead-acts"><button class="s-insight-lnk primary" type="button" data-draft-save>Save</button>' +
@@ -6725,12 +6725,12 @@
     const cl = critList().filter((c) => String(c.t).trim());
     const st = poolStats(cl);
     const reqN = cl.filter((c) => c.need).length;
-    const say = !cl.length ? 'Pick where to start, and the needs are drafted for you.'
-      : !FIND.src.pool ? 'Your pool is off, so only public pages are searched.'
-      : reqN ? '<b>' + plural(st.all, 'person', 'people') + '</b> in your pool ' + (st.all === 1 ? 'meets' : 'meet') + ' every required need' + (st.some ? ', and ' + st.some + ' more meet some of it.' : '.')
-      : '<b>' + plural(st.some, 'person', 'people') + '</b> in your pool ' + (st.some === 1 ? 'meets' : 'meet') + ' some of it. Nothing is marked required.';
+    const say = !cl.length ? 'Pick where to start, and I’ll draft the needs for you.'
+      : !FIND.src.pool ? 'Your pool is off, so I’ll search public pages only.'
+      : reqN ? 'I found <b>' + plural(st.all, 'person', 'people') + '</b> in your pool who ' + (st.all === 1 ? 'meets' : 'meet') + ' every required need' + (st.some ? ', and ' + st.some + ' more who meet some of it.' : '.')
+      : 'I found <b>' + plural(st.some, 'person', 'people') + '</b> in your pool who ' + (st.some === 1 ? 'meets' : 'meet') + ' some of it. Nothing is marked required.';
     const sub = cl.length > 6 ? plural(cl.length, 'need') + '. Past six, most profiles are silent on enough of them that the strongest people read as weak.'
-      : FIND.src.web ? 'Public pages add prospects when you search' + (FIND.src.apollo ? ', with work emails from Apollo.' : '.') : 'Public pages are off: only people we already know.';
+      : FIND.src.web ? 'When you search, I’ll add prospects from public pages' + (FIND.src.apollo ? ', with work emails from Apollo.' : '.') : 'Public pages are off, so I’ll only look at people we already know.';
     return '<div class="t-find-bar"><p class="t-find-bar-say">' + say + '<small>' + esc(sub) + '</small></p><span class="t-acts">' +
       (cl.length ? '<button class="b-ghost" type="button" data-find-save>Save this search</button>' : '') +
       '<button class="btn btn-brand btn-sm" type="button" data-find-go>' + (FIND.step === 'results' ? 'Search again' : 'Find candidates') + '</button></span></div>';
@@ -6742,11 +6742,11 @@
     const cl = critList(), st = poolStats(cl), eased = FIND.eased || [];
     const say = 'For <b>' + esc(q.title) + '</b> at ' + esc(accOf(q).name) + ', from its success profile' + (lp ? ' and from <b>' + esc(lp.name) + '</b>, who held the role before' : '') + '.' +
       (eased.length ? ' I made ' + esc(listSay(eased.map((t) => '“' + t + '”'))) + ' preferred: few profiles in your pool mention ' + (eased.length === 1 ? 'it' : 'them') + ', so as a must ' + (eased.length === 1 ? 'it' : 'they') + ' would hide good people. The phone screen asks.' : '');
-    const n = FIND.src.pool ? '<b>' + plural(st.all, 'person', 'people') + ' in your pool</b> already ' + (st.all === 1 ? 'meets' : 'meet') + ' every required need' + (st.some ? ', and ' + st.some + ' more meet some of it' : '') + '. ' : '';
-    return '<div class="s-insight is-lead t-find-draft"><div class="s-lead-mark">' + mark(14) + '<span class="work-state ws-drafted">Drafted for you</span></div>' +
+    const n = FIND.src.pool ? 'I found <b>' + plural(st.all, 'person', 'people') + ' in your pool</b> who already ' + (st.all === 1 ? 'meets' : 'meet') + ' every required need' + (st.some ? ', and ' + st.some + ' more who meet some of it' : '') + '. ' : '';
+    return '<div class="s-insight is-lead t-find-draft"><div class="s-lead-mark">' + mark(14) + '<span class="work-state ws-drafted">I drafted this for you</span></div>' +
       '<p class="s-lead-deck">' + say + '</p>' +
       '<div class="t-draft-chips">' + cl.map((c) => '<span class="t-draft-chip' + (c.need ? '' : ' is-pref') + '"><span class="t-draft-k">' + (c.need ? 'Required' : 'Preferred') + '</span>' + esc(c.t) + '</span>').join('') + '</div>' +
-      '<p class="t-draft-n">' + n + (FIND.src.web ? 'Public pages are searched when you run it.' : '') + '</p>' +
+      '<p class="t-draft-n">' + n + (FIND.src.web ? 'I’ll search public pages when you run it.' : '') + '</p>' +
       '<div class="s-lead-acts"><button class="s-insight-lnk primary" type="button" data-find-run>Run it</button><button class="s-insight-lnk" type="button" data-find-change>Change it</button></div></div>';
   }
   function findPage() {
@@ -8083,13 +8083,13 @@
       '<div class="canvas-action-row"><button class="s-insight-lnk primary" type="button" data-recap-copy>Copy the recap</button><span class="t-of-say">as text, to paste into an email or a chat</span></div>';
     const behind = [
       insightRow({ k: K.figs, ws: 'detected', wsSay: 'All 13 figures', q: QS.figs,
-        say: 'The <b>13 figures</b> behind the story, each with its target and trend. ' + missSay,
+        say: 'Here are the <b>13 figures</b> behind the story, each with its target and trend. ' + missSay,
         a: crAns('figs', 'Figures · 13', missSay, board('Reports', tiles) + sec('Staffing', 'what a hire takes, and what happens after it', board('Staffing', staffing))) }),
       insightRow({ k: K.cuts, ws: 'detected', wsSay: 'Stage by stage', q: QS.cuts,
-        say: (fRead ? fRead.text : 'Every stage is near its usual.') + ' Then by account and role' + (isHR() ? ', and by recruiter' : '') + '.',
+        say: (fRead ? fRead.text : 'Every stage is near its usual.') + ' I broke it down by account and role' + (isHR() ? ', and by recruiter' : '') + ' too.',
         a: crAns('cuts', 'Breakdown', fRead ? fRead.text : '', cuts) }),
       insightRow({ k: K.recap, ws: 'drafted', wsSay: 'Share the month', q: QS.recap,
-        say: 'The month in <b>' + plural(sto.slides.length, 'slide') + '</b>, one sentence each, ready to send to a BU director or a client.',
+        say: 'I wrote the month in <b>' + plural(sto.slides.length, 'slide') + '</b>, one sentence each, ready for you to send to a BU director or a client.',
         a: crAns('recap', 'Recap · ' + plural(sto.slides.length, 'slide'), '', deck) }),
     ];
     return '<div class="s-home">' +
@@ -9315,7 +9315,7 @@
           part('Account', (isDraft || isHR() ? pick('acc', 'Account', ACCOUNTS.map((a) => [a.id, a.name]), true) : '<p class="b-cmeta-p"><b>' + esc(accOf(q).name) + '</b></p>'), true) +
           part('Level', pick('level', 'Level', LEVELS.map((l) => [l, l])), true) +
           '<div class="b-cmeta-part t-wide"><div class="b-draft-caprow"><span class="b-cmeta-cap">About the role</span>' +
-            '<button class="b-draft-ai" type="button" data-ai-draft>' + mark(12) + 'Write it with AiMY</button></div>' +
+            '<button class="b-draft-ai" type="button" data-ai-draft>' + mark(12) + 'Let me write it</button></div>' +
             '<div class="b-cmeta-say"><textarea class="t-field t-grow" rows="3" data-ed="desc" aria-label="About the role" placeholder="What the person will do, in two or three sentences">' + esc(f.desc) + '</textarea></div></div>' +
           '<div class="b-cmeta-part t-wide"><div class="b-draft-caprow"><span class="b-cmeta-cap">Success profile, one must-have per line</span></div>' +
             '<div class="b-cmeta-say t-input-wrap" id="wrapMust"><textarea class="t-field t-grow t-input" rows="5" data-ed="must" aria-label="Must-haves" placeholder="2+ years of L2 software support">' + esc(f.must) + '</textarea>' +
@@ -9434,7 +9434,7 @@
         '</div>' +
       '</section>' +
       (sent ? '<section class="s-insight is-lead s-block-wide" aria-label="How much they take">' +
-        '<div class="s-lead-mark"><svg class="s-insight-mark" viewBox="0 0 18 20" width="14" height="14" aria-hidden="true"><use href="#aimy-logo-small"/></svg><span class="work-state ws-detected">Read off the record</span></div>' +
+        '<div class="s-lead-mark"><svg class="s-insight-mark" viewBox="0 0 18 20" width="14" height="14" aria-hidden="true"><use href="#aimy-logo-small"/></svg><span class="work-state ws-detected">I read this off the record</span></div>' +
         '<div class="s-lead-line"><span class="s-lead-n">' + met + '</span><span class="s-lead-say">of the <span class="s-lead-of">' + sent + '</span> profiles we sent got a client interview.</span></div>' +
         '<p class="s-lead-deck">' + (avg != null ? 'It takes ' + days(avg) + ' on average to send their first profile on a requisition.' : '') + '</p></section>' : '') +
       outcomeStrip(a.id, false) +
