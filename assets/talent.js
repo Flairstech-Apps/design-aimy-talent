@@ -9322,7 +9322,8 @@
      iterations.html, with B4's read). A line from today to the target; the
      pace as a soft band of about a week around the likely day, with the day
      marked and named, amber when it lands past the target. The first-profile
-     promise stays as a line under it. */
+     promise stays as a line under it; the date and lateness are not said
+     again in words (10 Nov): the line names the day, AiMY says how late. */
   function reqTrack(q, h) {
     const left = Math.max(0, h.left), need = h.need, late = h.risk;
     const span = Math.max(left, need + 3) + 3, x = (d) => Math.max(0, Math.min(100, Math.round(d / span * 1000) / 10));
@@ -9345,8 +9346,7 @@
         (at > 22 ? '<span class="t-rt-lab is-l" style="left:0">Today</span>' : '') +
         '<span class="t-rt-lab is-pace' + side(at) + '" style="left:' + at + '%">' + esc(sayDay(need)) + '</span>' +
       '</div>' +
-      '<p class="b-qcard-where t-fc-line"><span>Likely <b' + (late ? ' class="is-late"' : '') + '>' + esc(sayDay(need)) + '</b>, give or take three days' +
-        (late ? ', <b class="is-late">' + esc(days(need - h.left)) + ' late</b>.' : '.') + '</span></p>' + first + '</div>';
+      first + '</div>';
   }
   /* AiMY's read under it, in its voice: when it fills, and where to look. */
   function trackRead(q, h, ws, sent) {
