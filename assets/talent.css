@@ -2137,7 +2137,7 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 }
 .btn > svg, .b-ghost > svg, .s-insight-lnk > svg, .s-inline-btn > svg, .t-rq-btn > svg, .filter-chip > svg, .chip > svg,
 .b-menu-item > svg, .t-crumb-link > svg, .b-find > svg, .t-qe-more > svg, .t-qe-add > svg, .b-door-go > svg, .t-inline-link > svg,
-.rc .btn > svg, .rc .chip > svg {
+.rc .btn > svg, .rc .chip > svg, .t-lc-seg > svg, .t-lc-pill > svg, .t-lc-opt-ico > svg, .t-lc-hist-ico > svg {
   --ic: calc(1em * var(--ic-ratio));
   --ic: max(12px, round(down, calc(1em * var(--ic-ratio)), 2px));
   width: var(--ic); height: var(--ic); flex: none;
@@ -2262,7 +2262,6 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-lc-seg { font: inherit; font-size: 13px; font-weight: var(--fw-medium); color: var(--ink-muted); background: transparent; border: 0; border-radius: 8px; padding: 6px 10px;
   display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; }
 .t-lc-segs.is-wrap .t-lc-seg { border: 1px solid var(--card-border); border-radius: var(--r-pill); }
-.t-lc-seg > svg { width: 14px; height: 14px; flex: none; }
 .t-lc-seg:hover { color: var(--d50); }
 .t-lc-seg.is-on { color: var(--d50); background: rgba(var(--accent-rgb), 0.16); }
 .t-lc-segs.is-wrap .t-lc-seg.is-on { border-color: rgba(var(--accent-rgb), 0.4); }
@@ -2277,9 +2276,8 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-lc-inline { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
 /* Time and day as the design system's Select pill (b-ghost b-menu-open). */
 .t-lc-pill { gap: 6px; font-variant-numeric: tabular-nums; }
-.t-lc-pill > svg { width: 14px; height: 14px; flex: none; }
 .t-lc-pill > svg:first-child { color: var(--ink-muted); }
-.t-lc-seg > svg:only-child, .t-lc-segs.is-wrap .t-lc-seg > svg { width: 13px; height: 13px; }
+
 .t-lc-opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(190px, 100%), 1fr)); gap: 8px; }
 .t-lc-opt { font: inherit; text-align: left; color: var(--d100); background: color-mix(in srgb, var(--d50) 3%, transparent); border: 1px solid var(--card-border-hover); border-radius: 10px; padding: 10px 12px;
   display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; align-items: start; align-content: start; cursor: pointer; transition: border-color var(--t-fast, 150ms), background var(--t-fast, 150ms); }
@@ -2287,7 +2285,9 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-lc-opt.is-on { border-color: rgba(var(--accent-rgb), 0.7); background: rgba(var(--accent-rgb), 0.12); }
 .t-lc-opt-ico { color: var(--ink-muted); padding-top: 2px; }
 .t-lc-opt.is-on .t-lc-opt-ico { color: var(--accent-label, var(--accent)); }
-.t-lc-opt-ico > svg { width: 16px; height: 16px; display: block; }
+/* The icon sits beside the tile's name, so it is sized from it (the icon rule). */
+.t-lc-opt-ico { font-size: 14.5px; line-height: 1; }
+.t-lc-opt-ico > svg { display: block; }
 /* The name leads; what it does steps down in size, weight and colour. */
 .t-lc-opt-t { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .t-lc-opt-t b { font-size: 14.5px; line-height: 1.3; font-weight: var(--fw-semibold); color: var(--d50); letter-spacing: -0.005em; }
@@ -2325,7 +2325,7 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-lc-hist { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
 .t-lc-hist li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; align-items: start; }
 .t-lc-hist-ico { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; color: var(--d100); background: rgba(var(--accent-rgb), 0.1); }
-.t-lc-hist-ico > svg { width: 13px; height: 13px; }
+.t-lc-hist-ico { font-size: 12px; }
 .t-lc-hist-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: var(--fs-xs); color: var(--d100); line-height: 1.4; }
 .t-lc-hist-t > span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .t-lc-hist-t small { font-size: 11px; color: var(--ink-muted); }
