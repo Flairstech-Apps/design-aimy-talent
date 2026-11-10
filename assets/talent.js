@@ -4987,72 +4987,93 @@
   let EL = null;
   const EL_VIA = [['mobile', 'My mobile'], ['wa', 'WhatsApp call'], ['teams', 'Teams']];
   const VIA_SAY = { mobile: 'on your mobile', wa: 'a WhatsApp call', teams: 'on Teams' };
-  /* THE PAGE, REDONE (Engy, 10 Nov, from the Mobbin pass: HubSpot's logged
-     call, Pipedrive's activity, Bullhorn's note with its next action). Who
-     first, as one line when it came from their record; then what happened,
-     grouped by whether they answered; then the note. Where and when fold
-     into one line, as they are nearly always right. A call back asks when
-     right there. With a recording they agreed to, AiMY writes the note and
-     picks the outcome. The one action is pinned above AiMY's bar. */
+  /* THE PAGE AS A RECORD CARD (Engy, 10 Nov: "more professional, better
+     design", from the Mobbin pass). Pipedrive's activity form: one card, a
+     row per question, each led by its icon. Its head is the person and how
+     you called them (an icon segment, as Pipedrive's activity types). What
+     happened is a set of option tiles that each say what they do; the note
+     is a composer with the recording in its footer (HubSpot, Zoho); and a
+     rail beside it holds their record (HubSpot's contact column): stage,
+     who owns them, and the last few things that happened. The one action
+     stays pinned above AiMY's bar, saying what AiMY will do. */
   const EL_ANSWERED = ['passed', 'reached', 'callback', 'notfit', 'withdrew', 'dnc'];
   const EL_NONE = ['noanswer', 'wrong'];
+  const EL_ICO = { passed: 'okc', reached: 'phone', callback: 'clock', notfit: 'x', withdrew: 'minus', dnc: 'ban', noanswer: 'hangup', wrong: 'warnc' };
+  const EL_VIA_ICO = { mobile: 'phone', wa: 'wa', teams: 'video' };
+  const HIST_ICO = { apply: 'user', call: 'phone', asmt: 'goal', iv: 'users', offer: 'job', move: 'go', out: 'go', note: 'req', msg: 'msg', wa: 'wa' };
+  function elOptSub(k, c) {
+    const early = c ? rank(reqOf(c), c.stage) <= rank(reqOf(c), 'phone') : true;
+    return { passed: early ? 'Moves them to the HR interview' : 'Past the screen already', reached: 'Nothing moves', callback: 'Back in your calls',
+      notfit: 'Takes them out', withdrew: 'Takes them out', dnc: 'Never called again', noanswer: 'Stays in your calls', wrong: 'Marks the number' }[k];
+  }
   function elsewherePage() {
     const pre = S.lg && DB.byId[S.lg] ? S.lg : null;
-    if (!EL || EL.for !== S.lg) EL = { for: S.lg, cand: pre, via: 'mobile', day: 0, time: nowHM(), consent: false, rec: null, busy: false, read: null, lit: null, note: '', edit: false, cb: null };
+    if (!EL || EL.for !== S.lg) EL = { for: S.lg, cand: pre, via: 'mobile', day: 0, time: nowHM(), consent: false, rec: null, busy: false, read: null, lit: null, note: '', cb: null };
     const c = EL.cand ? DB.byId[EL.cand] : null;
     const people = [];
     myOpen().forEach((q) => activeOf(q).forEach((x) => people.push(x)));
     people.sort((a, b) => a.name.localeCompare(b.name));
-    const chips = (k, list, on) => '<div class="b-cuts" role="group" aria-label="' + k + '">' + list.map((x) => '<button class="filter-chip' + (on === x[0] ? ' active' : '') + '" type="button" data-el="' + k + '|' + x[0] + '" aria-pressed="' + (on === x[0]) + '">' + esc(x[1]) + '</button>').join('') + '</div>';
     const back = goAttr(c && pre ? { cand: c.id } : { on: 'calls' });
     const rd = EL.read;
-    /* Who: one line from their record; a picker when it opened from Interactions. */
-    const who = c && pre
-      ? '<div class="t-el-who"><span class="t-el-av" aria-hidden="true">' + esc(initials(c.name)) + '</span><span class="t-el-who-t"><b>' + esc(c.name) + '</b>' +
-          '<span>' + esc(reqOf(c).title + ' · ' + accOf(reqOf(c)).name) + (c.phone ? ' · ' + esc(c.phone) : '') + '</span></span></div>'
-      : '<div class="t-el-sec"><span class="t-el-cap">Who did you call?</span><span class="b-menu-wrap"><button class="b-ghost b-menu-open" type="button" data-pickopen="elWhoMenu" aria-haspopup="menu" aria-expanded="false">' +
-          esc(c ? c.name + ' · ' + reqOf(c).title : 'Choose the candidate') + svg('down', 14) + '</button>' +
-        '<div class="b-menu" id="elWhoMenu" role="menu" hidden><span class="b-menu-cap">On your open requisitions</span>' +
-          people.map((x) => '<button class="b-menu-item" type="button" role="menuitem" data-el="who|' + x.id + '"' + (EL.cand === x.id ? ' aria-current="true"' : '') + '>' +
-            '<span class="b-menu-name">' + esc(x.name) + '</span><span class="tel-menu-cc">' + esc(reqOf(x).title) + '</span></button>').join('') + '</div></span></div>';
-    /* Where and when, folded into one line until you change them. */
-    const viaName = EL_VIA.filter((v) => v[0] === EL.via)[0][1];
-    const when = EL.edit
-      ? '<div class="t-el-sec"><span class="t-el-cap">On</span>' + chips('via', EL_VIA, EL.via) +
-          '<span class="t-el-cap">When</span><div class="t-el-inline">' + chips('day', [['0', 'Today'], ['-1', 'Yesterday']], String(EL.day)) +
-          '<input class="input t-el-time" id="elTime" type="time" value="' + esc(EL.time) + '" aria-label="What time"></div>' +
-          '<button class="t-inline-link t-el-done" type="button" data-el="edit|0">Done</button></div>'
-      : '<p class="t-el-when">' + esc(viaName) + ' · ' + (EL.day ? 'yesterday' : 'today') + ', ' + esc(EL.time) +
-          ' <button class="t-inline-link" type="button" data-el="edit|1">Change</button></p>';
-    const outs = (ks) => '<div class="b-cuts" role="group">' + ks.map((k) => '<button class="filter-chip' + (EL.lit === k ? ' active' : '') + '" type="button" data-el="o|' + k + '" aria-pressed="' + (EL.lit === k) + '">' + esc(OUTCOME[k].label) + '</button>').join('') + '</div>';
+    const row = (ico, label, body, cls) => '<div class="t-lc-row' + (cls ? ' ' + cls : '') + '"><span class="t-lc-ico" aria-hidden="true">' + svg(ico) + '</span>' +
+      '<div class="t-lc-main"><span class="t-lc-lab">' + label + '</span>' + body + '</div></div>';
+    const picker = '<span class="b-menu-wrap"><button class="t-lc-pick" type="button" data-pickopen="elWhoMenu" aria-haspopup="menu" aria-expanded="false">' +
+        (c ? '<span class="t-lc-av" aria-hidden="true">' + esc(initials(c.name)) + '</span><span class="t-lc-who"><b>' + esc(c.name) + '</b><span>' + esc(reqOf(c).title) + '</span></span>'
+          : '<span class="t-lc-av is-empty" aria-hidden="true">' + svg('user') + '</span><span class="t-lc-who"><b>Who did you call?</b><span>Someone on your open requisitions</span></span>') + svg('down') + '</button>' +
+      '<div class="b-menu t-rpt-menu" id="elWhoMenu" role="menu" hidden><span class="b-menu-cap">On your open requisitions</span>' +
+        people.map((x) => '<button class="b-menu-item" type="button" role="menuitem" data-el="who|' + x.id + '"' + (EL.cand === x.id ? ' aria-current="true"' : '') + '>' +
+          '<span class="b-menu-name">' + esc(x.name) + '</span><span class="tel-menu-cc">' + esc(reqOf(x).title) + '</span></button>').join('') + '</div></span>';
+    const head = '<div class="t-lc-head">' +
+      (c && pre ? '<div class="t-lc-person"><span class="t-lc-av" aria-hidden="true">' + esc(initials(c.name)) + '</span><span class="t-lc-who"><b>' + esc(c.name) + '</b>' +
+          '<span>' + esc(reqOf(c).title + ' · ' + accOf(reqOf(c)).name) + '</span></span></div>' : picker) +
+      '<div class="t-lc-via" role="group" aria-label="How you called">' + EL_VIA.map((v) => '<button class="t-lc-seg' + (EL.via === v[0] ? ' is-on' : '') + '" type="button" data-el="via|' + v[0] + '" aria-pressed="' + (EL.via === v[0]) + '">' +
+        svg(EL_VIA_ICO[v[0]]) + '<span>' + esc(v[1]) + '</span></button>').join('') + '</div></div>';
+    const when = row('clock', 'When', '<div class="t-lc-inline"><span class="t-lc-segs" role="group" aria-label="Which day">' +
+        [['0', 'Today'], ['-1', 'Yesterday']].map((d) => '<button class="t-lc-seg' + (String(EL.day) === d[0] ? ' is-on' : '') + '" type="button" data-el="day|' + d[0] + '" aria-pressed="' + (String(EL.day) === d[0]) + '">' + d[1] + '</button>').join('') + '</span>' +
+        '<input class="input t-lc-time" id="elTime" type="time" value="' + esc(EL.time) + '" aria-label="What time"></div>');
+    const opts = (ks) => '<div class="t-lc-opts" role="group">' + ks.map((k) => {
+      const on = EL.lit === k;
+      return '<button class="t-lc-opt' + (on ? ' is-on' : '') + '" type="button" data-el="o|' + k + '" aria-pressed="' + on + '">' +
+        '<span class="t-lc-opt-ico" aria-hidden="true">' + svg(EL_ICO[k]) + '</span><span class="t-lc-opt-t"><b>' + esc(OUTCOME[k].label) + '</b><span>' + esc(elOptSub(k, c)) + '</span></span></button>';
+    }).join('') + '</div>';
     const cbList = EL.lit === 'callback' ? cbOpen() : [];
-    const happened = '<div class="t-el-sec"><span class="t-el-cap">What happened</span>' +
-      '<div class="t-el-groups"><div class="t-el-group"><span class="t-el-sub">They answered</span>' + outs(EL_ANSWERED) + '</div>' +
-        '<div class="t-el-group"><span class="t-el-sub">They didn’t</span>' + outs(EL_NONE) + '</div></div>' +
-      (cbList.length ? '<span class="t-el-sub">When to call back</span><div class="b-cuts" role="group" aria-label="When to call back">' +
-        cbList.map((w) => { const on = (EL.cb || cbWhen({ read: rd || {} }).k) === w.k; return '<button class="filter-chip' + (on ? ' active' : '') + '" type="button" data-el="cb|' + w.k + '" aria-pressed="' + on + '">' + esc(cbSay(w).charAt(0).toUpperCase() + cbSay(w).slice(1)) + '</button>'; }).join('') + '</div>' : '') +
-      '</div>';
-    /* The note, and the recording that lets AiMY write it. */
-    const recLine = EL.busy ? '<p class="t-el-note">' + svg('upload', 14) + 'I’m transcribing ' + esc(EL.rec) + ' and reading it against the role…</p>'
-      : rd ? '<p class="t-el-note">' + mark(13) + '<span>I wrote this from <b>' + esc(EL.rec) + '</b>' + (rd.outcome ? ' and picked what I heard: ' + esc(OUTCOME[rd.outcome].label.toLowerCase()) : '; I couldn’t tell the outcome, so pick it above') + '. Change anything.</span></p>'
-      : '<p class="t-q"><button class="t-check' + (EL.consent ? ' is-on' : '') + '" type="button" data-el-consent aria-pressed="' + EL.consent + '" aria-label="They agreed to be recorded">' + (EL.consent ? svg('check', 12) : '') + '</button>' +
-          '<span>They agreed to be recorded' + (EL.via === 'teams' ? ' (Teams said so on the call)' : '') + '</span></p>' +
-        (EL.consent ? '<label class="t-drop t-drop-sm t-el-drop" for="elFile">' + mark(16) + '<b>Add the recording, and I’ll write the note</b><span>Audio or video. I transcribe it, pick the outcome I hear and keep notice and salary.</span>' +
-          '<input class="t-file" id="elFile" type="file" accept=".mp3,.m4a,.wav,.ogg,.mp4,.webm" data-el-file></label>' : '');
-    const note = '<div class="t-el-sec"><span class="t-el-cap">Note</span>' +
-      '<textarea class="input t-el-text" id="elNote" rows="3" placeholder="What did they say? Notice, salary, anything worth keeping" aria-label="A note on the call">' + esc(EL.note) + '</textarea>' +
-      recLine + '</div>';
+    const cbOn = EL.cb || (cbList.length ? cbWhen({ read: rd || {} }).k : null);
+    const happened = row('okc', 'What happened',
+      '<span class="t-lc-sub">They answered</span>' + opts(EL_ANSWERED) +
+      '<span class="t-lc-sub">They didn’t</span>' + opts(EL_NONE) +
+      (cbList.length ? '<div class="t-lc-cb"><span class="t-lc-sub">When to call back</span><span class="t-lc-segs is-wrap" role="group" aria-label="When to call back">' +
+        cbList.map((w) => '<button class="t-lc-seg' + (cbOn === w.k ? ' is-on' : '') + '" type="button" data-el="cb|' + w.k + '" aria-pressed="' + (cbOn === w.k) + '">' + esc(cbSay(w).charAt(0).toUpperCase() + cbSay(w).slice(1)) + '</button>').join('') + '</span></div>' : ''));
+    const foot = EL.busy ? '<span class="t-lc-aimy">' + svg('upload') + 'I’m transcribing ' + esc(EL.rec) + '…</span>'
+      : rd ? '<span class="t-lc-aimy">' + mark(13) + 'I wrote this from ' + esc(EL.rec) + (rd.outcome ? ' and picked what I heard' : '') + '. Change anything.</span>'
+      : '<span class="t-lc-tog"><button class="t-sw" type="button" data-el-consent aria-pressed="' + EL.consent + '"><span class="t-sw-k" aria-hidden="true"></span>They agreed to be recorded' + (EL.via === 'teams' ? ' (Teams said so)' : '') + '</button></span>' +
+        (EL.consent ? '<label class="t-aimy-btn t-lc-rec" for="elFile">' + mark(13) + 'Add the recording, and I’ll write the note<input class="t-file" id="elFile" type="file" accept=".mp3,.m4a,.wav,.ogg,.mp4,.webm" data-el-file></label>' : '');
+    const note = row('pen', 'Note', '<div class="t-lc-note"><textarea class="t-lc-text" id="elNote" rows="4" placeholder="What did they say? Notice, salary, anything worth keeping" aria-label="A note on the call">' + esc(EL.note) + '</textarea>' +
+      '<div class="t-lc-note-foot">' + foot + '</div></div>');
+    /* The rail: their record, as HubSpot keeps the contact beside the activity. */
+    const hist = c ? historyOf(c).slice().sort((x, y) => y.day - x.day || String(y.time).localeCompare(String(x.time))).slice(0, 4) : [];
+    const aside = '<aside class="t-lc-aside" aria-label="On their record">' + (c
+      ? '<p class="t-lc-aside-h">On their record</p>' +
+        '<dl class="t-lc-facts"><div><dt>Stage</dt><dd>' + stageTag(c) + '</dd></div>' +
+          '<div><dt>Requisition</dt><dd>' + esc(reqOf(c).title) + '</dd></div>' +
+          (c.phone ? '<div><dt>Phone</dt><dd>' + esc(c.phone) + '</dd></div>' : '') +
+          '<div><dt>Calls so far</dt><dd>' + callsOf(c.id).length + '</dd></div></dl>' +
+        '<p class="t-lc-aside-h">Lately</p>' +
+        (hist.length ? '<ol class="t-lc-hist">' + hist.map((x) => '<li><span class="t-lc-hist-ico" aria-hidden="true">' + svg(x.kind === 'msg' && /WhatsApp/.test(x.text) ? 'wa' : HIST_ICO[x.kind] || 'req') + '</span>' +
+          '<span class="t-lc-hist-t"><span>' + esc(x.text) + '</span><small>' + esc(sayWhen(x.day)) + (x.time ? ', ' + esc(x.time) : '') + '</small></span></li>').join('') + '</ol>'
+          : '<p class="t-lc-empty">Nothing logged yet.</p>')
+      : '<p class="t-lc-aside-h">On their record</p><p class="t-lc-empty">Choose who you called, and their stage and latest calls show here.</p>') + '</aside>';
     const call = c ? { cand: c.id, lit: EL.lit, dir: 'out', fu: false, read: rd || {}, cb: EL.cb } : null;
     const say = !c ? 'Choose who you called, then what happened.' : willSay(call);
     return '<div class="s-home">' +
       '<div class="b-topbar s-block-wide"><button class="s-back" type="button"' + back + '>' + svg('back', 14) + 'Back</button></div>' +
-      '<section class="s-block s-block-wide t-el" aria-label="Log a call from elsewhere">' +
+      '<section class="s-block s-block-wide t-lc" aria-label="Log a call from elsewhere">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">Log a call from elsewhere</h2>' +
           '<span class="s-block-say">a call outside AiMY, so it is on their record like any other</span></div>' +
-        who + when + happened + note +
-        '<div class="t-find-bar t-el-bar"><p class="t-find-bar-say">' + esc(say) + '</p><span class="t-acts">' +
-          '<button class="b-ghost" type="button"' + back + '>Cancel</button>' +
-          '<button class="btn btn-brand btn-sm" type="button" data-el-log' + (c && EL.lit && !EL.busy ? '' : ' disabled') + '>Log it</button></span></div>' +
+        '<div class="t-lc-grid"><div class="t-lc-col"><div class="t-lc-card">' + head + when + happened + note + '</div>' +
+          '<div class="t-find-bar t-el-bar"><p class="t-find-bar-say">' + mark(14) + '<span>' + esc(say) + '</span></p><span class="t-acts">' +
+            '<button class="b-ghost" type="button"' + back + '>Cancel</button>' +
+            '<button class="btn btn-brand btn-sm" type="button" data-el-log' + (c && EL.lit && !EL.busy ? '' : ' disabled') + '>Log it</button></span></div></div>' +
+          aside + '</div>' +
       '</section></div>';
   }
   function elRead(name) {
@@ -10273,7 +10294,7 @@
     if ((el = at('[data-el-log]'))) { logElsewhere(); return; }
     if ((el = at('[data-el]'))) {
       const p = val('data-el').split('|');
-      if (EL) { if (p[0] === 'via') EL.via = p[1]; if (p[0] === 'who') { EL.cand = p[1]; EL.read = null; EL.rec = null; EL.consent = false; } if (p[0] === 'day') EL.day = Number(p[1]); if (p[0] === 'o') EL.lit = EL.lit === p[1] ? null : p[1]; if (p[0] === 'edit') EL.edit = p[1] === '1'; if (p[0] === 'cb') EL.cb = p[1];
+      if (EL) { if (p[0] === 'via') EL.via = p[1]; if (p[0] === 'who') { EL.cand = p[1]; EL.read = null; EL.rec = null; EL.consent = false; } if (p[0] === 'day') EL.day = Number(p[1]); if (p[0] === 'o') EL.lit = EL.lit === p[1] ? null : p[1]; if (p[0] === 'cb') EL.cb = p[1];
         const nt = byId('elNote'); if (nt) EL.note = nt.value;
         const t = byId('elTime'); if (t) EL.time = t.value; paint(); }
       return;
