@@ -2368,14 +2368,15 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-cal-w { height: 24px; display: grid; place-items: center; font-size: 11px; color: var(--ink-muted); }
 .t-cal-d { height: 34px; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 13px; color: var(--d100); cursor: pointer; font-variant-numeric: tabular-nums; }
 .t-cal-d:hover:not(:disabled):not(.is-on) { background: rgba(var(--accent-rgb), 0.12); color: var(--d50); }
-.t-cal-d.is-today { box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.6); }
-.t-cal-d.is-on { background: var(--accent); color: #fff; font-weight: var(--fw-semibold); }
+.t-cal-d.is-today { box-shadow: inset 0 0 0 1px var(--card-border-hover); }
+.t-cal-d.is-on { background: rgba(var(--accent-rgb), 0.16); box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.6); color: var(--d50); font-weight: var(--fw-semibold); }
 .t-cal-d:disabled { color: var(--ink-muted); opacity: 0.4; cursor: default; }
 .t-clk { display: grid; grid-template-columns: 56px 56px 56px; gap: 6px; }
 .t-clk-col { display: flex; flex-direction: column; gap: 2px; max-height: 216px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .t-clk-col + .t-clk-col { border-left: 1px solid var(--card-border); padding-left: 6px; }
 .t-clk-cell { flex: none; height: 32px; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 13px; color: var(--d100); cursor: pointer; font-variant-numeric: tabular-nums; }
 .t-clk-cell:hover:not(.is-on) { background: rgba(var(--accent-rgb), 0.12); color: var(--d50); }
-.t-clk-cell.is-on { background: var(--accent); color: #fff; font-weight: var(--fw-semibold); }
+/* The choice: a see-through purple with a stroke (10 Nov), as the toggles. */
+.t-clk-cell.is-on { background: rgba(var(--accent-rgb), 0.16); box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.6); color: var(--d50); font-weight: var(--fw-semibold); }
 .t-pop-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 8px; border-top: 1px solid var(--card-border); }
 .t-cal-d:focus-visible, .t-clk-cell:focus-visible, .t-cal-nav:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
