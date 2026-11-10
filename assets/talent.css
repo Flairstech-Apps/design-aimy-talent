@@ -2300,8 +2300,11 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 /* What AiMY will do, and the one action, at the top of the rail. */
 .t-lc-act { display: grid; grid-template-columns: 1fr auto; gap: 12px 8px; margin: -16px -18px 16px; padding: 16px 18px; border-bottom: 1px solid var(--card-border);
   border-radius: 14px 14px 0 0; background: linear-gradient(120deg, rgba(var(--accent-rgb), 0.12), rgba(0, 102, 255, 0.05)); }
-.t-lc-act-say { grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 10px; margin: 0; font-size: var(--fs-sm); line-height: var(--lh-base); color: var(--d50); }
-.t-lc-act-say > svg { flex: none; margin-top: 3px; }
+/* A caption, then the sentence at the rail's reading size (10 Nov: at 16px
+   it crowded the rail and outweighed the action under it). */
+.t-lc-act-cap { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; margin: 0 0 -6px; font-size: var(--t-micro); font-weight: var(--fw-medium); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+.t-lc-act-cap > svg { flex: none; }
+.t-lc-act-say { grid-column: 1 / -1; margin: 0; font-size: 13px; line-height: 1.55; color: var(--d100); text-wrap: pretty; }
 .t-lc-go { justify-content: center; }
 .t-lc-cancel { justify-content: center; }
 .t-lc-aside-h { margin: 0 0 10px; font-size: var(--t-micro); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }

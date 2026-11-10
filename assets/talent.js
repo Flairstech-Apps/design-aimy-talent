@@ -5055,7 +5055,7 @@
     const say = !c ? 'Choose who you called, then what happened.' : willSay(call);
     /* The action lives at the top of the rail, which stays in view: a bar
        pinned above AiMY's composer sat on the tiles in a short window. */
-    const act = '<div class="t-lc-act"><p class="t-lc-act-say">' + mark(14) + '<span>' + esc(say) + '</span></p>' +
+    const act = '<div class="t-lc-act"><p class="t-lc-act-cap">' + mark(11) + 'What I’ll do</p><p class="t-lc-act-say">' + esc(say) + '</p>' +
       '<button class="btn btn-brand t-lc-go" type="button" data-el-log' + (c && EL.lit && !EL.busy ? '' : ' disabled') + '>Log it</button>' +
       '<button class="b-ghost t-lc-cancel" type="button"' + back + '>Cancel</button></div>';
     const aside = '<aside class="t-lc-aside" aria-label="Log it, and their record">' + act + (c
