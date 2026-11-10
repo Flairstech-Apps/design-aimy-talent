@@ -3764,20 +3764,20 @@
   function willSay(call) {
     const c = DB.byId[call.cand];
     const o = call.lit;
-    if (!o) return 'Pick what happened, or type it below.';
-    if (!c) return 'Logs a ' + fmtClock(call.secs) + ' call with ' + (call.who || call.phone) + ' in your call log.';
+    if (!o) return 'Pick what happened, and I’ll log it.';
+    if (!c) return 'I’ll log a ' + fmtClock(call.secs) + ' call with ' + (call.who || call.phone) + ' in your call log.';
     const q = reqOf(c);
     const early = rank(q, c.stage) <= rank(q, 'phone');
     return {
-      passed: early ? 'Logs the call and moves ' + first(c.name) + ' to the HR interview. What they said about notice and salary goes on their record.'
-        : 'Logs the call. ' + first(c.name) + ' is past the screen already, so nothing moves.',
-      reached: 'Logs the call. Nothing moves.',
-      callback: 'Logs the call and puts them back in your calls ' + cbSay(cbWhen(call)) + '.',
-      noanswer: 'Logs an attempt' + (call.dir === 'out' && fuOn(call) ? ' and sends ' + first(c.name) + ' the message by ' + fuBy(c) : '') + '. They stay in your calls.',
-      notfit: 'Logs the call and takes them out as not a fit. Nothing is sent to them until a person approves the message.',
-      withdrew: 'Logs the call and takes them out: they are not interested.',
-      wrong: 'Logs the call and marks the number as not working.',
-      dnc: 'Logs the call and takes them out. Nobody calls this number again.',
+      passed: early ? 'I’ll log the call and move ' + first(c.name) + ' to the HR interview, with what they said about notice and salary on their record.'
+        : 'I’ll log the call. ' + first(c.name) + ' is past the screen already, so nothing moves.',
+      reached: 'I’ll log the call. Nothing moves.',
+      callback: 'I’ll log the call and put them back in your calls ' + cbSay(cbWhen(call)) + '.',
+      noanswer: 'I’ll log an attempt' + (call.dir === 'out' && fuOn(call) ? ' and send ' + first(c.name) + ' the message by ' + fuBy(c) : '') + '. They stay in your calls.',
+      notfit: 'I’ll log the call and take them out as not a fit. Nothing goes to them until a person approves the message.',
+      withdrew: 'I’ll log the call and take them out: they are not interested.',
+      wrong: 'I’ll log the call and mark the number as not working.',
+      dnc: 'I’ll log the call and take them out. Nobody calls this number again.',
     }[o];
   }
 
@@ -4987,43 +4987,72 @@
   let EL = null;
   const EL_VIA = [['mobile', 'My mobile'], ['wa', 'WhatsApp call'], ['teams', 'Teams']];
   const VIA_SAY = { mobile: 'on your mobile', wa: 'a WhatsApp call', teams: 'on Teams' };
+  /* THE PAGE, REDONE (Engy, 10 Nov, from the Mobbin pass: HubSpot's logged
+     call, Pipedrive's activity, Bullhorn's note with its next action). Who
+     first, as one line when it came from their record; then what happened,
+     grouped by whether they answered; then the note. Where and when fold
+     into one line, as they are nearly always right. A call back asks when
+     right there. With a recording they agreed to, AiMY writes the note and
+     picks the outcome. The one action is pinned above AiMY's bar. */
+  const EL_ANSWERED = ['passed', 'reached', 'callback', 'notfit', 'withdrew', 'dnc'];
+  const EL_NONE = ['noanswer', 'wrong'];
   function elsewherePage() {
     const pre = S.lg && DB.byId[S.lg] ? S.lg : null;
-    if (!EL || EL.for !== S.lg) EL = { for: S.lg, cand: pre, via: 'mobile', day: 0, time: nowHM(), consent: false, rec: null, busy: false, read: null, lit: null };
+    if (!EL || EL.for !== S.lg) EL = { for: S.lg, cand: pre, via: 'mobile', day: 0, time: nowHM(), consent: false, rec: null, busy: false, read: null, lit: null, note: '', edit: false, cb: null };
     const c = EL.cand ? DB.byId[EL.cand] : null;
     const people = [];
     myOpen().forEach((q) => activeOf(q).forEach((x) => people.push(x)));
     people.sort((a, b) => a.name.localeCompare(b.name));
-    const row = (cap, body) => '<div class="t-el-row"><span class="t-el-cap">' + cap + '</span><div class="t-el-body">' + body + '</div></div>';
     const chips = (k, list, on) => '<div class="b-cuts" role="group" aria-label="' + k + '">' + list.map((x) => '<button class="filter-chip' + (on === x[0] ? ' active' : '') + '" type="button" data-el="' + k + '|' + x[0] + '" aria-pressed="' + (on === x[0]) + '">' + esc(x[1]) + '</button>').join('') + '</div>';
+    const back = goAttr(c && pre ? { cand: c.id } : { on: 'calls' });
     const rd = EL.read;
-    const recBody = EL.busy ? '<p class="t-el-note">' + svg('upload', 14) + 'Transcribing ' + esc(EL.rec) + ' and reading it against the role…</p>'
-      : rd ? '<p class="t-el-note">' + sayMark() + '<span><b>Read from ' + esc(EL.rec) + '.</b> ' + (rd.outcome ? 'AiMY heard: ' + esc(OUTCOME[rd.outcome].label.toLowerCase()) + '. ' : 'AiMY could not tell the outcome; pick it below. ') +
-          [rd.notice ? esc(rd.notice.charAt(0).toUpperCase() + rd.notice.slice(1)) : null, rd.salary ? 'expects ' + esc(rd.salary) : null].filter(Boolean).join(', ') + (rd.notice || rd.salary ? '.' : '') + '</span></p>'
+    /* Who: one line from their record; a picker when it opened from Interactions. */
+    const who = c && pre
+      ? '<div class="t-el-who"><span class="t-el-av" aria-hidden="true">' + esc(initials(c.name)) + '</span><span class="t-el-who-t"><b>' + esc(c.name) + '</b>' +
+          '<span>' + esc(reqOf(c).title + ' · ' + accOf(reqOf(c)).name) + (c.phone ? ' · ' + esc(c.phone) : '') + '</span></span></div>'
+      : '<div class="t-el-sec"><span class="t-el-cap">Who did you call?</span><span class="b-menu-wrap"><button class="b-ghost b-menu-open" type="button" data-pickopen="elWhoMenu" aria-haspopup="menu" aria-expanded="false">' +
+          esc(c ? c.name + ' · ' + reqOf(c).title : 'Choose the candidate') + svg('down', 14) + '</button>' +
+        '<div class="b-menu" id="elWhoMenu" role="menu" hidden><span class="b-menu-cap">On your open requisitions</span>' +
+          people.map((x) => '<button class="b-menu-item" type="button" role="menuitem" data-el="who|' + x.id + '"' + (EL.cand === x.id ? ' aria-current="true"' : '') + '>' +
+            '<span class="b-menu-name">' + esc(x.name) + '</span><span class="tel-menu-cc">' + esc(reqOf(x).title) + '</span></button>').join('') + '</div></span></div>';
+    /* Where and when, folded into one line until you change them. */
+    const viaName = EL_VIA.filter((v) => v[0] === EL.via)[0][1];
+    const when = EL.edit
+      ? '<div class="t-el-sec"><span class="t-el-cap">On</span>' + chips('via', EL_VIA, EL.via) +
+          '<span class="t-el-cap">When</span><div class="t-el-inline">' + chips('day', [['0', 'Today'], ['-1', 'Yesterday']], String(EL.day)) +
+          '<input class="input t-el-time" id="elTime" type="time" value="' + esc(EL.time) + '" aria-label="What time"></div>' +
+          '<button class="t-inline-link t-el-done" type="button" data-el="edit|0">Done</button></div>'
+      : '<p class="t-el-when">' + esc(viaName) + ' · ' + (EL.day ? 'yesterday' : 'today') + ', ' + esc(EL.time) +
+          ' <button class="t-inline-link" type="button" data-el="edit|1">Change</button></p>';
+    const outs = (ks) => '<div class="b-cuts" role="group">' + ks.map((k) => '<button class="filter-chip' + (EL.lit === k ? ' active' : '') + '" type="button" data-el="o|' + k + '" aria-pressed="' + (EL.lit === k) + '">' + esc(OUTCOME[k].label) + '</button>').join('') + '</div>';
+    const cbList = EL.lit === 'callback' ? cbOpen() : [];
+    const happened = '<div class="t-el-sec"><span class="t-el-cap">What happened</span>' +
+      '<div class="t-el-groups"><div class="t-el-group"><span class="t-el-sub">They answered</span>' + outs(EL_ANSWERED) + '</div>' +
+        '<div class="t-el-group"><span class="t-el-sub">They didn’t</span>' + outs(EL_NONE) + '</div></div>' +
+      (cbList.length ? '<span class="t-el-sub">When to call back</span><div class="b-cuts" role="group" aria-label="When to call back">' +
+        cbList.map((w) => { const on = (EL.cb || cbWhen({ read: rd || {} }).k) === w.k; return '<button class="filter-chip' + (on ? ' active' : '') + '" type="button" data-el="cb|' + w.k + '" aria-pressed="' + on + '">' + esc(cbSay(w).charAt(0).toUpperCase() + cbSay(w).slice(1)) + '</button>'; }).join('') + '</div>' : '') +
+      '</div>';
+    /* The note, and the recording that lets AiMY write it. */
+    const recLine = EL.busy ? '<p class="t-el-note">' + svg('upload', 14) + 'I’m transcribing ' + esc(EL.rec) + ' and reading it against the role…</p>'
+      : rd ? '<p class="t-el-note">' + mark(13) + '<span>I wrote this from <b>' + esc(EL.rec) + '</b>' + (rd.outcome ? ' and picked what I heard: ' + esc(OUTCOME[rd.outcome].label.toLowerCase()) : '; I couldn’t tell the outcome, so pick it above') + '. Change anything.</span></p>'
       : '<p class="t-q"><button class="t-check' + (EL.consent ? ' is-on' : '') + '" type="button" data-el-consent aria-pressed="' + EL.consent + '" aria-label="They agreed to be recorded">' + (EL.consent ? svg('check', 12) : '') + '</button>' +
-          '<span>They agreed to be recorded' + (EL.via === 'teams' ? ' (Teams said so on the call)' : '') + '.</span></p>' +
-        (EL.consent ? '<label class="t-drop t-drop-sm" for="elFile">' + svg('upload', 18) + '<b>Add the recording</b><span>Audio or video. AiMY transcribes it, picks the outcome it heard and keeps notice and salary.</span>' +
-          '<input class="t-file" id="elFile" type="file" accept=".mp3,.m4a,.wav,.ogg,.mp4,.webm" data-el-file></label>' : '<p class="t-el-note">Optional. Without one, the log is your word.</p>');
-    const call = c ? { cand: c.id, lit: EL.lit, dir: 'out', fu: false, read: rd || {} } : null;
+          '<span>They agreed to be recorded' + (EL.via === 'teams' ? ' (Teams said so on the call)' : '') + '</span></p>' +
+        (EL.consent ? '<label class="t-drop t-drop-sm t-el-drop" for="elFile">' + mark(16) + '<b>Add the recording, and I’ll write the note</b><span>Audio or video. I transcribe it, pick the outcome I hear and keep notice and salary.</span>' +
+          '<input class="t-file" id="elFile" type="file" accept=".mp3,.m4a,.wav,.ogg,.mp4,.webm" data-el-file></label>' : '');
+    const note = '<div class="t-el-sec"><span class="t-el-cap">Note</span>' +
+      '<textarea class="input t-el-text" id="elNote" rows="3" placeholder="What did they say? Notice, salary, anything worth keeping" aria-label="A note on the call">' + esc(EL.note) + '</textarea>' +
+      recLine + '</div>';
+    const call = c ? { cand: c.id, lit: EL.lit, dir: 'out', fu: false, read: rd || {}, cb: EL.cb } : null;
+    const say = !c ? 'Choose who you called, then what happened.' : willSay(call);
     return '<div class="s-home">' +
-      '<div class="b-topbar s-block-wide"><button class="s-back" type="button"' + goAttr(c && pre ? { cand: c.id } : { on: 'calls' }) + '>' + svg('back', 14) + 'Back</button></div>' +
-      '<section class="s-block s-block-wide" aria-label="Log a call from elsewhere">' +
+      '<div class="b-topbar s-block-wide"><button class="s-back" type="button"' + back + '>' + svg('back', 14) + 'Back</button></div>' +
+      '<section class="s-block s-block-wide t-el" aria-label="Log a call from elsewhere">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">Log a call from elsewhere</h2>' +
           '<span class="s-block-say">a call outside AiMY, so it is on their record like any other</span></div>' +
-        row('With', pre ? '<b>' + esc(c.name) + '</b> <span class="b-kind">' + esc(reqOf(c).title) + '</span>'
-          : '<span class="b-menu-wrap"><button class="b-ghost b-menu-open" type="button" data-pickopen="elWhoMenu" aria-haspopup="menu" aria-expanded="false">' +
-              esc(c ? c.name + ' · ' + reqOf(c).title : 'Choose the candidate') + svg('down', 14) + '</button>' +
-            '<div class="b-menu" id="elWhoMenu" role="menu" hidden><span class="b-menu-cap">On your open requisitions</span>' +
-              people.map((x) => '<button class="b-menu-item" type="button" role="menuitem" data-el="who|' + x.id + '"' + (EL.cand === x.id ? ' aria-current="true"' : '') + '>' +
-                '<span class="b-menu-name">' + esc(x.name) + '</span><span class="tel-menu-cc">' + esc(reqOf(x).title) + '</span></button>').join('') + '</div></span>') +
-        row('On', chips('via', EL_VIA, EL.via)) +
-        row('When', chips('day', [['0', 'Today'], ['-1', 'Yesterday']], String(EL.day)) + '<input class="input t-el-time" id="elTime" type="time" value="' + esc(EL.time) + '" aria-label="What time">') +
-        row('Recording', recBody) +
-        row('What happened', '<div class="b-cuts" role="group" aria-label="What happened">' + OUTCOMES.map((o) => '<button class="filter-chip' + (EL.lit === o.k ? ' active' : '') + '" type="button" data-el="o|' + o.k + '" aria-pressed="' + (EL.lit === o.k) + '">' + esc(o.label) + '</button>').join('') + '</div>' +
-          (call ? '<p class="t-el-note">' + esc(willSay(call)) + '</p>' : '')) +
-        row('Note', '<textarea class="input" id="elNote" rows="2" placeholder="Anything worth keeping (optional)" aria-label="A note on the call"></textarea>') +
-        '<p class="t-acts t-el-acts"><button class="b-ghost" type="button"' + goAttr(c && pre ? { cand: c.id } : { on: 'calls' }) + '>Cancel</button>' +
-          '<button class="s-insight-lnk primary" type="button" data-el-log' + (c && EL.lit && !EL.busy ? '' : ' disabled') + '>Log it</button></p>' +
+        who + when + happened + note +
+        '<div class="t-find-bar t-el-bar"><p class="t-find-bar-say">' + esc(say) + '</p><span class="t-acts">' +
+          '<button class="b-ghost" type="button"' + back + '>Cancel</button>' +
+          '<button class="btn btn-brand btn-sm" type="button" data-el-log' + (c && EL.lit && !EL.busy ? '' : ' disabled') + '>Log it</button></span></div>' +
       '</section></div>';
   }
   function elRead(name) {
@@ -5034,6 +5063,10 @@
       const c = DB.byId[EL.cand];
       EL.read = readCall(scriptFor(c).map((l) => l[1]).join(' '));
       EL.lit = EL.read.outcome || EL.lit;
+      const rd = EL.read, f = first(c.name);
+      const bits = [rd.outcome ? f + ' ' + OUTCOME[rd.outcome].say + '.' : null,
+        rd.notice ? 'Notice: ' + rd.notice + '.' : null, rd.salary ? 'Expects ' + rd.salary + '.' : null];
+      if (!EL.note.trim()) EL.note = bits.filter(Boolean).join(' ');
       EL.busy = false; paint();
     }, 1600);
   }
@@ -5041,9 +5074,10 @@
     if (!EL || !EL.cand || !EL.lit || EL.busy) return;
     if (busy()) return;
     const c = DB.byId[EL.cand], t = byId('elTime'), n = byId('elNote');
+    if (n) EL.note = n.value;
     const script = EL.read ? scriptFor(c) : [];
     PENDING = { cand: c.id, phone: c.phone, dir: 'out', secs: EL.read ? 420 : 0, lit: EL.lit, read: EL.read || {}, video: EL.via === 'teams', via: EL.via,
-      recording: !!EL.read, script: script, shown: script.length, note: n && n.value.trim() ? n.value.trim() : '', fu: false,
+      recording: !!EL.read, script: script, shown: script.length, note: EL.note.trim(), fu: false, cb: EL.cb,
       day: EL.day, time: t && t.value ? t.value : nowHM(), recName: EL.rec };
     const back = S.lg && DB.byId[S.lg] ? { cand: c.id } : { on: 'calls', q: 'log' };
     EL = null;
@@ -10239,7 +10273,8 @@
     if ((el = at('[data-el-log]'))) { logElsewhere(); return; }
     if ((el = at('[data-el]'))) {
       const p = val('data-el').split('|');
-      if (EL) { if (p[0] === 'via') EL.via = p[1]; if (p[0] === 'who') { EL.cand = p[1]; EL.read = null; EL.rec = null; EL.consent = false; } if (p[0] === 'day') EL.day = Number(p[1]); if (p[0] === 'o') EL.lit = EL.lit === p[1] ? null : p[1];
+      if (EL) { if (p[0] === 'via') EL.via = p[1]; if (p[0] === 'who') { EL.cand = p[1]; EL.read = null; EL.rec = null; EL.consent = false; } if (p[0] === 'day') EL.day = Number(p[1]); if (p[0] === 'o') EL.lit = EL.lit === p[1] ? null : p[1]; if (p[0] === 'edit') EL.edit = p[1] === '1'; if (p[0] === 'cb') EL.cb = p[1];
+        const nt = byId('elNote'); if (nt) EL.note = nt.value;
         const t = byId('elTime'); if (t) EL.time = t.value; paint(); }
       return;
     }
@@ -10380,6 +10415,7 @@
     if (t.matches('[data-dr-text]')) { const x = turnById(g('data-dr-text')); if (x && !x.done) { x.text = t.value; saveChats(); } return; }
     if (t.matches('[data-in]') && INTAKE && INTAKE.f) { INTAKE.f[g('data-in')] = t.value; return; }
     if (t.matches('[data-find-q]')) { FIND.q = t.value; return; }
+    if (t.id === 'elNote' && EL) { EL.note = t.value; return; }
     if (t.matches('[data-find-reqq]')) { const f = t.value.trim().toLowerCase(); t.parentNode.querySelectorAll('[data-find-req]').forEach((b) => { b.hidden = !!f && b.textContent.toLowerCase().indexOf(f) < 0; }); return; }
     if (t.matches('[data-crit-ed]')) { const c = critList()[Number(g('data-crit-ed'))]; if (c) c.t = t.value; return; }
     if (t.id === 'passNote' && PASSING) { PASSING.line = t.value; return; }
