@@ -2242,8 +2242,8 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 /* Full width (10 Nov): the card takes the page, the rail a fixed 340. */
 .t-lc-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
 .t-lc-col { min-width: 0; }
-.t-lc-card { border: 1px solid var(--card-border-hover); border-radius: 14px; background: var(--card-see); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04); overflow: visible; }
+/* The fills swapped (10 Nov): the form is an outline, the rail holds the glass. */
+.t-lc-card { border: 1px solid var(--card-border-hover); border-radius: 14px; background: transparent; overflow: visible; }
 .t-lc-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; padding: 16px 20px; border-bottom: 1px solid var(--card-border); }
 .t-lc-person, .t-lc-pick { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .t-lc-pick { font: inherit; color: inherit; background: transparent; border: 1px dashed var(--card-border-hover); border-radius: 12px; padding: 6px 12px 6px 6px; cursor: pointer; text-align: left; }
@@ -2304,7 +2304,8 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-lc-rec .t-file { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .t-lc-aimy { display: inline-flex; align-items: center; gap: 8px; font-size: var(--fs-xs); color: var(--d100); }
 .t-lc-aimy > svg { flex: none; width: 14px; height: auto; }
-.t-lc-aside { position: sticky; top: 16px; padding: 16px 18px; border: 1px solid var(--card-border-hover); border-radius: 14px; }
+.t-lc-aside { position: sticky; top: 16px; padding: 16px 18px; border: 1px solid var(--card-border-hover); border-radius: 14px;
+  background: var(--card-see); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04); }
 /* What AiMY will do, and the one action, at the top of the rail. */
 .t-lc-act { display: grid; grid-template-columns: 1fr auto; gap: 12px 8px; margin: 18px -18px -16px; padding: 16px 18px; border-top: 1px solid var(--card-border);
   border-radius: 0 0 14px 14px; background: linear-gradient(120deg, rgba(var(--accent-rgb), 0.12), rgba(0, 102, 255, 0.05)); }
