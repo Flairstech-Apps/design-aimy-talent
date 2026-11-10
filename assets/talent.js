@@ -2013,7 +2013,7 @@
     return '<section class="slv s-block-wide">' +
       '<div class="slv-head">' + mark(18).replace('<svg ', '<svg ') + '<h1 class="slv-title">Today</h1>' +
         '<span class="slv-time">' + sayDay(0) + '</span></div>' +
-      '<p class="slv-hi">' + (hourNow() < 12 ? 'Good morning' : hourNow() < 17 ? 'Good afternoon' : 'Good evening') + ', ' + esc(first(me().name)) + '. Here’s what I found for you today:</p>' +
+      aimyHi() +
       '<div class="slv-body">' + lines.map((l) => '<p class="slv-line">' + l + '</p>').join('') + '</div>' +
       '<div class="s-starts-wrap"><div class="s-starts">' +
         starts.map((s) => '<button class="s-start" type="button" data-start="' + s.k + '">' +
@@ -8453,9 +8453,11 @@
     }
     return out;
   }
+  /* AiMY opens every desk's day the same way (10 Nov). */
+  const aimyHi = () => '<p class="slv-hi">' + (hourNow() < 12 ? 'Good morning' : hourNow() < 17 ? 'Good afternoon' : 'Good evening') + ', ' + esc(first(me().name)) + '. Here’s what I found for you today:</p>';
   function deskBrief(title, lines, starts) {
     return '<section class="slv s-block-wide">' +
-      '<div class="slv-head">' + mark(18) + '<h1 class="slv-title">' + esc(title) + '</h1><span class="slv-time">' + sayDay(0) + '</span></div>' +
+      '<div class="slv-head">' + mark(18) + '<h1 class="slv-title">' + esc(title) + '</h1><span class="slv-time">' + sayDay(0) + '</span></div>' + aimyHi() +
       '<div class="slv-body">' + lines.map((l) => '<p class="slv-line">' + l + '</p>').join('') + '</div>' +
       (starts ? '<div class="s-starts-wrap"><span class="s-starts-cap">Start</span><div class="s-starts">' + starts.map((s) => '<button class="s-start" type="button"' + (s.go ? goAttr(s.go) : ' data-' + s.data) + '>' +
         '<span class="s-start-top"><span class="s-start-label">' + esc(s.label) + '</span><span class="s-start-n">' + (s.n || '​') + '</span></span>' +
@@ -8491,9 +8493,9 @@
     const accs = ACCOUNTS.filter((x) => open.some((q) => q.acc === x.id));
     return '<div class="s-home">' +
       deskBrief('Today', [
-        a.length ? '<b>' + plural(a.length, 'ask') + '</b> waiting on you: ' + ['request', 'offer', 'client', 'debrief', 'new'].map((k) => { const n = a.filter((x) => x.k === k).length; return n ? n + ' ' + { offer: n === 1 ? 'offer to approve' : 'offers to approve', client: n === 1 ? 'answer a client owes' : 'answers clients owe', debrief: n === 1 ? 'debrief' : 'debriefs', new: 'new on your shortlists', request: n === 1 ? 'request from a client' : 'requests from clients' }[k] : null; }).filter(Boolean).join(', ') + '.' : 'Nothing waits on you today.',
-        '<b>' + plural(open.length, 'requisition') + '</b> open across ' + plural(accs.length, 'account') + (risky.length ? ', and <b>' + risky.length + '</b> ' + (risky.length === 1 ? 'is' : 'are') + ' likely to miss the date.' : '.'),
-        'You see candidates once the recruiter advances them; until then they are a count.',
+        a.length ? 'I have <b>' + plural(a.length, 'thing') + '</b> waiting on you: ' + ['request', 'offer', 'client', 'debrief', 'new'].map((k) => { const n = a.filter((x) => x.k === k).length; return n ? n + ' ' + { offer: n === 1 ? 'offer to approve' : 'offers to approve', client: n === 1 ? 'answer a client owes' : 'answers clients owe', debrief: n === 1 ? 'debrief' : 'debriefs', new: 'new on your shortlists', request: n === 1 ? 'request from a client' : 'requests from clients' }[k] : null; }).filter(Boolean).join(', ') + '.' : 'Nothing waits on you today.',
+        'You have <b>' + plural(open.length, 'requisition') + '</b> open across ' + plural(accs.length, 'account') + (risky.length ? ', and I see <b>' + risky.length + '</b> likely to miss the date.' : '.'),
+        'I show you candidates once the recruiter advances them; until then they are a count.',
       ], [
         { label: 'Approve offers', n: a.filter((x) => x.k === 'offer').length, why: 'one packet, approved in parallel', go: a.filter((x) => x.k === 'offer')[0] ? a.filter((x) => x.k === 'offer')[0].go : { on: 'reqs' } },
         { label: 'Debriefs you owe', n: a.filter((x) => x.k === 'debrief').length, why: 'two minutes each', go: a.filter((x) => x.k === 'debrief')[0] ? a.filter((x) => x.k === 'debrief')[0].go : { on: 'reqs' } },
@@ -8526,9 +8528,9 @@
     const lp = dProposals().concat(qProposals());
     return '<div class="s-home">' +
       deskBrief('Today', [
-        '<b>' + risky.length + ' of ' + open.length + '</b> open requisitions are likely to miss their date.',
-        appr.length ? '<b>' + plural(appr.length, 'offer') + '</b> ' + (appr.length === 1 ? 'is' : 'are') + ' waiting on an approver. ' + (owed.length ? '<b>' + plural(owed.length, 'debrief') + '</b> ' + (owed.length === 1 ? 'is' : 'are') + ' owed, the oldest from ' + sayWhen(owed[0].day) + '.' : '') : 'No offer is waiting on an approver.',
-        heavy.n > avgLoad * 1.4 ? '<b>' + esc(heavy.rc.name) + '</b> carries ' + heavy.n + ' open requisitions against an average of ' + Math.round(avgLoad) + '.' : 'The load is even across the team.',
+        risky.length ? 'I see <b>' + risky.length + ' of ' + open.length + '</b> open requisitions likely to miss their date.' : 'Every open requisition is on course for its date.',
+        appr.length ? 'I’m waiting on an approver for <b>' + plural(appr.length, 'offer') + '</b>. ' + (owed.length ? '<b>' + plural(owed.length, 'debrief') + '</b> ' + (owed.length === 1 ? 'is' : 'are') + ' still owed, the oldest from ' + sayWhen(owed[0].day) + '.' : '') : 'No offer is waiting on an approver.',
+        heavy.n > avgLoad * 1.4 ? 'I noticed <b>' + esc(heavy.rc.name) + '</b> carries ' + heavy.n + ' open requisitions against an average of ' + Math.round(avgLoad) + '.' : 'The load is even across the team.',
       ], [
         { label: 'At risk', n: risky.length, why: 'each with its reason', go: { on: 'reqs', q: 'risk' } },
         { label: 'Templates', why: 'stages, agendas and what AiMY may do', go: { on: 'templates' } },
@@ -8568,11 +8570,11 @@
     const top = declineCounts(said)[0];
     return '<div class="s-home">' +
       deskBrief('Today', [
-        a.length ? '<b>' + plural(a.length, 'offer') + '</b> ' + (a.length === 1 ? 'waits' : 'wait') + ' for your answer on budget and headcount. Fit is the hiring manager’s question, not yours.' : 'No offer is waiting for your answer.',
+        a.length ? 'I have <b>' + plural(a.length, 'offer') + '</b> waiting for your answer on budget and headcount. Fit is the hiring manager’s question, not yours.' : 'No offer is waiting for your answer.',
         /* No bare count of seats filled: Hiring outcomes never shows hires
            without acceptance and day-90 retention beside them (M10). */
-        '<b>' + plural(open.length, 'requisition') + '</b> open in the unit' + (risky.length ? ', <b>' + risky.length + '</b> likely to miss the date.' : '.'),
-        top ? 'Clients gave <b>' + plural(said.length, 'reason') + '</b> for passing in 90 days; the most common is ' + esc(lower(top.d.label)) + '.' : 'No client has passed with a reason yet.',
+        'The unit has <b>' + plural(open.length, 'requisition') + '</b> open' + (risky.length ? ', and I see <b>' + risky.length + '</b> likely to miss the date.' : '.'),
+        top ? 'I read <b>' + plural(said.length, 'reason') + '</b> clients gave for passing in 90 days; the most common is ' + esc(lower(top.d.label)) + '.' : 'No client has passed with a reason yet.',
       ], [
         { label: 'Answer the budget question', n: a.length, why: a[0] ? a[0].c.name + ', ' + reqOf(a[0].c).title : 'nothing is waiting', go: a[0] ? a[0].go : { on: 'reqs' } },
         { label: 'Request a hire', why: 'a hiring manager talks it through before it opens', data: 'client-request' },
@@ -8620,9 +8622,9 @@
     const booked = DB.ivs.filter((v) => v.status === 'booked' && (v.stage === 'client' || v.stage === 'ctech') && reqOf(DB.byId[v.cand]).acc === me().acc);
     return '<div class="s-home">' +
       deskBrief('Today', [
-        sent.length ? '<b>' + plural(sent.length, 'profile') + '</b> ' + (sent.length === 1 ? 'waits' : 'wait') + ' on your answer. Meet them, or pass with a reason.' : 'No profiles are waiting on you.',
-        booked.length ? '<b>' + plural(booked.length, 'interview') + '</b> booked with your team, the next ' + sayWhen(booked.sort((x, y) => x.day - y.day)[0].day) + '.' : 'No interviews are booked with your team.',
-        '<b>' + plural(open.length, 'request') + '</b> open with us. Your account manager is ' + esc(hmOf(reqs[0] || { hm: 'rania' }).name) + '.',
+        sent.length ? 'I have <b>' + plural(sent.length, 'profile') + '</b> waiting on your answer. Meet them, or pass with a reason.' : 'No profiles are waiting on you.',
+        booked.length ? 'You have <b>' + plural(booked.length, 'interview') + '</b> booked with your team, the next ' + sayWhen(booked.sort((x, y) => x.day - y.day)[0].day) + '.' : 'No interviews are booked with your team.',
+        'You have <b>' + plural(open.length, 'request') + '</b> open with us, and your account manager is ' + esc(hmOf(reqs[0] || { hm: 'rania' }).name) + '.',
       ], [
         { label: 'Profiles to decide', n: sent.length, why: 'meet them or pass', go: sent[0] ? sent[0].go : { on: 'reqs' } },
         { label: 'Feedback owed', n: a.filter((x) => x.k === 'debrief').length, why: 'two minutes each', go: a.filter((x) => x.k === 'debrief')[0] ? a.filter((x) => x.k === 'debrief')[0].go : { on: 'reqs' } },
