@@ -5461,14 +5461,14 @@
     let body;
     if (tab === 'tocall') {
       body = list.length
-        ? aimyBlock({ text: '<b>' + plural(list.length, 'person', 'people') + '</b> to call: ' +
+        ? aimyBlock({ text: 'I lined up <b>' + plural(list.length, 'person', 'people') + '</b> for you to call: ' +
             [counts.callback ? counts.callback + ' asked for a callback' : null, counts.screen ? counts.screen + ' due a phone screen' : null,
-              counts.applied ? counts.applied + ' applied and not called yet' : null].filter(Boolean).join(', ') + '. Callbacks first. ' +
+              counts.applied ? counts.applied + ' applied and not called yet' : null].filter(Boolean).join(', ') + '. I put callbacks first. ' +
             /* The run's size and its time ride on AiMY's line and the one
                button, not on a row of their own: the tabs above are the
                page's only filter. */
             (runN(list.length) < list.length ? 'The first ' + runN(list.length) + ' take' : list.length === 1 ? 'It takes' : 'All ' + list.length + ' take') +
-            ' about <b>' + runMins(runN(list.length)) + ' minutes</b>, if about six in ten pick up. You press Call for each one.' }, true) +
+            ' about <b>' + runMins(runN(list.length)) + ' minutes</b>, if about six in ten pick up. You press Call for each one; I log what happened.' }, true) +
           '<div class="b-acts t-run">' +
             '<button class="s-insight-lnk primary" type="button" data-call-all>' + svg('phone', 14) + (runN(list.length) < list.length ? 'Call the first ' + runN(list.length) + ' in order' : 'Call ' + (list.length === 1 ? 'them' : 'all ' + list.length + ' in order')) + '</button>' +
             (list.length > RUN_N[0] ? '<span class="b-menu-wrap"><button class="b-ghost t-run-more" type="button" data-pickopen="runMenu" aria-haspopup="menu" aria-expanded="false">How many' + svg('down', 14) + '</button>' +
@@ -5484,15 +5484,15 @@
               (x.c.fuDay != null ? ' Messaged by ' + fuBy(x.c) + ' ' + esc(sayWhen(x.c.fuDay)) + '.' : ''),
             aimy: true, act: 'data-call="' + x.c.id + '"', go: 'Call', goIco: svg('phone', 14),
           }, i)).join('') + '</div>'
-        : '<p class="b-vfoot">Nobody is waiting for a call from you.</p>';
+        : '<p class="b-vfoot">Nobody is waiting for a call from you. I’ll line them up here as they come in.</p>';
     } else if (tab === 'inbox') {
       /* Missed calls and WhatsApp replies, newest first: calling back or
          replying clears each one. */
       const items = miss.map((t) => ({ k: 'call', t: t, day: t.day, time: t.time })).concat(owed.map((m) => ({ k: 'msg', m: m, day: m.day, time: m.time })))
         .sort((a, b) => callKey(b) - callKey(a));
       body = items.length
-        ? aimyBlock({ text: [miss.length ? '<b>' + plural(miss.length, 'missed call') + '</b>' : null, owed.length ? '<b>' + plural(owed.length, 'WhatsApp reply', 'WhatsApp replies') + '</b>' : null].filter(Boolean).join(' and ') +
-            ' waiting on you. Calling back or replying clears each one.' }, true) +
+        ? aimyBlock({ text: 'While you were away, I caught ' + [miss.length ? '<b>' + plural(miss.length, 'missed call') + '</b>' : null, owed.length ? '<b>' + plural(owed.length, 'WhatsApp reply', 'WhatsApp replies') + '</b>' : null].filter(Boolean).join(' and ') +
+            '. Call back or reply, and I’ll clear each one for you.' }, true) +
           '<div class="b-log">' + logDays(items, (x, i) => {
             if (x.k === 'msg') return msgRow(x.m, i, true);
             const t = x.t;
@@ -5504,7 +5504,7 @@
               say: 'Nobody on file has this number. Calling back puts it in the dialer.', aimy: true,
               act: 'data-redial="' + esc(t.phone) + '"', go: 'Call them back', goIco: svg('phone', 14) }, i);
           }) + '</div>'
-        : '<p class="b-vfoot">Every call and message that came in has its answer.</p>';
+        : '<p class="b-vfoot">You’re all caught up: every call and message that came in has its answer.</p>';
     } else {
       /* Every channel in one history: calls in AiMY, calls logged from
          elsewhere, Teams, and WhatsApp both ways. */
@@ -5512,7 +5512,7 @@
         .sort((a, b) => callKey(b) - callKey(a));
       const shown = all.slice(0, 40);
       body = shown.length ? '<div class="b-log">' + logDays(shown, (x, i) => x.k === 'msg' ? msgRow(x.m, i, false) : callRow(x.t, i, true)) + '</div>' +
-        '<p class="b-vfoot">The last ' + shown.length + ' of ' + all.length + ' calls and messages.</p>' : '<p class="b-vfoot">Nothing yet.</p>';
+        '<p class="b-vfoot">I’m showing the last ' + shown.length + ' of ' + all.length + ' calls and messages.</p>' : '<p class="b-vfoot">Nothing yet. I’ll keep every call and message here.</p>';
     }
     return '<div class="s-home">' +
       '<section class="s-block s-block-wide" aria-label="Interactions">' +
