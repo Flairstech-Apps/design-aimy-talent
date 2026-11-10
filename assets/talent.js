@@ -3200,11 +3200,12 @@
        bright run, so they can be read without the sentence. The profile and
        the hover keep the full sentence. */
     const bold = (l, t) => and(l.map((m) => '<' + t + '>' + esc(m) + '</' + t + '>'));
-    const shows = met.length ? 'Shows ' + bold(met, 'b') + (part.length ? ', partly ' + bold(part, 'em') : '')
-      : part.length ? 'Partly shows ' + bold(part, 'em') : 'CV doesn’t show the must-haves yet';
+    /* In AiMY's voice (10 Nov). */
+    const shows = met.length ? 'I see ' + bold(met, 'b') + (part.length ? ', and partly ' + bold(part, 'em') : '')
+      : part.length ? 'I partly see ' + bold(part, 'em') : 'I don’t see the must-haves in the CV yet';
     /* With nothing shown, the list to check is every must-have: say how many. */
-    const sayCard = shows + (near ? (met.length || part.length ? ', lives nearby.' : '. Lives nearby.') : '.') +
-      (!check.length ? '' : met.length || part.length ? ' Check ' + esc(and(unk.map((m) => fluent(m) || short(m)))) + '.' : ' Check all ' + unk.length + '.');
+    const sayCard = shows + (near ? (met.length || part.length ? '; they live nearby.' : '. They live nearby.') : '.') +
+      (!check.length ? '' : met.length || part.length ? ' I’d check ' + esc(and(unk.map((m) => fluent(m) || short(m)))) + '.' : ' I’d check all ' + unk.length + '.');
     /* AiMY'S INSIGHT, FIRST ON THE CARD (Engy, 4 Nov: "the most important is
        the AiMY insights"; variation 4 of deliverables/candidate-card-progress
        .html). A verdict in words, never a score (29 Oct): Strong where the CV
