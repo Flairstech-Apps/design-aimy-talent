@@ -2257,7 +2257,7 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-lc-who b { font-size: var(--fs-base); font-weight: var(--fw-semibold); color: var(--d50); }
 .t-lc-who span { font-size: var(--fs-xs); color: var(--ink-muted); }
 /* Simpler toggles (10 Nov): no box around the group; the chosen one is tinted. */
-.t-lc-via, .t-lc-segs { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.t-lc-via, .t-lc-segs { position: relative; display: inline-flex; flex-wrap: wrap; gap: 4px; }
 .t-lc-segs.is-wrap { gap: 6px; }
 .t-lc-seg { font: inherit; font-size: 13px; font-weight: var(--fw-medium); color: var(--ink-muted); background: transparent; border: 0; border-radius: 8px; padding: 6px 10px;
   display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; }
@@ -2279,8 +2279,6 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-lc-pill { gap: 6px; font-variant-numeric: tabular-nums; }
 .t-lc-pill > svg { width: 14px; height: 14px; flex: none; }
 .t-lc-pill > svg:first-child { color: var(--ink-muted); }
-.t-lc-menu { min-width: 180px; }
-.t-lc-menu .b-menu-item.is-on { background: rgba(var(--accent-rgb), 0.12); }
 .t-lc-seg > svg:only-child, .t-lc-segs.is-wrap .t-lc-seg > svg { width: 13px; height: 13px; }
 .t-lc-opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(190px, 100%), 1fr)); gap: 8px; }
 .t-lc-opt { font: inherit; text-align: left; color: var(--d100); background: transparent; border: 1px solid var(--card-border-hover); border-radius: 10px; padding: 10px 12px;
@@ -2347,3 +2345,37 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
   .t-lc-opts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .t-lc-opt { grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 10px; }
 }
+
+/* The tint that slides from the old choice to the new one (elSlideTo). */
+.t-lc-glide { position: absolute; left: 0; top: 0; z-index: 0; border-radius: 8px; background: rgba(var(--accent-rgb), 0.16); pointer-events: none; }
+.t-lc-segs.is-wrap .t-lc-glide { border-radius: var(--r-pill); }
+.t-lc-seg { position: relative; z-index: 1; }
+.t-lc-seg.is-on.is-gliding { background: transparent; }
+
+/* ══ THE CALENDAR AND THE CLOCK (Engy, 10 Nov) ══════════════════════════════
+   In the menu's own surface (b-menu): the calendar is AiMY UI's month grid,
+   weeks from Monday, today outlined and the choice in the accent; the clock is
+   the old picker's three columns, hour, minute, AM or PM, in the same tint. */
+.t-lc-pop { min-width: 0; width: max-content; padding: 10px; gap: 8px; }
+.t-cal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 2px 4px; }
+.t-cal-head b { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--d50); }
+.t-cal-nav { width: 28px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--d100); cursor: pointer; }
+.t-cal-nav > svg { width: 14px; height: 14px; }
+.t-cal-nav.is-next > svg { transform: scaleX(-1); }
+.t-cal-nav:hover:not(:disabled) { background: rgba(var(--accent-rgb), 0.12); }
+.t-cal-nav:disabled { opacity: 0.35; cursor: default; }
+.t-cal-grid { display: grid; grid-template-columns: repeat(7, 34px); gap: 2px; }
+.t-cal-w { height: 24px; display: grid; place-items: center; font-size: 11px; color: var(--ink-muted); }
+.t-cal-d { height: 34px; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 13px; color: var(--d100); cursor: pointer; font-variant-numeric: tabular-nums; }
+.t-cal-d:hover:not(:disabled):not(.is-on) { background: rgba(var(--accent-rgb), 0.12); color: var(--d50); }
+.t-cal-d.is-today { box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.6); }
+.t-cal-d.is-on { background: var(--accent); color: #fff; font-weight: var(--fw-semibold); }
+.t-cal-d:disabled { color: var(--ink-muted); opacity: 0.4; cursor: default; }
+.t-clk { display: grid; grid-template-columns: 56px 56px 56px; gap: 6px; }
+.t-clk-col { display: flex; flex-direction: column; gap: 2px; max-height: 216px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.t-clk-col + .t-clk-col { border-left: 1px solid var(--card-border); padding-left: 6px; }
+.t-clk-cell { flex: none; height: 32px; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 13px; color: var(--d100); cursor: pointer; font-variant-numeric: tabular-nums; }
+.t-clk-cell:hover:not(.is-on) { background: rgba(var(--accent-rgb), 0.12); color: var(--d50); }
+.t-clk-cell.is-on { background: var(--accent); color: #fff; font-weight: var(--fw-semibold); }
+.t-pop-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 8px; border-top: 1px solid var(--card-border); }
+.t-cal-d:focus-visible, .t-clk-cell:focus-visible, .t-cal-nav:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }

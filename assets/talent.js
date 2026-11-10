@@ -3892,7 +3892,7 @@
     if (call.cb === 'own' && call.cbOwn) {
       const d = call.cbOwn.day, h = Number(String(call.cbOwn.time).slice(0, 2));
       return { k: 'own', day: d, win: h < 12 ? 'am' : h < 18 ? 'pm' : 'eve', at: true,
-        label: (d === 0 ? 'today' : d === 1 ? 'tomorrow' : 'on ' + sayDay(d)) + ' at ' + call.cbOwn.time };
+        label: (d === 0 ? 'today' : d === 1 ? 'tomorrow' : 'on ' + sayDay(d)) + ' at ' + ampm(call.cbOwn.time) };
     }
     const rd = call.read || {}, open = cbOpen();
     const pressed = open.filter((w) => w.k === call.cb)[0];
@@ -5010,33 +5010,79 @@
      library has no time picker; its Date picker is the same pill and menu). */
   const hm = (m) => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
   const toMin = (t) => { const p = String(t).split(':'); return Number(p[0]) * 60 + Number(p[1] || 0); };
-  function elPill(id, ico, label, items, key, on) {
-    return '<span class="b-menu-wrap"><button class="b-ghost b-menu-open t-lc-pill" type="button" data-pickopen="' + id + '" aria-haspopup="menu" aria-expanded="false">' +
+  const ampm = (t) => { const p = String(t).split(':'), H = Number(p[0]); return (H % 12 || 12) + ':' + p[1] + ' ' + (H >= 12 ? 'PM' : 'AM'); };
+  /* A pill that opens a popover of its own (the calendar, the clock), held
+     open across repaints while you pick in it (EL.open). */
+  function elPop(id, ico, label, body, aria) {
+    const open = EL.open === id;
+    return '<span class="b-menu-wrap"><button class="b-ghost b-menu-open t-lc-pill" type="button" data-pickopen="' + id + '" aria-haspopup="dialog" aria-expanded="' + open + '">' +
       svg(ico) + '<span>' + esc(label) + '</span>' + svg('down') + '</button>' +
-      '<div class="b-menu t-rpt-menu t-lc-menu" id="' + id + '" role="menu" hidden>' + items.map((x) => '<button class="b-menu-item' + (x[0] === on ? ' is-on' : '') + '" type="button" role="menuitem" data-el="' + key + '|' + x[0] + '"' + (x[0] === on ? ' aria-current="true"' : '') + '>' +
-        '<span class="b-menu-name">' + esc(x[1]) + '</span>' + (x[2] ? '<span class="tel-menu-cc">' + esc(x[2]) + '</span>' : '') + '</button>').join('') + '</div></span>';
+      '<div class="b-menu t-rpt-menu t-lc-pop" id="' + id + '" role="dialog" aria-label="' + esc(aria) + '"' + (open ? '' : ' hidden') + '>' + body + '</div></span>';
   }
-  /* When the call was: today, from now back to 08:00 every quarter hour; yesterday, 20:00 back to 08:00 every half hour. */
-  function elTimes(day) {
-    const out = [];
-    if (day === 0) {
-      const now = nowHM(), n = toMin(now);
-      out.push([now, 'Just now', now]);
-      for (let m = Math.floor(n / 15) * 15; m >= 480; m -= 15) if (hm(m) !== now) out.push([hm(m), hm(m)]);
-    } else for (let m = 1200; m >= 480; m -= 30) out.push([hm(m), hm(m)]);
-    return out;
+  /* The clock: hour, minute, AM or PM, in the old picker's three columns. */
+  function elClock(tg, t) {
+    const p = String(t).split(':'), H = Number(p[0]), M = Number(p[1]), pm = H >= 12, h12 = H % 12 || 12;
+    const mins = []; for (let m = 0; m < 60; m += 5) mins.push(m);
+    if (mins.indexOf(M) < 0) { mins.push(M); mins.sort((a, b) => a - b); }
+    const col = (lab, items) => '<div class="t-clk-col" role="group" aria-label="' + lab + '">' + items + '</div>';
+    const b = (key, on, text) => '<button class="t-clk-cell' + (on ? ' is-on' : '') + '" type="button" data-el="' + key + '" aria-pressed="' + on + '">' + text + '</button>';
+    return '<div class="t-clk">' +
+      col('Hour', [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((h) => b('th|' + tg + '|' + h, h === h12, h)).join('')) +
+      col('Minute', mins.map((m) => b('tm|' + tg + '|' + m, m === M, String(m).padStart(2, '0'))).join('')) +
+      col('AM or PM', b('ta|' + tg + '|AM', !pm, 'AM') + b('ta|' + tg + '|PM', pm, 'PM')) + '</div>' +
+      '<div class="t-pop-foot">' + (tg === 'when' ? '<button class="t-inline-link" type="button" data-el="tnow|when">Now</button>' : '<span></span>') +
+        '<button class="btn btn-brand btn-sm" type="button" data-el="tdone|' + tg + '">Done</button></div>';
   }
-  /* A call back you set yourself: the next working days, and the hours a person can be called. */
-  function elCbDays() {
-    const out = [];
-    for (let d = 0; d <= 14 && out.length < 8; d++) {
-      const g = dayOf(d).getDay();
-      if (g === 5 || g === 6) continue;
-      out.push([String(d), d === 0 ? 'Today' : d === 1 ? 'Tomorrow' : dayOf(d).toLocaleDateString('en-GB', { weekday: 'long' }), sayDay(d)]);
+  /* The calendar: a month, weeks from Monday, today outlined, the choice in the accent; past days off. */
+  function elCal(sel) {
+    const m = EL.calM || 0, base = dayOf(0);
+    const first = new Date(base.getFullYear(), base.getMonth() + m, 1);
+    const pad = (first.getDay() + 6) % 7, n = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+    let cells = '';
+    for (let i = 0; i < pad; i++) cells += '<span></span>';
+    for (let d = 1; d <= n; d++) {
+      const off = Math.round((new Date(first.getFullYear(), first.getMonth(), d) - base) / 864e5);
+      cells += '<button class="t-cal-d' + (off === sel ? ' is-on' : '') + (off === 0 ? ' is-today' : '') + '" type="button" data-el="cd|' + off + '"' + (off < 0 ? ' disabled' : '') +
+        ' aria-pressed="' + (off === sel) + '" aria-label="' + esc(sayDay(off)) + '">' + d + '</button>';
     }
-    return out;
+    return '<div class="t-cal-head"><button class="t-cal-nav" type="button" data-el="cm|-1"' + (m <= 0 ? ' disabled' : '') + ' aria-label="Previous month">' + svg('back') + '</button>' +
+      '<b>' + esc(first.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })) + '</b>' +
+      '<button class="t-cal-nav is-next" type="button" data-el="cm|1"' + (m >= 2 ? ' disabled' : '') + ' aria-label="Next month">' + svg('back') + '</button></div>' +
+      '<div class="t-cal-grid">' + ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map((w) => '<span class="t-cal-w">' + w + '</span>').join('') + cells + '</div>';
   }
-  const elCbTimes = () => { const out = []; for (let m = 540; m <= 1200; m += 30) out.push([hm(m), hm(m)]); return out; };
+  /* PICKING MOVES (Engy, 10 Nov). The page repaints on every press, so a
+     choice cannot transition in CSS. Before the repaint the old choice's box
+     is read; after it a tinted pill is drawn there and slides to the new one
+     (the toggles), or the picked tile settles in from 97% (the tiles). One
+     220ms ease-out; nothing under reduced motion. */
+  const EL_SLIDE = { via: 1, day: 1, cb: 1 };
+  function elSlideFrom(btn) {
+    const k = String(btn.getAttribute('data-el')).split('|')[0];
+    const grp = btn.closest('[role="group"]');
+    if (!grp || !EL_SLIDE[k]) return { k: k };
+    const on = grp.querySelector('.is-on');
+    return { k: k, from: on && on !== btn ? on.getBoundingClientRect() : null };
+  }
+  function elSlideTo(sl, key) {
+    if (!sl || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const nb = document.querySelector('[data-el="' + key + '"]');
+    if (!nb || !nb.classList.contains('is-on')) return;
+    const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
+    if (sl.k === 'o') { nb.animate([{ transform: 'scale(0.97)' }, { transform: 'scale(1)' }], { duration: 220, easing: ease }); return; }
+    if (!sl.from) return;
+    const grp = nb.closest('[role="group"]'), to = nb.getBoundingClientRect(), g = grp.getBoundingClientRect();
+    const z = parseFloat(getComputedStyle(document.body).zoom) || 1;
+    const pill = document.createElement('span');
+    pill.className = 't-lc-glide';
+    pill.style.left = (to.left - g.left) / z + 'px'; pill.style.top = (to.top - g.top) / z + 'px';
+    pill.style.width = to.width / z + 'px'; pill.style.height = to.height / z + 'px';
+    grp.appendChild(pill);
+    nb.classList.add('is-gliding');
+    const a = pill.animate([{ transform: 'translate(' + (sl.from.left - to.left) / z + 'px, ' + (sl.from.top - to.top) / z + 'px)', width: sl.from.width / z + 'px' },
+      { transform: 'translate(0, 0)', width: to.width / z + 'px' }], { duration: 220, easing: ease });
+    const end = () => { pill.remove(); nb.classList.remove('is-gliding'); };
+    a.onfinish = end; a.oncancel = end;
+  }
   function elOptSub(k, c) {
     const early = c ? rank(reqOf(c), c.stage) <= rank(reqOf(c), 'phone') : true;
     return { passed: early ? 'Moves them to the HR interview' : 'Past the screen already', reached: 'Nothing moves', callback: 'Back in your calls',
@@ -5066,7 +5112,7 @@
         svg(EL_VIA_ICO[v[0]]) + '<span>' + esc(v[1]) + '</span></button>').join('') + '</div></div>';
     const when = row('clock', 'When', '<div class="t-lc-inline"><span class="t-lc-segs" role="group" aria-label="Which day">' +
         [['0', 'Today'], ['-1', 'Yesterday']].map((d) => '<button class="t-lc-seg' + (String(EL.day) === d[0] ? ' is-on' : '') + '" type="button" data-el="day|' + d[0] + '" aria-pressed="' + (String(EL.day) === d[0]) + '">' + d[1] + '</button>').join('') + '</span>' +
-        elPill('elTimeMenu', 'clock', EL.time, elTimes(EL.day), 'time', EL.time) + '</div>');
+        elPop('elTimeMenu', 'clock', ampm(EL.time), elClock('when', EL.time), 'What time') + '</div>');
     const opts = (ks) => '<div class="t-lc-opts" role="group">' + ks.map((k) => {
       const on = EL.lit === k;
       return '<button class="t-lc-opt' + (on ? ' is-on' : '') + '" type="button" data-el="o|' + k + '" aria-pressed="' + on + '">' +
@@ -5074,15 +5120,15 @@
     }).join('') + '</div>';
     const cbList = EL.lit === 'callback' ? cbOpen() : [];
     const cbOn = EL.cb || (cbList.length ? cbWhen({ read: rd || {} }).k : null);
-    const own = EL.cbOwn || (EL.cbOwn = { day: elCbDays()[1] ? Number(elCbDays()[1][0]) : 1, time: '10:00' });
+    const own = EL.cbOwn || (EL.cbOwn = { day: 1, time: '10:00' });
     const happened = row('okc', 'What happened',
       '<span class="t-lc-sub">They answered</span>' + opts(EL_ANSWERED) +
       '<span class="t-lc-sub">They didn’t</span>' + opts(EL_NONE) +
       (cbList.length ? '<div class="t-lc-cb"><span class="t-lc-sub">When to call back</span><span class="t-lc-segs is-wrap" role="group" aria-label="When to call back">' +
         cbList.map((w) => '<button class="t-lc-seg' + (cbOn === w.k ? ' is-on' : '') + '" type="button" data-el="cb|' + w.k + '" aria-pressed="' + (cbOn === w.k) + '">' + esc(cbSay(w).charAt(0).toUpperCase() + cbSay(w).slice(1)) + '</button>').join('') +
         '<button class="t-lc-seg' + (cbOn === 'own' ? ' is-on' : '') + '" type="button" data-el="cb|own" aria-pressed="' + (cbOn === 'own') + '">' + svg('cal') + 'Pick a day and time</button></span>' +
-        (cbOn === 'own' ? '<div class="t-lc-inline">' + elPill('elCbDayMenu', 'cal', (elCbDays().filter((x) => Number(x[0]) === own.day)[0] || [0, sayDay(own.day)])[1] + ', ' + sayDay(own.day), elCbDays(), 'cbday', String(own.day)) +
-          elPill('elCbTimeMenu', 'clock', own.time, elCbTimes(), 'cbtime', own.time) + '</div>' : '') + '</div>' : ''));
+        (cbOn === 'own' ? '<div class="t-lc-inline">' + elPop('elCbDayMenu', 'cal', (own.day === 0 ? 'Today' : own.day === 1 ? 'Tomorrow' : dayOf(own.day).toLocaleDateString('en-GB', { weekday: 'long' })) + ', ' + sayDay(own.day), elCal(own.day), 'Which day') +
+          elPop('elCbTimeMenu', 'clock', ampm(own.time), elClock('cb', own.time), 'What time') + '</div>' : '') + '</div>' : ''));
     const foot = EL.busy ? '<span class="t-lc-aimy">' + svg('upload') + 'I’m transcribing ' + esc(EL.rec) + '…</span>'
       : rd ? '<span class="t-lc-aimy">' + mark(13) + 'I wrote this from ' + esc(EL.rec) + (rd.outcome ? ' and picked what I heard' : '') + '. Change anything.</span>'
       : '<span class="t-lc-tog"><button class="t-sw" type="button" data-el-consent aria-pressed="' + EL.consent + '"><span class="t-sw-k" aria-hidden="true"></span>They agreed to be recorded' + (EL.via === 'teams' ? ' (Teams said so)' : '') + '</button></span>' +
@@ -10336,11 +10382,27 @@
     if ((el = at('[data-el-log]'))) { logElsewhere(); return; }
     if ((el = at('[data-el]'))) {
       const p = val('data-el').split('|');
+      const slide = elSlideFrom(el);
+      if (EL && ['th', 'tm', 'ta', 'tnow', 'tdone', 'cd', 'cm'].indexOf(p[0]) >= 0) {
+        const get = (tg) => (tg === 'when' ? EL.time : EL.cbOwn.time), put = (tg, H, M) => { const t = String(H).padStart(2, '0') + ':' + String(M).padStart(2, '0'); if (tg === 'when') EL.time = t; else EL.cbOwn = Object.assign({}, EL.cbOwn, { time: t }); };
+        const cur = p[1] && (p[1] === 'when' || p[1] === 'cb') ? get(p[1]).split(':').map(Number) : null;
+        const id = p[1] === 'when' ? 'elTimeMenu' : p[1] === 'cb' ? 'elCbTimeMenu' : 'elCbDayMenu';
+        if (p[0] === 'th') put(p[1], (Number(p[2]) % 12) + (cur[0] >= 12 ? 12 : 0), cur[1]);
+        if (p[0] === 'tm') put(p[1], cur[0], Number(p[2]));
+        if (p[0] === 'ta') put(p[1], (cur[0] % 12) + (p[2] === 'PM' ? 12 : 0), cur[1]);
+        if (p[0] === 'tnow') { const n = nowHM().split(':'); put('when', Number(n[0]), Number(n[1])); }
+        if (p[0] === 'cd') EL.cbOwn = Object.assign({}, EL.cbOwn, { day: Number(p[1]) });
+        if (p[0] === 'cm') EL.calM = Math.max(0, Math.min(2, (EL.calM || 0) + Number(p[1])));
+        EL.open = p[0] === 'tdone' || p[0] === 'cd' ? null : id;
+        const nt = byId('elNote'); if (nt) EL.note = nt.value;
+        const keep = {}; document.querySelectorAll('.t-clk-col').forEach((x, i) => { keep[i] = x.scrollTop; });
+        paint(); document.querySelectorAll('.t-clk-col').forEach((x, i) => { if (keep[i] != null) x.scrollTop = keep[i]; }); return;
+      }
+      if (EL) EL.open = null;
       if (EL) { if (p[0] === 'via') EL.via = p[1]; if (p[0] === 'who') { EL.cand = p[1]; EL.read = null; EL.rec = null; EL.consent = false; } if (p[0] === 'day') EL.day = Number(p[1]); if (p[0] === 'o') EL.lit = EL.lit === p[1] ? null : p[1]; if (p[0] === 'cb') EL.cb = p[1]; if (p[0] === 'time') EL.time = p[1];
-        if (p[0] === 'day') { const ts = elTimes(EL.day); if (!ts.some((x) => x[0] === EL.time)) EL.time = ts[0][0]; }
         if (p[0] === 'cbday') EL.cbOwn = Object.assign({}, EL.cbOwn, { day: Number(p[1]) }); if (p[0] === 'cbtime') EL.cbOwn = Object.assign({}, EL.cbOwn, { time: p[1] });
         const nt = byId('elNote'); if (nt) EL.note = nt.value;
-        paint(); }
+        paint(); elSlideTo(slide, val('data-el')); }
       return;
     }
     if ((el = at('[data-run-skip]'))) { if (RUN) RUN.skip[el.getAttribute('data-run-skip')] = 1; paint(); return; }
@@ -10400,7 +10462,10 @@
     if ((el = at('[data-pickopen]'))) {
       const m = byId(el.getAttribute('data-pickopen'));
       document.querySelectorAll('.t-rpt-menu:not([hidden])').forEach((x) => { if (x !== m) { x.hidden = true; x.previousElementSibling.setAttribute('aria-expanded', 'false'); } });
-      m.hidden = !m.hidden; el.setAttribute('aria-expanded', String(!m.hidden)); return;
+      m.hidden = !m.hidden; el.setAttribute('aria-expanded', String(!m.hidden));
+      /* The clock opens on its current hour and minute. */
+      if (!m.hidden) m.querySelectorAll('.t-clk-col').forEach((col) => { const on = col.querySelector('.is-on'); if (on) col.scrollTop = on.offsetTop - col.clientHeight / 2 + on.offsetHeight / 2; });
+      return;
     }
     if ((el = at('[data-req]'))) { go({ req: el.getAttribute('data-req') }); return; }
     if ((el = at('[data-go]'))) { go(JSON.parse(el.getAttribute('data-go'))); return; }
