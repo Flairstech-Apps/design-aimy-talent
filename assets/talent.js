@@ -4424,7 +4424,6 @@
             '<span class="call-timer" id="callTimer">' + (st === 'connecting' ? 'Connecting…' : (call.held ? 'On hold · ' : '') + fmtClock(call.secs)) + '</span>'
           : '') +
         (sess ? '<span class="call-of">' + at + ' of ' + sess.ids.length + '</span>' : '') +
-        '<span class="tag tag-warn" title="Telephony for Talent is on hold with AiMY Phone">Design target</span>' +
       '</div>' +
       /* A way out of the panel whenever no call is on the line: before it
          starts, and once it has ended. A live call ends with hang-up. */
@@ -5519,7 +5518,6 @@
       '<section class="s-block s-block-wide" aria-label="Interactions">' +
         '<div class="s-camp-list-head">' + switcher('calls') +
           '<span class="b-draft-acts"><button class="b-ghost" type="button"' + goAttr({ on: 'calls', lg: 'new' }) + '>Log a call from elsewhere</button></span></div>' +
-        '<p class="t-scope">' + tag('Design target', 'warn') + '<span>' + (connectOn() ? 'Calls wait on AiMY Phone, and WhatsApp on AiMY Connect’s templates being approved.' : 'Calls wait on AiMY Phone. WhatsApp is each recruiter’s own, logged here.') + ' This shows where it is going, not what ships first.</span></p>' +
         '<div class="b-cuts b-log-tabs">' + TABS.map((x) => '<button class="filter-chip' + (tab === x[0] ? ' active' : '') + '" type="button" data-q="' + x[0] + '"' +
           (tab === x[0] ? ' aria-current="true"' : '') + '>' + esc(x[1]) + (n[x[0]] != null ? '<span class="b-cut-n">' + n[x[0]] + '</span>' : '') + '</button>').join('') + '</div>' +
         body +
@@ -9604,6 +9602,8 @@
       '</div>' +
       '<div class="proto-sec">' +
         '<div class="proto-h">Incoming calls</div>' +
+        /* For reviewers, not users (10 Nov): off the Interactions page and the call panel. */
+        '<p class="proto-note">' + tag('Design target', 'warn') + '<span>' + (connectOn() ? 'Calls wait on AiMY Phone, and WhatsApp on AiMY Connect’s templates being approved.' : 'Calls wait on AiMY Phone. WhatsApp is each recruiter’s own, logged here.') + ' Interactions shows where it is going, not what ships first.</span></p>' +
         '<button class="proto-link" type="button" data-ring="known">A candidate calls in</button>' +
         '<button class="proto-link" type="button" data-ring="named">A stranger calls in, and says who they are</button>' +
         '<button class="proto-link" type="button" data-ring="anon">A stranger calls in, and will not say</button>' +

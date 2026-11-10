@@ -2385,3 +2385,6 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 
 /* AiMY opens the briefing in its own voice (10 Nov). */
 .slv-hi { margin: 4px 0 6px; font-size: var(--fs-sm); color: var(--ink-muted); }
+
+/* The design-target note, for reviewers, in the prototype panel (10 Nov). */
+.proto-note { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin: 4px 0 10px; font-size: 12px; line-height: 1.5; color: var(--ink-muted); }
