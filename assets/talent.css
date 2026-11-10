@@ -2414,3 +2414,10 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-rt-lab.is-r { transform: translateX(-100%); }
 /* The line keeps the card's 14px inset, as the lines around it do. */
 .t-reqcard .t-rt { margin-left: 14px; margin-right: 14px; }
+/* The target is a tick above the line (10 Nov), so the band runs across it
+   uncut; the band stays see-through over the purple, the dot on top. */
+.t-rt-pin { z-index: 1; top: 7px !important; height: 9px !important; }
+.t-rt-band { z-index: 2; }
+.t-rt-dot { z-index: 3; }
+.t-rt { margin-top: 10px; }
+.t-rt-lab.is-up { top: -10px; }
