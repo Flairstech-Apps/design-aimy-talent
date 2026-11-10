@@ -9339,7 +9339,8 @@
     }
     return '<div class="t-fc">' +
       '<div class="t-rt ' + tone + '" role="img" aria-label="' + esc('Target ' + sayDay(q.target) + '. At this pace likely ' + sayDay(need) + ', give or take three days' + (late ? ', ' + days(need - h.left) + ' late.' : '.')) + '">' +
-        '<span class="t-rt-rail"></span><span class="t-rt-fill" style="width:' + Math.min(at, pin) + '%"></span>' +
+        /* The purple runs to the likely day in both cases, so the band always sits over it (10 Nov). */
+        '<span class="t-rt-rail"></span><span class="t-rt-fill" style="width:' + at + '%"></span>' +
         '<span class="t-rt-band" style="left:' + lo + '%;width:' + Math.max(2, hi - lo) + '%"></span>' +
         '<span class="t-rt-pin" style="left:' + pin + '%"></span><span class="t-rt-dot" style="left:' + at + '%"></span>' +
         '<span class="t-rt-lab is-up' + side(pin) + '" style="left:' + pin + '%">Target ' + esc(sayDay(q.target)) + '</span>' +
