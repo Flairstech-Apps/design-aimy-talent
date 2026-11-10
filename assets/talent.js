@@ -9027,7 +9027,38 @@
     const level = m && m[2] ? LEVELS.filter((l) => l.toLowerCase() === m[2].toLowerCase())[0] : role ? role.level : 'Mid-level';
     return { title: title, level: level, seats: n, role: role };
   }
+  /* THE BAR KNOWS THE THREAD (Engy, 10 Nov, direction 3). On a WhatsApp
+     thread the bar is about that person: "tell him I'll call at 4" or "ask
+     for his CV" is written into the reply box, in AiMY's words, ready to
+     edit and send. A question about them, or anything else, goes on to the
+     chat as before. */
+  const threadCand = () => (S.on === 'calls' && S.th && DB.byId[S.th] ? DB.byId[S.th] : null);
+  function threadWrite(c, t) {
+    const lc = t.toLowerCase(), f = first(c.name);
+    if (!/^(tell|ask|let|say|reply|write|send|remind|thank|confirm)\b/.test(lc)) return false;
+    const box = byId('waText');
+    if (!box) return false;
+    const r = waRead(t), bits = [];
+    if (r.time || /\bcall\b/.test(lc)) bits.push(r.time ? 'I’ll call you ' + whenSay(r) + '.' : 'I’ll give you a call shortly.');
+    if (/\bcv|resume\b/.test(lc)) bits.push('Could you send me your latest CV?');
+    if (/\bnotice\b/.test(lc)) bits.push('What notice do you have to give at your current job?');
+    if (/\bsalary|expect/.test(lc)) bits.push('What salary are you expecting?');
+    /* What they asked to say, kept in their words when it says more than a topic. */
+    const said = t.replace(/^(tell|ask|let|say|reply|write|send|remind|confirm)\s+(him|her|them|\w+)\s+(know\s+)?(that\s+|to\s+|about\s+)?/i, '').replace(/[.!?]+$/, '');
+    if (/\binterview\b/.test(lc) && !bits.length) bits.push(said.split(/\s+/).length >= 3 ? said.charAt(0).toUpperCase() + said.slice(1) + '.' : 'I’ll send you the interview details shortly.');
+    if (/\bthank/.test(lc) && !bits.length) bits.push('Thank you for getting back to me.');
+    if (!bits.length) {
+      bits.push(said.charAt(0).toUpperCase() + said.slice(1) + '.');
+    }
+    box.value = 'Hi ' + f + '. ' + bits.join(' ') + ' ' + first(me().name);
+    box.focus({ preventScroll: true }); box.setSelectionRange(box.value.length, box.value.length);
+    box.animate([{ boxShadow: '0 0 0 3px rgba(139, 79, 244, 0.45)' }, { boxShadow: '0 0 0 0 rgba(139, 79, 244, 0)' }], { duration: 700, easing: 'ease-out' });
+    box.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    return true;
+  }
   function ask(text) {
+    const tc = threadCand(), tt = String(text || '').trim();
+    if (tc && tt && threadWrite(tc, tt)) return;
     ASKING = String(text || '').trim() || null;
     try { askNow(text); } finally { ASKING = null; }
   }
@@ -9768,6 +9799,7 @@
       '<li><span class="t-crumb-now" aria-current="page">' + esc(t.now) + '</span></li></ol></nav>';
   });
   function paint() {
+    { const fi = byId('floatInput'), tc = threadCand(); if (fi && !fi.dataset.held) fi.placeholder = tc ? 'Ask about ' + first(tc.name) + ', or tell me what to send…' : 'Ask AiMY, or find a requisition or a candidate…'; }
     /* The name a CV card hangs from is about to be redrawn. */
     cvHide();
     teamsRecs();

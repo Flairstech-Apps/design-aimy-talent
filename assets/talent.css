@@ -2435,3 +2435,5 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-wa-sug:hover { background: rgba(var(--accent-rgb), 0.16); border-style: solid; }
 .t-wa-sug:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .t-wa-none { font-size: var(--fs-xs); margin-top: 2px; }
+/* Room under the thread so the reply box clears AiMY's bar when scrolled to. */
+.s-home:has(.t-wa-box) { padding-bottom: 96px; }
