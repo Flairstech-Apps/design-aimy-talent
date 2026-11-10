@@ -2419,3 +2419,19 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-rt-pin { z-index: 1; }
 .t-rt-band { z-index: 2; }
 .t-rt-dot { z-index: 3; }
+
+/* ══ AiMY IN THE THREAD (Engy, 10 Nov) ══════════════════════════════════════
+   AiMY's read under their latest message, with the next step; then the
+   replies it wrote, as tappable bubbles in the outgoing side's tint, that drop
+   into the box. */
+.t-wa-aimy { margin: 10px 0 0; max-width: 560px; align-items: flex-start; }
+.t-wa-aimy-in { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.t-wa-aimy .t-acts { margin: 0; }
+.t-wa-sugs { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; max-width: 640px; margin: 14px 0 10px; }
+.t-wa-sugs-h { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-micro); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+.t-wa-sug { max-width: min(520px, 90%); text-align: left; font: inherit; font-size: var(--fs-sm); line-height: 1.45; color: var(--d50); cursor: pointer;
+  padding: 8px 12px; border-radius: 14px 14px 4px 14px; border: 1px dashed rgba(var(--accent-rgb), 0.5); background: rgba(var(--accent-rgb), 0.08);
+  transition: background var(--t-fast, 150ms), border-color var(--t-fast, 150ms); }
+.t-wa-sug:hover { background: rgba(var(--accent-rgb), 0.16); border-style: solid; }
+.t-wa-sug:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.t-wa-none { font-size: var(--fs-xs); margin-top: 2px; }

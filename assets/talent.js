@@ -4883,6 +4883,62 @@
       say: '“' + esc(m.text) + '”', act: goAttr({ on: 'calls', th: c.id }).trim(), go: inbox ? 'Reply' : 'Open', goIco: inbox ? svg('wa', 14) : '' }, i);
   }
 
+  /* AiMY IN THE THREAD (Engy, 10 Nov; from Quo's suggested replies,
+     Intercom's composer and Featurebase's copilot). Under their latest
+     message AiMY says what it understood and offers the next step in one
+     press; above the box, two or three replies written from what they said,
+     each dropped into the box to edit. A person always presses Send. */
+  function waRead(text) {
+    const t = String(text || '');
+    const m = /\b(?:after|from|at|around)\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/i.exec(t);
+    let time = null;
+    if (m) { let H = Number(m[1]); const ap = (m[3] || '').toLowerCase(); if (ap === 'pm' && H < 12) H += 12; if (!ap && H < 8) H += 12; time = String(H).padStart(2, '0') + ':' + (m[2] || '00'); }
+    const day = /\btomorrow\b/i.test(t) ? 1 : /\bnext week\b/i.test(t) ? 7 : time || /\b(today|tonight|this (afternoon|evening))\b/i.test(t) ? 0 : null;
+    const cv = /\b(cv|resume|résumé)\b/i.test(t), no = /\b(not interested|no longer|found (a|another) (job|role)|withdraw)\b/i.test(t);
+    return { time: time, day: day, talk: time != null || /\b(call|talk|speak)\b/i.test(t), cv: cv, no: no };
+  }
+  const whenSay = (r) => (r.day === 1 ? 'tomorrow' : r.day === 7 ? 'next week' : 'today') + (r.time ? ' at ' + ampm(r.time) : '');
+  function waSuggest(c, last) {
+    const r = waRead(last.text), f = first(c.name);
+    if (r.no) return ['Thanks for letting me know, ' + f + '. I’ll close your application for now; you’re welcome to apply again any time.', 'Understood, ' + f + '. If anything changes, just reply here.'];
+    if (r.talk && r.time) return ['Great, I’ll call you ' + whenSay(r) + '. Thank you, ' + f + '!', ampm(r.time) + ' works. Is this the best number to reach you on?', 'Thanks, ' + f + '. I’ll call ' + whenSay(r) + ' for about 15 minutes about the ' + reqOf(c).title + ' role.'];
+    if (r.talk) return ['Thanks, ' + f + '. What time suits you for a short call?', 'Great. Would later today or tomorrow morning work for a 15-minute call?'];
+    if (r.cv) return ['Thanks, ' + f + '. I’ll take a look and come back to you this week.', 'Got it, thank you. I’ll share it with the team.'];
+    return ['Thanks, ' + f + '!', 'Thanks for getting back to me, ' + f + '. I’ll be in touch soon.'];
+  }
+  function waAimy(c, last) {
+    const r = waRead(last.text), f = first(c.name);
+    let say = '', acts = '';
+    if (r.no) { say = f + ' says they’re not interested any more. Shall I take them out and thank them?'; acts = '<button class="t-aimy-btn" type="button" data-wa-next="out|' + c.id + '">' + mark(13) + 'Take them out</button>'; }
+    else if (r.talk && r.time && r.day != null) {
+      say = f + ' can talk <b>' + esc(whenSay(r)) + '</b>. Shall I set a call back for then and tell them?';
+      acts = '<button class="t-aimy-btn" type="button" data-wa-next="cbreply|' + c.id + '">' + mark(13) + 'Set it and reply</button>' +
+        '<button class="b-ghost" type="button" data-wa-next="cb|' + c.id + '">Just set it</button>';
+    } else if (r.talk) say = f + ' wants to talk but didn’t say when. I wrote a reply asking for a time.';
+    else if (r.cv) say = f + ' mentioned their CV. I’ll add anything they send to their record.';
+    else return '';
+    return '<div class="b-aimy t-wa-aimy">' + mark(13) + '<div class="t-wa-aimy-in"><span class="b-aimy-say">' + say + '</span>' + (acts ? '<span class="t-acts">' + acts + '</span>' : '') + '</div></div>';
+  }
+  /* The call back AiMY read off their message: in your calls, on the Diary. */
+  function waSetCb(c, reply) {
+    const ms = msgsOf(c.id), last = ms[ms.length - 1], r = waRead(last.text);
+    const before = { callback: c.callback, cbWin: c.cbWin };
+    const h = r.time ? Number(r.time.slice(0, 2)) : 18;
+    c.callback = r.day != null ? r.day : 0; c.cbWin = h < 12 ? 'am' : h < 18 ? 'pm' : 'eve';
+    const e = note(c, 'note', 'Call back set ' + whenSay(r) + ', from ' + first(c.name) + '’s WhatsApp.');
+    let m = null;
+    if (reply && c.wa) {
+      m = { id: 'w' + Date.now().toString(36), cand: c.id, dir: 'out', day: 0, time: nowHM(), text: waSuggest(c, last)[0], by: ME };
+      D.msgs.push(m); DB.msgs.push(m);
+      D.waDone[last.id] = 1;
+    }
+    save(); paint();
+    toast(reply ? 'I set the call back and replied to ' + first(c.name) : 'I set the call back ' + whenSay(r), () => {
+      c.callback = before.callback; c.cbWin = before.cbWin; unmake('events', e);
+      if (m) { D.msgs = D.msgs.filter((x) => x.id !== m.id); DB.msgs = DB.msgs.filter((x) => x.id !== m.id); delete D.waDone[last.id]; }
+      save(); paint(); }, 'It is in your calls and on the Diary.');
+  }
+
   /* ONE WHATSAPP THREAD (?on=calls&th=): their messages left, yours right,
      by day; under it the reply, free text inside the 24 hours and a template
      outside them. Somebody who never opted in gets no box at all. */
@@ -4919,13 +4975,17 @@
             '<button class="s-insight-lnk primary" type="button" data-wa-send="' + c.id + '">' + svg('send', 14) + 'Send the template</button></div></div>' : '') + '</div>';
     return '<div class="s-home">' +
       '<div class="b-topbar s-block-wide"><button class="s-back" type="button"' + goAttr({ on: 'calls', q: 'inbox' }) + '>' + svg('back', 14) + 'Interactions</button>' +
-        '<span class="b-draft-acts"><button class="t-aimy-btn" type="button" data-draft-chat="' + c.id + '">' + mark(13) + 'Let me write it</button>' + (canCall(c) ? '<button class="b-ghost" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call</button>' : '') +
+        '<span class="b-draft-acts">' + (canCall(c) ? '<button class="b-ghost" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call</button>' : '') +
           '<button class="b-ghost" type="button"' + goAttr({ on: 'calls', lg: c.id }) + '>Log a call from elsewhere</button></span></div>' +
       '<section class="s-block s-block-wide" aria-label="WhatsApp with ' + esc(c.name) + '">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">' + esc(c.name) + '</h2>' +
           '<span class="s-block-say">WhatsApp · ' + esc(c.wa ? 'opted in ' + sayWhen(c.waDay != null ? c.waDay : -3) + (connectOn() ? '' : ' · your own number') : 'no opt-in') + ' · ' + esc(reqOf(c).title) + ', ' + esc(accOf(reqOf(c)).name) + '</span></div>' +
         '<div class="t-wa">' + (list || '<p class="b-vfoot">Nothing on WhatsApp yet.</p>') + '</div>' +
-        (owed ? '<p class="t-acts t-wa-done"><button class="b-ghost" type="button" data-wa-done="' + last.id + '">Needs no reply</button></p>' : '') +
+        (owed ? waAimy(c, last) : '') +
+        (owed && hrs && c.wa ? '<div class="t-wa-sugs" role="group" aria-label="Replies I wrote"><span class="t-wa-sugs-h">' + mark(11) + 'Replies I wrote</span>' +
+          waSuggest(c, last).map((x, i) => '<button class="t-wa-sug" type="button" data-wa-sug="' + i + '|' + c.id + '">' + esc(x) + '</button>').join('') +
+          '<button class="t-inline-link t-wa-none" type="button" data-wa-done="' + last.id + '">Needs no reply</button></div>'
+          : owed ? '<p class="t-acts t-wa-done"><button class="b-ghost" type="button" data-wa-done="' + last.id + '">Needs no reply</button></p>' : '') +
         box +
       '</section></div>';
   }
@@ -10420,6 +10480,16 @@
     if ((el = at('[data-wa-addgo]'))) { addWaReply(DB.byId[val('data-wa-addgo')]); return; }
     if ((el = at('[data-wa-add]'))) { WA_ADD = val('data-wa-add') || null; paint(); const r = byId('waReply'); if (r) r.focus(); return; }
     if ((el = at('[data-wa-send]'))) { sendWa(DB.byId[val('data-wa-send')]); return; }
+    if ((el = at('[data-wa-sug]'))) {
+      const p = val('data-wa-sug').split('|'), c = DB.byId[p[1]], ms = msgsOf(c.id), t = byId('waText');
+      if (t) { t.value = waSuggest(c, ms[ms.length - 1])[Number(p[0])]; t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
+      return;
+    }
+    if ((el = at('[data-wa-next]'))) {
+      const p = val('data-wa-next').split('|'), c = DB.byId[p[1]];
+      if (p[0] === 'cb') waSetCb(c, false); else if (p[0] === 'cbreply') waSetCb(c, true); else if (p[0] === 'out') go({ cand: c.id });
+      return;
+    }
     if ((el = at('[data-wa-tpl]'))) { const k = val('data-wa-tpl'); WA_TPL_ON = WA_TPL_ON === k ? null : k; paint(); return; }
     if ((el = at('[data-wa-done]'))) { const id = val('data-wa-done'); D.waDone[id] = 1; save(); paint(); toast('Set aside: it needs no reply', () => { delete D.waDone[id]; save(); paint(); }); return; }
     if ((el = at('[data-el-consent]'))) { if (EL) { EL.consent = !EL.consent; paint(); } return; }
