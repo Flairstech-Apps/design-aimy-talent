@@ -2437,3 +2437,8 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-wa-none { font-size: var(--fs-xs); margin-top: 2px; }
 /* Room under the thread so the reply box clears AiMY's bar when scrolled to. */
 .s-home:has(.t-wa-box) { padding-bottom: 96px; }
+
+/* What AiMY did on its own, said on the thread with Undo (10 Nov). */
+.t-wa-aimy.is-done { border-color: rgba(var(--ok-rgb), 0.3); }
+.t-wa-rule { display: block; margin-top: 4px; font-size: var(--fs-xs); color: var(--ink-muted); }
+.t-wa-m.is-out .t-wa-t svg { vertical-align: -1px; }

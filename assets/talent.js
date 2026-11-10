@@ -526,6 +526,7 @@
     { k: 'decline', label: 'Send a decline under the HR template', at: 'suggest', why: '38 declines went out under the template in 30 days, none edited before sending.' },
     { k: 'contact', label: 'First message to a sourced prospect', at: 'suggest', why: 'Not enough yet: 9 approvals so far, and prospects have not consented to anything.' },
     { k: 'offerq',  label: 'Answer a candidate’s questions from the offer facts', at: 'undo', why: 'Anything about money already goes to a person.' },
+    { k: 'wareply', label: 'Answer a WhatsApp reply and set the call back it asks for', at: 'tell', why: 'Replies that give a time are facts to confirm, nothing judged; a “no” still goes to a person.' },
   ];
 
 
@@ -1213,7 +1214,7 @@
     D.gone.forEach((g) => { const c = DB.byId[g.id]; if (c) { DB.cands = DB.cands.filter((x) => x.id !== c.id); DB.byReq[c.req] = DB.byReq[c.req].filter((x) => x.id !== c.id); delete DB.byId[c.id]; } });
     D.x = D.x || {}; D.tpl = D.tpl || {}; D.auto = D.auto || {}; D.autoLog = D.autoLog || [];
     D.news = D.news || []; D.lists = D.lists || [];
-    D.msgs = D.msgs || []; D.waDone = D.waDone || {};
+    D.msgs = D.msgs || []; D.waDone = D.waDone || {}; D.waAi = D.waAi || {};
     D.flags = D.flags || []; D.searches = D.searches || []; D.searchRun = D.searchRun || {}; D.searchGone = D.searchGone || [];
     Object.keys(D.tpl).forEach((k) => { TEMPLATE[k] = D.tpl[k].slice(); });
     /* A SENT ANSWER LASTS UNTIL THE PROTOTYPE RESTARTS (Engy, 29 Oct), so
@@ -4939,6 +4940,60 @@
       save(); paint(); }, 'It is in your calls and on the Diary.');
   }
 
+  /* AiMY ANSWERS FOR YOU (Engy, 10 Nov: "aimy takes the decisions and sends
+     the text"). Under the trust ladder's "Answer a WhatsApp reply" rung (the
+     HR Manager moves it on Templates): a reply that gives a time gets its call
+     back set and a confirmation sent; one that wants to talk without a time is
+     asked for one; a CV is thanked. AiMY says what it did on the thread, with
+     Undo. A "not interested" never goes out alone: it stays for a person. */
+  function waAutoRun() {
+    if (autoAt('wareply') === 'suggest' || !connectOn()) return;
+    waOwed().forEach((m) => {
+      const c = DB.byId[m.cand];
+      if (!c || !c.wa || D.waAi[m.id] || !waHrs(c)) return;
+      const r = waRead(m.text);
+      if (r.no) return;
+      const f = first(c.name);
+      let text = null, kind = null;
+      if (r.talk && r.time && r.day != null) { text = 'Great, I’ll call you ' + whenSay(r) + '. Thank you, ' + f + '!'; kind = 'cb'; }
+      else if (r.talk) { text = 'Thanks, ' + f + '. What time suits you for a short call today or tomorrow?'; kind = 'ask'; }
+      else if (r.cv) { text = 'Thanks, ' + f + '. I’ll take a look and come back to you this week.'; kind = 'cv'; }
+      if (!text) return;
+      const rec = { kind: kind, at: nowHM(), cb: c.callback, win: c.cbWin };
+      if (kind === 'cb') { const h = Number(r.time.slice(0, 2)); c.callback = r.day; c.cbWin = h < 12 ? 'am' : h < 18 ? 'pm' : 'eve'; rec.when = whenSay(r); }
+      const out = { id: 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), cand: c.id, dir: 'out', day: 0, time: nowHM(), text: text, by: 'aimy', ai: true };
+      D.msgs.push(out); DB.msgs.push(out);
+      rec.msg = out.id;
+      rec.ev = note(c, 'msg', 'On WhatsApp to ' + f + ', by AiMY: “' + text + '”', { by: null }).id;
+      D.waDone[m.id] = 1;
+      D.waAi[m.id] = rec;
+    });
+    save();
+  }
+  function waAutoUndo(id) {
+    const rec = D.waAi[id];
+    if (!rec || rec.undone) return;
+    const m = DB.msgs.filter((x) => x.id === id)[0], c = m && DB.byId[m.cand];
+    if (c && rec.kind === 'cb') { c.callback = rec.cb; c.cbWin = rec.win; }
+    D.msgs = D.msgs.filter((x) => x.id !== rec.msg); DB.msgs = DB.msgs.filter((x) => x.id !== rec.msg);
+    const e = DB.events.filter((x) => x.id === rec.ev)[0]; if (e) unmake('events', e);
+    delete D.waDone[id];
+    rec.undone = true;
+    save(); paint();
+    toast('I took it back', null, 'The message is withdrawn and the thread is yours to answer.');
+  }
+  function waAutoSay(c, ms) {
+    const done = ms.filter((m) => m.dir === 'in' && D.waAi[m.id] && !D.waAi[m.id].undone).pop();
+    if (!done) return '';
+    const rec = D.waAi[done.id], f = first(c.name);
+    const say = rec.kind === 'cb' ? 'I set a call back for <b>' + esc(rec.when) + '</b> and told ' + esc(f) + '. It’s in your calls and on the Diary.'
+      : rec.kind === 'ask' ? esc(f) + ' wanted to talk without a time, so I asked for one. I’ll set the call back when they answer.'
+      : 'I thanked ' + esc(f) + ' for the CV and added it to their record.';
+    return '<div class="b-aimy t-wa-aimy is-done">' + mark(13) + '<div class="t-wa-aimy-in"><span class="b-aimy-say">' + say +
+      ' <span class="t-wa-rule">Under ' + esc(DESKS.dina.name) + '’s rule: I do it and tell you.</span></span>' +
+      '<span class="t-acts"><button class="b-ghost" type="button" data-wa-undo="' + done.id + '">Undo</button></span></div></div>';
+  }
+
   /* ONE WHATSAPP THREAD (?on=calls&th=): their messages left, yours right,
      by day; under it the reply, free text inside the 24 hours and a template
      outside them. Somebody who never opted in gets no box at all. */
@@ -4951,7 +5006,7 @@
       const h = m.day !== day ? '<p class="t-wa-day">' + esc(dayLabel(m.day)) + '</p>' : '';
       day = m.day;
       return h + '<div class="t-wa-m ' + (m.dir === 'out' ? 'is-out' : 'is-in') + '"><p class="t-wa-text">' + esc(m.text) + '</p>' +
-        '<span class="t-wa-t">' + esc(m.dir === 'out' ? 'You' + (m.tpl ? ', template' : '') + (m.own ? ', from your WhatsApp' : '') : first(c.name) + (m.added ? ', added by you' : '')) + ' · ' + esc(m.time) + '</span></div>';
+        '<span class="t-wa-t">' + (m.ai ? mark(10) + ' ' : '') + esc(m.dir === 'out' ? (m.ai ? 'AiMY, for you' : 'You' + (m.tpl ? ', template' : '') + (m.own ? ', from your WhatsApp' : '')) : first(c.name) + (m.added ? ', added by you' : '')) + ' · ' + esc(m.time) + '</span></div>';
     }).join('');
     const tpl = WA_TPL.filter((x) => x.k === WA_TPL_ON)[0];
     /* Without AiMY Connect: no 24 hours and no templates, since it is their
@@ -4981,6 +5036,7 @@
         '<div class="s-camp-list-head"><h2 class="s-block-h">' + esc(c.name) + '</h2>' +
           '<span class="s-block-say">WhatsApp · ' + esc(c.wa ? 'opted in ' + sayWhen(c.waDay != null ? c.waDay : -3) + (connectOn() ? '' : ' · your own number') : 'no opt-in') + ' · ' + esc(reqOf(c).title) + ', ' + esc(accOf(reqOf(c)).name) + '</span></div>' +
         '<div class="t-wa">' + (list || '<p class="b-vfoot">Nothing on WhatsApp yet.</p>') + '</div>' +
+        waAutoSay(c, ms) +
         (owed ? waAimy(c, last) : '') +
         (owed && hrs && c.wa ? '<div class="t-wa-sugs" role="group" aria-label="Replies I wrote"><span class="t-wa-sugs-h">' + mark(11) + 'Replies I wrote</span>' +
           waSuggest(c, last).map((x, i) => '<button class="t-wa-sug" type="button" data-wa-sug="' + i + '|' + c.id + '">' + esc(x) + '</button>').join('') +
@@ -9799,6 +9855,7 @@
       '<li><span class="t-crumb-now" aria-current="page">' + esc(t.now) + '</span></li></ol></nav>';
   });
   function paint() {
+    if (!outside() && isRec()) waAutoRun();
     { const fi = byId('floatInput'), tc = threadCand(); if (fi && !fi.dataset.held) fi.placeholder = tc ? 'Ask about ' + first(tc.name) + ', or tell me what to send…' : 'Ask AiMY, or find a requisition or a candidate…'; }
     /* The name a CV card hangs from is about to be redrawn. */
     cvHide();
@@ -10512,6 +10569,7 @@
     if ((el = at('[data-wa-addgo]'))) { addWaReply(DB.byId[val('data-wa-addgo')]); return; }
     if ((el = at('[data-wa-add]'))) { WA_ADD = val('data-wa-add') || null; paint(); const r = byId('waReply'); if (r) r.focus(); return; }
     if ((el = at('[data-wa-send]'))) { sendWa(DB.byId[val('data-wa-send')]); return; }
+    if ((el = at('[data-wa-undo]'))) { waAutoUndo(val('data-wa-undo')); return; }
     if ((el = at('[data-wa-sug]'))) {
       const p = val('data-wa-sug').split('|'), c = DB.byId[p[1]], ms = msgsOf(c.id), t = byId('waText');
       if (t) { t.value = waSuggest(c, ms[ms.length - 1])[Number(p[0])]; t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
