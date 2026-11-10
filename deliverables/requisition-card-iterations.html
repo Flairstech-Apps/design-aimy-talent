@@ -1,0 +1,223 @@
+<title>Requisition Card Iterations</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a sheet of seven labelled rows, each the same four requisitions
+   drawn one way, in AiMY Talent's own dark look so each reads as the app. */
+:root {
+  color-scheme: dark;
+  --bg: #0e1319; --card: rgba(20, 27, 36, 0.85); --raised: #1a2330;
+  --line: rgba(255, 255, 255, 0.08); --line-2: rgba(255, 255, 255, 0.14);
+  --ink: #eef2f6; --ink-2: #d8e0e8; --mute: #9aa8b6; --mute-2: #7d8b99;
+  --accent: #8b4ff4; --accent-rgb: 139, 79, 244; --accent-ink: #b896ff; --ai: #61adf1;
+  --ok: #4ed6a1; --ok-rgb: 78, 214, 161; --warn: #f7c95c; --warn-rgb: 247, 201, 92; --err: #ff8a80;
+  --font: "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink-2); font-family: var(--font); font-size: 14px; line-height: 1.5;
+  background-image: radial-gradient(900px 500px at 10% -10%, rgba(51, 105, 255, 0.10), transparent 60%), radial-gradient(800px 500px at 100% 0%, rgba(139, 79, 244, 0.08), transparent 60%); }
+.wrap { max-width: 1320px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 40px 80px; }
+h1 { margin: 0; font-size: clamp(24px, 3.4vw, 32px); font-weight: 700; color: var(--ink); letter-spacing: -0.02em; text-wrap: balance; }
+.lede { margin: 10px 0 0; max-width: 70ch; color: var(--mute); font-size: 15px; }
+.row { margin-top: 44px; }
+.row-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 4px; }
+.row-head h2 { margin: 0; font-size: 18px; font-weight: 600; color: var(--ink); }
+.row-k { font-size: 12px; font-weight: 600; color: var(--accent-ink); }
+.row-say { margin: 0 0 14px; max-width: 80ch; color: var(--mute); font-size: 13.5px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 14px; }
+.grid.wide { grid-template-columns: repeat(auto-fill, minmax(min(560px, 100%), 1fr)); }
+.card { position: relative; display: flex; flex-direction: column; gap: 10px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); min-width: 0; }
+.card:hover { border-color: var(--line-2); }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 22px; }
+.acc { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--mute); }
+.acc svg, .fact svg, .ln svg { width: 14px; height: 14px; flex: none; }
+.tag { font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+.tag.warn { color: var(--warn); background: rgba(var(--warn-rgb), 0.12); border: 1px solid rgba(var(--warn-rgb), 0.3); }
+.tag.ok { color: var(--ok); background: rgba(var(--ok-rgb), 0.10); border: 1px solid rgba(var(--ok-rgb), 0.28); }
+.title { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.3; color: var(--ink); text-wrap: balance; }
+.facts { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--mute); }
+.fact { display: inline-flex; align-items: center; gap: 5px; }
+.big { font-size: 14px; color: var(--ink-2); } .big b { color: var(--ink); font-weight: 600; }
+.ln { display: flex; align-items: flex-start; gap: 7px; font-size: 12.5px; color: var(--mute); } .ln svg { margin-top: 2px; }
+.ln b { color: var(--ink-2); font-weight: 600; }
+.late { color: var(--warn); font-weight: 600; } .early { color: var(--ok); font-weight: 600; }
+.aimy { display: flex; gap: 9px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(var(--accent-rgb), 0.28);
+  background: linear-gradient(120deg, rgba(var(--accent-rgb), 0.12), rgba(0, 102, 255, 0.05)); font-size: 13px; color: var(--ink-2); }
+.aimy .mk { flex: none; margin-top: 2px; }
+.aimy b { color: var(--ink); font-weight: 600; }
+.mute { color: var(--mute); }
+.sep { height: 1px; background: var(--line); margin: 2px 0; }
+/* B: the date drawn */
+.track { position: relative; height: 46px; margin-top: 2px; }
+.track .rail { position: absolute; left: 0; right: 0; top: 20px; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.08); }
+.track .fill { position: absolute; left: 0; top: 20px; height: 4px; border-radius: 4px; background: var(--accent); }
+.track .pin { position: absolute; top: 14px; width: 2px; height: 16px; background: var(--ink-2); border-radius: 2px; }
+.track .fc { position: absolute; top: 16px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; border: 2px solid var(--bg); }
+.track .lab.up { top: -2px !important; }
+.track .gap { position: absolute; top: 18px; height: 8px; border-radius: 4px; background: repeating-linear-gradient(135deg, rgba(var(--warn-rgb), 0.45) 0 4px, rgba(var(--warn-rgb), 0.15) 4px 8px); }
+.track .band { position: absolute; top: 15px; height: 14px; border-radius: 7px; }
+.track .tick { position: absolute; top: 17px; width: 10px; height: 10px; margin-left: -5px; border-radius: 2px; transform: rotate(45deg); background: var(--ai); border: 2px solid var(--bg); }
+.key { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 1px; transform: rotate(45deg); background: var(--ai); }
+.more { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--line); }
+.more-h { margin: 0 0 6px; font-size: 22px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
+.track .lab { position: absolute; top: 30px; font-size: 10.5px; color: var(--mute); white-space: nowrap; transform: translateX(-50%); }
+.track .lab.r { transform: translateX(-100%); } .track .lab.l { transform: none; }
+/* C: funnel bars */
+.fun { display: grid; gap: 4px; }
+.fun-r { display: grid; grid-template-columns: 74px minmax(0, 1fr) 24px; align-items: center; gap: 8px; font-size: 11.5px; color: var(--mute); }
+.fun-b { height: 8px; border-radius: 4px; background: rgba(var(--accent-rgb), 0.45); }
+.fun-r.drop .fun-b { background: var(--warn); } .fun-r.drop { color: var(--ink-2); }
+.fun-r span:last-child { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+/* D: three numbers */
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.stat { padding: 9px 10px; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.stat + .stat { border-left: 1px solid var(--line); }
+.stat b { font-size: 18px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1.2; }
+.stat span { font-size: 11px; color: var(--mute); }
+.stat.warn b { color: var(--warn); } .stat.ok b { color: var(--ok); }
+/* F: people */
+.pipe { display: flex; align-items: flex-end; gap: 3px; height: 40px; }
+.pipe i { flex: 1; border-radius: 3px 3px 0 0; background: rgba(var(--accent-rgb), 0.35); }
+.pipe i.on { background: var(--accent); }
+.pipe-l { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--mute); }
+.avs { display: flex; align-items: center; }
+.av { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 10px; font-weight: 600; color: var(--ink); background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.45), rgba(0, 102, 255, 0.3)); border: 2px solid #141b24; margin-left: -7px; }
+.av:first-child { margin-left: 0; } .av.more { background: var(--raised); color: var(--mute); }
+.who { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--mute); }
+/* G: wide row */
+.wrow { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) auto; gap: 14px 20px; align-items: center; }
+.wrow .col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.verdict { font-size: 22px; font-weight: 600; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; text-align: right; }
+.verdict small { display: block; font-size: 11px; font-weight: 500; color: var(--mute); margin-top: 3px; }
+.verdict.warn { color: var(--warn); } .verdict.ok { color: var(--ok); }
+@media (max-width: 640px) { .wrow { grid-template-columns: minmax(0, 1fr); } .verdict { text-align: left; } }
+.foot { margin-top: 48px; font-size: 12.5px; color: var(--mute); max-width: 80ch; }
+</style>
+
+<div class="wrap">
+  <h1>Requisition cards, seven ways</h1>
+  <p class="lede">The same four open requisitions from Omar's desk, drawn seven ways. Each row changes what the card leads with: the status, the date, the funnel, the numbers, AiMY's read, the people, or a wide row. Same data throughout, from the prototype on 10 Nov.</p>
+  <section class="more"><h2 class="more-h">More like B</h2><p class="row-say">The date drawn, six ways. Same four requisitions; the line is today to the target, the dot is where this pace lands.</p></section>
+  <div id="sheetB"></div>
+  <section class="more"><h2 class="more-h">The first seven</h2></section>
+  <div id="sheet"></div>
+  <p class="foot">Every row keeps the rules the cards already follow: no fit percentages, the drop said as people moved on, the late or early days in colour only where they matter, and AiMY speaking in the first person.</p>
+</div>
+
+<script>
+(function () {
+  const I = {
+    acc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>',
+    lvl: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>',
+    seat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+    rep: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>',
+    user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+    cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>',
+    send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>',
+    mark: '<svg class="mk" width="13" height="14" viewBox="0 0 24 24" aria-hidden="true"><g fill="#8b4ff4"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="3.5" r="2"/><circle cx="12" cy="20.5" r="2"/><circle cx="3.5" cy="12" r="2"/><circle cx="20.5" cy="12" r="2"/><circle cx="6" cy="6" r="1.8"/><circle cx="18" cy="18" r="1.8"/><circle cx="18" cy="6" r="1.8"/><circle cx="6" cy="18" r="1.8"/></g></svg>',
+  };
+  /* The four requisitions, as the prototype shows them on 10 Nov. off: days
+     from the target the pace lands on (+ late, - early). stages: people who
+     reached each step; drop marks the step people fell away after. */
+  const R = [
+    { t: 'L3 Support Engineer', acc: 'Northwind Software', lvl: 'Senior', seats: 1, kind: 'Replacement', hm: 'Rania Samir', prog: 9, client: 0, target: '16 Nov', left: 6, pace: '1 Dec', off: 15, first: 12, firstSent: true, risk: true,
+      stages: [['Sourced', 20], ['Applied', 10], ['Assessment', 7], ['Phone screen', 5], ['HR', 4], ['Technical', 2]], drop: 0, people: ['NG', 'MS', 'AH', 'YK'] },
+    { t: 'Accounts Receivable Specialist', acc: 'Northwind Software', lvl: 'Mid-level', seats: 1, kind: 'Replacement', hm: 'Rania Samir', prog: 11, client: 0, target: '6 Dec', left: 26, pace: '9 Dec', off: 3, first: 4, firstSent: false, risk: true,
+      stages: [['Sourced', 14], ['Applied', 4], ['Phone screen', 1]], drop: 1, people: ['AF', 'MK', 'WM', 'AN'] },
+    { t: 'Technical Support Engineer', acc: 'Halcyon Mobile', lvl: 'Mid-level', seats: 1, kind: 'Replacement', hm: 'Laila Mansour', prog: 5, client: 0, target: '28 Nov', left: 18, pace: '26 Nov', off: -2, first: 8, firstSent: true, risk: false,
+      stages: [['Sourced', 9], ['Applied', 7], ['Phone screen', 6], ['HR', 5], ['Technical', 5], ['Profile sent', 1]], drop: 4, people: ['SK', 'TH', 'RA'] },
+    { t: 'Bilingual Technical Support (German)', acc: 'Northwind Software', lvl: 'Mid-level', seats: 2, kind: 'Replacement', hm: 'Rania Samir', prog: 5, client: 4, target: '29 Nov', left: 19, pace: '24 Nov', off: -5, first: 9, firstSent: true, risk: false,
+      stages: [['Sourced', 12], ['Applied', 9], ['Phone screen', 7], ['Technical', 5], ['Profile sent', 5], ['Client interview', 2]], drop: 4, people: ['ME', 'YH', 'SR', 'OL'] },
+  ];
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const plural = (n, a, b) => n + ' ' + (n === 1 ? a : (b || a + 's'));
+  const offSay = (r) => r.off > 0 ? '<span class="late">' + r.pace + ', ' + plural(r.off, 'day') + ' late</span>' : '<b>' + r.pace + '</b>, ' + plural(-r.off, 'day') + ' early';
+  const dropSay = (r) => { const a = r.stages[r.drop], b = r.stages[r.drop + 1]; return b[1] + ' of ' + a[1] + ' moved on after ' + a[0]; };
+  const firstSay = (r) => r.firstSent ? 'First profile on <b' + (r.first > 7 ? ' class="late"' : '') + '>day ' + r.first + '</b> of 7' : 'No profile yet, <b>day ' + r.first + '</b> of 7';
+  const top = (r, tag) => '<div class="top">' + (tag === false ? '<span></span>' : r.risk ? '<span class="tag warn">At risk</span>' : '<span></span>') + '<span class="acc">' + I.acc + esc(r.acc) + '</span></div>';
+  const facts = (r) => '<div class="facts"><span class="fact">' + I.lvl + r.lvl + '</span><span class="fact">' + I.seat + plural(r.seats, 'seat') + '</span><span class="fact">' + I.rep + r.kind + '</span><span class="fact">' + I.user + esc(r.hm) + '</span></div>';
+  const prog = (r) => '<p class="big" style="margin:0"><b>' + r.prog + '</b> in progress' + (r.client ? ', <b>' + r.client + '</b> with the client' : '') + '</p>';
+  const aimy = (html) => '<div class="aimy">' + I.mark + '<span>' + html + '</span></div>';
+
+  const V = [
+    { k: 'A', name: 'Today’s card, tidied', say: 'The current card with one change: the date and first-profile lines become one quiet block, and AiMY’s note names the drop in its own voice. The baseline the others are measured against.',
+      card: (r) => top(r) + '<h3 class="title">' + esc(r.t) + '</h3>' + facts(r) + prog(r) +
+        '<div class="ln">' + I.cal + '<span>Target ' + r.target + ', ' + plural(r.left, 'day') + ' left. At this pace ' + offSay(r) + '.</span></div>' +
+        '<div class="ln">' + I.send + '<span>' + firstSay(r) + '.</span></div>' + aimy('I see the biggest drop here: ' + dropSay(r) + '.') },
+    { k: 'B', name: 'The date, drawn', say: 'The question on this page is “will it fill in time”. The card draws it: today on the left, the target as a line, and the pace as a dot, amber when it lands past the target.',
+      card: (r) => { const span = Math.max(r.left + Math.max(r.off, 0), r.left) + 4, x = (d) => Math.round(d / span * 100);
+        return top(r) + '<h3 class="title">' + esc(r.t) + '</h3>' + facts(r) + prog(r) +
+          '<div class="track"><div class="rail"></div><div class="fill" style="width:' + x(Math.min(r.left + r.off, r.left)) + '%"></div>' +
+          '<div class="pin" style="left:' + x(r.left) + '%"></div><div class="fc" style="left:' + x(r.left + r.off) + '%;background:' + (r.off > 0 ? 'var(--warn)' : 'var(--ok)') + '"></div>' +
+          '<span class="lab l" style="left:0">Today</span><span class="lab up" style="left:' + x(r.left) + '%">Target' + r.target + '</span></div>' +
+          '<div class="ln"><span>At this pace ' + offSay(r) + '. ' + firstSay(r) + '.</span></div>'; } },
+    { k: 'C', name: 'The funnel, drawn', say: 'Where people fall away is the recruiter’s lever. A bar per stage shows the shape of the funnel at a glance, with the stage they drop after marked in amber.',
+      card: (r) => top(r) + '<h3 class="title">' + esc(r.t) + '</h3>' + facts(r) +
+        '<div class="fun">' + r.stages.map((s, i) => '<div class="fun-r' + (i === r.drop ? ' drop' : '') + '"><span>' + s[0] + '</span><div><div class="fun-b" style="width:' + Math.max(6, Math.round(s[1] / r.stages[0][1] * 100)) + '%"></div></div><span>' + s[1] + '</span></div>').join('') + '</div>' +
+        '<div class="ln">' + I.cal + '<span>Target ' + r.target + '. At this pace ' + offSay(r) + '.</span></div>' },
+    { k: 'D', name: 'Three numbers', say: 'For scanning a wall of requisitions: three numbers in a strip, the same place on every card, coloured only when one is off. The words go underneath.',
+      card: (r) => top(r) + '<h3 class="title">' + esc(r.t) + '</h3>' + facts(r) +
+        '<div class="stats"><div class="stat"><b>' + r.prog + '</b><span>in progress</span></div>' +
+        '<div class="stat' + (r.off > 0 ? ' warn' : ' ok') + '"><b>' + (r.off > 0 ? '+' + r.off : r.off) + 'd</b><span>vs target</span></div>' +
+        '<div class="stat' + (r.first > 7 && r.firstSent ? ' warn' : '') + '"><b>' + (r.firstSent ? 'day ' + r.first : '—') + '</b><span>first profile</span></div></div>' +
+        '<div class="ln"><span>Target ' + r.target + ', ' + plural(r.left, 'day') + ' left. ' + dropSay(r) + '.</span></div>' },
+    { k: 'E', name: 'AiMY says it', say: 'AiMY’s read leads, in its voice, and the facts become the small print. The card answers “what should I do about this one” before it lists anything.',
+      card: (r) => top(r) + '<h3 class="title">' + esc(r.t) + '</h3>' +
+        aimy(r.off > 0 ? 'I see a risk: at this pace it fills on <b>' + r.pace + '</b>, ' + plural(r.off, 'day') + ' after the target. The biggest drop is after ' + r.stages[r.drop][0] + '; I’d look there first.'
+          : 'This one is on course: at this pace it fills on <b>' + r.pace + '</b>, ' + plural(-r.off, 'day') + ' early.' + (r.client ? ' I’m waiting on the client for ' + r.client + '.' : '')) +
+        '<div class="sep"></div>' + facts(r) + '<div class="ln mute"><span>' + r.prog + ' in progress · target ' + r.target + ' · ' + firstSay(r).replace(/<\/?b[^>]*>/g, '') + '</span></div>' },
+    { k: 'F', name: 'The people in it', say: 'A requisition is people moving. The card shows them: a bar per stage for how many are where, the furthest people as faces, and the hiring manager named at the foot.',
+      card: (r) => { const m = r.stages[0][1];
+        return top(r) + '<h3 class="title">' + esc(r.t) + '</h3>' +
+          '<div class="pipe">' + r.stages.map((s, i) => '<i class="' + (i === r.stages.length - 1 ? 'on' : '') + '" style="height:' + Math.max(8, Math.round(s[1] / m * 100)) + '%"></i>').join('') + '</div>' +
+          '<div class="pipe-l"><span>' + r.stages[0][0] + '</span><span>' + r.stages[r.stages.length - 1][0] + '</span></div>' +
+          '<div class="who"><span class="avs">' + r.people.map((p) => '<span class="av">' + p + '</span>').join('') + (r.prog > r.people.length ? '<span class="av more">+' + (r.prog - r.people.length) + '</span>' : '') + '</span><span>' + r.prog + ' in progress</span></div>' +
+          '<div class="sep"></div><div class="ln">' + I.user + '<span>' + esc(r.hm) + ' · target ' + r.target + ', ' + (r.off > 0 ? '<span class="late">' + plural(r.off, 'day') + ' late</span>' : plural(-r.off, 'day') + ' early') + '</span></div>'; } },
+    { k: 'G', name: 'A wide row', say: 'Two to a row instead of four: the title and facts on the left, the pace and drop in the middle, and one verdict on the right in large type. Easier to compare down a column.', wide: true,
+      card: (r) => '<div class="wrow"><div class="col">' + top(r) + '<h3 class="title">' + esc(r.t) + '</h3>' + facts(r) + '</div>' +
+        '<div class="col"><div class="ln">' + I.cal + '<span>Target ' + r.target + ', ' + plural(r.left, 'day') + ' left</span></div><div class="ln">' + I.send + '<span>' + firstSay(r) + '</span></div>' +
+        '<div class="ln">' + I.mark + '<span>' + dropSay(r) + '</span></div></div>' +
+        '<div class="verdict ' + (r.off > 0 ? 'warn' : 'ok') + '">' + (r.off > 0 ? '+' + r.off : r.off) + ' days<small>' + (r.off > 0 ? 'late at this pace' : 'early at this pace') + '</small></div></div>' },
+  ];
+  /* MORE LIKE B (10 Nov): the date drawn, six ways. */
+  const sx = (r) => { const span = r.left + Math.max(r.off, 0) + 4; return (d) => Math.max(0, Math.min(100, Math.round(d / span * 100))); };
+  const tone = (r) => (r.off > 0 ? 'var(--warn)' : 'var(--ok)');
+  const trackB = (r, opt) => { const x = sx(r), o = opt || {};
+    return '<div class="track' + (o.cls ? ' ' + o.cls : '') + '"><div class="rail"></div>' +
+      (o.band ? '<div class="band" style="left:' + x(r.left + r.off - 3) + '%;width:' + (x(r.left + r.off + 3) - x(r.left + r.off - 3)) + '%;background:' + (r.off > 0 ? 'rgba(var(--warn-rgb),0.22)' : 'rgba(var(--ok-rgb),0.2)') + '"></div>' : '') +
+      (o.gap && r.off > 0 ? '<div class="gap" style="left:' + x(r.left) + '%;width:' + (x(r.left + r.off) - x(r.left)) + '%"></div>' : '') +
+      '<div class="fill" style="width:' + x(Math.min(r.left + r.off, r.left)) + '%"></div>' +
+      (o.first ? '<div class="tick" style="left:' + x(Math.min(7, r.left)) + '%" title="First profile due"></div>' : '') +
+      '<div class="pin" style="left:' + x(r.left) + '%"></div><div class="fc" style="left:' + x(r.left + r.off) + '%;background:' + tone(r) + '"></div>' +
+      '<span class="lab l" style="left:0">Today</span><span class="lab up" style="left:' + x(r.left) + '%">Target ' + r.target + '</span>' +
+      (o.paceLab ? '<span class="lab" style="left:' + x(r.left + r.off) + '%;color:' + tone(r) + '">' + r.pace + '</span>' : '') + '</div>'; };
+  const VB = [
+    { k: 'B1', name: 'B, as it is', say: 'The direction as first drawn, for comparison: today, the target as a line, the pace as a dot.',
+      card: (r) => V[1].card(r) },
+    { k: 'B2', name: 'The gap shaded', say: 'When the pace lands past the target, the days between them are shaded amber, so “how late” is a length you can see, not a number to read.',
+      card: (r) => top(r) + '<h3 class="title">' + esc(r.t) + '</h3>' + facts(r) + prog(r) + trackB(r, { gap: true, paceLab: true }) +
+        '<div class="ln"><span>' + (r.off > 0 ? '<span class="late">' + plural(r.off, 'day') + ' past the target</span> at this pace.' : '<span class="early">' + plural(-r.off, 'day') + ' to spare</span> at this pace.') + ' ' + firstSay(r) + '.</span></div>' },
+    { k: 'B3', name: 'A range, not a day', say: 'A forecast is honest as a range: the pace is drawn as a soft band of about a week around the likely day, with the likely day marked.',
+      card: (r) => top(r) + '<h3 class="title">' + esc(r.t) + '</h3>' + facts(r) + prog(r) + trackB(r, { band: true, paceLab: true }) +
+        '<div class="ln"><span>Likely ' + r.pace + ', give or take three days. ' + firstSay(r) + '.</span></div>' },
+    { k: 'B4', name: 'Drawn, with AiMY’s read', say: 'B and E together: the line shows when, AiMY says why and what to do, in one sentence under it.',
+      card: (r) => top(r) + '<h3 class="title">' + esc(r.t) + '</h3>' + facts(r) + trackB(r, { gap: true, paceLab: true }) +
+        aimy(r.off > 0 ? 'At this pace it fills <b>' + plural(r.off, 'day') + ' late</b>. Most people drop after ' + r.stages[r.drop][0] + '; I’d look there first.'
+          : 'On course, <b>' + plural(-r.off, 'day') + ' early</b>.' + (r.client ? ' I’m waiting on the client for ' + r.client + '.' : ' Nothing needs you here.')) },
+    { k: 'B5', name: 'The line in the head', say: 'The track moves up under the title and the facts drop to one muted line, so the date is the second thing you read on every card.',
+      card: (r) => top(r) + '<h3 class="title">' + esc(r.t) + '</h3>' + trackB(r, { paceLab: true }) +
+        '<div class="ln"><span>' + (r.off > 0 ? '<span class="late">' + plural(r.off, 'day') + ' late</span>' : '<span class="early">' + plural(-r.off, 'day') + ' early</span>') + ' · ' + r.prog + ' in progress' + (r.client ? ', ' + r.client + ' with the client' : '') + '</span></div>' +
+        '<div class="sep"></div><div class="facts">' + '<span class="fact">' + I.user + esc(r.hm) + '</span><span class="fact">' + I.lvl + r.lvl + '</span><span class="fact">' + I.seat + plural(r.seats, 'seat') + '</span></div>' },
+    { k: 'B6', name: 'With the first profile', say: 'The first-profile promise (day 7) sits on the same line as a small diamond, so both dates the recruiter answers for are in one picture. Built for real, this line would start on the day the requisition opened, so the diamond lands at day 7 exactly; here it is placed roughly.',
+      card: (r) => top(r) + '<h3 class="title">' + esc(r.t) + '</h3>' + facts(r) + prog(r) + trackB(r, { first: true, gap: true, paceLab: true }) +
+        '<div class="ln"><span><i class="key"></i>First profile due day 7: ' + (r.firstSent ? 'sent on <b' + (r.first > 7 ? ' class="late"' : '') + '>day ' + r.first + '</b>' : 'not yet, <b>day ' + r.first + '</b>') + '.</span></div>' },
+  ];
+  const rowHtml = (v) => '<section class="row" id="v-' + v.k.toLowerCase() + '"><div class="row-head"><span class="row-k">' + v.k + '</span><h2>' + v.name + '</h2></div>' +
+    '<p class="row-say">' + v.say + '</p><div class="grid' + (v.wide ? ' wide' : '') + '">' + R.map((r) => '<article class="card">' + v.card(r) + '</article>').join('') + '</div></section>';
+  document.getElementById('sheetB').innerHTML = VB.map(rowHtml).join('');
+  document.getElementById('sheet').innerHTML = V.map((v) => '<section class="row" id="v-' + v.k.toLowerCase() + '"><div class="row-head"><span class="row-k">' + v.k + '</span><h2>' + v.name + '</h2></div>' +
+    '<p class="row-say">' + v.say + '</p><div class="grid' + (v.wide ? ' wide' : '') + '">' + R.map((r) => '<article class="card">' + v.card(r) + '</article>').join('') + '</div></section>').join('');
+})();
+</script>

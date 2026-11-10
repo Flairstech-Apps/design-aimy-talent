@@ -2395,3 +2395,22 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 /* The card's facts a step greyer than the role above them (10 Nov), and regular
    weight, so name, role and facts read as three levels. */
 .b-qcard .t-cfacts > .b-qcard-where { color: var(--d300, var(--ink-muted)); font-weight: 400; }
+
+/* ══ THE DATE, DRAWN, ON THE REQUISITION CARD (Engy, 10 Nov) ═══════════════
+   Today on the left, the target as a short upright line, the pace as a soft
+   band of about a week with the likely day as a dot. Green when it lands in
+   time, amber when it lands past the target. */
+.t-rt { position: relative; height: 44px; margin: 2px 0 4px; --rt: var(--ok); --rt-rgb: var(--ok-rgb); }
+.t-rt.is-late { --rt: var(--warn-text, var(--warn)); --rt-rgb: var(--warn-rgb); }
+.t-rt-rail { position: absolute; left: 0; right: 0; top: 19px; height: 4px; border-radius: 4px; background: color-mix(in srgb, var(--d50) 10%, transparent); }
+.t-rt-fill { position: absolute; left: 0; top: 19px; height: 4px; border-radius: 4px; background: var(--accent); }
+.t-rt-band { position: absolute; top: 14px; height: 14px; border-radius: 7px; background: rgba(var(--rt-rgb), 0.22); }
+.t-rt-pin { position: absolute; top: 12px; width: 2px; height: 18px; margin-left: -1px; border-radius: 2px; background: var(--d100); }
+.t-rt-dot { position: absolute; top: 15px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: var(--rt); box-shadow: 0 0 0 2px var(--card-bg); }
+.t-rt-lab { position: absolute; top: 30px; transform: translateX(-50%); font-size: 11px; line-height: 1.2; white-space: nowrap; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.t-rt-lab.is-up { top: -3px; }
+.t-rt-lab.is-pace { color: var(--rt); font-weight: var(--fw-semibold); }
+.t-rt-lab.is-l { transform: none; }
+.t-rt-lab.is-r { transform: translateX(-100%); }
+/* The line keeps the card's 14px inset, as the lines around it do. */
+.t-reqcard .t-rt { margin-left: 14px; margin-right: 14px; }

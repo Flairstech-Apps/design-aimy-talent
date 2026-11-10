@@ -2537,8 +2537,8 @@
       '<p class="b-qcard-where t-req-facts">' + fact('job', q.level) + fact('users', plural(q.seats, 'seat')) + fact('loop', q.kind === 'replacement' ? 'Replacement' : 'New role') + fact('user', hmOf(q).name) + '</p>' +
       '<p class="t-req-prog">' + (CLOSED[q.state] ? 'Opened ' + sayDay(q.opened)
         : '<b>' + act.length + '</b> in progress' + (sent ? ', <b>' + sent + '</b> with the client' : '')) + '</p>' +
-      (h && !isClient() ? forecastHtml(q, h) : '') +
-      aimyBlock({ text: read }, true) +
+      (h && !isClient() ? reqTrack(q, h) : '') +
+      aimyBlock({ text: h && !isClient() ? trackRead(q, h, ws, sent) : read }, true) +
     '</article>';
   }
 
@@ -9318,6 +9318,42 @@
   /* THE DATES AS ONE STORY (Engy, 6 Nov): the target once, how long is
      left, and where this pace lands, in one line; the first profile in the
      next. The late part is in the warning ink, said in words too. */
+  /* THE DATE, DRAWN (Engy, 10 Nov: B3 of deliverables/requisition-card-
+     iterations.html, with B4's read). A line from today to the target; the
+     pace as a soft band of about a week around the likely day, with the day
+     marked and named, amber when it lands past the target. The first-profile
+     promise stays as a line under it. */
+  function reqTrack(q, h) {
+    const left = Math.max(0, h.left), need = h.need, late = h.risk;
+    const span = Math.max(left, need + 3) + 3, x = (d) => Math.max(0, Math.min(100, Math.round(d / span * 1000) / 10));
+    const lo = x(Math.max(0, need - 3)), hi = x(need + 3), at = x(need), pin = x(left);
+    const tone = late ? 'is-late' : 'is-ok';
+    const side = (p) => (p > 84 ? ' is-r' : p < 12 ? ' is-l' : '');
+    let first = '';
+    if (rank(q, 'sent') >= 0) {
+      const sd = sentDays(q), age = -q.opened;
+      first = '<p class="b-qcard-where t-fc-line"><span class="b-fact">' + svg('send') + '<span>' + (sd != null
+        ? 'First profile on ' + (sd > FIRST_TARGET ? '<b class="is-late">day ' + sd + '</b>' : '<b>day ' + sd + '</b>') + ' of ' + FIRST_TARGET
+        : 'No profile yet, ' + (age > FIRST_TARGET ? '<b class="is-late">day ' + age + '</b>' : '<b>day ' + age + '</b>') + ' of ' + FIRST_TARGET) + '.</span></span></p>';
+    }
+    return '<div class="t-fc">' +
+      '<div class="t-rt ' + tone + '" role="img" aria-label="' + esc('Target ' + sayDay(q.target) + '. At this pace likely ' + sayDay(need) + ', give or take three days' + (late ? ', ' + days(need - h.left) + ' late.' : '.')) + '">' +
+        '<span class="t-rt-rail"></span><span class="t-rt-fill" style="width:' + Math.min(at, pin) + '%"></span>' +
+        '<span class="t-rt-band" style="left:' + lo + '%;width:' + Math.max(2, hi - lo) + '%"></span>' +
+        '<span class="t-rt-pin" style="left:' + pin + '%"></span><span class="t-rt-dot" style="left:' + at + '%"></span>' +
+        '<span class="t-rt-lab is-up' + side(pin) + '" style="left:' + pin + '%">Target ' + esc(sayDay(q.target)) + '</span>' +
+        (at > 22 ? '<span class="t-rt-lab is-l" style="left:0">Today</span>' : '') +
+        '<span class="t-rt-lab is-pace' + side(at) + '" style="left:' + at + '%">' + esc(sayDay(need)) + '</span>' +
+      '</div>' +
+      '<p class="b-qcard-where t-fc-line"><span>Likely <b' + (late ? ' class="is-late"' : '') + '>' + esc(sayDay(need)) + '</b>, give or take three days' +
+        (late ? ', <b class="is-late">' + esc(days(need - h.left)) + ' late</b>.' : '.') + '</span></p>' + first + '</div>';
+  }
+  /* AiMY's read under it, in its voice: when it fills, and where to look. */
+  function trackRead(q, h, ws, sent) {
+    const gap = h.left - h.need;
+    if (h.risk) return 'At this pace it fills <b>' + days(-gap) + ' late</b>.' + (ws ? ' Most people drop after ' + esc(STAGE[ws.from].label) + '; I’d look there first.' : ' I’d push the furthest candidates first.');
+    return 'On course' + (gap ? ', <b>' + days(gap) + ' early</b>.' : ', <b>on time</b>.') + (sent ? ' I’m waiting on the client for ' + sent + '.' : ' Nothing needs you here.');
+  }
   function forecastHtml(q, h) {
     const gap = h.left - h.need;
     const pace = h.risk ? '<b class="is-late">' + esc(sayDay(h.need)) + ', ' + esc(days(-gap)) + ' late</b>'
