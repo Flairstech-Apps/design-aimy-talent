@@ -515,9 +515,9 @@
      when a person moves it, and the move is logged with AiMY's reason; it
      can come down the same way. Seeded where the prototype already acts. */
   const RUNG = [
-    { k: 'suggest', label: 'Suggests', say: 'AiMY suggests; a person does it' },
-    { k: 'undo',    label: 'Does, with Undo', say: 'AiMY does it; the toast can take it back' },
-    { k: 'tell',    label: 'Does and tells', say: 'AiMY does it and says so afterwards' },
+    { k: 'suggest', label: 'Suggests', say: 'I suggest; a person does it' },
+    { k: 'undo',    label: 'Does, with Undo', say: 'I do it; the toast can take it back' },
+    { k: 'tell',    label: 'Does and tells', say: 'I do it and tell you afterwards' },
   ];
   const AUTO_SEED = [
     { k: 'book',    label: 'Book an interview in the interviewer’s free slots', at: 'undo', why: 'Every booking this month kept its slot; 2 of 61 were moved by a person.' },
@@ -2569,10 +2569,10 @@
     const lead = CLOSED[q.state] ? { n: q.seats, of: q.seats, say: 'seats filled. This requisition is closed.' }
       : rank(q, 'sent') >= 0 && sentN ? { n: metN, of: sentN, say: (sentN === 1 ? 'profile sent got' : 'profiles sent got') + ' a client interview' + (h ? ', with ' + days(Math.max(0, h.left)) + ' to the target.' : '.') }
       : { n: act.length, of: all.length, say: (all.length === 1 ? 'candidate is' : 'candidates are') + ' still in progress' + (h ? ', with ' + days(Math.max(0, h.left)) + ' to the target.' : '.') };
-    const deck = h && h.risk ? riskSay(q, h).replace(/<\/?b>/g, '') + ' Moving the date changes the forecast, not the work.'
-      : ws ? 'The biggest drop is after the ' + lower(STAGE[ws.from].label) + ': ' + ws.m + ' of ' + ws.n + ' reached the ' + lower(STAGE[ws.to].label) + '.' +
+    const deck = h && h.risk ? 'I see a risk to the date. ' + riskSay(q, h).replace(/<\/?b>/g, '') + ' Moving the date changes the forecast, not the work.'
+      : ws ? 'I see the biggest drop after the ' + lower(STAGE[ws.from].label) + ': ' + ws.m + ' of ' + ws.n + ' reached the ' + lower(STAGE[ws.to].label) + '.' +
         (ws.from === 'sent' ? ' That one is the client’s choice: about ' + (ws.n / Math.max(1, ws.m)).toFixed(1) + ' profiles per client interview. ' + versusNorm(ws.m ? ws.n / ws.m : null) + ' Their reasons say what to change.' : '')
-      : 'Nothing stands out yet.';
+      : 'Nothing stands out to me yet.';
 
     return '<div class="s-home">' +
       '<div class="b-topbar s-block-wide"><button class="s-back" type="button" data-trail>' + svg('back', 14) + 'Back to ' + backTo + '</button>' +
@@ -3093,7 +3093,7 @@
   function writeBox(c, inCard) {
     const a = accOf(reqOf(c));
     const body = '<div style="margin-top:12px">' + rcCaps('The write-up · what ' + a.name + ' reads') +
-      rcAimy('AiMY drafted this from the CV, the interviews and the evidence. Salary, margin and internal notes are left out. Edit anything before it goes.', 'from ' + plural(ivsOf(c).filter((v) => v.status === 'done').length, 'interview') + ' and the success profile') +
+      rcAimy('I drafted this from the CV, the interviews and the evidence, and left out salary, margin and internal notes. Edit anything before it goes.', 'from ' + plural(ivsOf(c).filter((v) => v.status === 'done').length, 'interview') + ' and the success profile') +
       '<div class="t-input-wrap" id="wrapWu" style="margin-top:10px"><textarea class="dial-input t-area t-input" id="wuText" rows="5" aria-label="The write-up the client reads">' + esc(WRITING.text) + '</textarea>' +
         '<p class="t-error-msg">The client needs a line or two about them.</p></div>' +
       '<div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">' + rcBtn('Approve and send to ' + a.name, 'data-wu-send="' + c.id + '"', 'primary', 'send') +
@@ -3268,7 +3268,7 @@
         }).join('') + '</div>' +
         rcFoot(svg('hist', 12) + ' Criteria v' + ((q.mustV || 0) + 1) + ' · set by ' + esc(hmOf(q).name) + ', ' + esc(sayDay(q.opened)) +
           (last != null ? ' · last checked in interview ' + esc(sayDay(last)) : ''), works ? 'Overridable · you decide' : 'Read against your success profile') +
-        (isClient() ? '' : rcNote('info', 'AiMY suggests each interview finding from the transcript; the interviewer confirms it before it lands here. The candidate sees and edits only what the CV says.')) });
+        (isClient() ? '' : rcNote('info', 'I suggest each interview finding from the transcript; the interviewer confirms it before it lands here. The candidate sees and edits only what the CV says.')) });
   }
   function passWith(c, why, line) {
     const was = { exit: c.exit, since: c.since, decline: c.decline || null, decideDay: c.decideDay, told: c.told };
@@ -3314,10 +3314,10 @@
       '<div class="t-funnel">' + counts.map((x) => '<div class="t-fn-row' + (x === top && top.n >= 2 ? ' is-top' : '') + '"><span class="t-fn-label">' + esc(x.d.label) + '</span>' +
         '<span class="t-fn-track"><span class="t-fn-fill" style="width:' + (x.n / top.n * 100).toFixed(1) + '%"></span></span>' +
         '<span class="t-fn-n"><b>' + x.n + '</b> · ' + Math.round(x.n / list.length * 100) + '%</span></div>').join('') + '</div>' +
-      aimyBlock({ text: (top.n >= 2 ? '<b>' + top.n + ' of ' + list.length + '</b> name ' + esc(lower(top.d.label)) + '. ' : 'No reason stands out yet. ') +
+      aimyBlock({ text: (top.n >= 2 ? 'I read their reasons: <b>' + top.n + ' of ' + list.length + '</b> name ' + esc(lower(top.d.label)) + '. ' : 'No reason stands out to me yet. ') +
         (rule ? 'A rule is in force, approved by ' + esc(DESKS[rule.decidedBy] ? DESKS[rule.decidedBy].name : 'the HR Manager') + ': ' + esc(rule.rule)
-          : prop && !prop.rec ? 'AiMY has proposed a change to the HR Manager: ' + esc(prop.rule)
-          : accId ? 'AiMY proposes a change once there are five declines in 90 days and one reason is behind a third of them.' : 'Each reason feeds matching for its own client only.') +
+          : prop && !prop.rec ? 'I proposed a change to the HR Manager: ' + esc(prop.rule)
+          : accId ? 'I propose a change once there are five declines in 90 days and one reason is behind a third of them.' : 'Each reason feeds matching for its own client only.') +
         (notes.length ? ' Said under Other: ' + notes.map((c) => '“' + esc(c.decline.note) + '”').join(', ') + '.' : ''), from: 'every decline with a reason' }) +
     '</section>';
   }
@@ -4308,7 +4308,7 @@
     }).join('');
     if (!said && !co.checks) return '';
     return '<div class="s-callsum-row"><span class="s-callsum-mem">What AiMY suggested</span><span class="s-callsum-val">' +
-      (said || 'Nothing. AiMY heard ' + plural(co.log.length, 'call') + ' and had nothing to change.') + '</span></div>';
+      (said || 'Nothing. I heard ' + plural(co.log.length, 'call') + ' and had nothing to change.') + '</span></div>';
   }
 
   /* Closing the panel before a call starts: one press, with Undo. In a run
@@ -4446,7 +4446,7 @@
       (st === 'ready' && call.dir === 'out' && c ? '<div class="b-cuts t-call-mode" role="group" aria-label="How to reach them">' +
         '<button class="filter-chip' + (call.video ? '' : ' active') + '" type="button" data-call-mode="phone" aria-pressed="' + !call.video + '">' + svg('phone', 14) + 'Phone</button>' +
         '<button class="filter-chip' + (call.video ? ' active' : '') + '" type="button" data-call-mode="video" aria-pressed="' + !!call.video + '">' + svg('video', 14) + 'Video on Teams</button></div>' +
-        (call.video ? '<p class="call-num t-call-teams">Teams tells them it is recording. When it ends, the recording and transcript come back here and AiMY reads them.</p>' : '') : '') +
+        (call.video ? '<p class="call-num t-call-teams">Teams tells them it is recording. When it ends, the recording and transcript come back here and I read them.</p>' : '') : '') +
       (st === 'ready' && call.dir === 'out' && !call.video ? '<div class="call-from"><span class="call-from-cap">From</span>' + telPick('Call') + '</div>' : '') +
       '<div class="call-tools">' +
         (st === 'ready' ? (sess ? '<button class="call-tool" type="button" data-call-skip aria-label="Skip to the next one" title="Skip to the next one">' + svg('skip') + '</button>' : '') +
@@ -5696,7 +5696,7 @@
     else if (s.status === 'sent') body = '<p class="b-cmeta-p">Sent ' + esc(sayWhen(s.day)) + '. Not taken yet.</p>' +
       (works ? '<p class="b-cmeta-p t-acts"><button class="s-insight-lnk" type="button" data-copy="' + esc('https://talent.flairstech.com/test/' + s.id) + '">Copy their test link</button>' +
         '<button class="s-insight-lnk" type="button"' + goAttr({ take: s.id }) + '>Open it as them</button></p>' : '');
-    else body = '<p class="b-cmeta-p"><b>' + esc(scoreSay(a, s)) + '</b>.' + (s.probed && s.probed.length ? ' Taken live; AiMY asked for more on ' + s.probed.map((i) => 'Q' + (i + 1)).join(' and ') + '.' : '') + '</p>' +
+    else body = '<p class="b-cmeta-p"><b>' + esc(scoreSay(a, s)) + '</b>.' + (s.probed && s.probed.length ? ' Taken live; I asked for more on ' + s.probed.map((i) => 'Q' + (i + 1)).join(' and ') + '.' : '') + '</p>' +
       /* How it was scored, and by whom: their consent is part of the result. */
       '<p class="b-cmeta-p">' + (s.consent === 'person' ? (s.reviewed ? 'They asked for a person to score it; ' + esc(DESKS[s.reviewed.by] ? DESKS[s.reviewed.by].name : 'a recruiter') + ' did, ' + esc(sayWhen(s.reviewed.day)) + '.'
           : 'They asked for a person to score it. AiMY’s suggestion above does not count until a person confirms it.')
@@ -5751,7 +5751,7 @@
       (v.status === 'done' || rec ? '<div class="t-acc-panel"><div class="t-acc-panel-inner">' +
         (v.ratings ? '<div class="t-qlist">' + reqOf(c).must.map((m, i) => '<p class="t-q"><span class="tag tag-' + (v.ratings[i] === 'm' ? 'ok' : v.ratings[i] === 'p' ? 'warn' : 'neutral') + '">' + RATE[v.ratings[i]] + '</span>' +
           '<span>' + esc(m) + '. ' + esc(v.notes ? v.notes[i] : '') + '</span></p>').join('') + '</div>' : '') +
-        (rec ? '<div class="t-rec">' + aimyBlock({ text: '<b>' + (rec.teams ? 'Teams sent the recording back' : 'Recording') + ', ' + rec.mins + ' minutes, transcribed.</b> ' + esc(rec.summary || 'Summarised and matched to the success profile.'), from: rec.teams ? 'the Teams recording, read by AiMY' : 'the recording, read by AiMY' }) +
+        (rec ? '<div class="t-rec">' + aimyBlock({ text: '<b>' + (rec.teams ? 'Teams sent the recording back' : 'I have the recording') + ', ' + rec.mins + ' minutes, and I transcribed it.</b> ' + esc(rec.summary || 'Summarised and matched to the success profile.'), from: rec.teams ? 'the Teams recording, which I read' : 'the recording, which I read' }) +
           (rec.lines ? '<div class="s-said-lines">' + rec.lines.map((l) => '<p class="call-line ' + (l[0] === 'them' ? 'is-them' : 'is-you') + '"><span class="call-who">' + esc(l[0] === 'them' ? first(c.name) : first(v.by)) + '</span>' + esc(l[1]) + '</p>').join('') + '</div>' : '') +
           (rec.suggests ? '<p class="b-vfoot">AiMY’s read of the recording, kept apart from the interviewer’s own rating: ' + reqOf(c).must.map((m, i) => esc(m) + ', ' + RATE[rec.suggests[i]].toLowerCase()).join('; ') + '.</p>' : '') +
         '</div>' : '') +
@@ -5789,7 +5789,7 @@
         appr(hmOf(q).name, 'Hiring manager: fit and salary', 'hm') +
         appr(BU_DIRECTOR, 'BU Director: budget and headcount', 'bu') +
       '</div>' +
-      (o.status === 'approving' ? aimyBlock({ text: 'Both approve the same packet at the same time. Changing the salary asks them again.', from: 'how offers are approved' }) : '') +
+      (o.status === 'approving' ? aimyBlock({ text: 'I send both approvers the same packet at the same time. If you change the salary, I ask them again.', from: 'how offers are approved' }) : '') +
       (works ? '<p class="t-acts">' +
         (o.status === 'approving' && both ? '<button class="s-insight-lnk primary" type="button" data-offer-send="' + o.id + '">Send the offer</button>' : '') +
         (o.status === 'sent' ? '<button class="s-insight-lnk primary" type="button" data-offer-res="' + o.id + '|accepted">They accepted</button>' +
@@ -5853,7 +5853,7 @@
           (n >= GATE ? rcChip('Enough data', 'ok') : rcChip('Waiting for data', 'dash', 'lock')) + '</div>' +
         '<div class="sub" style="margin-top:6px">Weigh what day-90 outcomes show at screening</div>' +
         '<div class="meter" role="meter" aria-label="Day-90 check-ins recorded" aria-valuemin="0" aria-valuemax="' + GATE + '" aria-valuenow="' + Math.min(n, GATE) + '"><i style="width:' + pct + '%"></i></div>' +
-        '<div class="row between" style="margin-top:6px"><span class="sub">' + n + ' of ' + GATE + ' day-90 check-ins needed before AiMY proposes</span><span class="sub">' + pct + '%</span></div></div>'] });
+        '<div class="row between" style="margin-top:6px"><span class="sub">' + n + ' of ' + GATE + ' day-90 check-ins needed before I propose</span><span class="sub">' + pct + '%</span></div></div>'] });
   }
 
   /* ── The history, and a line to add to it ── in the research cards'
@@ -6028,7 +6028,7 @@
         '<div class="b-cmeta b-said"><div class="b-cmeta-part"><div class="b-draft-caprow"><span class="b-cmeta-cap">Summary</span></div><div class="b-cmeta-say">' +
           '<textarea class="b-draft-in b-draft-area t-area" rows="3" data-ed="summary" aria-label="Summary">' + esc(f.summary) + '</textarea></div></div></div>' +
       '</section>' +
-      aimyBlock({ text: 'What the candidate says about themselves stays theirs. Interview findings are not edited here; they come from the interviews.', from: 'how profiles work' }) +
+      aimyBlock({ text: 'I keep what the candidate says about themselves as theirs. Interview findings aren’t edited here; they come from the interviews.', from: 'how profiles work' }) +
     '</div>';
   }
   function saveCand(c) {
@@ -6091,7 +6091,7 @@
     const top = '<div class="b-topbar s-block-wide"><button class="s-back" type="button" data-req="' + q.id + '">' + svg('back', 14) + 'Back to ' + esc(q.title) + '</button></div>';
     let body;
     if (INTAKE.step === 'attach') {
-      body = '<label class="t-drop" for="cvFile">' + svg('upload', 22) + '<b>Drop a CV here, or choose a file</b><span>PDF or Word. AiMY reads it as information about the person; nothing written in it is followed as an instruction.</span>' +
+      body = '<label class="t-drop" for="cvFile">' + svg('upload', 22) + '<b>Drop a CV here, or choose a file</b><span>PDF or Word. I read it as information about the person; nothing written in it is followed as an instruction.</span>' +
         '<input class="t-file" id="cvFile" type="file" accept=".pdf,.doc,.docx" data-cv-file></label>' +
         '<p class="t-acts"><button class="s-insight-lnk" type="button" data-intake-sample>Use a sample CV</button></p>';
     } else if (INTAKE.step === 'reading') {
@@ -6106,13 +6106,13 @@
       const fld = (cap, k, wide) => '<div class="b-cmeta-part' + (wide ? ' t-wide' : '') + '"><h2 class="b-cmeta-cap">' + esc(cap) + '</h2><div class="b-cmeta-say">' +
         '<input class="b-draft-in" type="text" data-in="' + k + '" value="' + esc(f[k] == null ? '' : f[k]) + '" aria-label="' + esc(cap) + '"' + (k === 'phone' && !f.phone ? ' placeholder="Not in the CV. Add it so we can call."' : '') + '></div></div>';
       body = '<div class="t-skel-in">' +
-        aimyBlock({ text: 'Read from <b>' + esc(INTAKE.file) + '</b>. ' + (INTAKE.cv.phone ? 'Everything the profile needs was in it.' : '<b>The CV has no phone number.</b> Add one below so we can call them.') + ' Check the rest and change anything I got wrong.', from: 'the CV' }, false) +
+        aimyBlock({ text: 'I read <b>' + esc(INTAKE.file) + '</b>. ' + (INTAKE.cv.phone ? 'Everything the profile needs was in it.' : '<b>The CV has no phone number.</b> Add one below so we can call them.') + ' Check the rest and change anything I got wrong.', from: 'the CV' }, false) +
         '<div class="t-input-wrap" id="wrapIntakeName"><input class="b-draft-name t-input" type="text" data-in="name" value="' + esc(f.name) + '" aria-label="Name"><p class="t-error-msg">A candidate needs a name.</p></div>' +
         '<div class="b-cmeta t-edit-grid">' + fld('Phone', 'phone') + fld('Email', 'email') + fld('Now', 'at', true) + fld('Years of experience', 'years') + fld('Where they live', 'place') +
           fld('Languages, comma between', 'langs', true) + fld('Skills, comma between', 'skills', true) + '</div>' +
         '<h3 class="b-month">Against the success profile</h3>' +
         '<div class="t-qlist">' + q.must.map((m, i) => '<p class="t-q"><span class="tag tag-' + (ev[i] === 'm' ? 'ok' : ev[i] === 'p' ? 'warn' : 'neutral') + '">' + EVW[ev[i]] + '</span><span>' + esc(m) + '</span></p>').join('') + '</div>' +
-        (dup ? aimyBlock({ text: '<b>' + esc(dup.name) + '</b> is already in the pool, for ' + esc(reqOf(dup).title) + ' (' + esc(dup.exit ? EXIT[dup.exit].label.toLowerCase() : STAGE[dup.stage].label.toLowerCase()) + '). The new profile is kept as another application by the same person.', from: 'the talent pool' }) : '') +
+        (dup ? aimyBlock({ text: 'I found <b>' + esc(dup.name) + '</b> already in the pool, for ' + esc(reqOf(dup).title) + ' (' + esc(dup.exit ? EXIT[dup.exit].label.toLowerCase() : STAGE[dup.stage].label.toLowerCase()) + '). I’ll keep the new profile as another application by the same person.', from: 'the talent pool' }) : '') +
         '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-intake-create>Create the profile</button><button class="b-ghost" type="button" data-intake-reset>Start again</button></p>' +
       '</div>';
     }
@@ -6686,7 +6686,7 @@
     const pool = d.res.filter((x) => x.src === 'pool').length;
     const gate = !saved && LEAVE ? '<section class="s-insight is-lead b-lead-slim b-gate s-block-wide" aria-label="Not saved">' +
       '<div class="s-lead-mark">' + mark(14) + '<span class="work-state ws-staged" data-work-state="staged">Waiting on you</span></div>' +
-      '<p class="s-lead-deck">This shortlist is not saved. <b>' + plural(d.res.length, 'person', 'people') + '</b> came back and nobody is working them.</p>' +
+      '<p class="s-lead-deck">I haven’t saved this shortlist. <b>' + plural(d.res.length, 'person', 'people') + '</b> came back and nobody is working them.</p>' +
       '<p class="b-gate-note">Leaving throws them away. Save it and it is yours; put it on a requisition and they join your queue.</p>' +
       '<div class="s-lead-acts"><button class="s-insight-lnk primary" type="button" data-draft-save>Save</button>' +
         '<button class="s-insight-lnk" type="button" data-draft-discard>Discard</button><button class="s-inline-btn" type="button" data-draft-stay>Stay</button></div></section>' : '';
@@ -7046,7 +7046,7 @@
           (x.flag ? rcChip('Reported: ' + lower(FLAG_WHY.filter((f) => f[0] === x.flag)[0][1]), 'warn') : rcChip('Prospect', 'dash')) +
           (x.flag ? '' : rcBtn('Wrong data?', 'data-find-flag="' + x.i + '" aria-expanded="' + (FIND.flagOpen === x.i) + '"', 'quiet')) + add(x)) +
         (FIND.flagOpen === x.i ? '<div class="reasons t-flag" role="group" aria-label="What is wrong">' + FLAG_WHY.map((f) => '<button class="chip" type="button" data-find-flagwhy="' + x.i + '|' + f[0] + '">' + esc(f[1]) + '</button>').join('') + '</div>' : '')).join('');
-    return '<section class="rc s-block-wide" aria-label="What AiMY found">' +
+    return '<section class="rc s-block-wide" aria-label="What I found">' +
       '<div class="eyebrow">' + svg('find', 14) + ' Sourcing and search</div>' +
       '<div class="search">' + svg('find', 16) + '<span>' + esc(asked) + '</span>' + (q ? '<span style="margin-left:auto" class="chip acc">' + svg('doc', 12) + ' from ' + esc(q.title) + '</span>' : '') + '</div>' +
       '<div class="tabs" role="tablist">' + [['pool', 'In your pool', pool.length], ['web', 'Web prospects', web.length]].map((t) =>
@@ -7218,7 +7218,7 @@
       questions: q ? q.must.map((m) => ({ q: 'Give an example from your work of: ' + lower(m) + '.', type: 'open', points: ['a real example', 'what they did themselves', 'the result'], fails: 0 })) : [] });
     EDIT = null;
     go({ asmt: a.id, edit: '1' });
-    if (q) toast('AiMY drafted ' + plural(a.questions.length, 'question') + ' from the success profile', () => { unmake('asmts', a); go({ on: 'asmts' }, true); }, 'One per must-have. Change any of them.');
+    if (q) toast('I drafted ' + plural(a.questions.length, 'question') + ' from the success profile', () => { unmake('asmts', a); go({ on: 'asmts' }, true); }, 'One per must-have. Change any of them.');
   }
   /* A SEGMENTED CHOICE: one of a few, pressed in place (6 Nov). Each option
      is [label, on, attrs]. */
@@ -8354,8 +8354,8 @@
     const cnt = (k) => week.filter((m) => m.kind === k && !m.done).length;
     const said = [[cnt('iv') + cnt('client'), 'interview'], [cnt('callback'), 'callback'], [cnt('start'), 'start date'], [cnt('check'), 'check-in']]
       .filter((x) => x[0]).map((x) => '<b>' + plural(x[0], x[1]) + '</b>');
-    const lead1 = aimyBlock({ text: (said.length ? 'This week: ' + said.join(', ').replace(/, ([^,]*)$/, ' and $1') + '.' : 'Nothing is in the diary this week.') +
-      (owed.length ? ' <b>' + plural(owed.length, 'result') + '</b> not in yet, the oldest from ' + esc(sayWhen(owed[0].day)) + '.' : ' Every interview so far has its result.'),
+    const lead1 = aimyBlock({ text: (said.length ? 'Here’s your week: ' + said.join(', ').replace(/, ([^,]*)$/, ' and $1') + '.' : 'Nothing is in the diary this week.') +
+      (owed.length ? ' I’m still waiting on <b>' + plural(owed.length, 'result') + '</b>, the oldest from ' + esc(sayWhen(owed[0].day)) + '.' : ' Every interview so far has its result.'),
       from: 'the interviews, callbacks and offers on ' + (isHM() ? 'the requisitions you asked for' : 'your requisitions') }, true);
     const keyRow = '<p class="t-diary-key">' + ['iv', 'client', 'callback', 'start', 'check', 'owed'].filter((k) => isRec() || k !== 'callback')
       .map((k) => '<span><span class="' + DIARY_DOT[k] + '"></span>' + esc(DIARY_KIND[k]) + '</span>').join('') + '</p>';
@@ -8552,9 +8552,9 @@
       '<section class="s-block s-block-wide"><div class="s-camp-list-head"><h2 class="s-block-h">The team’s load</h2><span class="s-block-say">alphabetical · open requisitions · people in progress</span></div>' +
         '<div class="t-funnel">' + load.map((x) => '<div class="t-fn-row"><span class="t-fn-label">' + esc(x.rc.name) + '</span><span class="t-fn-track"><span class="t-fn-fill" style="width:' + (x.n / most * 100).toFixed(1) + '%"></span></span>' +
           '<span class="t-fn-n"><b>' + x.n + '</b> · ' + x.p + '</span></div>').join('') + '</div></section>' +
-      '<section class="s-block s-block-wide" aria-label="Learning proposals"><div class="s-camp-list-head"><h2 class="s-block-h">Learning proposals</h2><span class="s-block-say">AiMY proposes · you approve · the version before is kept</span></div>' +
+      '<section class="s-block s-block-wide" aria-label="Learning proposals"><div class="s-camp-list-head"><h2 class="s-block-h">Learning proposals</h2><span class="s-block-say">I propose · you approve · I keep the version before</span></div>' +
         gate(checkins(), GATE, 'day-90 check-ins recorded', checkins() < GATE
-          ? 'AiMY proposes nothing from outcomes until there are ' + GATE + '. At about 21 hires in two months, that is months, not weeks. Proposals from client reasons and from test results need no outcomes, so they come now.'
+          ? 'I propose nothing from outcomes until there are ' + GATE + '. At about 21 hires in two months, that is months, not weeks. Proposals from client reasons and from test results need no outcomes, so they come now.'
           : 'Enough to read. AiMY compares who stayed against the success profile, and proposes only where a pattern holds.') +
         (lp.length ? '<div class="t-props">' + lp.map((p, i) => propCard(p, i)).join('') + '</div>' : '<p class="s-none">Nothing to approve.</p>') +
       '</section>' +
@@ -9827,13 +9827,13 @@
     if (to === 'joined' && o) put('offers', o, { status: 'joined', joinDay: 0 });
     const e = note(c, 'move', to === 'sent' && fields.writeup ? 'Profile sent to ' + accOf(q).name + ' by ' + me().name + ', with the write-up they approved.' : 'Moved to ' + lower(STAGE[to].label) + ' by ' + me().name + '.');
     const n = isClient() && to === 'client' ? tellDesk(q.rec, { sev: 'p1', type: 'Client decision', cta: 'Open ' + first(c.name), go: { cand: c.id },
-      body: accOf(q).name + ' wants to meet ' + c.name + ' for ' + q.title + '. AiMY booked it for ' + sayDay(2) + '.' }) : null;
+      body: accOf(q).name + ' wants to meet ' + c.name + ' for ' + q.title + '. I booked it for ' + sayDay(2) + '.' }) : null;
     paint();
     toast('Moved ' + first(c.name) + ' to ' + lower(STAGE[to].label), () => {
       write(c, was); if (iv) unmake('ivs', iv); if (o) put('offers', o, oWas); unmake('events', e); untell(n); paint();
       toast('Put back', null, c.name + ' is at ' + lower(STAGE[was.stage].label) + ' again.');
     },
-      MEETS[to] ? 'AiMY booked it for ' + sayDay(2) + ' with ' + interviewerFor(q, to) + ' and tells them from the booking.'
+      MEETS[to] ? 'I booked it for ' + sayDay(2) + ' with ' + interviewerFor(q, to) + ' and told them from the booking.'
         : to === 'sent' ? 'Sent to ' + accOf(q).name + '. They will be asked once, and nudged if they go quiet.'
         : to === 'offer' ? 'Prepare the offer from their card.' : to === 'assess' ? 'Send the assessment from their card.' : null);
   }
@@ -9951,7 +9951,7 @@
     }
     if ((el = at('[data-ai-draft]'))) {
       const known = aiDraft(EDIT.f); paint();
-      toast('AiMY wrote the description and the success profile', null, known ? 'From the role and the ones like it you filled before. Change anything.'
+      toast('I wrote the description and the success profile', null, known ? 'From the role and the ones like it you filled before. Change anything.'
         : 'From the title alone: nothing like it was filled here before. Check the success profile before you open it.');
       return;
     }
@@ -10006,7 +10006,7 @@
       const e = note(c, 'note', 'First contact approved by ' + me().name + '.');
       paint();
       toast('First contact approved', () => { write(c, { contactOk: false }); unmake('events', e); paint(); },
-        'AiMY sends one short message on LinkedIn or by email, naming the role. Nothing about pay.');
+        'I send one short message on LinkedIn or by email, naming the role. Nothing about pay.');
       return;
     }
     /* ── Not progressing, with its reason ── */
@@ -10062,7 +10062,7 @@
       SEL.sourced = {};
       paint();
       toast('First contact approved for ' + plural(list.length, 'person', 'people'), () => { list.forEach((c) => write(c, { contactOk: false })); es.forEach((e) => unmake('events', e)); paint(); },
-        'AiMY sends each one short message naming the role. Nothing about pay.');
+        'I send each one short message naming the role. Nothing about pay.');
       return;
     }
     if ((el = at('[data-find-sel]'))) {

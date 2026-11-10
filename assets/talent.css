@@ -2391,3 +2391,7 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 
 /* What Interactions is, in AiMY's voice, under its title (10 Nov). */
 .t-hub-say { margin: -4px 0 14px; max-width: 120ch; font-size: var(--fs-sm); line-height: 1.55; color: var(--d100); }
+
+/* The card's facts a step greyer than the role above them (10 Nov), and regular
+   weight, so name, role and facts read as three levels. */
+.b-qcard .t-cfacts > .b-qcard-where { color: var(--d300, var(--ink-muted)); font-weight: 400; }
