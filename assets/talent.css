@@ -2379,4 +2379,5 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 /* The choice: a see-through purple with a stroke (10 Nov), as the toggles. */
 .t-clk-cell.is-on { background: rgba(var(--accent-rgb), 0.16); box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.6); color: var(--d50); font-weight: var(--fw-semibold); }
 .t-pop-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding-top: 8px; border-top: 1px solid var(--card-border); }
+.t-pop-now { margin-right: auto; font-size: 13px; }
 .t-cal-d:focus-visible, .t-clk-cell:focus-visible, .t-cal-nav:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }

@@ -5030,7 +5030,7 @@
       col('Hour', [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((h) => b('th|' + tg + '|' + h, h === h12, h)).join('')) +
       col('Minute', mins.map((m) => b('tm|' + tg + '|' + m, m === M, String(m).padStart(2, '0'))).join('')) +
       col('AM or PM', b('ta|' + tg + '|AM', !pm, 'AM') + b('ta|' + tg + '|PM', pm, 'PM')) + '</div>' +
-      '<div class="t-pop-foot">' +
+      '<div class="t-pop-foot">' + (tg === 'when' ? '<button class="t-inline-link t-pop-now" type="button" data-el="tnow|when">Now</button>' : '') +
         '<button class="btn btn-brand btn-sm" type="button" data-el="tdone|' + tg + '">Done</button></div>';
   }
   /* The calendar: a month, weeks from Monday, today outlined, the choice in the accent; past days off. */
@@ -10383,19 +10383,22 @@
     if ((el = at('[data-el]'))) {
       const p = val('data-el').split('|');
       const slide = elSlideFrom(el);
-      if (EL && ['th', 'tm', 'ta', 'tdone', 'cd', 'cm'].indexOf(p[0]) >= 0) {
+      if (EL && ['th', 'tm', 'ta', 'tnow', 'tdone', 'cd', 'cm'].indexOf(p[0]) >= 0) {
         const get = (tg) => (tg === 'when' ? EL.time : EL.cbOwn.time), put = (tg, H, M) => { const t = String(H).padStart(2, '0') + ':' + String(M).padStart(2, '0'); if (tg === 'when') EL.time = t; else EL.cbOwn = Object.assign({}, EL.cbOwn, { time: t }); };
         const cur = p[1] && (p[1] === 'when' || p[1] === 'cb') ? get(p[1]).split(':').map(Number) : null;
         const id = p[1] === 'when' ? 'elTimeMenu' : p[1] === 'cb' ? 'elCbTimeMenu' : 'elCbDayMenu';
         if (p[0] === 'th') put(p[1], (Number(p[2]) % 12) + (cur[0] >= 12 ? 12 : 0), cur[1]);
         if (p[0] === 'tm') put(p[1], cur[0], Number(p[2]));
         if (p[0] === 'ta') put(p[1], (cur[0] % 12) + (p[2] === 'PM' ? 12 : 0), cur[1]);
+        /* Now: the call just ended. Only on the call's own time, never a call back. */
+        if (p[0] === 'tnow') { const n = nowHM().split(':'); put('when', Number(n[0]), Number(n[1])); }
         if (p[0] === 'cd') EL.cbOwn = Object.assign({}, EL.cbOwn, { day: Number(p[1]) });
         if (p[0] === 'cm') EL.calM = Math.max(0, Math.min(2, (EL.calM || 0) + Number(p[1])));
         EL.open = p[0] === 'tdone' || p[0] === 'cd' ? null : id;
         const nt = byId('elNote'); if (nt) EL.note = nt.value;
         const keep = {}; document.querySelectorAll('.t-clk-col').forEach((x, i) => { keep[i] = x.scrollTop; });
-        paint(); document.querySelectorAll('.t-clk-col').forEach((x, i) => { if (keep[i] != null) x.scrollTop = keep[i]; }); return;
+        paint(); document.querySelectorAll('.t-clk-col').forEach((x, i) => { const on = x.querySelector('.is-on');
+          if (p[0] === 'tnow' && on) x.scrollTop = on.offsetTop - x.clientHeight / 2 + on.offsetHeight / 2; else if (keep[i] != null) x.scrollTop = keep[i]; }); return;
       }
       if (EL) EL.open = null;
       if (EL) { if (p[0] === 'via') EL.via = p[1]; if (p[0] === 'who') { EL.cand = p[1]; EL.read = null; EL.rec = null; EL.consent = false; } if (p[0] === 'day') EL.day = Number(p[1]); if (p[0] === 'o') EL.lit = EL.lit === p[1] ? null : p[1]; if (p[0] === 'cb') EL.cb = p[1]; if (p[0] === 'time') EL.time = p[1];
