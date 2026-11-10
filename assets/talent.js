@@ -2264,11 +2264,16 @@
     /* What AiMY did without asking (standalone: the closing line). */
     const booked = DB.ivs.filter((v) => v.status === 'booked' && on(DB.byId[v.cand])).length;
     const tests = DB.sends.filter((x) => x.status === 'sent' && on(DB.byId[x.cand])).length;
-    if (booked + tests) out.push(insightRow({ ws: 'completed', wsSay: 'I did this for you',
-      say: 'Under rules a person approved, I booked <b>' + plural(booked, 'interview') + '</b> with their kits' + (tests ? ' and sent <b>' + plural(tests, 'assessment') + '</b>' : '') + '. You can undo each one.',
+    /* and the WhatsApp replies it answered on its own (10 Nov) */
+    const did = isRec() ? waAiDone() : [];
+    if (booked + tests + did.length) out.push(insightRow({ ws: 'completed', wsSay: 'I did this for you',
+      say: 'Under rules a person approved, I ' + [booked ? 'booked <b>' + plural(booked, 'interview') + '</b> with their kits' : null, tests ? 'sent <b>' + plural(tests, 'assessment') + '</b>' : null,
+        did.length ? 'answered <b>' + plural(did.length, 'WhatsApp reply', 'WhatsApp replies') + '</b>' : null].filter(Boolean).join(', ').replace(/, ([^,]*)$/, ' and $1') + '. You can undo each one.',
       q: 'What did you do without asking me?',
-      a: '<p>I booked ' + plural(booked, 'interview') + ' inside the interviewers’ free slots and sent each its kit' + (tests ? '; I sent ' + plural(tests, 'assessment') + ' from the link on the requisition' : '') +
-        '. Nothing reached a candidate outside a rule ' + esc(DESKS.dina.name) + ' approved, and you can undo each one from the record it sits on.</p>' }));
+      a: '<p>' + (booked ? 'I booked ' + plural(booked, 'interview') + ' inside the interviewers’ free slots and sent each its kit' + (tests ? '; I sent ' + plural(tests, 'assessment') + ' from the link on the requisition' : '') + '. ' : '') +
+        (did.length ? 'On WhatsApp: ' + did.map((x) => '<b>' + esc(x.c.name) + '</b>, ' + esc(lower(aiDid(x))) + ' (' + esc(ampm(x.rec.at)) + ')').join('; ') + '. ' : '') +
+        'Nothing reached a candidate outside a rule ' + esc(DESKS.dina.name) + ' approved, and you can undo each one from the record or thread it sits on.</p>',
+      acts: did.length ? [{ label: 'Open Interactions', go: { on: 'calls' }, primary: true }] : undefined }));
     return out;
   }
   function homePage() {
@@ -4879,8 +4884,9 @@
   const waFill = (t, c) => t.split('{first}').join(first(c.name)).split('{me}').join(first(me().name)).split('{role}').join(reqOf(c).title);
   function msgRow(m, i, inbox) {
     const c = DB.byId[m.cand];
-    return logRow({ tone: '', ico: svg('wa'), who: c.name,
-      meta: logMeta(['WhatsApp', m.dir === 'in' ? 'they wrote' : 'you wrote', m.time, reqOf(c).title]),
+    const ans = m.dir === 'in' && D.waAi[m.id] && !D.waAi[m.id].undone;
+    return logRow({ tone: m.ai ? 'is-ai' : '', ico: m.ai ? mark(16) : svg('wa'), who: c.name,
+      meta: logMeta(['WhatsApp', m.dir === 'in' ? (ans ? 'they wrote, I answered' : 'they wrote') : m.ai ? 'I wrote, for you' : 'you wrote', m.time, reqOf(c).title]),
       say: '“' + esc(m.text) + '”', act: goAttr({ on: 'calls', th: c.id }).trim(), go: inbox ? 'Reply' : 'Open', goIco: inbox ? svg('wa', 14) : '' }, i);
   }
 
@@ -4982,6 +4988,33 @@
     save(); paint();
     toast('I took it back', null, 'The message is withdrawn and the thread is yours to answer.');
   }
+  /* WHAT I DID FOR YOU (Engy, 10 Nov: "a smart indication for that"). The
+     replies AiMY answered on its own leave the Inbox, so they are said where
+     you would have looked: a strip on Interactions naming each person and
+     what was done, a mark on the Inbox tab, the History rows and bubble
+     labelled as AiMY's, and a line in Today's briefing. Undo stays on the
+     thread. */
+  function waAiDone() {
+    return Object.keys(D.waAi).map((id) => ({ id: id, rec: D.waAi[id], m: DB.msgs.filter((x) => x.id === id)[0] }))
+      .filter((x) => x.m && !x.rec.undone && DB.byId[x.m.cand] && reqOf(DB.byId[x.m.cand]).rec === ME)
+      .map((x) => Object.assign(x, { c: DB.byId[x.m.cand] }));
+  }
+  const aiDid = (x) => (x.rec.kind === 'cb' ? 'Call back ' + x.rec.when : x.rec.kind === 'ask' ? 'Asked for a time' : 'Thanked for the CV');
+  function aiDidLine(list) {
+    const n = (k) => list.filter((x) => x.rec.kind === k).length;
+    return [n('cb') ? 'set ' + plural(n('cb'), 'call back') + ' and told them' : null, n('ask') ? 'asked ' + plural(n('ask'), 'person', 'people') + ' for a time' : null,
+      n('cv') ? 'thanked ' + plural(n('cv'), 'person', 'people') + ' for a CV' : null].filter(Boolean).join(', ');
+  }
+  function aiDidStrip() {
+    const list = waAiDone();
+    if (!list.length) return '';
+    return '<div class="t-aido" role="status">' +
+      '<span class="t-aido-mark">' + mark(14) + '</span>' +
+      '<div class="t-aido-in"><p class="t-aido-say">I answered <b>' + plural(list.length, 'WhatsApp reply', 'WhatsApp replies') + '</b> for you: I ' + esc(aiDidLine(list)) + '. ' +
+        '<span class="t-aido-rule">' + esc(DESKS.dina.name) + '’s rule lets me; Undo is on each thread.</span></p>' +
+        '<div class="t-aido-list">' + list.map((x) => '<button class="t-aido-chip' + (x.rec.kind === 'cb' ? ' is-cb' : '') + '" type="button"' + goAttr({ on: 'calls', th: x.c.id }) + '>' +
+          '<b>' + esc(x.c.name) + '</b><span>' + esc(aiDid(x)) + '</span><span class="t-aido-t">' + esc(ampm(x.rec.at)) + '</span></button>').join('') + '</div></div></div>';
+  }
   function waAutoSay(c, ms) {
     const done = ms.filter((m) => m.dir === 'in' && D.waAi[m.id] && !D.waAi[m.id].undone).pop();
     if (!done) return '';
@@ -5005,7 +5038,7 @@
     const list = ms.map((m) => {
       const h = m.day !== day ? '<p class="t-wa-day">' + esc(dayLabel(m.day)) + '</p>' : '';
       day = m.day;
-      return h + '<div class="t-wa-m ' + (m.dir === 'out' ? 'is-out' : 'is-in') + '"><p class="t-wa-text">' + esc(m.text) + '</p>' +
+      return h + '<div class="t-wa-m ' + (m.dir === 'out' ? 'is-out' : 'is-in') + (m.ai ? ' is-ai' : '') + '"><p class="t-wa-text">' + esc(m.text) + '</p>' +
         '<span class="t-wa-t">' + (m.ai ? mark(10) + ' ' : '') + esc(m.dir === 'out' ? (m.ai ? 'AiMY, for you' : 'You' + (m.tpl ? ', template' : '') + (m.own ? ', from your WhatsApp' : '')) : first(c.name) + (m.added ? ', added by you' : '')) + ' · ' + esc(m.time) + '</span></div>';
     }).join('');
     const tpl = WA_TPL.filter((x) => x.k === WA_TPL_ON)[0];
@@ -5567,7 +5600,7 @@
     /* A thread and the call-from-elsewhere form are pages of their own. */
     if (S.lg) return elsewherePage();
     if (S.th && DB.byId[S.th]) return threadPage(DB.byId[S.th]);
-    const list = toCall(), miss = missed(), log = myCalls(), owed = waOwed();
+    const list = toCall(), miss = missed(), log = myCalls(), owed = waOwed(), aiN = waAiDone().length;
     /* "missed" was the Inbox's old name; links to it still land. */
     const tab = S.q === 'missed' || S.q === 'inbox' ? 'inbox' : S.q === 'log' ? 'log' : 'tocall';
     const n = { tocall: list.length, inbox: miss.length + owed.length, log: null };
@@ -5621,7 +5654,7 @@
               say: 'Nobody on file has this number. Calling back puts it in the dialer.', aimy: true,
               act: 'data-redial="' + esc(t.phone) + '"', go: 'Call them back', goIco: svg('phone', 14) }, i);
           }) + '</div>'
-        : '<p class="b-vfoot">You’re all caught up: every call and message that came in has its answer.</p>';
+        : '<p class="b-vfoot">You’re all caught up: every call and message that came in has its answer' + (aiN ? ', ' + aiN + ' of them from me' : '') + '.</p>';
     } else {
       /* Every channel in one history: calls in AiMY, calls logged from
          elsewhere, Teams, and WhatsApp both ways. */
@@ -5637,8 +5670,10 @@
           '<span class="b-draft-acts"><button class="b-ghost" type="button"' + goAttr({ on: 'calls', lg: 'new' }) + '>Log a call from elsewhere</button></span></div>' +
         /* What the page is, said by AiMY (10 Nov), where the design-target note stood. */
         '<p class="t-hub-say">Every call and ' + (connectOn() ? 'WhatsApp message' : 'logged WhatsApp') + ' with your candidates, in one place. I line up who to reach next, keep what came in while you were away, and file each conversation on their record.</p>' +
+        aiDidStrip() +
         '<div class="b-cuts b-log-tabs">' + TABS.map((x) => '<button class="filter-chip' + (tab === x[0] ? ' active' : '') + '" type="button" data-q="' + x[0] + '"' +
-          (tab === x[0] ? ' aria-current="true"' : '') + '>' + esc(x[1]) + (n[x[0]] != null ? '<span class="b-cut-n">' + n[x[0]] + '</span>' : '') + '</button>').join('') + '</div>' +
+          (tab === x[0] ? ' aria-current="true"' : '') + '>' + esc(x[1]) + (n[x[0]] != null ? '<span class="b-cut-n">' + n[x[0]] + '</span>' : '') +
+          (x[0] === 'inbox' && aiN ? '<span class="t-cut-ai" title="I answered ' + aiN + ' myself">' + mark(10) + aiN + '<span class="sr-only"> answered by AiMY</span></span>' : '') + '</button>').join('') + '</div>' +
         body +
       '</section></div>';
   }
@@ -6005,7 +6040,7 @@
       '<button class="filter-chip' + (tab === x[0] ? ' active' : '') + '" type="button" data-hist-tab="' + x[0] + '" aria-pressed="' + (tab === x[0]) + '">' + esc(x[1]) + '<span class="b-cut-n">' + n[x[0]] + '</span></button>').join('') + '</div>';
     const rows = tab === 'calls' ? (calls.length ? '<div class="b-log">' + logDays(calls, (t, i) => callRow(t, i, false)) + '</div>' : '<p class="b-vfoot">No calls yet.</p>')
       : tab === 'wa' ? (ms.length ? '<div class="t-wa">' + ms.slice().reverse().map((m) => '<div class="t-wa-m ' + (m.dir === 'out' ? 'is-out' : 'is-in') + '"><p class="t-wa-text">' + esc(m.text) + '</p>' +
-          '<span class="t-wa-t">' + esc((m.dir === 'out' ? 'You' : first(c.name)) + ' · ' + dayLabel(m.day) + ', ' + m.time) + '</span></div>').join('') + '</div>' : '<p class="b-vfoot">' + (c.wa ? 'Nothing on WhatsApp yet.' : 'No WhatsApp opt-in.') + '</p>') +
+          '<span class="t-wa-t">' + esc((m.dir === 'out' ? (m.ai ? 'AiMY, for you' : 'You') : first(c.name)) + ' · ' + dayLabel(m.day) + ', ' + m.time) + '</span></div>').join('') + '</div>' : '<p class="b-vfoot">' + (c.wa ? 'Nothing on WhatsApp yet.' : 'No WhatsApp opt-in.') + '</p>') +
         (c.wa ? '<p class="t-acts"><button class="s-inline-btn" type="button"' + goAttr({ on: 'calls', th: c.id }) + '>Open the thread</button></p>' : '')
       : null;
     return rcard({ cap: 'History', ico: 'hist', label: 'History', bare: true,
