@@ -2185,7 +2185,7 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-sw:disabled { opacity: 0.45; cursor: default; }
 .t-sw:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .t-where-note { flex-basis: 100%; margin: 2px 0 0; font-size: var(--fs-xs); color: var(--ink-muted); }
-.t-find-bar, .t-el-bar { position: sticky; bottom: 86px; z-index: 5; margin: 20px 0 0; padding: 12px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+.t-find-bar { position: sticky; bottom: 86px; z-index: 5; margin: 20px 0 0; padding: 12px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
   border: 1px solid var(--card-border-hover); border-radius: 14px; background: var(--panel-bg); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28); }
 .t-find-bar-say { flex: 1 1 280px; min-width: 0; margin: 0; font-size: var(--fs-sm); color: var(--d100); }
 .t-find-bar-say b { color: var(--d50); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
@@ -2293,10 +2293,14 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-lc-rec .t-file { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .t-lc-aimy { display: inline-flex; align-items: center; gap: 8px; font-size: var(--fs-xs); color: var(--d100); }
 .t-lc-aimy > svg { flex: none; width: 14px; height: auto; }
-.t-el-bar { margin-top: 12px; }
-.t-el-bar .t-find-bar-say { display: flex; align-items: center; gap: 10px; }
-.t-el-bar .t-find-bar-say > svg { flex: none; }
 .t-lc-aside { position: sticky; top: 16px; padding: 16px 18px; border: 1px solid var(--card-border-hover); border-radius: 14px; }
+/* What AiMY will do, and the one action, at the top of the rail. */
+.t-lc-act { display: grid; grid-template-columns: 1fr auto; gap: 12px 8px; margin: -16px -18px 16px; padding: 16px 18px; border-bottom: 1px solid var(--card-border);
+  border-radius: 14px 14px 0 0; background: linear-gradient(120deg, rgba(var(--accent-rgb), 0.12), rgba(0, 102, 255, 0.05)); }
+.t-lc-act-say { grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 10px; margin: 0; font-size: var(--fs-sm); line-height: var(--lh-base); color: var(--d50); }
+.t-lc-act-say > svg { flex: none; margin-top: 3px; }
+.t-lc-go { justify-content: center; }
+.t-lc-cancel { justify-content: center; }
 .t-lc-aside-h { margin: 0 0 10px; font-size: var(--t-micro); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
 .t-lc-aside-h + .t-lc-facts, .t-lc-aside-h + .t-lc-hist { margin-top: 0; }
 .t-lc-facts { margin: 0 0 18px; display: grid; gap: 8px; }

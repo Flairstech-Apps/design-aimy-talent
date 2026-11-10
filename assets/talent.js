@@ -5051,7 +5051,14 @@
       '<div class="t-lc-note-foot">' + foot + '</div></div>');
     /* The rail: their record, as HubSpot keeps the contact beside the activity. */
     const hist = c ? historyOf(c).slice().sort((x, y) => y.day - x.day || String(y.time).localeCompare(String(x.time))).slice(0, 4) : [];
-    const aside = '<aside class="t-lc-aside" aria-label="On their record">' + (c
+    const call = c ? { cand: c.id, lit: EL.lit, dir: 'out', fu: false, read: rd || {}, cb: EL.cb } : null;
+    const say = !c ? 'Choose who you called, then what happened.' : willSay(call);
+    /* The action lives at the top of the rail, which stays in view: a bar
+       pinned above AiMY's composer sat on the tiles in a short window. */
+    const act = '<div class="t-lc-act"><p class="t-lc-act-say">' + mark(14) + '<span>' + esc(say) + '</span></p>' +
+      '<button class="btn btn-brand t-lc-go" type="button" data-el-log' + (c && EL.lit && !EL.busy ? '' : ' disabled') + '>Log it</button>' +
+      '<button class="b-ghost t-lc-cancel" type="button"' + back + '>Cancel</button></div>';
+    const aside = '<aside class="t-lc-aside" aria-label="Log it, and their record">' + act + (c
       ? '<p class="t-lc-aside-h">On their record</p>' +
         '<dl class="t-lc-facts"><div><dt>Stage</dt><dd>' + stageTag(c) + '</dd></div>' +
           '<div><dt>Requisition</dt><dd>' + esc(reqOf(c).title) + '</dd></div>' +
@@ -5062,17 +5069,12 @@
           '<span class="t-lc-hist-t"><span>' + esc(x.text) + '</span><small>' + esc(sayWhen(x.day)) + (x.time ? ', ' + esc(x.time) : '') + '</small></span></li>').join('') + '</ol>'
           : '<p class="t-lc-empty">Nothing logged yet.</p>')
       : '<p class="t-lc-aside-h">On their record</p><p class="t-lc-empty">Choose who you called, and their stage and latest calls show here.</p>') + '</aside>';
-    const call = c ? { cand: c.id, lit: EL.lit, dir: 'out', fu: false, read: rd || {}, cb: EL.cb } : null;
-    const say = !c ? 'Choose who you called, then what happened.' : willSay(call);
     return '<div class="s-home">' +
       '<div class="b-topbar s-block-wide"><button class="s-back" type="button"' + back + '>' + svg('back', 14) + 'Back</button></div>' +
       '<section class="s-block s-block-wide t-lc" aria-label="Log a call from elsewhere">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">Log a call from elsewhere</h2>' +
           '<span class="s-block-say">a call outside AiMY, so it is on their record like any other</span></div>' +
-        '<div class="t-lc-grid"><div class="t-lc-col"><div class="t-lc-card">' + head + when + happened + note + '</div>' +
-          '<div class="t-find-bar t-el-bar"><p class="t-find-bar-say">' + mark(14) + '<span>' + esc(say) + '</span></p><span class="t-acts">' +
-            '<button class="b-ghost" type="button"' + back + '>Cancel</button>' +
-            '<button class="btn btn-brand btn-sm" type="button" data-el-log' + (c && EL.lit && !EL.busy ? '' : ' disabled') + '>Log it</button></span></div></div>' +
+        '<div class="t-lc-grid"><div class="t-lc-col"><div class="t-lc-card">' + head + when + happened + note + '</div></div>' +
           aside + '</div>' +
       '</section></div>';
   }
