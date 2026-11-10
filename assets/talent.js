@@ -5519,7 +5519,7 @@
         '<div class="s-camp-list-head">' + switcher('calls') +
           '<span class="b-draft-acts"><button class="b-ghost" type="button"' + goAttr({ on: 'calls', lg: 'new' }) + '>Log a call from elsewhere</button></span></div>' +
         /* What the page is, said by AiMY (10 Nov), where the design-target note stood. */
-        '<p class="t-hub-say">' + mark(13) + '<span>Every call and ' + (connectOn() ? 'WhatsApp message' : 'logged WhatsApp') + ' with your candidates, in one place. I line up who to reach next, keep what came in while you were away, and file each conversation on their record.</span></p>' +
+        '<p class="t-hub-say">Every call and ' + (connectOn() ? 'WhatsApp message' : 'logged WhatsApp') + ' with your candidates, in one place. I line up who to reach next, keep what came in while you were away, and file each conversation on their record.</p>' +
         '<div class="b-cuts b-log-tabs">' + TABS.map((x) => '<button class="filter-chip' + (tab === x[0] ? ' active' : '') + '" type="button" data-q="' + x[0] + '"' +
           (tab === x[0] ? ' aria-current="true"' : '') + '>' + esc(x[1]) + (n[x[0]] != null ? '<span class="b-cut-n">' + n[x[0]] + '</span>' : '') + '</button>').join('') + '</div>' +
         body +
