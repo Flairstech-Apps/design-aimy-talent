@@ -2256,14 +2256,16 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-lc-who { display: flex; flex-direction: column; min-width: 0; line-height: 1.35; }
 .t-lc-who b { font-size: var(--fs-base); font-weight: var(--fw-semibold); color: var(--d50); }
 .t-lc-who span { font-size: var(--fs-xs); color: var(--ink-muted); }
-.t-lc-via, .t-lc-segs { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border: 1px solid var(--card-border-hover); border-radius: 10px; background: rgba(var(--accent-rgb), 0.03); }
-.t-lc-segs.is-wrap { border: 0; padding: 0; gap: 6px; background: none; }
-.t-lc-seg { font: inherit; font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--ink-muted); background: transparent; border: 0; border-radius: 7px; padding: 6px 11px;
+/* Simpler toggles (10 Nov): no box around the group; the chosen one is tinted. */
+.t-lc-via, .t-lc-segs { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.t-lc-segs.is-wrap { gap: 6px; }
+.t-lc-seg { font: inherit; font-size: 13px; font-weight: var(--fw-medium); color: var(--ink-muted); background: transparent; border: 0; border-radius: 8px; padding: 6px 10px;
   display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; }
-.t-lc-segs.is-wrap .t-lc-seg { border: 1px solid var(--card-border-hover); border-radius: var(--r-pill); }
+.t-lc-segs.is-wrap .t-lc-seg { border: 1px solid var(--card-border); border-radius: var(--r-pill); }
 .t-lc-seg > svg { width: 14px; height: 14px; flex: none; }
 .t-lc-seg:hover { color: var(--d50); }
-.t-lc-seg.is-on { color: var(--d50); background: rgba(var(--accent-rgb), 0.18); box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.4); }
+.t-lc-seg.is-on { color: var(--d50); background: rgba(var(--accent-rgb), 0.16); }
+.t-lc-segs.is-wrap .t-lc-seg.is-on { border-color: rgba(var(--accent-rgb), 0.4); }
 .t-lc-seg:focus-visible, .t-lc-opt:focus-visible, .t-lc-pick:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .t-lc-row { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 14px; padding: 16px 20px; }
 .t-lc-row + .t-lc-row { border-top: 1px solid var(--card-border); }
@@ -2273,18 +2275,25 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-lc-lab { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--d50); }
 .t-lc-sub { font-size: var(--t-micro); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
 .t-lc-inline { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
-.t-lc-time { width: 132px; }
+/* Time and day as the design system's Select pill (b-ghost b-menu-open). */
+.t-lc-pill { gap: 6px; font-variant-numeric: tabular-nums; }
+.t-lc-pill > svg { width: 14px; height: 14px; flex: none; }
+.t-lc-pill > svg:first-child { color: var(--ink-muted); }
+.t-lc-menu { min-width: 180px; }
+.t-lc-menu .b-menu-item.is-on { background: rgba(var(--accent-rgb), 0.12); }
+.t-lc-seg > svg:only-child, .t-lc-segs.is-wrap .t-lc-seg > svg { width: 13px; height: 13px; }
 .t-lc-opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(190px, 100%), 1fr)); gap: 8px; }
 .t-lc-opt { font: inherit; text-align: left; color: var(--d100); background: transparent; border: 1px solid var(--card-border-hover); border-radius: 10px; padding: 10px 12px;
   display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; align-items: start; align-content: start; cursor: pointer; transition: border-color var(--t-fast, 150ms), background var(--t-fast, 150ms); }
 .t-lc-opt:hover { border-color: rgba(var(--accent-rgb), 0.45); }
 .t-lc-opt.is-on { border-color: rgba(var(--accent-rgb), 0.7); background: rgba(var(--accent-rgb), 0.12); }
-.t-lc-opt-ico { color: var(--ink-muted); padding-top: 1px; }
+.t-lc-opt-ico { color: var(--ink-muted); padding-top: 2px; }
 .t-lc-opt.is-on .t-lc-opt-ico { color: var(--accent-label, var(--accent)); }
 .t-lc-opt-ico > svg { width: 16px; height: 16px; display: block; }
-.t-lc-opt-t { display: flex; flex-direction: column; min-width: 0; line-height: 1.35; }
-.t-lc-opt-t b { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--d50); }
-.t-lc-opt-t span { font-size: var(--fs-xs); color: var(--ink-muted); }
+/* The name leads; what it does steps down in size, weight and colour. */
+.t-lc-opt-t { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.t-lc-opt-t b { font-size: 14.5px; line-height: 1.3; font-weight: var(--fw-semibold); color: var(--d50); letter-spacing: -0.005em; }
+.t-lc-opt-t span { font-size: 12px; line-height: 1.4; font-weight: var(--fw-regular, 400); color: var(--ink-muted); }
 .t-lc-cb { display: flex; flex-direction: column; gap: 8px; }
 .t-lc-note { border: 1px solid var(--card-border-hover); border-radius: 10px; background: rgba(0, 0, 0, 0.12); overflow: hidden; }
 .t-lc-note:focus-within { border-color: rgba(var(--accent-rgb), 0.6); }
@@ -2299,8 +2308,8 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-lc-aimy > svg { flex: none; width: 14px; height: auto; }
 .t-lc-aside { position: sticky; top: 16px; padding: 16px 18px; border: 1px solid var(--card-border-hover); border-radius: 14px; }
 /* What AiMY will do, and the one action, at the top of the rail. */
-.t-lc-act { display: grid; grid-template-columns: 1fr auto; gap: 12px 8px; margin: -16px -18px 16px; padding: 16px 18px; border-bottom: 1px solid var(--card-border);
-  border-radius: 14px 14px 0 0; background: linear-gradient(120deg, rgba(var(--accent-rgb), 0.12), rgba(0, 102, 255, 0.05)); }
+.t-lc-act { display: grid; grid-template-columns: 1fr auto; gap: 12px 8px; margin: 18px -18px -16px; padding: 16px 18px; border-top: 1px solid var(--card-border);
+  border-radius: 0 0 14px 14px; background: linear-gradient(120deg, rgba(var(--accent-rgb), 0.12), rgba(0, 102, 255, 0.05)); }
 /* A caption, then the sentence at the rail's reading size (10 Nov: at 16px
    it crowded the rail and outweighed the action under it). */
 .t-lc-act-cap { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; margin: 0 0 -6px; font-size: var(--t-micro); font-weight: var(--fw-medium); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }

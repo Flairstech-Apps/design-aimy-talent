@@ -3889,6 +3889,11 @@
   /* The window pressed, else the one read off what was said, else the
      nearest that makes sense. */
   function cbWhen(call) {
+    if (call.cb === 'own' && call.cbOwn) {
+      const d = call.cbOwn.day, h = Number(String(call.cbOwn.time).slice(0, 2));
+      return { k: 'own', day: d, win: h < 12 ? 'am' : h < 18 ? 'pm' : 'eve', at: true,
+        label: (d === 0 ? 'today' : d === 1 ? 'tomorrow' : 'on ' + sayDay(d)) + ' at ' + call.cbOwn.time };
+    }
     const rd = call.read || {}, open = cbOpen();
     const pressed = open.filter((w) => w.k === call.cb)[0];
     if (pressed) return pressed;
@@ -3896,7 +3901,7 @@
     const win = rd.win || (day === 0 ? 'eve' : day === 1 ? 'am' : null);
     return open.filter((w) => w.day === day && w.win === win)[0] || open.filter((w) => w.day === day)[0] || open.filter((w) => w.k === '1am')[0];
   }
-  const cbSay = (w) => w.label.toLowerCase() + (w.win ? ', ' + winSay(w.win) : '');
+  const cbSay = (w) => w.at ? w.label : w.label.toLowerCase() + (w.win ? ', ' + winSay(w.win) : '');
   /* Today's window has not opened yet, so the call waits for it. */
   const cbLater = (c) => c.callback === 0 && c.cbWin && hourNow() < Number(CB_WIN[c.cbWin][0].slice(0, 2));
   /* A SHORT MESSAGE AFTER NO ANSWER (Calls, 29 Oct): a missed call alone
@@ -5001,6 +5006,37 @@
   const EL_ICO = { passed: 'okc', reached: 'phone', callback: 'clock', notfit: 'x', withdrew: 'minus', dnc: 'ban', noanswer: 'hangup', wrong: 'warnc' };
   const EL_VIA_ICO = { mobile: 'phone', wa: 'wa', teams: 'video' };
   const HIST_ICO = { apply: 'user', call: 'phone', asmt: 'goal', iv: 'users', offer: 'job', move: 'go', out: 'go', note: 'req', msg: 'msg', wa: 'wa' };
+  /* A time or a day as AiMY UI's Select: a pill that opens its choices (the
+     library has no time picker; its Date picker is the same pill and menu). */
+  const hm = (m) => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+  const toMin = (t) => { const p = String(t).split(':'); return Number(p[0]) * 60 + Number(p[1] || 0); };
+  function elPill(id, ico, label, items, key, on) {
+    return '<span class="b-menu-wrap"><button class="b-ghost b-menu-open t-lc-pill" type="button" data-pickopen="' + id + '" aria-haspopup="menu" aria-expanded="false">' +
+      svg(ico) + '<span>' + esc(label) + '</span>' + svg('down') + '</button>' +
+      '<div class="b-menu t-rpt-menu t-lc-menu" id="' + id + '" role="menu" hidden>' + items.map((x) => '<button class="b-menu-item' + (x[0] === on ? ' is-on' : '') + '" type="button" role="menuitem" data-el="' + key + '|' + x[0] + '"' + (x[0] === on ? ' aria-current="true"' : '') + '>' +
+        '<span class="b-menu-name">' + esc(x[1]) + '</span>' + (x[2] ? '<span class="tel-menu-cc">' + esc(x[2]) + '</span>' : '') + '</button>').join('') + '</div></span>';
+  }
+  /* When the call was: today, from now back to 08:00 every quarter hour; yesterday, 20:00 back to 08:00 every half hour. */
+  function elTimes(day) {
+    const out = [];
+    if (day === 0) {
+      const now = nowHM(), n = toMin(now);
+      out.push([now, 'Just now', now]);
+      for (let m = Math.floor(n / 15) * 15; m >= 480; m -= 15) if (hm(m) !== now) out.push([hm(m), hm(m)]);
+    } else for (let m = 1200; m >= 480; m -= 30) out.push([hm(m), hm(m)]);
+    return out;
+  }
+  /* A call back you set yourself: the next working days, and the hours a person can be called. */
+  function elCbDays() {
+    const out = [];
+    for (let d = 0; d <= 14 && out.length < 8; d++) {
+      const g = dayOf(d).getDay();
+      if (g === 5 || g === 6) continue;
+      out.push([String(d), d === 0 ? 'Today' : d === 1 ? 'Tomorrow' : dayOf(d).toLocaleDateString('en-GB', { weekday: 'long' }), sayDay(d)]);
+    }
+    return out;
+  }
+  const elCbTimes = () => { const out = []; for (let m = 540; m <= 1200; m += 30) out.push([hm(m), hm(m)]); return out; };
   function elOptSub(k, c) {
     const early = c ? rank(reqOf(c), c.stage) <= rank(reqOf(c), 'phone') : true;
     return { passed: early ? 'Moves them to the HR interview' : 'Past the screen already', reached: 'Nothing moves', callback: 'Back in your calls',
@@ -5030,7 +5066,7 @@
         svg(EL_VIA_ICO[v[0]]) + '<span>' + esc(v[1]) + '</span></button>').join('') + '</div></div>';
     const when = row('clock', 'When', '<div class="t-lc-inline"><span class="t-lc-segs" role="group" aria-label="Which day">' +
         [['0', 'Today'], ['-1', 'Yesterday']].map((d) => '<button class="t-lc-seg' + (String(EL.day) === d[0] ? ' is-on' : '') + '" type="button" data-el="day|' + d[0] + '" aria-pressed="' + (String(EL.day) === d[0]) + '">' + d[1] + '</button>').join('') + '</span>' +
-        '<input class="input t-lc-time" id="elTime" type="time" value="' + esc(EL.time) + '" aria-label="What time"></div>');
+        elPill('elTimeMenu', 'clock', EL.time, elTimes(EL.day), 'time', EL.time) + '</div>');
     const opts = (ks) => '<div class="t-lc-opts" role="group">' + ks.map((k) => {
       const on = EL.lit === k;
       return '<button class="t-lc-opt' + (on ? ' is-on' : '') + '" type="button" data-el="o|' + k + '" aria-pressed="' + on + '">' +
@@ -5038,11 +5074,15 @@
     }).join('') + '</div>';
     const cbList = EL.lit === 'callback' ? cbOpen() : [];
     const cbOn = EL.cb || (cbList.length ? cbWhen({ read: rd || {} }).k : null);
+    const own = EL.cbOwn || (EL.cbOwn = { day: elCbDays()[1] ? Number(elCbDays()[1][0]) : 1, time: '10:00' });
     const happened = row('okc', 'What happened',
       '<span class="t-lc-sub">They answered</span>' + opts(EL_ANSWERED) +
       '<span class="t-lc-sub">They didn’t</span>' + opts(EL_NONE) +
       (cbList.length ? '<div class="t-lc-cb"><span class="t-lc-sub">When to call back</span><span class="t-lc-segs is-wrap" role="group" aria-label="When to call back">' +
-        cbList.map((w) => '<button class="t-lc-seg' + (cbOn === w.k ? ' is-on' : '') + '" type="button" data-el="cb|' + w.k + '" aria-pressed="' + (cbOn === w.k) + '">' + esc(cbSay(w).charAt(0).toUpperCase() + cbSay(w).slice(1)) + '</button>').join('') + '</span></div>' : ''));
+        cbList.map((w) => '<button class="t-lc-seg' + (cbOn === w.k ? ' is-on' : '') + '" type="button" data-el="cb|' + w.k + '" aria-pressed="' + (cbOn === w.k) + '">' + esc(cbSay(w).charAt(0).toUpperCase() + cbSay(w).slice(1)) + '</button>').join('') +
+        '<button class="t-lc-seg' + (cbOn === 'own' ? ' is-on' : '') + '" type="button" data-el="cb|own" aria-pressed="' + (cbOn === 'own') + '">' + svg('cal') + 'Pick a day and time</button></span>' +
+        (cbOn === 'own' ? '<div class="t-lc-inline">' + elPill('elCbDayMenu', 'cal', (elCbDays().filter((x) => Number(x[0]) === own.day)[0] || [0, sayDay(own.day)])[1] + ', ' + sayDay(own.day), elCbDays(), 'cbday', String(own.day)) +
+          elPill('elCbTimeMenu', 'clock', own.time, elCbTimes(), 'cbtime', own.time) + '</div>' : '') + '</div>' : ''));
     const foot = EL.busy ? '<span class="t-lc-aimy">' + svg('upload') + 'I’m transcribing ' + esc(EL.rec) + '…</span>'
       : rd ? '<span class="t-lc-aimy">' + mark(13) + 'I wrote this from ' + esc(EL.rec) + (rd.outcome ? ' and picked what I heard' : '') + '. Change anything.</span>'
       : '<span class="t-lc-tog"><button class="t-sw" type="button" data-el-consent aria-pressed="' + EL.consent + '"><span class="t-sw-k" aria-hidden="true"></span>They agreed to be recorded' + (EL.via === 'teams' ? ' (Teams said so)' : '') + '</button></span>' +
@@ -5051,14 +5091,14 @@
       '<div class="t-lc-note-foot">' + foot + '</div></div>');
     /* The rail: their record, as HubSpot keeps the contact beside the activity. */
     const hist = c ? historyOf(c).slice().sort((x, y) => y.day - x.day || String(y.time).localeCompare(String(x.time))).slice(0, 4) : [];
-    const call = c ? { cand: c.id, lit: EL.lit, dir: 'out', fu: false, read: rd || {}, cb: EL.cb } : null;
+    const call = c ? { cand: c.id, lit: EL.lit, dir: 'out', fu: false, read: rd || {}, cb: EL.cb, cbOwn: EL.cbOwn } : null;
     const say = !c ? 'Choose who you called, then what happened.' : willSay(call);
-    /* The action lives at the top of the rail, which stays in view: a bar
-       pinned above AiMY's composer sat on the tiles in a short window. */
+    /* The action closes the rail, under Lately (10 Nov), which stays in view:
+       a bar pinned above AiMY's composer sat on the tiles in a short window. */
     const act = '<div class="t-lc-act"><p class="t-lc-act-cap">' + mark(11) + 'What I’ll do</p><p class="t-lc-act-say">' + esc(say) + '</p>' +
       '<button class="btn btn-brand t-lc-go" type="button" data-el-log' + (c && EL.lit && !EL.busy ? '' : ' disabled') + '>Log it</button>' +
       '<button class="b-ghost t-lc-cancel" type="button"' + back + '>Cancel</button></div>';
-    const aside = '<aside class="t-lc-aside" aria-label="Log it, and their record">' + act + (c
+    const aside = '<aside class="t-lc-aside" aria-label="Their record, and log it">' + (c
       ? '<p class="t-lc-aside-h">On their record</p>' +
         '<dl class="t-lc-facts"><div><dt>Stage</dt><dd>' + stageTag(c) + '</dd></div>' +
           '<div><dt>Requisition</dt><dd>' + esc(reqOf(c).title) + '</dd></div>' +
@@ -5068,7 +5108,7 @@
         (hist.length ? '<ol class="t-lc-hist">' + hist.map((x) => '<li><span class="t-lc-hist-ico" aria-hidden="true">' + svg(x.kind === 'msg' && /WhatsApp/.test(x.text) ? 'wa' : HIST_ICO[x.kind] || 'req') + '</span>' +
           '<span class="t-lc-hist-t"><span>' + esc(x.text) + '</span><small>' + esc(sayWhen(x.day)) + (x.time ? ', ' + esc(x.time) : '') + '</small></span></li>').join('') + '</ol>'
           : '<p class="t-lc-empty">Nothing logged yet.</p>')
-      : '<p class="t-lc-aside-h">On their record</p><p class="t-lc-empty">Choose who you called, and their stage and latest calls show here.</p>') + '</aside>';
+      : '<p class="t-lc-aside-h">On their record</p><p class="t-lc-empty">Choose who you called, and their stage and latest calls show here.</p>') + act + '</aside>';
     return '<div class="s-home">' +
       '<div class="b-topbar s-block-wide"><button class="s-back" type="button"' + back + '>' + svg('back', 14) + 'Back</button></div>' +
       '<section class="s-block s-block-wide t-lc" aria-label="Log a call from elsewhere">' +
@@ -5100,8 +5140,8 @@
     if (n) EL.note = n.value;
     const script = EL.read ? scriptFor(c) : [];
     PENDING = { cand: c.id, phone: c.phone, dir: 'out', secs: EL.read ? 420 : 0, lit: EL.lit, read: EL.read || {}, video: EL.via === 'teams', via: EL.via,
-      recording: !!EL.read, script: script, shown: script.length, note: EL.note.trim(), fu: false, cb: EL.cb,
-      day: EL.day, time: t && t.value ? t.value : nowHM(), recName: EL.rec };
+      recording: !!EL.read, script: script, shown: script.length, note: EL.note.trim(), fu: false, cb: EL.cb, cbOwn: EL.cbOwn,
+      day: EL.day, time: EL.time || nowHM(), recName: EL.rec };
     const back = S.lg && DB.byId[S.lg] ? { cand: c.id } : { on: 'calls', q: 'log' };
     EL = null;
     go(back, true);
@@ -10296,9 +10336,11 @@
     if ((el = at('[data-el-log]'))) { logElsewhere(); return; }
     if ((el = at('[data-el]'))) {
       const p = val('data-el').split('|');
-      if (EL) { if (p[0] === 'via') EL.via = p[1]; if (p[0] === 'who') { EL.cand = p[1]; EL.read = null; EL.rec = null; EL.consent = false; } if (p[0] === 'day') EL.day = Number(p[1]); if (p[0] === 'o') EL.lit = EL.lit === p[1] ? null : p[1]; if (p[0] === 'cb') EL.cb = p[1];
+      if (EL) { if (p[0] === 'via') EL.via = p[1]; if (p[0] === 'who') { EL.cand = p[1]; EL.read = null; EL.rec = null; EL.consent = false; } if (p[0] === 'day') EL.day = Number(p[1]); if (p[0] === 'o') EL.lit = EL.lit === p[1] ? null : p[1]; if (p[0] === 'cb') EL.cb = p[1]; if (p[0] === 'time') EL.time = p[1];
+        if (p[0] === 'day') { const ts = elTimes(EL.day); if (!ts.some((x) => x[0] === EL.time)) EL.time = ts[0][0]; }
+        if (p[0] === 'cbday') EL.cbOwn = Object.assign({}, EL.cbOwn, { day: Number(p[1]) }); if (p[0] === 'cbtime') EL.cbOwn = Object.assign({}, EL.cbOwn, { time: p[1] });
         const nt = byId('elNote'); if (nt) EL.note = nt.value;
-        const t = byId('elTime'); if (t) EL.time = t.value; paint(); }
+        paint(); }
       return;
     }
     if ((el = at('[data-run-skip]'))) { if (RUN) RUN.skip[el.getAttribute('data-run-skip')] = 1; paint(); return; }
