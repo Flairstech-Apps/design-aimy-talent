@@ -1983,21 +1983,22 @@
     /* One fact a sentence (5 Nov). "Results wait on your call", not
        "decisions wait on you": Candidates' "wait on you" counts everyone
        with a next step of yours, a different, larger set. */
+    /* AiMY tells you the day (10 Nov: "as if AiMY speaks to you"). */
     lines.push(d.length
-      ? 'You have <b>' + plural(d.length, 'result') + '</b> waiting on your call, the oldest for <b>' + days(oldest.since) + '</b>.'
+      ? 'I have <b>' + plural(d.length, 'result') + '</b> waiting on your call; the oldest has waited <b>' + days(oldest.since) + '</b>.'
       : 'Nothing is waiting on your call.');
-    if (t.length) lines.push('<button class="slv-n" type="button"' + goAttr({ on: 'diary' }) + '>' + plural(t.length, 'interview') + '</button> today, the first at <b>' + esc(t[0].slot) + '</b> with ' + esc(t[0].name) + '.');
+    if (t.length) lines.push('You have <button class="slv-n" type="button"' + goAttr({ on: 'diary' }) + '>' + plural(t.length, 'interview') + '</button> today; the first is at <b>' + esc(t[0].slot) + '</b> with ' + esc(t[0].name) + '.');
     if (client.length) {
-      lines.push('Clients owe an answer on <button class="slv-n" type="button"' + goAttr({ on: 'reqs', q: 'client' }) + '>' + plural(client.length, 'candidate') + '</button>' +
-        ', the oldest waiting <b>' + days(client[0].since) + '</b>.');
+      lines.push('I’m still waiting on clients for <button class="slv-n" type="button"' + goAttr({ on: 'reqs', q: 'client' }) + '>' + plural(client.length, 'candidate') + '</button>' +
+        '; the oldest has been with them <b>' + days(client[0].since) + '</b>.');
     }
     const tc = toCall();
     const miss = missed();
     const waN = waOwed().length;
-    if (waN && !miss.length) lines.push('<button class="slv-n" type="button"' + goAttr({ on: 'calls', q: 'inbox' }) + '>' + plural(waN, 'WhatsApp reply', 'WhatsApp replies') + '</button> ' + (waN === 1 ? 'waits' : 'wait') + ' on you.');
+    if (waN && !miss.length) lines.push('<button class="slv-n" type="button"' + goAttr({ on: 'calls', q: 'inbox' }) + '>' + plural(waN, 'WhatsApp reply', 'WhatsApp replies') + '</button> ' + 'came in for you' + '.');
     if (miss.length) {
-      lines.push('<button class="slv-n" type="button"' + goAttr({ on: 'calls', q: 'inbox' }) + '>' + plural(miss.length, 'person', 'people') + '</button>' +
-        ' called and got nobody' + (waN ? ', <button class="slv-n" type="button"' + goAttr({ on: 'calls', q: 'inbox' }) + '>' + plural(waN, 'WhatsApp reply', 'WhatsApp replies') + '</button> ' + (waN === 1 ? 'waits' : 'wait') : '') + (tc.filter((x) => x.why === 'callback').length ? ', and <b>' + plural(tc.filter((x) => x.why === 'callback').length, 'callback') + '</b> ' +
+      lines.push('While you were away, <button class="slv-n" type="button"' + goAttr({ on: 'calls', q: 'inbox' }) + '>' + plural(miss.length, 'person', 'people') + '</button>' +
+        ' called and got nobody' + (waN ? ', <button class="slv-n" type="button"' + goAttr({ on: 'calls', q: 'inbox' }) + '>' + plural(waN, 'WhatsApp reply', 'WhatsApp replies') + '</button> came in' : '') + (tc.filter((x) => x.why === 'callback').length ? ', and <b>' + plural(tc.filter((x) => x.why === 'callback').length, 'callback') + '</b> ' +
         (tc.filter((x) => x.why === 'callback').length === 1 ? 'is' : 'are') + ' due today.' : '.'));
     }
     const ready = d.filter((c) => c.stage === 'tech' && reqOf(c).tpl !== 'internal');
@@ -2007,11 +2008,12 @@
       { k: 'screen', label: 'Call the next one', n: tc.length, why: tc.length ? tc[0].c.name + (tc[0].why === 'callback' ? ' asked for a callback' : ', ' + lower(STAGE[tc[0].c.stage].label)) : 'nobody is waiting' },
       /* Sales's fourth tile is Find leads; at-risk requisitions are already a
          line above and a block below. */
-      { k: 'find', label: 'Find people', n: null, why: 'describe who to look for; what comes back is a shortlist' },
+      { k: 'find', label: 'Find people', n: null, why: 'tell me who to look for, and I’ll bring back a shortlist' },
     ];
     return '<section class="slv s-block-wide">' +
       '<div class="slv-head">' + mark(18).replace('<svg ', '<svg ') + '<h1 class="slv-title">Today</h1>' +
         '<span class="slv-time">' + sayDay(0) + '</span></div>' +
+      '<p class="slv-hi">' + (hourNow() < 12 ? 'Good morning' : hourNow() < 17 ? 'Good afternoon' : 'Good evening') + ', ' + esc(first(me().name)) + '. Here’s what I found for you today:</p>' +
       '<div class="slv-body">' + lines.map((l) => '<p class="slv-line">' + l + '</p>').join('') + '</div>' +
       '<div class="s-starts-wrap"><div class="s-starts">' +
         starts.map((s) => '<button class="s-start" type="button" data-start="' + s.k + '">' +

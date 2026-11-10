@@ -2381,3 +2381,6 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-pop-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding-top: 8px; border-top: 1px solid var(--card-border); }
 .t-pop-now { margin-right: auto; font-size: 13px; }
 .t-cal-d:focus-visible, .t-clk-cell:focus-visible, .t-cal-nav:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+
+/* AiMY opens the briefing in its own voice (10 Nov). */
+.slv-hi { margin: 4px 0 6px; font-size: var(--fs-sm); color: var(--ink-muted); }
