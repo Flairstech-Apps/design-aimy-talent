@@ -1228,6 +1228,12 @@
     D.x = D.x || {}; D.tpl = D.tpl || {}; D.auto = D.auto || {}; D.autoLog = D.autoLog || [];
     D.news = D.news || []; D.lists = D.lists || [];
     D.msgs = D.msgs || []; D.waDone = D.waDone || {}; D.waAi = D.waAi || {};
+    /* No prototype person named as the owner of a rule (Engy, 11 Nov):
+       replies saved before then are rewritten on load. */
+    const unname = (t) => typeof t !== 'string' ? t : t.split(' by ' + DESKS.dina.name + '’s rule').join(' to answer')
+      .split(DESKS.dina.name + '’s template').join('the approved template').split(DESKS.dina.name + '’s <b>').join('the approved <b>')
+      .split(DESKS.dina.name + '’s ').join('the HR Manager’s ');
+    Object.keys(D.waAi).forEach((k) => { const r = D.waAi[k]; ['why', 'heldWhy'].forEach((f) => { r[f] = unname(r[f]); }); if (r.checks) r.checks.forEach((x) => { x.t = unname(x.t); }); });
     D.flags = D.flags || []; D.searches = D.searches || []; D.searchRun = D.searchRun || {}; D.searchGone = D.searchGone || [];
     Object.keys(D.tpl).forEach((k) => { TEMPLATE[k] = D.tpl[k].slice(); });
     /* A SENT ANSWER LASTS UNTIL THE PROTOTYPE RESTARTS (Engy, 29 Oct), so
@@ -3394,7 +3400,7 @@
     /* `alone`: the profile, where ticks on a list do not apply. */
     const many = withSend && !alone && selN('tell') > 1;
     const say = many ? 'Shown for ' + first(c.name) + '. Each of the ' + selN('tell') + ' ticked gets their own name and role.'
-      : 'To ' + first(c.name) + ' by ' + (waAuto(c) ? 'WhatsApp and email' : noWaSay(c)) + ' · HR template, approved by ' + DESKS.dina.name + '.';
+      : 'To ' + first(c.name) + ' by ' + (waAuto(c) ? 'WhatsApp and email' : noWaSay(c)) + ' · HR template, approved by the HR Manager.';
     return '<div class="t-msg">' +
       '<p class="t-msg-body">' + esc(tellText(c)) + '</p>' +
       '<div class="t-msg-end"><p class="t-msg-foot">' + esc(say) + '</p>' +
@@ -3468,8 +3474,8 @@
       ? (st === 'approved' ? '' : '<button class="s-insight-lnk primary" type="button" data-prop="' + esc(p.key) + '|approve">Approve</button>' +
         (p.kind === 'question' ? '<button class="b-ghost" type="button" data-prop="' + esc(p.key) + '|drop">Drop the question instead</button>' : '') +
         '<button class="b-ghost" type="button" data-prop="' + esc(p.key) + '|later">Not now</button>')
-      : st === 'waiting' ? '<span class="b-kind">Waiting on ' + esc(DESKS.dina.name) + '</span>'
-      : st ? '' : '<button class="s-insight-lnk primary" type="button" data-prop="' + esc(p.key) + '|send">Send it to ' + esc(DESKS.dina.name) + ' to approve</button>';
+      : st === 'waiting' ? '<span class="b-kind">Waiting on the HR Manager</span>'
+      : st ? '' : '<button class="s-insight-lnk primary" type="button" data-prop="' + esc(p.key) + '|send">Send it to the HR Manager to approve</button>';
     return '<article class="t-prop" style="--i:' + Math.min(i || 0, 8) + '">' +
       '<div class="t-prop-head"><span class="tag tag-' + (st === 'approved' ? 'ok' : 'neutral') + '">' + (st === 'approved' ? 'Approved' : 'Learning proposal') + '</span><b class="t-prop-title">' + esc(p.title) + '</b></div>' +
       aimyBlock({ text: p.evidence, from: p.from }) +
@@ -3556,7 +3562,7 @@
       undoQ = () => { put('asmts', a, { questions: was, dropped: wasDropped }); sends.forEach((x) => put('sends', x.s, { answers: x.a })); };
     }
     paint();
-    const said = act === 'send' ? ['Sent to ' + DESKS.dina.name + ' to approve', 'Nothing changes until she approves it.']
+    const said = act === 'send' ? ['Sent to the HR Manager to approve', 'Nothing changes until it is approved.']
       : act === 'later' ? ['Not now', 'AiMY asks again only if the pattern grows.']
       : view.kind === 'decline' ? ['In force for ' + accOf({ acc: view.acc }).name, view.rule + ' Shown on its account and its requisitions.']
       : act === 'drop' ? ['Dropped Q' + (view.i + 1), 'Results drop the same question. The wording is kept on the assessment.']
@@ -5811,7 +5817,7 @@
     const c = DB.byId[t.cand];
     if (!c) return 'They are no longer on file.';
     const shut = waAuto(c) && !waHrs(c), tpl = shut ? WA_TPL.filter((x) => x.k === tplFrom(t.text))[0] : null;
-    const how = waAuto(c) ? (shut ? 'It has been more than 24 hours since ' + first(c.name) + ' wrote, so it goes as ' + DESKS.dina.name + '’s approved template “' + tpl.label + '”, shown here as it will read.' : 'It goes on WhatsApp through AiMY Connect.')
+    const how = waAuto(c) ? (shut ? 'It has been more than 24 hours since ' + first(c.name) + ' wrote, so it goes as the approved template “' + tpl.label + '”, shown here as it will read.' : 'It goes on WhatsApp through AiMY Connect.')
       : c.wa ? 'It opens your own WhatsApp with this text, and is logged on ' + first(c.name) + '’s thread.' : first(c.name) + ' has not opted in to WhatsApp, so it goes by email to ' + (c.email || 'the address on file') + '.';
     const go = waAuto(c) ? 'Send on WhatsApp' : c.wa ? 'Open in WhatsApp' : 'Send by email';
     return '<p>A draft to <b>' + esc(c.name) + '</b>. Change it here, or tell me what to change (“shorter”, or what it should say).</p>' +
@@ -7818,8 +7824,8 @@
     const vSay = { none: 'predicts nothing we measure', wrong: 'points the wrong way', good: 'predicts who the client accepts' };
     const propActs = (x) => !pp || pp.i !== x.i ? '' : isHR()
       ? '<button class="s-insight-lnk primary" type="button" data-prop="' + esc(pp.key) + '|approve">Approve the rewording</button><button class="b-ghost" type="button" data-prop="' + esc(pp.key) + '|drop">Drop Q' + (x.i + 1) + ' instead</button><button class="b-ghost" type="button" data-prop="' + esc(pp.key) + '|later">Keep Q' + (x.i + 1) + '</button>'
-      : pp.rec && pp.rec.state === 'waiting' ? '<span class="b-kind">Rewording waits on ' + esc(DESKS.dina.name) + '</span>'
-      : '<button class="s-insight-lnk primary" type="button" data-prop="' + esc(pp.key) + '|send">Send the rewording to ' + esc(DESKS.dina.name) + '</button><button class="b-ghost" type="button" data-prop="' + esc(pp.key) + '|later">Keep Q' + (x.i + 1) + '</button>';
+      : pp.rec && pp.rec.state === 'waiting' ? '<span class="b-kind">Rewording waits on the HR Manager</span>'
+      : '<button class="s-insight-lnk primary" type="button" data-prop="' + esc(pp.key) + '|send">Send the rewording to the HR Manager</button><button class="b-ghost" type="button" data-prop="' + esc(pp.key) + '|later">Keep Q' + (x.i + 1) + '</button>';
     const sentN = Math.max.apply(null, outs.map((o) => o.n).concat([0]));
     const answers = '<div class="s-camp-list-head t-asmt-sub"><h3 class="s-block-h">What the answers show</h3><span class="s-block-say">' + plural(r.length, 'person', 'people') + ' took it · against who the client accepted</span></div>' +
       '<ul class="t-rv">' +
@@ -8348,8 +8354,8 @@
             return '<b>' + esc(c.name) + '</b>, ' + esc(reqOf(c).title) + ': offered ' + o.salary.toLocaleString('en') + (o.expects ? ' against ' + o.expects.toLocaleString('en') + ' asked' : '') + '. ' + esc(o.note || 'No reason given.'); }).join('<br>') + '</p>',
             [{ label: 'Open ' + first(DB.byId[offs[0].cand].name), go: { cand: offs[0].cand } }]) : '') +
           (dp ? (isHR() ? '<button class="s-insight-lnk primary" type="button" data-prop="' + esc(dp.key) + '|approve">Approve the rule</button>'
-            : dp.rec && dp.rec.state === 'waiting' ? '<span class="t-of-say">The rule waits on ' + esc(DESKS.dina.name) + '</span>'
-            : '<button class="s-insight-lnk" type="button" data-prop="' + esc(dp.key) + '|send">Send the rule to ' + esc(DESKS.dina.name) + '</button>') : '') });
+            : dp.rec && dp.rec.state === 'waiting' ? '<span class="t-of-say">The rule waits on the HR Manager</span>'
+            : '<button class="s-insight-lnk" type="button" data-prop="' + esc(dp.key) + '|send">Send the rule to the HR Manager</button>') : '') });
     }
     /* 4. Whose desk it is on, now. */
     const lanes = {};
@@ -8513,7 +8519,7 @@
     const offers = st.offers;
     const num = (x) => (x == null ? '·' : String(x));
     const pcS = (x) => (x == null ? '·' : x + '%');
-    const TARGET_BY = 'Set by ' + DESKS.dina.name + ', the HR Manager. A sample until the team sets its own.';
+    const TARGET_BY = 'Set by the HR Manager. A sample until the team sets its own.';
     /* Day 90 is read for the hires whose day 90 has passed, which are older
        than any period here, so the period cannot apply to them; the account
        does. */
