@@ -3622,7 +3622,7 @@
           '<span class="t-ladder-why">' + mark(10) + '<span>' + esc(a.why) + '</span></span></div>' +
           '<div class="t-rungs" role="radiogroup" aria-label="' + esc(a.label) + '">' + RUNG.map((g, k) =>
             '<button class="t-rung' + (k <= at ? ' is-on' : '') + '" type="button" role="radio" aria-checked="' + (k === at) + '" data-auto="' + a.k + '|' + g.k + '" title="' + esc(g.say) + '">' + esc(g.label) + '</button>').join('') +
-          '</div>' + (a.k === 'wareply' ? '<div class="t-ladder-hold"><span>When a reply changes someone’s time or uses a template, I hold it first:</span>' +
+          '</div>' + (a.k === 'wareply' ? '<div class="t-ladder-hold"><span>When a reply moves an interview, I hold it first:</span>' +
             '<div class="t-rungs" role="radiogroup" aria-label="Hold those replies">' + [[0, 'Don’t hold'], [5, '5 min'], [10, '10 min']].map((h) =>
               '<button class="t-rung' + (waHoldMin() === h[0] ? ' is-on' : '') + '" type="button" role="radio" aria-checked="' + (waHoldMin() === h[0]) + '" data-wa-hold="' + h[0] + '">' + esc(h[1]) + '</button>').join('') + '</div></div>' : '') +
           '</div>';
@@ -5087,10 +5087,9 @@
     if (!hrs) {
       const tp = waTplOk()[0];
       if (!tp) return { hand: '24 hours passed', note: 'no approved template to send' };
-      return { kind: 'tpl', tpl: tp.k, held: 'it reopens the chat with a template', label: 'Template: ' + tp.label, note: 'the 24 hours had passed', text: waFill(tp.text, c),
+      return { kind: 'tpl', tpl: tp.k, label: 'Template: ' + tp.label, note: 'the 24 hours had passed', text: waFill(tp.text, c),
         checks: [{ ok: 1, t: 'Read ' + esc(f) + '’s message: <b>“' + esc(m.text.length > 60 ? m.text.slice(0, 57) + '…' : m.text) + '”</b>' },
           { ok: 1, t: 'The 24-hour window: <b>closed</b>, so only an approved template can go' }, { ok: 1, t: 'Picked the approved template: <b>' + esc(tp.label) + '</b>' }],
-        heldWhy: 'More than 24 hours since ' + esc(f) + ' wrote, so only an approved template can reopen the chat. I picked <b>“' + esc(tp.label) + '”</b> and I’m holding it in case you’d rather pick another.',
         why: 'More than 24 hours had passed, so I reopened the chat with the approved <b>“' + esc(tp.label) + '”</b> template. When ' + esc(f) + ' replies, you can answer them in your own words.' };
     }
     const iv = r.move ? DB.ivs.filter((v) => v.cand === c.id && v.status === 'booked' && v.day >= 0).sort((a, b) => a.day - b.day)[0] : null;
@@ -5195,9 +5194,9 @@
         return;
       }
       const f = first(c.name), text = x.text;
-      const rec = Object.assign({ kind: x.kind, at: nowHM(), cb: c.callback, win: c.cbWin, why: x.why, checks: x.checks, label: x.label, note: x.note }, x.extra || {});
+      const rec = Object.assign({ kind: x.kind, tpl: x.tpl || null, at: nowHM(), cb: c.callback, win: c.cbWin, why: x.why, checks: x.checks, label: x.label, note: x.note }, x.extra || {});
       if (x.cb) { const h = Number(x.cb.time.slice(0, 2)); c.callback = x.cb.day; c.cbWin = h < 12 ? 'am' : h < 18 ? 'pm' : 'eve'; rec.when = whenSay(x.cb); }
-      const out = { id: 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), cand: c.id, dir: 'out', day: 0, time: nowHM(), text: text, by: 'aimy', ai: true };
+      const out = { id: 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), cand: c.id, dir: 'out', day: 0, time: nowHM(), text: text, by: 'aimy', ai: true, tpl: x.tpl || null };
       D.msgs.push(out); DB.msgs.push(out);
       rec.msg = out.id;
       rec.ev = note(c, 'msg', 'On WhatsApp to ' + f + ', by AiMY: “' + text + '”', { by: null }).id;
@@ -10997,7 +10996,7 @@
       const was = waHoldMin(), to = Number(val('data-wa-hold'));
       if (was === to) return;
       D.waHoldMin = to; save(); paint();
-      toast(to ? 'I hold those replies ' + plural(to, 'minute') + ' first' : 'I send those replies straight away', () => { D.waHoldMin = was; save(); paint(); }, 'Replies that change someone’s time or use a template.');
+      toast(to ? 'I hold those replies ' + plural(to, 'minute') + ' first' : 'I send those replies straight away', () => { D.waHoldMin = was; save(); paint(); }, 'Replies that move an interview.');
       return;
     }
     if ((el = at('[data-wa-draft]'))) {
