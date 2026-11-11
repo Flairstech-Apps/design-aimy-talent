@@ -922,6 +922,17 @@
     const mv = DB.ivs.filter((v) => v.status === 'booked' && v.day >= 0 && mine.some((c) => c.id === v.cand && !c.wa)).sort((x, y) => (x.stage === 'hr') - (y.stage === 'hr') || y.day - x.day)[0];
     const moves = mv && DB.byId[mv.cand];
     if (moves) { optIn(moves); M(moves, 'in', 0, '09:12', 'Hi, something came up. Can we move my interview to another day?'); }
+    /* and one inside the company (11 Nov): a technical interview tomorrow
+       with our own interviewer, so the hold has something to show. */
+    const inner = mine.filter((c) => (c.stage === 'tech' || c.stage === 'mgr') && !c.wa && c !== moves && first(c.name) !== first(RECRUITERS[0].name))[0];
+    if (inner) {
+      const q = DB.reqById[inner.req];
+      DB.ivs = DB.ivs.filter((v) => !(v.cand === inner.id && v.stage === inner.stage));
+      DB.ivs.push({ id: 'ivmove', cand: inner.id, stage: inner.stage, day: 1, slot: '12:30', by: interviewerFor(q, inner.stage), mode: 'video', status: 'booked',
+        ratings: null, notes: null, verdict: null, recording: null, tpl: (IVTPL_SEED.filter((x) => x.kind === inner.stage)[0] || {}).id });
+      inner.meet = 1; inner.slot = '12:30'; inner.fb = false;
+      optIn(inner); M(inner, 'in', 0, '10:05', 'Sorry, I can’t make tomorrow’s interview any more. Could we move it?');
+    }
     /* On Teams (5 Nov): today's first interview, so it can be joined from
        the diary, and the oldest result still owed, so its recording is
        shown come back from Teams by itself. */
@@ -5094,7 +5105,7 @@
     }
     const iv = r.move ? DB.ivs.filter((v) => v.cand === c.id && v.status === 'booked' && v.day >= 0).sort((a, b) => a.day - b.day)[0] : null;
     if (iv) {
-      const by = iv.by.split(',')[0], mineIv = by === me().name, bf = mineIv ? 'you' : first(by), alt = freeSlots(c, 2);
+      const by = iv.by.split(',')[0], mineIv = by === me().name, bf = mineIv ? 'you' : first(by), alt = freeSlots(c, 8).filter((x) => x.d !== iv.day).slice(0, 2);
       /* A client's interviewer (Engy, 11 Nov: "the person itself confirms"):
          AiMY never offers their time. It asks the candidate which days suit
          them and writes the note to the client for you to send; the client
