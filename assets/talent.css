@@ -2558,3 +2558,29 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-who-menu .tel-menu-cc { margin-left: 0; font-weight: var(--fw-medium); }
 .t-who-menu .b-menu-item[aria-current="true"] .b-menu-name { color: var(--accent-label, var(--d50)); }
 .t-menu-none { margin: 0; padding: 10px; font-size: var(--fs-xs); color: var(--ink-muted); }
+
+/* ══ WHATSAPP TEMPLATES, MANAGED (Engy, 11 Nov) ════════════════════════════
+   On the HR Manager's Templates page: each template with WhatsApp's review,
+   delete, add, and what recruiters asked for. In the thread's picker, the
+   clue and the ask. */
+.t-wtpl-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.t-wtpl { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 12px 14px; border-radius: 12px;
+  background: var(--card-bg); border: 1px solid var(--card-border); }
+.t-wtpl-main { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.t-wtpl-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.t-wtpl-top b { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--d50); }
+.t-wtpl p { margin: 0; font-size: var(--fs-xs); line-height: 1.5; color: var(--ink-secondary); }
+.t-wtpl-st { padding: 2px 8px; border-radius: var(--r-pill); font-size: var(--t-micro); font-weight: var(--fw-semibold); }
+.t-wtpl-st.is-ok { color: var(--ok); background: rgba(var(--ok-rgb), 0.12); }
+.t-wtpl-st.is-rev { color: var(--warn, #f7c95c); background: rgba(var(--warn-rgb), 0.14); }
+.t-wtpl-ph { padding: 0 5px; border-radius: 4px; color: var(--d50); background: rgba(var(--accent-rgb), 0.14); }
+.t-wtpl-form { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding: 14px; border-radius: 12px;
+  background: rgba(var(--accent-rgb), 0.06); border: 1px solid rgba(var(--accent-rgb), 0.18); }
+.t-wtpl-lab { font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--d100); margin-top: 4px; }
+.t-wtpl-asks { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.t-wtpl-ask { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 10px 14px; border-radius: 12px;
+  background: rgba(var(--accent-rgb), 0.08); border: 1px solid rgba(var(--accent-rgb), 0.18); }
+.t-wtpl-ask p { margin: 0; font-size: var(--fs-xs); line-height: 1.5; color: var(--ink-secondary); min-width: 0; }
+.t-wtpl-ask b { color: var(--d50); }
+.t-wa-tplmore { margin-top: 2px; }
+@media (max-width: 560px) { .t-wtpl { flex-direction: column; } }

@@ -4916,6 +4916,45 @@
     { k: 'update', label: 'An update', text: 'Hi {first}, an update on your application for {role}: it is with us and moving. I will be in touch this week. {me}, FlairsTech' },
     { k: 'iv', label: 'Your interview', text: 'Hi {first}, a reminder of your interview for {role}. Reply here if the time no longer works. {me}, FlairsTech' },
   ];
+  /* MANAGING THEM (Engy, 11 Nov: "from where can we manage the templates?").
+     The HR Manager adds and deletes WhatsApp templates on Templates; each
+     new one goes to WhatsApp for approval before anyone can send it, as on
+     the WhatsApp Business Platform. Recruiters ask for one from the
+     thread's template picker, and the ask lands on that page. */
+  function waTpls() { if (!D.waTpls) D.waTpls = WA_TPL.map((x) => Object.assign({ st: 'ok' }, x)); return D.waTpls; }
+  const waTplOk = () => waTpls().filter((x) => x.st === 'ok');
+  const tplLive = (k) => waTplOk().filter((x) => x.k === k)[0] || waTplOk()[0] || WA_TPL[0];
+  const waAsks = () => (D.waAsks = D.waAsks || []);
+  let WTPL_ADD = null, WA_ASK = null;
+  function waTplBlock() {
+    const list = waTpls(), asks = waAsks();
+    const show = (t) => esc(t).replace(/\{(first|role|me)\}/g, (m, k) => '<span class="t-wtpl-ph">' + ({ first: 'first name', role: 'role', me: 'recruiter' })[k] + '</span>');
+    const form = WTPL_ADD ? '<div class="t-wtpl-form">' +
+        '<label class="t-wtpl-lab" for="wtplLabel">Name</label><input class="t-field" id="wtplLabel" type="text" placeholder="For example: After the client interview" value="' + esc(WTPL_ADD.label || '') + '">' +
+        '<label class="t-wtpl-lab" for="wtplText">What it says</label><textarea class="input t-wa-in" id="wtplText" rows="3" placeholder="Hi {first}, …">' + esc(WTPL_ADD.text || '') + '</textarea>' +
+        '<p class="t-wa-win">Write {first} for their first name, {role} for the role and {me} for the recruiter’s first name. WhatsApp reviews each template before it can be sent.</p>' +
+        '<p class="t-acts"><button class="b-ghost" type="button" data-wtpl-add="">Cancel</button><button class="s-insight-lnk primary" type="button" data-wtpl-save>Send to WhatsApp for approval</button></p></div>'
+      : '<p class="t-acts"><button class="s-insight-lnk" type="button" data-wtpl-add="new">Add a template</button></p>';
+    return '<section class="s-block s-block-wide" aria-label="WhatsApp templates">' +
+      '<div class="s-camp-list-head"><h2 class="s-block-h">WhatsApp templates</h2><span class="s-block-say">what can open a chat once 24 hours have passed · for everyone in the company</span></div>' +
+      (connectOn() ? '' : '<p class="b-tocall">These are used with WhatsApp through AiMY Connect. While recruiters use their own WhatsApp, they write freely.</p>') +
+      (asks.length ? '<div class="t-wtpl-asks"><span class="t-aido-h">Asked for by recruiters</span>' + asks.map((a) => '<div class="t-wtpl-ask"><p><b>' + esc(a.by) + '</b> · ' + esc(ampm(a.at)) + '<br>“' + esc(a.text) + '”</p>' +
+          '<span class="t-acts"><button class="s-insight-lnk" type="button" data-wtpl-use="' + a.id + '">Write it as a template</button><button class="b-ghost" type="button" data-wtpl-drop="' + a.id + '">Dismiss</button></span></div>').join('') + '</div>' : '') +
+      '<div class="t-wtpl-list">' + list.map((t) => '<div class="t-wtpl"><div class="t-wtpl-main"><span class="t-wtpl-top"><b>' + esc(t.label) + '</b>' +
+          '<span class="t-wtpl-st ' + (t.st === 'ok' ? 'is-ok">Approved by WhatsApp' : 'is-rev">With WhatsApp for review') + '</span></span><p>' + show(t.text) + '</p></div>' +
+          '<button class="b-ghost" type="button" data-wtpl-del="' + esc(t.k) + '" aria-label="Delete ' + esc(t.label) + '">Delete</button></div>').join('') +
+        (list.length ? '' : '<p class="b-vfoot">No templates. After 24 hours, nothing can open a chat until one is approved.</p>') + '</div>' +
+      form + '</section>';
+  }
+  function waTplSave() {
+    const l = byId('wtplLabel'), t = byId('wtplText'), label = l ? l.value.trim() : '', text = t ? t.value.trim() : '';
+    if (!label || !text) { toast('Give it a name and what it says.'); return; }
+    const x = { k: 't' + Date.now().toString(36), label: label, text: text, st: 'rev', at: Date.now() };
+    waTpls().push(x);
+    if (WTPL_ADD && WTPL_ADD.ask) D.waAsks = waAsks().filter((a) => a.id !== WTPL_ADD.ask);
+    WTPL_ADD = null; save(); paint();
+    toast('Sent “' + label + '” to WhatsApp for approval', () => { D.waTpls = waTpls().filter((y) => y !== x); save(); paint(); }, 'Recruiters and I can use it once WhatsApp approves it.');
+  }
   const waFill = (t, c) => t.split('{first}').join(first(c.name)).split('{me}').join(first(me().name)).split('{role}').join(reqOf(c).title);
   function msgRow(m, i, inbox) {
     const c = DB.byId[m.cand];
@@ -5046,7 +5085,8 @@
       return x;
     }
     if (!hrs) {
-      const tp = WA_TPL[0];
+      const tp = waTplOk()[0];
+      if (!tp) return { hand: '24 hours passed', note: 'no approved template to send' };
       return { kind: 'tpl', tpl: tp.k, held: 'it reopens the chat with a template', label: 'Template: ' + tp.label, note: 'the 24 hours had passed', text: waFill(tp.text, c),
         checks: [{ ok: 1, t: 'Read ' + esc(f) + '’s message: <b>“' + esc(m.text.length > 60 ? m.text.slice(0, 57) + '…' : m.text) + '”</b>' },
           { ok: 1, t: 'The 24-hour window: <b>closed</b>, so only an approved template can go' }, { ok: 1, t: 'Picked the approved template: <b>' + esc(tp.label) + '</b>' }],
@@ -5198,6 +5238,9 @@
   function waTick() {
     if (!D || !D.waAi) return;
     const now = Date.now();
+    const back = (D.waTpls || []).filter((t) => t.st === 'rev' && now - t.at > 20000);
+    if (back.length) { back.forEach((t) => { t.st = 'ok'; }); save(); toast('WhatsApp approved “' + back.map((t) => t.label).join('”, “') + '”', null, 'It is in every recruiter’s template picker now.');
+      if (!(document.activeElement && /^(TEXTAREA|INPUT)$/.test(document.activeElement.tagName))) paint(); }
     const due = Object.keys(D.waAi).filter((id) => D.waAi[id].pend && !D.waAi[id].undone && D.waAi[id].due <= now);
     if (due.length) {
       const typing = document.activeElement && /^(TEXTAREA|INPUT)$/.test(document.activeElement.tagName);
@@ -5362,7 +5405,7 @@
         '<span class="t-wa-t">' + (m.ai ? mark(10) + ' ' : '') + esc(m.dir === 'out' ? (m.ai ? 'AiMY, for you' : 'You' + (m.tpl ? ', template' : '') + (m.own ? ', from your WhatsApp' : '')) : first(c.name) + (m.added ? ', added by you' : '')) + ' · ' + esc(m.time) + '</span></div>';
     }).join('') + (lr && lr.pend ? '<div class="t-wa-m is-out is-ai is-held"><p class="t-wa-text" dir="auto">' + esc(lr.text) + '</p>' +
       '<span class="t-wa-t">' + mark(10) + ' AiMY' + (lr.tpl ? ', template' : '') + ' · <span data-due="' + lr.due + '|clock">Sending in ' + waClock(lr.due - Date.now()) + '</span></span></div>' : '');
-    const tpl = WA_TPL.filter((x) => x.k === WA_TPL_ON)[0];
+    const tpl = waTplOk().filter((x) => x.k === WA_TPL_ON)[0];
     /* Without AiMY Connect: no 24 hours and no templates, since it is their
        own number. The box writes the message, Open in WhatsApp hands it to
        their app and logs it here, and a reply is pasted in by hand. */
@@ -5379,9 +5422,9 @@
           '<div class="t-wa-end"><p class="t-wa-win">Open for ' + plural(hrs, 'more hour') + '. After that, only an approved template can start it again.</p>' +
           '<button class="s-insight-lnk primary" type="button" data-wa-send="' + c.id + '">' + svg('send', 14) + 'Send</button></div></div>'
       : '<div class="t-wa-box"><p class="t-wa-win">' + (ms.length ? 'More than 24 hours since ' + esc(first(c.name)) + ' last wrote' : 'No conversation yet') + ', so it opens with one of the approved templates.</p>' +
-          '<div class="b-cuts t-wa-tpls" role="group" aria-label="Templates">' + WA_TPL.map((x) => '<button class="filter-chip' + (WA_TPL_ON === x.k ? ' active' : '') + '" type="button" data-wa-tpl="' + x.k + '" aria-pressed="' + (WA_TPL_ON === x.k) + '">' + esc(x.label) + '</button>').join('') + '</div>' +
+          '<div class="b-cuts t-wa-tpls" role="group" aria-label="Templates">' + waTplOk().map((x) => '<button class="filter-chip' + (WA_TPL_ON === x.k ? ' active' : '') + '" type="button" data-wa-tpl="' + x.k + '" aria-pressed="' + (WA_TPL_ON === x.k) + '">' + esc(x.label) + '</button>').join('') + '</div>' +
           (tpl ? '<div class="t-msg"><p class="t-msg-body">' + esc(waFill(tpl.text, c)) + '</p><div class="t-msg-end"><p class="t-msg-foot">To ' + esc(first(c.name)) + ' on WhatsApp · an approved template.</p>' +
-            '<button class="s-insight-lnk primary" type="button" data-wa-send="' + c.id + '">' + svg('send', 14) + 'Send the template</button></div></div>' : '') + '</div>';
+            '<button class="s-insight-lnk primary" type="button" data-wa-send="' + c.id + '">' + svg('send', 14) + 'Send the template</button></div></div>' : '') + waAskBox(c) + '</div>';
     return '<div class="s-home">' +
       '<div class="b-topbar s-block-wide"><button class="s-back" type="button"' + goAttr({ on: 'calls', q: 'inbox' }) + '>' + svg('back', 14) + 'Interactions</button>' +
         '<span class="b-draft-acts">' + (canCall(c) ? '<button class="b-ghost" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call</button>' : '') +
@@ -5399,8 +5442,16 @@
         box +
       '</section></div>';
   }
+  function waAskBox(c) {
+    const mine = waAsks().filter((a) => a.by === me().name).pop();
+    if (WA_ASK === c.id) return '<div class="t-wa-add"><textarea class="input t-wa-in" id="waAskText" rows="2" placeholder="What should it say? For example: a note after a client interview" aria-label="The template you need"></textarea>' +
+      '<p class="t-acts"><button class="b-ghost" type="button" data-wa-ask="">Cancel</button><button class="s-insight-lnk" type="button" data-wa-askgo="' + c.id + '">Send to the HR Manager</button></p></div>';
+    return '<p class="t-wa-win t-wa-tplmore">' + (mine ? 'You asked the HR Manager for one at ' + esc(ampm(mine.at)) + '. It shows here once WhatsApp approves it. '
+      : 'Need a different one? The HR Manager adds templates, and WhatsApp approves each before it can go. ') +
+      '<button class="t-inline-link" type="button" data-wa-ask="' + c.id + '">' + (mine ? 'Ask for another' : 'Ask for one') + '</button></p>';
+  }
   function sendWa(c) {
-    const hrs = waHrs(c), tpl = WA_TPL.filter((x) => x.k === WA_TPL_ON)[0];
+    const hrs = waHrs(c), tpl = waTplOk().filter((x) => x.k === WA_TPL_ON)[0];
     const el = byId('waText');
     const text = hrs ? (el ? el.value.trim() : '') : tpl ? waFill(tpl.text, c) : '';
     if (!text) { toast(hrs ? 'Write something first.' : 'Pick a template first.'); return; }
@@ -5823,7 +5874,7 @@
   function draftTurnHtml(t) {
     const c = DB.byId[t.cand];
     if (!c) return 'They are no longer on file.';
-    const shut = waAuto(c) && !waHrs(c), tpl = shut ? WA_TPL.filter((x) => x.k === tplFrom(t.text))[0] : null;
+    const shut = waAuto(c) && !waHrs(c), tpl = shut ? tplLive(tplFrom(t.text)) : null;
     const how = waAuto(c) ? (shut ? 'It has been more than 24 hours since ' + first(c.name) + ' wrote, so it goes as the approved template “' + tpl.label + '”, shown here as it will read.' : 'It goes on WhatsApp through AiMY Connect.')
       : c.wa ? 'It opens your own WhatsApp with this text, and is logged on ' + first(c.name) + '’s thread.' : first(c.name) + ' has not opted in to WhatsApp, so it goes by email to ' + (c.email || 'the address on file') + '.';
     const go = waAuto(c) ? 'Send on WhatsApp' : c.wa ? 'Open in WhatsApp' : 'Send by email';
@@ -5836,7 +5887,7 @@
     const c = DB.byId[t.cand];
     if (!c || t.done) return;
     const shut = waAuto(c) && !waHrs(c), tk = shut ? tplFrom(t.text) : null;
-    const text = shut ? waFill(WA_TPL.filter((x) => x.k === tk)[0].text, c) : String(t.text || '').trim();
+    const text = shut ? waFill(tplLive(tk).text, c) : String(t.text || '').trim();
     if (!text) { toast('Write something first.'); return; }
     let m = null, e;
     if (c.wa) {
@@ -8053,7 +8104,7 @@
             '<button class="b-ghost" type="button" data-tpl-del="' + t.id + '|' + i + '" aria-label="Remove">Remove</button></p>').join('') +
           '<p class="t-acts"><button class="s-insight-lnk" type="button" data-tpl-add="' + t.id + '">Add an item</button></p></div>').join('') +
       '</section>' +
-      (isHR() ? connectBlock() + ladder() : '') +
+      (isHR() ? connectBlock() + waTplBlock() + ladder() : '') +
     '</div>';
   }
   function toggleStage(k, s) {
@@ -10962,6 +11013,26 @@
     if ((el = at('[data-wa-next]'))) {
       const p = val('data-wa-next').split('|'), c = DB.byId[p[1]];
       if (p[0] === 'cb') waSetCb(c, false); else if (p[0] === 'cbreply') waSetCb(c, true); else if (p[0] === 'out') go({ cand: c.id });
+      return;
+    }
+    if ((el = at('[data-wtpl-add]'))) { WTPL_ADD = val('data-wtpl-add') ? {} : null; paint(); const f = byId('wtplLabel'); if (f) f.focus(); return; }
+    if ((el = at('[data-wtpl-save]'))) { waTplSave(); return; }
+    if ((el = at('[data-wtpl-del]'))) {
+      const k = val('data-wtpl-del'), all = waTpls(), i = all.findIndex((t) => t.k === k), t = all[i];
+      if (!t) return;
+      all.splice(i, 1); if (WA_TPL_ON === k) WA_TPL_ON = null; save(); paint();
+      toast('Deleted “' + t.label + '”', () => { waTpls().splice(i, 0, t); save(); paint(); }, 'Nobody can send it any more.');
+      return;
+    }
+    if ((el = at('[data-wtpl-use]'))) { const a = waAsks().filter((x) => x.id === val('data-wtpl-use'))[0]; if (a) { WTPL_ADD = { text: a.text, ask: a.id }; paint(); const f = byId('wtplLabel'); if (f) f.focus(); } return; }
+    if ((el = at('[data-wtpl-drop]'))) { const id = val('data-wtpl-drop'), was = waAsks().slice(); D.waAsks = was.filter((x) => x.id !== id); save(); paint(); toast('Dismissed', () => { D.waAsks = was; save(); paint(); }); return; }
+    if ((el = at('[data-wa-ask]'))) { WA_ASK = val('data-wa-ask') || null; paint(); const f = byId('waAskText'); if (f) f.focus(); return; }
+    if ((el = at('[data-wa-askgo]'))) {
+      const f = byId('waAskText'), text = f ? f.value.trim() : '';
+      if (!text) { toast('Say what it should say first.'); return; }
+      const a = { id: 'a' + Date.now().toString(36), by: me().name, text: text, at: nowHM(), cand: val('data-wa-askgo') };
+      waAsks().push(a); WA_ASK = null; save(); paint();
+      toast('Sent to the HR Manager', () => { D.waAsks = waAsks().filter((x) => x !== a); save(); paint(); }, 'It shows in your template picker once WhatsApp approves it.');
       return;
     }
     if ((el = at('[data-wa-tpl]'))) { const k = val('data-wa-tpl'); WA_TPL_ON = WA_TPL_ON === k ? null : k; paint(); return; }
