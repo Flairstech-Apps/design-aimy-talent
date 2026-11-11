@@ -2531,7 +2531,7 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 /* The WhatsApp thread as one wide column (Engy, 11 Nov): the stage's
    width less 20px a side; the head, messages, AiMY's card, replies and box
    share it. */
-.t-wa-page { width: 100%; max-width: none; padding-inline: 20px; box-sizing: border-box; }
+.t-wa-page { width: 100%; max-width: 920px; margin-inline: auto; padding-inline: 20px; box-sizing: border-box; }
 /* wide column, readable lines: bubbles and AiMY's words keep a measure */
 .t-wa-page .t-wa-m { max-width: min(70%, 680px); }
 .t-wa-page .t-wa-aimy-in { max-width: 78ch; }
