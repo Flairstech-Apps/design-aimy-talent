@@ -12,7 +12,7 @@ Prototype: https://design-aimy-talent.aimy.flairstech.com/?on=calls
 
 ---
 
-## Script (about 10 minutes)
+## Script (about 11 minutes)
 
 **1. Interactions**
 Hi everyone, and thanks for joining. Today I'm introducing Interactions, the hub in AiMY Talent where every call and WhatsApp message with a candidate comes together. I'll show you the three tabs a recruiter works from. Then the part I'm most excited about: AiMY now answers routine WhatsApp replies for you, checks what's going on before it does, and leaves anything that's really your call to you. We'll finish with the rules that keep it safe, and a live demo.
@@ -21,7 +21,7 @@ Hi everyone, and thanks for joining. Today I'm introducing Interactions, the hub
 Here's the problem we started from. A recruiter's conversation with a candidate is spread out. Calls happen on a mobile, so nothing reaches the record unless someone types it up. WhatsApp lives on a phone, so even a simple "after 4 works for me" waits until you notice it. And the context sits in someone's head, so the next person starts from zero. Interactions brings calls and WhatsApp into one place, and files every conversation on the candidate's record automatically.
 
 **3. One page, three tabs**
-This is the Interactions page: one page with three tabs. To reach is who you should call next. Inbox is what came in while you were away: missed calls and WhatsApp replies. History is everything that happened, filed on each candidate's record. Above the tabs, a strip from AiMY tells you what it answered for you and what's waiting on you. I'll come back to that strip in a minute.
+This is the Interactions page: one page with three tabs. To reach is who you should call next. Inbox is what came in while you were away: missed calls and WhatsApp replies. The small AiMY mark next to Inbox counts the replies AiMY already answered for you. History is everything that happened, filed on each candidate's record. Above the tabs, a strip from AiMY tells you what it answered for you and what's waiting on you. I'll come back to that strip in a minute.
 
 **4. To reach**
 To reach is your call list for the day. AiMY puts people who asked for a callback first, inside the window they gave. Then come everyone who applied and hasn't been called yet. Each row tells you what to get from the call, based on what the CV doesn't say, like their notice period or a must-have skill. You can call one by one, or press "Call all in order". You still press Call each time; AiMY logs what happened.
@@ -44,20 +44,26 @@ Here's what "checks what's going on" means. First, your Diary. Karim wrote "afte
 **10. Every answer says why**
 Under every message AiMY sends, there's a small card. The first line says what it did and why, in one sentence. "What I checked" opens the full list. It read the message and looked at their stage. It checked your Diary and confirmed the 24-hour window was open. And it confirmed nothing needed a person. If you disagree, Undo withdraws the message. "Change the reply" takes it back and puts the text in your box, so you can edit it and send it yourself.
 
-**11. The strip**
-Back to the strip at the top of the page. It sums up everything AiMY did with WhatsApp, in three groups. Done means it already went out; each chip says why, like "you were busy at 4:00", and opens the thread where Undo lives. Sending soon means AiMY wrote a reply that will go by itself at the time shown, unless you step in. Waiting on you means nothing goes until you act, and each chip names the next step, like "Reply about pay".
+**11. The strip: Done**
+Back to the strip at the top of the page. It sums up everything AiMY did with WhatsApp, in three groups, and I'll take them one at a time. The first is Done: these already went out. In green is what AiMY did: it offered Karim 4:15 or 4:45, it set Reem a call back tomorrow morning, and it reopened Mariam's chat with a template. Next to each one is why, like "you were busy at 4:00". Every chip opens the thread, where you can see What I checked, and Undo if you disagree.
 
-**12. Pay and a "no" stay with you**
+**12. The strip: Sending soon**
+The second group is Sending soon. Here AiMY has written a reply, but it doesn't send it straight away. Mohamed asked to move his interview, and AiMY offered two of Tarek's interview hours. Because that changes a colleague's week, AiMY holds the reply for 10 minutes. The chip shows when it goes. Open it and you can send it now, change it, or stop it. If you do nothing, it goes, so Mohamed isn't kept waiting.
+
+**13. The strip: Waiting on you**
+The third group is Waiting on you. Nothing here goes until you act. In red is the next step: reply to Adham about pay, reply to Ayman's "no", and send Jana at Northwind a note about Reem's interview. Next to it, what the candidate was told. For Adham and Ayman, AiMY said you'll reply today, so they aren't left on read. Open any of them and there's a brief and a draft waiting. You send it yourself.
+
+**14. Pay and a "no" stay with you**
 Some replies are never AiMY's to answer. Adham asks about the salary range; Ayman says they've accepted another offer. In both cases AiMY doesn't decide anything. It sends a short holding reply, "Omar will come back to you on that today", so the candidate isn't left on read. Then it leaves you a brief. That's the band on the requisition, what the candidate said they expect and whether that's inside the band, and their stage. For a "no", it also says who else needs to hear, like the client. A draft is ready, and you send it yourself.
 
-**13. Moving an interview**
+**15. Moving an interview**
 Moving an interview touches someone else's calendar. So the rule is: only the person whose time it is commits it. If the interviewer is the client's, like Jana at Northwind, AiMY never offers Jana's times. It asks the candidate which days suit them and drafts a note for you to send to the client. If the interviewer is a colleague, AiMY offers the nearest of their interview hours from Outlook, and the invite is still theirs to accept. Because it changes a colleague's week, AiMY holds that reply for 10 minutes. You can send it now, change it, or stop it. If you do nothing, it goes, so the candidate isn't kept waiting.
 
-**14. After 24 hours: templates**
+**16. After 24 hours: templates**
 One rule comes from WhatsApp itself, not from us. On the WhatsApp Business Platform, once 24 hours have passed since the candidate's last message, a business can only send a template WhatsApp approved in advance. The HR Manager manages templates on the Templates page. They can add one or delete one, and each new template waits for WhatsApp's review before anyone can use it. Recruiters see only approved templates in their picker. If they need a different one, "Ask for one" sends the request straight to the HR Manager. If a company lets recruiters use their own WhatsApp instead of AiMY Connect, there's no window and no templates at all.
 
-**15. The rules**
+**17. The rules**
 So, in one view: what AiMY does on its own, what it holds, and what it never touches. It confirms a time when you're free, and offers your next free times when you're not. It answers questions from the requisition, and reopens a chat with an approved template. It holds one thing first: moving an interview with a colleague. And three things are always yours: pay, a "no", and a client's time. The HR Manager controls all of this on the "What AiMY may do" page. That covers how far AiMY goes with WhatsApp, from only suggesting to doing it and telling you. It also covers whether interview moves are held for 5 minutes, 10, or not at all.
 
-**16. Try it**
+**18. Try it**
 That's Interactions. The best way to get it is to try it, so here's the link to the prototype. Start with the strip at the top. Open one of the Done chips and press "What I checked" to see the reasoning. Then open Adham's pay question and use the draft. And look at Mohamed's reply that's being held: you can watch the countdown, or send it now. If you click around and want to start over, just refresh the page and the demo resets. Happy to take questions.
