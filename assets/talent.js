@@ -1219,7 +1219,12 @@
   const COLS = ['reqs', 'ivs', 'sends', 'offers', 'asmts', 'ivtpls', 'events', 'props'];
   let D = fresh();
   function load() {
-    try { const s = localStorage.getItem(KEY); if (s) D = JSON.parse(s); } catch (e) { D = fresh(); }
+    /* A REFRESH STARTS OVER (Engy, 11 Nov). Moving around never reloads the
+       page, so changes last while you click through; a refresh, or a new
+       tab, throws them away and the prototype comes back as seeded. Your
+       preferences (theme, language, phone line) are kept. */
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    D = fresh();
     if (!D || !D.c) D = fresh();
     D.calls = D.calls || []; D.added = D.added || []; D.gone = D.gone || [];
     D.added.forEach((c) => { if (!DB.byId[c.id] && DB.byReq[c.req]) { DB.cands.push(c); DB.byId[c.id] = c; DB.byReq[c.req].push(c); } });
@@ -9316,7 +9321,7 @@
      empty. Stored per browser like the rest of the delta, under its own key
      so Reset in the prototype panel does not need to know about it. */
   const CHAT_KEY = 'aimy-talent:chats';
-  const CHATS = (function () { try { return JSON.parse(localStorage.getItem(CHAT_KEY)) || []; } catch (e) { return []; } })();
+  const CHATS = (function () { try { localStorage.removeItem(CHAT_KEY); } catch (e) {} return []; })();
   let CHAT_AT = null, ASKING = null, THINK = null, UNREAD = 0, THREAD_SEEN = 0;
   const saveChats = () => { try { localStorage.setItem(CHAT_KEY, JSON.stringify(CHATS.slice(-40))); } catch (e) {} };
   const chatNow = () => CHATS.filter((x) => x.id === CHAT_AT && x.desk === DESK)[0] || null;
