@@ -2528,7 +2528,13 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-aido-chip:hover { background: rgba(var(--accent-rgb), 0.14); border-color: rgba(var(--accent-rgb), 0.4); }
 @media (max-width: 560px) { .t-aido-grps { grid-template-columns: minmax(0, 1fr); gap: 6px; } .t-aido-grps .t-aido-h { padding-top: 6px; } .t-aido-chip { border-radius: 14px; } }
 
-/* The WhatsApp thread as one centred column (Engy, 11 Nov): the head, the
-   messages, AiMY's card, the replies and the box share its width. */
-.t-wa-page { width: 100%; max-width: 760px; margin-inline: auto; }
+/* The WhatsApp thread as one wide column (Engy, 11 Nov): the stage's
+   width less 20px a side; the head, messages, AiMY's card, replies and box
+   share it. */
+.t-wa-page { width: 100%; max-width: none; padding-inline: 20px; box-sizing: border-box; }
+/* wide column, readable lines: bubbles and AiMY's words keep a measure */
+.t-wa-page .t-wa-m { max-width: min(70%, 680px); }
+.t-wa-page .t-wa-aimy-in { max-width: 78ch; }
+.t-wa-page .t-wa-sug { max-width: min(70%, 680px); }
+@media (max-width: 560px) { .t-wa-page { padding-inline: 0; } .t-wa-page .t-wa-m, .t-wa-page .t-wa-sug { max-width: 92%; } }
 .t-wa-page .t-wa, .t-wa-page .t-wa-box, .t-wa-page .t-wa-sugs, .t-wa-page .t-wa-done, .t-wa-page .t-wa-aimy { max-width: none; }
