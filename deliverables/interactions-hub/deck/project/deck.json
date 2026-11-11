@@ -1,0 +1,19 @@
+{
+  "v": 4,
+  "createdOnFiles": { "v": 1, "at": "2026-11-11T19:00:00Z" },
+  "lists": "css",
+  "title": "Interactions Hub Intro",
+  "order": ["cover", "why", "hub", "toreach", "inbox", "history", "logcall", "aimy", "room", "checked", "strip", "yours", "moves", "templates", "rules", "close"],
+  "sections": {
+    "s1": { "description": "What Interactions is and why it exists.", "start": "cover" },
+    "s2": { "description": "The three tabs: who to reach, what came in, and what happened.", "start": "hub" },
+    "s3": { "description": "How AiMY answers WhatsApp for you, and where it stops.", "start": "aimy" },
+    "s4": { "description": "The rules that keep it safe, and how to try it.", "start": "rules" }
+  },
+  "faces": {
+    "poppins": { "family": "Poppins", "href": "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" }
+  },
+  "designSystems": [
+    { "title": "AiMY Design System", "namespace": "aimy", "artifact": "https://claude.ai/artifact/N4FiqRMgLAZ1LQhqBwRMTo", "version": "1793658925-e0d2", "copiedAt": "2026-11-11T19:00:00Z" }
+  ]
+}
