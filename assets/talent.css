@@ -2493,3 +2493,16 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-wa-trail li.is-no::before { content: '–'; color: var(--ink-muted); }
 .t-wa-trail b { color: var(--d50); font-weight: var(--fw-semibold); }
 .t-wa-aimy.is-done .t-acts { gap: 6px; }
+
+/* ══ WHEN IT'S A PERSON'S CALL (Engy, 11 Nov; direction C) ═════════════════
+   The brief under a holding reply: why AiMY stopped, the facts you need,
+   and a draft you send yourself. */
+.t-wa-facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 2px 0 0; font-size: var(--fs-xs); line-height: 1.45; }
+.t-wa-facts dt { color: var(--ink-muted); }
+.t-wa-facts dd { margin: 0; color: var(--ink-secondary); min-width: 0; }
+.t-wa-facts b { color: var(--d50); font-weight: var(--fw-semibold); }
+.t-wa-draft { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 10px; background: var(--card-bg); border: 1px dashed rgba(var(--accent-rgb), 0.45); }
+.t-wa-draft-h { font-size: var(--t-micro); font-weight: var(--fw-semibold); letter-spacing: 0.02em; color: var(--ink-muted); }
+.t-wa-draft p { margin: 0; font-size: var(--fs-xs); line-height: 1.5; color: var(--d50); }
+.t-wa-brief { border-color: rgba(var(--warn-rgb, 214, 140, 0), 0.4); }
+.t-wa-brief .t-acts { gap: 6px; flex-wrap: wrap; }
