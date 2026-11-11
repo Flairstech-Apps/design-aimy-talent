@@ -5206,7 +5206,6 @@
     document.querySelectorAll('[data-due]').forEach((el) => {
       const p = el.getAttribute('data-due').split('|'), left = Number(p[0]) - now;
       if (p[1] === 'bar') el.style.transform = 'scaleX(' + Math.max(0, Math.min(1, left / (Number(p[2]) * 60000))) + ')';
-      else if (p[1] === 'min') el.textContent = left > 60000 ? 'sending in ' + Math.ceil(left / 60000) + ' min' : 'sending now';
       else el.textContent = left > 0 ? 'Sending in ' + waClock(left) : 'Sending now';
     });
   }
@@ -5278,19 +5277,19 @@
       '<b>' + esc(c.name) + '</b><span class="t-aido-l">' + esc(lab) + '</span>' + (note ? '<span class="t-aido-n">' + esc(note) + '</span>' : '') + '<span class="t-aido-t">' + esc(ampm(t)) + '</span></button>';
     const held = need.filter((x) => x.held).length;
     const told = held ? (held === need.length ? ', and I told ' + (held === 1 ? 'them' : 'each of them') : ', and I told ' + held + ' of them') + ' you’ll reply today' : '';
-    const hsay = hold.length ? ' I’m holding <b>' + hold.length + '</b> for you to see before ' + (hold.length === 1 ? 'it goes' : 'they go') + '.' : '';
+    const hsay = hold.length ? ' <b>' + hold.length + '</b> ' + (hold.length === 1 ? 'is' : 'are') + ' sending soon on ' + (hold.length === 1 ? 'its' : 'their') + ' own, unless you step in.' : '';
     const say = (list.length
-      ? 'I answered <b>' + plural(list.length, 'WhatsApp reply', 'WhatsApp replies') + '</b> for you: I ' + esc(aiDidLine(list)) + '.' + (need.length ? ' <b>' + need.length + '</b> ' + (need.length === 1 ? 'needs' : 'need') + ' you' + told + '.' : '')
+      ? 'I answered <b>' + plural(list.length, 'WhatsApp reply', 'WhatsApp replies') + '</b> for you: I ' + esc(aiDidLine(list)) + '.' + (need.length ? ' <b>' + need.length + '</b> ' + (need.length === 1 ? 'is' : 'are') + ' waiting on you' + told + '.' : '')
       : !need.length ? '' : 'I read <b>' + plural(need.length, 'WhatsApp reply', 'WhatsApp replies') + '</b> that ' + (need.length === 1 ? 'needs' : 'need') + ' a person, so I left ' + (need.length === 1 ? 'it' : 'them') + ' for you' + told + '.') + hsay;
     return '<div class="t-aido" role="status">' +
       '<span class="t-aido-mark">' + mark(14) + '</span>' +
       '<div class="t-aido-in"><p class="t-aido-say">' + say + ' ' +
         '<span class="t-aido-rule">Undo is on each thread.</span></p>' +
         '<div class="t-aido-grps">' + (list.length ? '<div class="t-aido-grp"><span class="t-aido-h">Done</span><div class="t-aido-list">' + list.map((x) => chip(x.c, 'is-ok', aiDid(x), x.rec.note, x.rec.at)).join('') + '</div></div>' : '') +
-        (hold.length ? '<div class="t-aido-grp"><span class="t-aido-h">Holding</span><div class="t-aido-list">' + hold.map((x) => '<button class="t-aido-chip is-hold" type="button"' + goAttr({ on: 'calls', th: x.c.id }) + '>' +
+        (hold.length ? '<div class="t-aido-grp"><span class="t-aido-h">Sending soon</span><div class="t-aido-list">' + hold.map((x) => '<button class="t-aido-chip is-hold" type="button"' + goAttr({ on: 'calls', th: x.c.id }) + '>' +
           '<b>' + esc(x.c.name) + '</b><span class="t-aido-l">' + esc(x.rec.label) + '</span><span class="t-aido-n">' + esc(x.rec.note) + '</span>' +
-          '<span class="t-aido-t" data-due="' + x.rec.due + '|min"></span></button>').join('') + '</div></div>' : '') +
-        (need.length ? '<div class="t-aido-grp"><span class="t-aido-h">Needs you</span><div class="t-aido-list">' + need.map((x) => chip(x.c, 'is-need', x.x.hand, x.x.note, x.m.time)).join('') + '</div></div>' : '') + '</div>' +
+          '<span class="t-aido-t">goes at ' + esc(ampm(new Date(x.rec.due).toTimeString().slice(0, 5))) + '</span></button>').join('') + '</div></div>' : '') +
+        (need.length ? '<div class="t-aido-grp"><span class="t-aido-h">Waiting on you</span><div class="t-aido-list">' + need.map((x) => chip(x.c, 'is-need', ({ 'Asked about pay': 'Reply about pay', 'Said no': 'Reply to their “no”', '24 hours passed': 'Send a template' })[x.x.hand] || x.x.hand, x.x.note, x.m.time)).join('') + '</div></div>' : '') + '</div>' +
       '</div></div>';
   }
   function waAutoSay(c, ms) {
