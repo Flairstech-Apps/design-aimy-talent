@@ -5241,6 +5241,21 @@
   }
   /* The strip, grouped by what it means for you (direction D): what AiMY
      finished, and what it read and left for you, each with its reason. */
+  /* THE RULE, WHERE IT IS NAMED (Engy, 11 Nov: "link it"). A recruiter
+     cannot open Templates, where the HR Manager sets it, so the name opens
+     the rule in place: what AiMY may do, the hold, what always goes to a
+     person, who set it and the last change. */
+  let WA_RULE_OPEN = false;
+  function waRuleBox() {
+    const a = AUTO_SEED.filter((x) => x.k === 'wareply')[0], g = RUNG.filter((x) => x.k === autoAt('wareply'))[0], hm = waHoldMin();
+    const last = D.autoLog.filter((x) => x.k === 'wareply').pop();
+    const rows = [['What it covers', esc(a.label)], ['How far I go', '<b>' + esc(g.label) + '</b>: ' + esc(g.say)],
+      ['When I hold', hm ? 'A reply that changes someone’s time or uses a template waits <b>' + plural(hm, 'minute') + '</b> before it goes' : 'I don’t hold: those replies go straight away'],
+      ['Always to a person', 'Pay and a “no”. I send only a holding reply and leave you a brief'],
+      ['Set by', esc(DESKS.dina.name) + ', HR Manager' + (last ? '. Last changed ' + esc(last.time) + (DESKS[last.by] ? ' by ' + esc(DESKS[last.by].name) : '') : '')]];
+    return '<div class="t-aido-rulebox" id="waRule"><dl>' + rows.map((r) => '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>').join('') + '</dl>' +
+      '<p class="t-aido-rulefoot">Only ' + esc(DESKS.dina.name) + ' can change it, on Templates. ' + esc(a.why) + '</p></div>';
+  }
   function aiDidStrip() {
     const list = waAiDone(), need = connectOn() ? aiNeeds() : [], hold = connectOn() ? waHeld() : [];
     if (!list.length && !need.length && !hold.length) return '';
@@ -5255,7 +5270,8 @@
     return '<div class="t-aido" role="status">' +
       '<span class="t-aido-mark">' + mark(14) + '</span>' +
       '<div class="t-aido-in"><p class="t-aido-say">' + say + ' ' +
-        '<span class="t-aido-rule">' + esc(DESKS.dina.name) + '’s rule lets me; Undo is on each thread.</span></p>' +
+        '<span class="t-aido-rule"><button class="t-aido-rulelink" type="button" data-wa-rule aria-expanded="' + WA_RULE_OPEN + '" aria-controls="waRule">' + esc(DESKS.dina.name) + '’s rule</button> lets me; Undo is on each thread.</span></p>' +
+        (WA_RULE_OPEN ? waRuleBox() : '') +
         '<div class="t-aido-grps">' + (list.length ? '<div class="t-aido-grp"><span class="t-aido-h">Done</span><div class="t-aido-list">' + list.map((x) => chip(x.c, 'is-ok', aiDid(x), x.rec.note, x.rec.at)).join('') + '</div></div>' : '') +
         (hold.length ? '<div class="t-aido-grp"><span class="t-aido-h">Holding</span><div class="t-aido-list">' + hold.map((x) => '<button class="t-aido-chip is-hold" type="button"' + goAttr({ on: 'calls', th: x.c.id }) + '>' +
           '<b>' + esc(x.c.name) + '</b><span class="t-aido-l">' + esc(x.rec.label) + '</span><span class="t-aido-n">' + esc(x.rec.note) + '</span>' +
@@ -10887,6 +10903,7 @@
     if ((el = at('[data-wa-send]'))) { sendWa(DB.byId[val('data-wa-send')]); return; }
     if ((el = at('[data-wa-undo]'))) { waAutoUndo(val('data-wa-undo')); return; }
     if ((el = at('[data-wa-edit]'))) { waAutoUndo(val('data-wa-edit'), true); return; }
+    if ((el = at('[data-wa-rule]'))) { WA_RULE_OPEN = !WA_RULE_OPEN; paint(); const b = document.querySelector('[data-wa-rule]'); if (b) b.focus(); return; }
     if ((el = at('[data-wa-now]'))) { waHeldSend(val('data-wa-now'), 'now'); return; }
     if ((el = at('[data-wa-change]'))) { waHeldStop(val('data-wa-change'), true); return; }
     if ((el = at('[data-wa-drop]'))) { waHeldStop(val('data-wa-drop'), false); return; }
