@@ -2514,7 +2514,6 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-wa-as .t-acts { gap: 6px; flex-wrap: wrap; }
 .t-wa-let { display: flex; align-items: center; gap: 8px; font-size: var(--fs-xs); color: var(--ink-secondary); cursor: pointer; }
 .t-wa-let input { accent-color: var(--accent); }
-.t-aido-chip.is-hold .t-aido-l { color: var(--d50); }
 .t-ladder-hold { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 10px 12px; border-radius: 10px;
   font-size: var(--fs-xs); color: var(--d100); background: rgba(var(--accent-rgb), 0.06); }
 /* The strip's groups side by side on one line, wrapping when narrow, and

@@ -5250,12 +5250,6 @@
     save(); paint();
     toast(bf + ' picked ' + when, null, 'I told ' + f + ' and sent the invite.' + (allow ? ' Next time I offer ' + bf + '’s interview hours without asking.' : ''));
   }
-  /* Waiting on someone else: a colleague asked by AiMY, or a client you sent the note to. */
-  function waOthers() {
-    return Object.keys(D.waAi).map((id) => ({ id: id, rec: D.waAi[id], m: DB.msgs.filter((x) => x.id === id)[0] }))
-      .filter((x) => x.m && !x.rec.undone && ((x.rec.kind === 'colask' && !x.rec.picked && !x.rec.none) || (x.rec.kind === 'clientask' && x.rec.toClient)) && DB.byId[x.m.cand] && reqOf(DB.byId[x.m.cand]).rec === ME)
-      .map((x) => Object.assign(x, { c: DB.byId[x.m.cand] }));
-  }
   function waTick() {
     if (!D || !D.waTpls) return;
     const now = Date.now();
@@ -5290,7 +5284,7 @@
      thread. */
   function waAiDone() {
     return Object.keys(D.waAi).map((id) => ({ id: id, rec: D.waAi[id], m: DB.msgs.filter((x) => x.id === id)[0] }))
-      .filter((x) => x.m && !x.rec.undone && x.rec.kind !== 'hold' && x.rec.kind !== 'clientask' && !(x.rec.kind === 'colask' && !x.rec.picked) && DB.byId[x.m.cand] && reqOf(DB.byId[x.m.cand]).rec === ME)
+      .filter((x) => x.m && !x.rec.undone && x.rec.kind !== 'hold' && !(x.rec.kind === 'clientask' && !x.rec.toClient) && !(x.rec.kind === 'colask' && !x.rec.picked) && DB.byId[x.m.cand] && reqOf(DB.byId[x.m.cand]).rec === ME)
       .map((x) => Object.assign(x, { c: DB.byId[x.m.cand] }));
   }
   const aiDid = (x) => x.rec.label || (x.rec.kind === 'cb' ? 'Call back ' + x.rec.when : x.rec.kind === 'ask' ? 'Asked for a time' : 'Thanked for the CV');
@@ -5299,6 +5293,7 @@
     return [n('cb') ? 'set ' + plural(n('cb'), 'call back') + ' and told them' : null, n('offer') ? 'offered new times to ' + plural(n('offer'), 'person', 'people') : null,
       n('faq') ? 'answered ' + plural(n('faq'), 'question') + ' from the requisition' : null,
       n('move') ? 'offered new interview times to ' + plural(n('move'), 'person', 'people') : null,
+      n('clientask') ? 'asked ' + plural(n('clientask'), 'person', 'people') + ' for days to move a client interview' : null,
       n('colask') ? 'moved ' + plural(n('colask'), 'interview') + ' to the time the interviewer picked' : null,
       n('tpl') ? 'reopened ' + plural(n('tpl'), 'chat') + ' with a template' : null,
       n('ask') ? 'asked ' + plural(n('ask'), 'person', 'people') + ' for a time' : null,
@@ -5322,25 +5317,20 @@
   /* The strip, grouped by what it means for you (direction D): what AiMY
      finished, and what it read and left for you, each with its reason. */
   function aiDidStrip() {
-    const list = waAiDone(), need = connectOn() ? aiNeeds() : [], hold = connectOn() ? waOthers() : [];
-    if (!list.length && !need.length && !hold.length) return '';
+    const list = waAiDone(), need = connectOn() ? aiNeeds() : [];
+    if (!list.length && !need.length) return '';
     const chip = (c, cls, lab, note, t) => '<button class="t-aido-chip ' + cls + '" type="button"' + goAttr({ on: 'calls', th: c.id }) + '>' +
       '<b>' + esc(c.name) + '</b><span class="t-aido-l">' + esc(lab) + '</span>' + (note ? '<span class="t-aido-n">' + esc(note) + '</span>' : '') + '<span class="t-aido-t">' + esc(ampm(t)) + '</span></button>';
     const held = need.filter((x) => x.held).length;
     const told = held ? (held === need.length ? ', and I told ' + (held === 1 ? 'them' : 'each of them') : ', and I told ' + held + ' of them') + ' you’ll reply today' : '';
-    const who = hold.map((x) => first(x.rec.by)).filter((v, i, a) => a.indexOf(v) === i);
-    const hsay = hold.length ? ' <b>' + hold.length + '</b> ' + (hold.length === 1 ? 'is' : 'are') + ' waiting on ' + (who.length > 1 ? who.slice(0, -1).join(', ') + ' and ' + who[who.length - 1] : who[0]) + ' to pick a time.' : '';
     const say = (list.length
       ? 'I answered <b>' + plural(list.length, 'WhatsApp reply', 'WhatsApp replies') + '</b> for you: I ' + esc(aiDidLine(list)) + '.' + (need.length ? ' <b>' + need.length + '</b> ' + (need.length === 1 ? 'is' : 'are') + ' waiting on you' + told + '.' : '')
-      : !need.length ? '' : 'I read <b>' + plural(need.length, 'WhatsApp reply', 'WhatsApp replies') + '</b> that ' + (need.length === 1 ? 'needs' : 'need') + ' a person, so I left ' + (need.length === 1 ? 'it' : 'them') + ' for you' + told + '.') + hsay;
+      : !need.length ? '' : 'I read <b>' + plural(need.length, 'WhatsApp reply', 'WhatsApp replies') + '</b> that ' + (need.length === 1 ? 'needs' : 'need') + ' a person, so I left ' + (need.length === 1 ? 'it' : 'them') + ' for you' + told + '.');
     return '<div class="t-aido" role="status">' +
       '<span class="t-aido-mark">' + mark(14) + '</span>' +
       '<div class="t-aido-in"><p class="t-aido-say">' + say + ' ' +
         '<span class="t-aido-rule">Undo is on each thread.</span></p>' +
         '<div class="t-aido-grps">' + (list.length ? '<div class="t-aido-grp"><span class="t-aido-h">Done</span><div class="t-aido-list">' + list.map((x) => chip(x.c, 'is-ok', aiDid(x), x.rec.note, x.rec.at)).join('') + '</div></div>' : '') +
-        (hold.length ? '<div class="t-aido-grp"><span class="t-aido-h">Waiting on others</span><div class="t-aido-list">' + hold.map((x) => x.rec.kind === 'colask'
-          ? chip(x.c, 'is-hold', 'Asked ' + first(x.rec.by) + ' for a time', first(x.rec.by) + ' picks the time', x.rec.at)
-          : chip(x.c, 'is-hold', 'Sent ' + first(x.rec.by) + ' the note', x.rec.acc + ' names the time', x.rec.toClient)).join('') + '</div></div>' : '') +
         (need.length ? '<div class="t-aido-grp"><span class="t-aido-h">Waiting on you</span><div class="t-aido-list">' + need.map((x) => chip(x.c, 'is-need', ({ 'Asked about pay': 'Reply about pay', 'Said no': 'Reply to their “no”', '24 hours passed': 'Send a template' })[x.x.hand] || x.x.hand, x.x.note, x.m.time)).join('') + '</div></div>' : '') + '</div>' +
       '</div></div>';
   }
