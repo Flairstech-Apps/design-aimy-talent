@@ -2527,3 +2527,8 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-aido-chip { background: rgba(var(--accent-rgb), 0.08); border-color: rgba(var(--accent-rgb), 0.18); }
 .t-aido-chip:hover { background: rgba(var(--accent-rgb), 0.14); border-color: rgba(var(--accent-rgb), 0.4); }
 @media (max-width: 560px) { .t-aido-grps { grid-template-columns: minmax(0, 1fr); gap: 6px; } .t-aido-grps .t-aido-h { padding-top: 6px; } .t-aido-chip { border-radius: 14px; } }
+
+/* The WhatsApp thread as one centred column (Engy, 11 Nov): the head, the
+   messages, AiMY's card, the replies and the box share its width. */
+.t-wa-page { width: 100%; max-width: 760px; margin-inline: auto; }
+.t-wa-page .t-wa, .t-wa-page .t-wa-box, .t-wa-page .t-wa-sugs, .t-wa-page .t-wa-done, .t-wa-page .t-wa-aimy { max-width: none; }

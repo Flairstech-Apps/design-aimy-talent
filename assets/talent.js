@@ -5346,7 +5346,7 @@
       '<div class="b-topbar s-block-wide"><button class="s-back" type="button"' + goAttr({ on: 'calls', q: 'inbox' }) + '>' + svg('back', 14) + 'Interactions</button>' +
         '<span class="b-draft-acts">' + (canCall(c) ? '<button class="b-ghost" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call</button>' : '') +
           '<button class="b-ghost" type="button"' + goAttr({ on: 'calls', lg: c.id }) + '>Log a call from elsewhere</button></span></div>' +
-      '<section class="s-block s-block-wide" aria-label="WhatsApp with ' + esc(c.name) + '">' +
+      '<section class="s-block s-block-wide t-wa-page" aria-label="WhatsApp with ' + esc(c.name) + '">' +
         '<div class="s-camp-list-head"><h2 class="s-block-h">' + esc(c.name) + '</h2>' +
           '<span class="s-block-say">WhatsApp · ' + esc(c.wa ? 'opted in ' + sayWhen(c.waDay != null ? c.waDay : -3) + (connectOn() ? '' : ' · your own number') : 'no opt-in') + ' · ' + esc(reqOf(c).title) + ', ' + esc(accOf(reqOf(c)).name) + '</span></div>' +
         '<div class="t-wa">' + (list || '<p class="b-vfoot">Nothing on WhatsApp yet.</p>') + '</div>' +
