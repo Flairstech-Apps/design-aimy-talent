@@ -3633,9 +3633,8 @@
           '<span class="t-ladder-why">' + mark(10) + '<span>' + esc(a.why) + '</span></span></div>' +
           '<div class="t-rungs" role="radiogroup" aria-label="' + esc(a.label) + '">' + RUNG.map((g, k) =>
             '<button class="t-rung' + (k <= at ? ' is-on' : '') + '" type="button" role="radio" aria-checked="' + (k === at) + '" data-auto="' + a.k + '|' + g.k + '" title="' + esc(g.say) + '">' + esc(g.label) + '</button>').join('') +
-          '</div>' + (a.k === 'wareply' ? '<div class="t-ladder-hold"><span>When a reply moves an interview, I hold it first:</span>' +
-            '<div class="t-rungs" role="radiogroup" aria-label="Hold those replies">' + [[0, 'Don’t hold'], [5, '5 min'], [10, '10 min']].map((h) =>
-              '<button class="t-rung' + (waHoldMin() === h[0] ? ' is-on' : '') + '" type="button" role="radio" aria-checked="' + (waHoldMin() === h[0]) + '" data-wa-hold="' + h[0] + '">' + esc(h[1]) + '</button>').join('') + '</div></div>' : '') +
+          '</div>' + (a.k === 'wareply' ? '<div class="t-ladder-hold"><span>When a reply moves a colleague’s interview, I ask that colleague first. Each interviewer can let me offer their interview hours without asking, in their own settings' +
+            (Object.keys(D.ivLet || {}).length ? ': ' + esc(Object.keys(D.ivLet).join(', ')) + (Object.keys(D.ivLet).length === 1 ? ' has' : ' have') + ' turned it on' : '') + '.</span></div>' : '') +
           '</div>';
       }).join('') + '</div>' +
       (D.autoLog.length ? '<div class="b-log">' + D.autoLog.slice().reverse().slice(0, 6).map((x, i) => logRow({ tone: '', ico: svg('goal'),
@@ -4971,7 +4970,7 @@
     const c = DB.byId[m.cand];
     const ans = m.dir === 'in' && D.waAi[m.id] && !D.waAi[m.id].undone;
     return logRow({ tone: m.ai ? 'is-ai' : '', ico: m.ai ? mark(16) : svg('wa'), who: c.name,
-      meta: logMeta(['WhatsApp', m.dir === 'in' ? (ans ? (D.waAi[m.id].pend ? 'they wrote, my reply goes at ' + ampm(new Date(D.waAi[m.id].due).toTimeString().slice(0, 5)) : D.waAi[m.id].kind === 'hold' ? 'they wrote, I said you’ll reply' : 'they wrote, I answered') : 'they wrote') : m.ai ? 'I wrote, for you' : 'you wrote', m.time, reqOf(c).title]),
+      meta: logMeta(['WhatsApp', m.dir === 'in' ? (ans ? (D.waAi[m.id].kind === 'colask' && !D.waAi[m.id].picked ? 'they wrote, I asked ' + first(D.waAi[m.id].by) : D.waAi[m.id].kind === 'hold' ? 'they wrote, I said you’ll reply' : 'they wrote, I answered') : 'they wrote') : m.ai ? 'I wrote, for you' : 'you wrote', m.time, reqOf(c).title]),
       say: '“' + esc(m.text) + '”', act: goAttr({ on: 'calls', th: c.id }).trim(), go: inbox ? 'Reply' : 'Open', goIco: inbox ? svg('wa', 14) : '' }, i);
   }
 
@@ -5126,14 +5125,26 @@
         const dn = (d) => (d === 0 ? 'today' : d === 1 ? 'tomorrow' : DAY_FULL[dayOf(d).getDay()]), stg = lower(STAGE[iv.stage].label);
         const or = alt.length === 2 && alt[0].d === alt[1].d ? dn(alt[0].d) + ' at ' + ampm(alt[0].t) + ' or ' + ampm(alt[1].t) : alt.map((x) => dn(x.d) + ' at ' + ampm(x.t)).join(' or ');
         const was = (iv.day === 0 ? 'today' : iv.day === 1 ? 'tomorrow' : DAY_FULL[dayOf(iv.day).getDay()] + ' ' + sayDay(iv.day)) + (iv.slot ? ' at ' + ampm(iv.slot) : '');
-        return { kind: 'move', held: mineIv ? 'it changes your week' : 'it changes ' + bf + '’s week', label: 'Offered ' + or, note: mineIv ? 'moving your interview' : 'it changes ' + bf + '’s week',
-          text: 'No problem, ' + f + '. ' + (mineIv ? 'I’m free ' : bf + ' is free ') + or + '. Which suits you?',
-          checks: [{ ok: 1, t: 'Read ' + esc(f) + '’s message: <b>“' + esc(m.text.length > 60 ? m.text.slice(0, 57) + '…' : m.text) + '”</b>' },
-            { ok: 1, t: 'Their ' + esc(stg) + ': <b>' + esc(was) + '</b>, with ' + esc(mineIv ? 'you' : by) },
-            { ok: 1, t: (mineIv ? 'Your' : esc(bf) + '’s') + ' interview hours in Outlook, nearest free' + (mineIv ? '' : ', and yours') + ': <b>' + esc(or) + '</b>' },
-            { ok: 1, t: 'The 24-hour window: <b>open, ' + plural(hrs, 'hour') + ' left</b>' }],
-          heldWhy: esc(f) + ' wants to move their <b>' + esc(stg) + '</b> with ' + esc(mineIv ? 'you' : by) + ' (' + esc(was) + '). I found the two nearest of ' + (mineIv ? 'your' : esc(bf) + '’s') + ' interview hours in Outlook; the invite is ' + (mineIv ? 'yours' : esc(bf) + '’s') + ' to accept. It changes ' + (mineIv ? 'your' : esc(bf) + '’s') + ' week, so I’m holding it for you.',
-          why: esc(f) + ' asked to move their ' + esc(stg) + ', so I offered ' + (mineIv ? 'your' : esc(bf) + '’s') + ' two nearest free times: <b>' + esc(or) + '</b>. I’ll book the one they pick.' };
+        const read = { ok: 1, t: 'Read ' + esc(f) + '’s message: <b>“' + esc(m.text.length > 60 ? m.text.slice(0, 57) + '…' : m.text) + '”</b>' };
+        const win = { ok: 1, t: 'The 24-hour window: <b>open, ' + plural(hrs, 'hour') + ' left</b>' };
+        const hours = { ok: 1, t: (mineIv ? 'Your' : esc(bf) + '’s') + ' interview hours in Outlook, nearest free' + (mineIv ? '' : ', and yours') + ': <b>' + esc(or) + '</b>' };
+        /* Whose time it is decides (Engy, 11 Nov: "he should decide for
+           himself"). Your own interview: AiMY offers your hours. A
+           colleague's: AiMY offers theirs only if they turned on "Let AiMY
+           offer my interview hours"; otherwise it asks them first and tells
+           the candidate it will come back today. */
+        if (mineIv || ivLets(by)) {
+          return { kind: 'move', label: 'Offered ' + or, note: mineIv ? 'your interview hours' : bf + ' lets me offer them',
+            text: 'No problem, ' + f + '. ' + (mineIv ? 'I’m free ' : bf + ' is free ') + or + '. Which suits you?',
+            checks: [read, { ok: 1, t: 'Their ' + esc(stg) + ': <b>' + esc(was) + '</b>, with ' + esc(mineIv ? 'you' : by) }].concat(mineIv ? [] : [{ ok: 1, t: esc(bf) + ' turned on <b>Let AiMY offer my interview hours</b>' }]).concat([hours, win]),
+            why: esc(f) + ' asked to move their ' + esc(stg) + ', so I offered ' + (mineIv ? 'your' : esc(bf) + '’s') + ' two nearest free times: <b>' + esc(or) + '</b>.' + (mineIv ? '' : ' ' + esc(bf) + ' lets me offer those interview hours without asking, and the invite is still theirs to accept.') + ' I’ll book the one they pick.' };
+        }
+        return { kind: 'colask', label: 'Asked ' + bf + ' for a time', note: bf + ' picks the time',
+          text: 'No problem, ' + f + '. I’m checking new times with ' + bf + ' and will come back to you today.',
+          extra: { by: by, alt: alt, or: or, stg: stg },
+          checks: [read, { ok: 1, t: 'Their ' + esc(stg) + ': <b>' + esc(was) + '</b>, with ' + esc(by) }, hours,
+            { ok: 0, t: esc(bf) + ' hasn’t turned on <b>Let AiMY offer my interview hours</b>, so I offered none of them' }, win],
+          why: esc(f) + ' wants to move their <b>' + esc(stg) + '</b> with ' + esc(by) + ' (' + esc(was) + '). It’s ' + esc(bf) + '’s time, so ' + esc(bf) + ' decides: I asked about <b>' + esc(or) + '</b>, and told ' + esc(f) + ' I’ll come back today.' };
       }
     }
     const quote = m.text.length > 60 ? m.text.slice(0, 57) + '…' : m.text;
@@ -5198,12 +5209,6 @@
           ev: note(c, 'msg', 'On WhatsApp to ' + first(c.name) + ', by AiMY: “' + x.hold.text + '”', { by: null }).id };
         return;
       }
-      if (x.held) {
-        D.waAi[m.id] = { kind: x.kind, pend: true, due: Date.now() + waHoldMin() * 60000, mins: waHoldMin(), text: x.text, tpl: x.tpl || null, held: x.held,
-          heldWhy: x.heldWhy, why: x.why, checks: x.checks, label: x.label, note: x.note };
-        if (!waHoldMin()) waHeldSend(m.id, 'now', true);
-        return;
-      }
       const f = first(c.name), text = x.text;
       const rec = Object.assign({ kind: x.kind, tpl: x.tpl || null, at: nowHM(), cb: c.callback, win: c.cbWin, why: x.why, checks: x.checks, label: x.label, note: x.note }, x.extra || {});
       if (x.cb) { const h = Number(x.cb.time.slice(0, 2)); c.callback = x.cb.day; c.cbWin = h < 12 ? 'am' : h < 18 ? 'pm' : 'eve'; rec.when = whenSay(x.cb); }
@@ -5216,64 +5221,57 @@
     });
     save();
   }
-  /* HOLDING IT FOR YOU (Engy, 11 Nov; direction B). When a reply changes
-     someone's time (moving an interview) or reopens a chat with a template,
-     AiMY writes it and holds it for the minutes the HR Manager sets on the
-     ladder, with a countdown. You can send it now, change it, or not send
-     it; if you do nothing it still goes, so nobody is kept waiting. */
-  const waHoldMin = () => (D.waHoldMin == null ? 10 : D.waHoldMin);
-  function waHeldSend(id, how, quiet) {
+  /* ASKING THE COLLEAGUE (Engy, 11 Nov). When a candidate asks to move an
+     interview with a colleague, AiMY asks that colleague, not you: they pick
+     one of the times, or say neither works. Each interviewer can let AiMY
+     offer their interview hours without asking (their own setting); the
+     prototype answers as them from the thread. */
+  const ivLets = (who) => !!(D.ivLet && D.ivLet[who]);
+  const ivDayWord = (d) => (d === 0 ? 'today' : d === 1 ? 'tomorrow' : DAY_FULL[dayOf(d).getDay()]);
+  function waColPick(id, i, allow) {
     const rec = D.waAi[id], m = DB.msgs.filter((x) => x.id === id)[0], c = m && DB.byId[m.cand];
-    if (!rec || !rec.pend || rec.undone || !c) return;
-    const out = { id: 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), cand: c.id, dir: 'out', day: 0, time: nowHM(), text: rec.text, by: 'aimy', ai: true, tpl: rec.tpl };
+    if (!rec || rec.kind !== 'colask' || rec.picked || rec.none || rec.undone || !c) return;
+    const bf = first(rec.by), f = first(c.name);
+    if (allow) D.ivLet = Object.assign({}, D.ivLet, { [rec.by]: true });
+    if (i < 0) {
+      rec.none = nowHM(); save(); paint();
+      toast(bf + ' can’t do either time', () => { delete rec.none; save(); paint(); }, 'It’s with you now. ' + f + ' was told you’ll come back today.');
+      return;
+    }
+    const sl = rec.alt[i], when = ivDayWord(sl.d) + ' at ' + ampm(sl.t);
+    const iv = DB.ivs.filter((v) => v.cand === c.id && v.status === 'booked' && v.day >= 0).sort((a, b) => a.day - b.day)[0];
+    if (iv) { rec.was0 = { id: iv.id, day: iv.day, slot: iv.slot, cs: c.slot }; iv.day = sl.d; iv.slot = sl.t; c.slot = sl.t; }
+    const text = 'Good news, ' + f + ': ' + bf + ' can do ' + when + '. I’ve sent you the invite.';
+    const out = { id: 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), cand: c.id, dir: 'out', day: 0, time: nowHM(), text: text, by: 'aimy', ai: true };
     D.msgs.push(out); DB.msgs.push(out);
-    rec.msg = out.id; rec.at = nowHM(); rec.pend = false; rec.sent = how;
-    rec.ev = note(c, 'msg', 'On WhatsApp to ' + first(c.name) + ', by AiMY' + (rec.tpl ? ', template' : '') + ': “' + rec.text + '”', { by: null }).id;
-    D.waDone[id] = 1;
-    save();
-    if (!quiet) { paint(); if (how === 'now') toast('Sent to ' + first(c.name), null, 'Undo is on the thread.'); }
-  }
-  function waHeldStop(id, change) {
-    const rec = D.waAi[id];
-    if (!rec || !rec.pend) return;
-    rec.undone = true; rec.pend = false;
-    if (change && rec.tpl) WA_TPL_ON = rec.tpl;
+    rec.msg2 = out.id; rec.picked = when; rec.at = nowHM(); rec.label = 'Moved to ' + when; rec.note = bf + ' picked it';
+    rec.ev2 = note(c, 'msg', 'On WhatsApp to ' + f + ', by AiMY: “' + text + '”', { by: null }).id;
+    rec.why = esc(f) + ' asked to move their ' + esc(rec.stg) + '. ' + esc(bf) + ' picked <b>' + esc(when) + '</b>, so I told ' + esc(f) + ' and sent the invite.';
     save(); paint();
-    const box = change && !rec.tpl && byId('waText');
-    if (box) { box.value = rec.text; box.focus(); box.setSelectionRange(rec.text.length, rec.text.length); }
-    if (change) toast(rec.tpl ? 'Pick the template you want' : 'It’s in the box, yours to change', null, 'Nothing went. Press Send when it reads right.');
-    else toast('I won’t send it', () => { rec.undone = false; rec.pend = true; save(); paint(); }, 'The thread is yours to answer.');
+    toast(bf + ' picked ' + when, null, 'I told ' + f + ' and sent the invite.' + (allow ? ' Next time I offer ' + bf + '’s interview hours without asking.' : ''));
   }
-  const waClock = (ms) => { const t = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+  /* Waiting on someone else: a colleague asked by AiMY, or a client you sent the note to. */
+  function waOthers() {
+    return Object.keys(D.waAi).map((id) => ({ id: id, rec: D.waAi[id], m: DB.msgs.filter((x) => x.id === id)[0] }))
+      .filter((x) => x.m && !x.rec.undone && ((x.rec.kind === 'colask' && !x.rec.picked && !x.rec.none) || (x.rec.kind === 'clientask' && x.rec.toClient)) && DB.byId[x.m.cand] && reqOf(DB.byId[x.m.cand]).rec === ME)
+      .map((x) => Object.assign(x, { c: DB.byId[x.m.cand] }));
+  }
   function waTick() {
-    if (!D || !D.waAi) return;
+    if (!D || !D.waTpls) return;
     const now = Date.now();
     const back = (D.waTpls || []).filter((t) => t.st === 'rev' && now - t.at > 20000);
     if (back.length) { back.forEach((t) => { t.st = 'ok'; }); save(); toast('WhatsApp approved “' + back.map((t) => t.label).join('”, “') + '”', null, 'It is in every recruiter’s template picker now.');
       if (!(document.activeElement && /^(TEXTAREA|INPUT)$/.test(document.activeElement.tagName))) paint(); }
-    const due = Object.keys(D.waAi).filter((id) => D.waAi[id].pend && !D.waAi[id].undone && D.waAi[id].due <= now);
-    if (due.length) {
-      const typing = document.activeElement && /^(TEXTAREA|INPUT)$/.test(document.activeElement.tagName);
-      if (!typing) { due.forEach((id) => waHeldSend(id, 'auto', true)); paint(); return; }
-    }
-    document.querySelectorAll('[data-due]').forEach((el) => {
-      const p = el.getAttribute('data-due').split('|'), left = Number(p[0]) - now;
-      if (p[1] === 'bar') el.style.transform = 'scaleX(' + Math.max(0, Math.min(1, left / (Number(p[2]) * 60000))) + ')';
-      else el.textContent = left > 0 ? 'Sending in ' + waClock(left) : 'Sending now';
-    });
   }
   setInterval(waTick, 1000);
-  function waHeld() {
-    return Object.keys(D.waAi).map((id) => ({ id: id, rec: D.waAi[id], m: DB.msgs.filter((x) => x.id === id)[0] }))
-      .filter((x) => x.m && x.rec.pend && !x.rec.undone && DB.byId[x.m.cand] && reqOf(DB.byId[x.m.cand]).rec === ME)
-      .map((x) => Object.assign(x, { c: DB.byId[x.m.cand] }));
-  }
   function waAutoUndo(id, edit) {
     const rec = D.waAi[id];
     if (!rec || rec.undone) return;
     const said = (DB.msgs.filter((x) => x.id === rec.msg)[0] || {}).text || '';
     const m = DB.msgs.filter((x) => x.id === id)[0], c = m && DB.byId[m.cand];
     if (c && rec.kind === 'cb') { c.callback = rec.cb; c.cbWin = rec.win; }
+    if (rec.msg2) { D.msgs = D.msgs.filter((x) => x.id !== rec.msg2); DB.msgs = DB.msgs.filter((x) => x.id !== rec.msg2); const e2 = DB.events.filter((x) => x.id === rec.ev2)[0]; if (e2) unmake('events', e2); }
+    if (rec.was0) { const iv = DB.ivs.filter((v) => v.id === rec.was0.id)[0]; if (iv) { iv.day = rec.was0.day; iv.slot = rec.was0.slot; } if (c) c.slot = rec.was0.cs; }
     D.msgs = D.msgs.filter((x) => x.id !== rec.msg); DB.msgs = DB.msgs.filter((x) => x.id !== rec.msg);
     const e = DB.events.filter((x) => x.id === rec.ev)[0]; if (e) unmake('events', e);
     delete D.waDone[id];
@@ -5292,7 +5290,7 @@
      thread. */
   function waAiDone() {
     return Object.keys(D.waAi).map((id) => ({ id: id, rec: D.waAi[id], m: DB.msgs.filter((x) => x.id === id)[0] }))
-      .filter((x) => x.m && !x.rec.undone && !x.rec.pend && x.rec.kind !== 'hold' && !(x.rec.kind === 'clientask' && !x.rec.toClient) && DB.byId[x.m.cand] && reqOf(DB.byId[x.m.cand]).rec === ME)
+      .filter((x) => x.m && !x.rec.undone && x.rec.kind !== 'hold' && x.rec.kind !== 'clientask' && !(x.rec.kind === 'colask' && !x.rec.picked) && DB.byId[x.m.cand] && reqOf(DB.byId[x.m.cand]).rec === ME)
       .map((x) => Object.assign(x, { c: DB.byId[x.m.cand] }));
   }
   const aiDid = (x) => x.rec.label || (x.rec.kind === 'cb' ? 'Call back ' + x.rec.when : x.rec.kind === 'ask' ? 'Asked for a time' : 'Thanked for the CV');
@@ -5301,19 +5299,19 @@
     return [n('cb') ? 'set ' + plural(n('cb'), 'call back') + ' and told them' : null, n('offer') ? 'offered new times to ' + plural(n('offer'), 'person', 'people') : null,
       n('faq') ? 'answered ' + plural(n('faq'), 'question') + ' from the requisition' : null,
       n('move') ? 'offered new interview times to ' + plural(n('move'), 'person', 'people') : null,
-      n('clientask') ? 'asked ' + plural(n('clientask'), 'person', 'people') + ' for days to move a client interview' : null,
+      n('colask') ? 'moved ' + plural(n('colask'), 'interview') + ' to the time the interviewer picked' : null,
       n('tpl') ? 'reopened ' + plural(n('tpl'), 'chat') + ' with a template' : null,
       n('ask') ? 'asked ' + plural(n('ask'), 'person', 'people') + ' for a time' : null,
       n('cv') ? 'thanked ' + plural(n('cv'), 'person', 'people') + ' for a CV' : null].filter(Boolean).join(', ').replace(/, ([^,]*)$/, ' and $1');
   }
   /* The replies AiMY read and left for a person, with why. */
   function aiNeeds() {
-    const ask = Object.keys(D.waAi).filter((id) => D.waAi[id].kind === 'clientask' && !D.waAi[id].undone && !D.waAi[id].toClient)
+    const ask = Object.keys(D.waAi).filter((id) => !D.waAi[id].undone && ((D.waAi[id].kind === 'clientask' && !D.waAi[id].toClient) || (D.waAi[id].kind === 'colask' && D.waAi[id].none)))
       .map((id) => DB.msgs.filter((x) => x.id === id)[0]).filter(Boolean);
     return waOwed().concat(ask.filter((m) => waOwed().indexOf(m) < 0)).map((m) => {
       const c = DB.byId[m.cand];
       const rec = D.waAi[m.id];
-      if (rec && rec.pend && !rec.undone) return null;
+      if (c && rec && !rec.undone && rec.kind === 'colask' && rec.none) return { m: m, c: c, x: { hand: 'Find another time', note: first(rec.by) + ' had none of those' }, held: true };
       if (c && rec && !rec.undone && rec.kind === 'clientask' && !rec.toClient) return { m: m, c: c, x: { hand: 'Send ' + first(rec.by) + ' the note', note: rec.acc + ' names the time' } };
       if (c && rec && !rec.undone && rec.kind === 'hold') return { m: m, c: c, x: { hand: rec.hand, note: 'I said you’ll reply today' }, held: true };
       if (!c || !c.wa || (rec && !rec.undone)) return null;
@@ -5324,13 +5322,14 @@
   /* The strip, grouped by what it means for you (direction D): what AiMY
      finished, and what it read and left for you, each with its reason. */
   function aiDidStrip() {
-    const list = waAiDone(), need = connectOn() ? aiNeeds() : [], hold = connectOn() ? waHeld() : [];
+    const list = waAiDone(), need = connectOn() ? aiNeeds() : [], hold = connectOn() ? waOthers() : [];
     if (!list.length && !need.length && !hold.length) return '';
     const chip = (c, cls, lab, note, t) => '<button class="t-aido-chip ' + cls + '" type="button"' + goAttr({ on: 'calls', th: c.id }) + '>' +
       '<b>' + esc(c.name) + '</b><span class="t-aido-l">' + esc(lab) + '</span>' + (note ? '<span class="t-aido-n">' + esc(note) + '</span>' : '') + '<span class="t-aido-t">' + esc(ampm(t)) + '</span></button>';
     const held = need.filter((x) => x.held).length;
     const told = held ? (held === need.length ? ', and I told ' + (held === 1 ? 'them' : 'each of them') : ', and I told ' + held + ' of them') + ' you’ll reply today' : '';
-    const hsay = hold.length ? ' <b>' + hold.length + '</b> ' + (hold.length === 1 ? 'is' : 'are') + ' sending soon on ' + (hold.length === 1 ? 'its' : 'their') + ' own, unless you step in.' : '';
+    const who = hold.map((x) => first(x.rec.by)).filter((v, i, a) => a.indexOf(v) === i);
+    const hsay = hold.length ? ' <b>' + hold.length + '</b> ' + (hold.length === 1 ? 'is' : 'are') + ' waiting on ' + (who.length > 1 ? who.slice(0, -1).join(', ') + ' and ' + who[who.length - 1] : who[0]) + ' to pick a time.' : '';
     const say = (list.length
       ? 'I answered <b>' + plural(list.length, 'WhatsApp reply', 'WhatsApp replies') + '</b> for you: I ' + esc(aiDidLine(list)) + '.' + (need.length ? ' <b>' + need.length + '</b> ' + (need.length === 1 ? 'is' : 'are') + ' waiting on you' + told + '.' : '')
       : !need.length ? '' : 'I read <b>' + plural(need.length, 'WhatsApp reply', 'WhatsApp replies') + '</b> that ' + (need.length === 1 ? 'needs' : 'need') + ' a person, so I left ' + (need.length === 1 ? 'it' : 'them') + ' for you' + told + '.') + hsay;
@@ -5339,9 +5338,9 @@
       '<div class="t-aido-in"><p class="t-aido-say">' + say + ' ' +
         '<span class="t-aido-rule">Undo is on each thread.</span></p>' +
         '<div class="t-aido-grps">' + (list.length ? '<div class="t-aido-grp"><span class="t-aido-h">Done</span><div class="t-aido-list">' + list.map((x) => chip(x.c, 'is-ok', aiDid(x), x.rec.note, x.rec.at)).join('') + '</div></div>' : '') +
-        (hold.length ? '<div class="t-aido-grp"><span class="t-aido-h">Sending soon</span><div class="t-aido-list">' + hold.map((x) => '<button class="t-aido-chip is-hold" type="button"' + goAttr({ on: 'calls', th: x.c.id }) + '>' +
-          '<b>' + esc(x.c.name) + '</b><span class="t-aido-l">' + esc(x.rec.label) + '</span><span class="t-aido-n">' + esc(x.rec.note) + '</span>' +
-          '<span class="t-aido-t">goes at ' + esc(ampm(new Date(x.rec.due).toTimeString().slice(0, 5))) + '</span></button>').join('') + '</div></div>' : '') +
+        (hold.length ? '<div class="t-aido-grp"><span class="t-aido-h">Waiting on others</span><div class="t-aido-list">' + hold.map((x) => x.rec.kind === 'colask'
+          ? chip(x.c, 'is-hold', 'Asked ' + first(x.rec.by) + ' for a time', first(x.rec.by) + ' picks the time', x.rec.at)
+          : chip(x.c, 'is-hold', 'Sent ' + first(x.rec.by) + ' the note', x.rec.acc + ' names the time', x.rec.toClient)).join('') + '</div></div>' : '') +
         (need.length ? '<div class="t-aido-grp"><span class="t-aido-h">Waiting on you</span><div class="t-aido-list">' + need.map((x) => chip(x.c, 'is-need', ({ 'Asked about pay': 'Reply about pay', 'Said no': 'Reply to their “no”', '24 hours passed': 'Send a template' })[x.x.hand] || x.x.hand, x.x.note, x.m.time)).join('') + '</div></div>' : '') + '</div>' +
       '</div></div>';
   }
@@ -5349,16 +5348,20 @@
     const done = ms.filter((m) => m.dir === 'in' && D.waAi[m.id] && !D.waAi[m.id].undone).pop();
     if (!done) return '';
     const rec = D.waAi[done.id], f = first(c.name);
-    if (rec.pend) {
-      const mins = rec.mins || waHoldMin();
-      return '<div class="b-aimy t-wa-aimy t-wa-held">' + mark(13) + '<div class="t-wa-aimy-in"><span class="b-aimy-say">' + rec.heldWhy + '</span>' +
-        '<div class="t-wa-bar" role="presentation"><span data-due="' + rec.due + '|bar|' + mins + '"></span></div>' +
+    if (rec.kind === 'colask' && !rec.picked) {
+      const bf = first(rec.by);
+      return '<div class="b-aimy t-wa-aimy t-wa-brief">' + mark(13) + '<div class="t-wa-aimy-in"><span class="b-aimy-say">' + rec.why + '</span>' +
         (rec.checks ? '<details class="t-wa-why"><summary>What I checked</summary><ul class="t-wa-trail">' +
           rec.checks.map((k) => '<li' + (k.ok ? '' : ' class="is-no"') + '><span>' + k.t + '</span></li>').join('') + '</ul></details>' : '') +
-        '<span class="t-wa-rule">When ' + esc(rec.held) + ', I hold it ' + plural(mins, 'minute') + ' first. If you do nothing, it goes.</span>' +
-        '<span class="t-acts"><button class="t-aimy-btn" type="button" data-wa-now="' + done.id + '">' + mark(13) + 'Send now</button>' +
-          '<button class="b-ghost" type="button" data-wa-change="' + done.id + '">' + (rec.tpl ? 'Pick another template' : 'Change it') + '</button>' +
-          '<button class="b-ghost" type="button" data-wa-drop="' + done.id + '">Don’t send</button></span></div></div>';
+        (rec.none
+          ? '<p class="t-wa-wait"><b>' + esc(bf) + ' can’t do either time.</b> It’s with you now: call ' + esc(f) + ', or ask ' + esc(bf) + ' for other times.</p>'
+          : '<p class="t-wa-wait"><b>Waiting on ' + esc(bf) + '.</b> I asked at ' + esc(ampm(rec.at)) + ' about ' + esc(rec.or) + ', from ' + esc(bf) + '’s interview hours. When ' + esc(bf) + ' picks one, I’ll tell ' + esc(f) + ' and send the invite.</p>' +
+            '<div class="t-wa-as"><span class="t-wa-as-h">' + tag('Prototype', 'info') + '<span>Answer as ' + esc(rec.by) + '</span></span>' +
+              '<span class="t-acts">' + rec.alt.map((sl, i) => '<button class="b-ghost" type="button" data-wa-col="' + done.id + '|' + i + '">' + esc(ivDayWord(sl.d) + ' at ' + ampm(sl.t)) + '</button>').join('') +
+                '<button class="b-ghost" type="button" data-wa-col="' + done.id + '|-1">Neither works</button></span>' +
+              '<label class="t-wa-let"><input type="checkbox" id="waColLet"> Let AiMY offer my interview hours without asking</label></div>') +
+        '<span class="t-acts">' + (rec.none && canCall(c) ? '<button class="b-ghost" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call ' + esc(f) + '</button>' : '') +
+          '<button class="b-ghost" type="button" data-wa-undo="' + done.id + '">Take back my reply</button></span></div></div>';
     }
     if (rec.kind === 'clientask') {
       const bf = first(rec.by);
@@ -5387,7 +5390,7 @@
     if (rec.why) return '<div class="b-aimy t-wa-aimy is-done">' + mark(13) + '<div class="t-wa-aimy-in"><span class="b-aimy-say">' + rec.why + '</span>' +
       (rec.checks ? '<details class="t-wa-why"><summary>What I checked</summary><ul class="t-wa-trail">' +
         rec.checks.map((k) => '<li' + (k.ok ? '' : ' class="is-no"') + '><span>' + k.t + '</span></li>').join('') + '</ul></details>' : '') +
-      '<span class="t-wa-rule">' + (rec.sent === 'now' ? 'I held it, and you sent it before the time ran out.' : rec.sent ? 'I held it ' + plural(rec.mins || waHoldMin(), 'minute') + ', then it went.' : 'I do it and tell you.') + '</span>' +
+      '<span class="t-wa-rule">' + (rec.kind === 'colask' ? 'It was ' + esc(first(rec.by)) + '’s time, so ' + esc(first(rec.by)) + ' picked it.' : 'I do it and tell you.') + '</span>' +
       '<span class="t-acts"><button class="b-ghost" type="button" data-wa-undo="' + done.id + '">Undo</button>' +
       '<button class="b-ghost" type="button" data-wa-edit="' + done.id + '">Change the reply</button></span></div></div>';
     const say = rec.kind === 'cb' ? 'I set a call back for <b>' + esc(rec.when) + '</b> and told ' + esc(f) + '. It’s in your calls and on the Diary.'
@@ -5406,15 +5409,14 @@
     const ms = msgsOf(c.id), hrs = c.wa ? waHrs(c) : 0, last = ms.filter((m) => !m.hold).pop();
     const owed = last && last.dir === 'in' && !last.done && !D.waDone[last.id];
     const lr = owed && D.waAi[last.id] && !D.waAi[last.id].undone ? D.waAi[last.id] : null;
-    const held = !!lr && (lr.kind === 'hold' || lr.pend);
+    const held = !!lr && lr.kind === 'hold';
     let day = null;
     const list = ms.map((m) => {
       const h = m.day !== day ? '<p class="t-wa-day">' + esc(dayLabel(m.day)) + '</p>' : '';
       day = m.day;
       return h + '<div class="t-wa-m ' + (m.dir === 'out' ? 'is-out' : 'is-in') + (m.ai ? ' is-ai' : '') + '"><p class="t-wa-text" dir="auto">' + esc(m.text) + '</p>' +
         '<span class="t-wa-t">' + (m.ai ? mark(10) + ' ' : '') + esc(m.dir === 'out' ? (m.ai ? 'AiMY, for you' : 'You' + (m.tpl ? ', template' : '') + (m.own ? ', from your WhatsApp' : '')) : first(c.name) + (m.added ? ', added by you' : '')) + ' · ' + esc(m.time) + '</span></div>';
-    }).join('') + (lr && lr.pend ? '<div class="t-wa-m is-out is-ai is-held"><p class="t-wa-text" dir="auto">' + esc(lr.text) + '</p>' +
-      '<span class="t-wa-t">' + mark(10) + ' AiMY' + (lr.tpl ? ', template' : '') + ' · <span data-due="' + lr.due + '|clock">Sending in ' + waClock(lr.due - Date.now()) + '</span></span></div>' : '');
+    }).join('');
     const tpl = waTplOk().filter((x) => x.k === WA_TPL_ON)[0];
     /* Without AiMY Connect: no 24 hours and no templates, since it is their
        own number. The box writes the message, Open in WhatsApp hands it to
@@ -11000,16 +11002,7 @@
       toast('Sent to ' + rec.by + ' at ' + rec.acc, () => { delete rec.toClient; unmake('events', e); save(); paint(); }, 'When ' + first(rec.by) + ' names a time, I’ll tell ' + first(c.name) + ' and book it.');
       return;
     }
-    if ((el = at('[data-wa-now]'))) { waHeldSend(val('data-wa-now'), 'now'); return; }
-    if ((el = at('[data-wa-change]'))) { waHeldStop(val('data-wa-change'), true); return; }
-    if ((el = at('[data-wa-drop]'))) { waHeldStop(val('data-wa-drop'), false); return; }
-    if ((el = at('[data-wa-hold]'))) {
-      const was = waHoldMin(), to = Number(val('data-wa-hold'));
-      if (was === to) return;
-      D.waHoldMin = to; save(); paint();
-      toast(to ? 'I hold those replies ' + plural(to, 'minute') + ' first' : 'I send those replies straight away', () => { D.waHoldMin = was; save(); paint(); }, 'Replies that move an interview.');
-      return;
-    }
+    if ((el = at('[data-wa-col]'))) { const p = val('data-wa-col').split('|'); waColPick(p[0], Number(p[1]), !!(byId('waColLet') || {}).checked); return; }
     if ((el = at('[data-wa-draft]'))) {
       const rec = D.waAi[val('data-wa-draft')], t = byId('waText');
       if (rec && t) { t.value = rec.draft; t.focus(); t.setSelectionRange(t.value.length, t.value.length); toast('My draft is in the box', null, 'Change anything, then press Send.'); }
