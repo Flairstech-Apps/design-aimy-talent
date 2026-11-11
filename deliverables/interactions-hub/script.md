@@ -45,25 +45,22 @@ Here's what "checks what's going on" means. First, your Diary. Karim wrote "afte
 Under every message AiMY sends, there's a small card. The first line says what it did and why, in one sentence. "What I checked" opens the full list. It read the message and looked at their stage. It checked your Diary and confirmed the 24-hour window was open. And it confirmed nothing needed a person. If you disagree, Undo withdraws the message. "Change the reply" takes it back and puts the text in your box, so you can edit it and send it yourself.
 
 **11. The strip: Done**
-Back to the strip at the top of the page. It sums up everything AiMY did with WhatsApp, in three groups, and I'll take them one at a time. The first is Done: these already went out. In green is what AiMY did: it offered Karim 4:15 or 4:45, it set Reem a call back tomorrow morning, and it reopened Mariam's chat with a template. Next to each one is why, like "you were busy at 4:00". Every chip opens the thread, where you can see What I checked, and Undo if you disagree.
+Back to the strip at the top of the page. It sums up everything AiMY did with WhatsApp, in two groups. The first is Done: these already went out. In green is what AiMY did: it offered Karim 4:15 or 4:45, it set Reem a call back tomorrow morning, and it reopened Mariam's chat with a template. Next to each one is why, like "you were busy at 4:00". Every chip opens the thread, where you can see What I checked, and Undo if you disagree.
 
-**12. The strip: Waiting on others**
-The second group is Waiting on others. These are waiting on the person whose time it is. Mohamed asked to move his interview with Tarek, a colleague. It's Tarek's time, so AiMY doesn't offer it, and it doesn't ask you to approve it either. It tells Mohamed it's checking and will come back today, and asks Tarek about the two nearest of Tarek's interview hours. When Tarek picks one, AiMY tells Mohamed and sends the invite, and the chip moves to Done. If neither works, it comes to you under Waiting on you. A client interview waits here too, once you've sent the client the note.
+**12. The strip: Waiting on you**
+The second group is Waiting on you. Nothing here goes until you act. In red is the next step: reply to Adham about pay, reply to Ayman's "no", and send Jana at Northwind a note about Reem's interview. Next to it, what the candidate was told. For Adham and Ayman, AiMY said you'll reply today, so they aren't left on read. Open any of them and there's a brief and a draft waiting. You send it yourself.
 
-**13. The strip: Waiting on you**
-The third group is Waiting on you. Nothing here goes until you act. In red is the next step: reply to Adham about pay, reply to Ayman's "no", and send Jana at Northwind a note about Reem's interview. Next to it, what the candidate was told. For Adham and Ayman, AiMY said you'll reply today, so they aren't left on read. Open any of them and there's a brief and a draft waiting. You send it yourself.
-
-**14. Pay and a "no" stay with you**
+**13. Pay and a "no" stay with you**
 Some replies are never AiMY's to answer. Adham asks about the salary range; Ayman says they've accepted another offer. In both cases AiMY doesn't decide anything. It sends a short holding reply, "Omar will come back to you on that today", so the candidate isn't left on read. Then it leaves you a brief. That's the band on the requisition, what the candidate said they expect and whether that's inside the band, and their stage. For a "no", it also says who else needs to hear, like the client. A draft is ready, and you send it yourself.
 
-**15. Moving an interview**
+**14. Moving an interview**
 Moving an interview touches someone else's calendar, so the rule is: only the person whose time it is decides. If the interviewer is the client's, like Jana at Northwind, AiMY never offers Jana's times. It asks the candidate which days suit them and drafts a note for you to send to the client. If the interviewer is a colleague, like Tarek, AiMY asks Tarek, not you. It tells the candidate it will come back today, and offers Tarek the two nearest of Tarek's interview hours. Tarek picks one or says neither works. And each interviewer can turn on "Let AiMY offer my interview hours": then AiMY offers them straight away, and the invite is still theirs to accept.
 
-**16. After 24 hours: templates**
+**15. After 24 hours: templates**
 One rule comes from WhatsApp itself, not from us. On the WhatsApp Business Platform, once 24 hours have passed since the candidate's last message, a business can only send a template WhatsApp approved in advance. The HR Manager manages templates on the Templates page. They can add one or delete one, and each new template waits for WhatsApp's review before anyone can use it. Recruiters see only approved templates in their picker. If they need a different one, "Ask for one" sends the request straight to the HR Manager. If a company lets recruiters use their own WhatsApp instead of AiMY Connect, there's no window and no templates at all.
 
-**17. The rules**
+**16. The rules**
 So, in one view: what AiMY does on its own, what it asks first, and what it never touches. It confirms a time when you're free, offers your next free times when you're not, answers questions from the requisition, and reopens a chat with an approved template. It asks first in one case: moving a colleague's interview. The colleague picks the time, unless they've let AiMY offer their interview hours. And three things are always yours: pay, a "no", and a client's time. The HR Manager sets how far AiMY goes with WhatsApp on the "What AiMY may do" page, from only suggesting to doing it and telling you.
 
-**18. Try it**
+**17. Try it**
 That's Interactions. The best way to get it is to try it, so here's the link to the prototype. Start with the strip at the top. Open one of the Done chips and press "What I checked" to see the reasoning. Then open Adham's pay question and use the draft. And open Mohamed's thread: the prototype lets you answer as Tarek, pick a time, and watch AiMY tell Mohamed. If you click around and want to start over, just refresh the page and the demo resets. Happy to take questions.
