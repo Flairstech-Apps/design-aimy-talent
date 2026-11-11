@@ -2543,3 +2543,18 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-wa-wait { margin: 0; padding: 10px 12px; border-radius: 12px; font-size: var(--fs-xs); line-height: 1.5; color: var(--ink-secondary);
   background: rgba(var(--accent-rgb), 0.08); border: 1px solid rgba(var(--accent-rgb), 0.18); }
 .t-wa-wait b { color: var(--d50); font-weight: var(--fw-semibold); }
+
+/* ══ SEARCH IN A PICKER (Engy, 11 Nov) ═════════════════════════════════════
+   The person picker on Log a call: a search box that stays at the top while
+   the list scrolls, and each name over its requisition. */
+.t-menu-search { position: sticky; top: -6px; z-index: 1; display: flex; align-items: center; margin: -6px -6px 4px; padding: 6px 6px 6px;
+  background: var(--card-bg-raised); border-bottom: 1px solid var(--card-border); }
+.t-menu-search > svg { position: absolute; left: 18px; color: var(--ink-muted); pointer-events: none; }
+.t-menu-q { padding-left: 34px; }
+.t-menu-q:focus-visible { outline: none; border-color: rgba(var(--accent-rgb), 0.6); box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.18); }
+.t-who-menu { min-width: 300px; }
+.t-who-menu .b-menu-item { flex-direction: column; align-items: flex-start; gap: 2px; }
+.t-who-menu .b-menu-item[hidden] { display: none; }
+.t-who-menu .tel-menu-cc { margin-left: 0; font-weight: var(--fw-medium); }
+.t-who-menu .b-menu-item[aria-current="true"] .b-menu-name { color: var(--accent-label, var(--d50)); }
+.t-menu-none { margin: 0; padding: 10px; font-size: var(--fs-xs); color: var(--ink-muted); }

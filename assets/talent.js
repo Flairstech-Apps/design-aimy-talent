@@ -5575,9 +5575,12 @@
     const picker = '<span class="b-menu-wrap"><button class="t-lc-pick" type="button" data-pickopen="elWhoMenu" aria-haspopup="menu" aria-expanded="false">' +
         (c ? '<span class="t-lc-av" aria-hidden="true">' + esc(initials(c.name)) + '</span><span class="t-lc-who"><b>' + esc(c.name) + '</b><span>' + esc(reqOf(c).title) + '</span></span>'
           : '<span class="t-lc-av is-empty" aria-hidden="true">' + svg('user') + '</span><span class="t-lc-who"><b>Who did you call?</b><span>Someone on your open requisitions</span></span>') + svg('down') + '</button>' +
-      '<div class="b-menu t-rpt-menu" id="elWhoMenu" role="menu" hidden><span class="b-menu-cap">On your open requisitions</span>' +
+      '<div class="b-menu t-rpt-menu t-who-menu" id="elWhoMenu" role="menu" hidden>' +
+        '<div class="t-menu-search">' + svg('find', 14) + '<input class="t-field t-menu-q" type="search" data-menu-q placeholder="Search by name or role" aria-label="Search people on your open requisitions" autocomplete="off"></div>' +
+        '<span class="b-menu-cap">On your open requisitions</span>' +
         people.map((x) => '<button class="b-menu-item" type="button" role="menuitem" data-el="who|' + x.id + '"' + (EL.cand === x.id ? ' aria-current="true"' : '') + '>' +
-          '<span class="b-menu-name">' + esc(x.name) + '</span><span class="tel-menu-cc">' + esc(reqOf(x).title) + '</span></button>').join('') + '</div></span>';
+          '<span class="b-menu-name">' + esc(x.name) + '</span><span class="tel-menu-cc">' + esc(reqOf(x).title) + '</span></button>').join('') +
+        '<p class="t-menu-none" hidden>No one on your open requisitions matches that.</p></div></span>';
     const head = '<div class="t-lc-head">' +
       (c && pre ? '<div class="t-lc-person"><span class="t-lc-av" aria-hidden="true">' + esc(initials(c.name)) + '</span><span class="t-lc-who"><b>' + esc(c.name) + '</b>' +
           '<span>' + esc(reqOf(c).title + ' · ' + accOf(reqOf(c)).name) + '</span></span></div>' : picker) +
@@ -11051,6 +11054,8 @@
       const m = byId(el.getAttribute('data-pickopen'));
       document.querySelectorAll('.t-rpt-menu:not([hidden])').forEach((x) => { if (x !== m) { x.hidden = true; x.previousElementSibling.setAttribute('aria-expanded', 'false'); } });
       m.hidden = !m.hidden; el.setAttribute('aria-expanded', String(!m.hidden));
+      const mq = !m.hidden && m.querySelector('[data-menu-q]');
+      if (mq) { mq.value = ''; mq.dispatchEvent(new Event('input', { bubbles: true })); mq.focus(); }
       /* The clock opens on its current hour and minute. */
       if (!m.hidden) m.querySelectorAll('.t-clk-col').forEach((col) => { const on = col.querySelector('.is-on'); if (on) col.scrollTop = on.offsetTop - col.clientHeight / 2 + on.offsetHeight / 2; });
       return;
@@ -11134,6 +11139,14 @@
     if (t.matches('[data-in]') && INTAKE && INTAKE.f) { INTAKE.f[g('data-in')] = t.value; return; }
     if (t.matches('[data-find-q]')) { FIND.q = t.value; return; }
     if (t.id === 'elNote' && EL) { EL.note = t.value; return; }
+    if (t.matches('[data-menu-q]')) {
+      const f = t.value.trim().toLowerCase(), menu = t.closest('.b-menu');
+      let n = 0;
+      menu.querySelectorAll('.b-menu-item').forEach((b) => { const hit = !f || b.textContent.toLowerCase().indexOf(f) >= 0; b.hidden = !hit; if (hit) n++; });
+      const none = menu.querySelector('.t-menu-none'); if (none) none.hidden = n > 0;
+      const cap = menu.querySelector('.b-menu-cap'); if (cap) cap.hidden = n === 0;
+      return;
+    }
     if (t.matches('[data-find-reqq]')) { const f = t.value.trim().toLowerCase(); t.parentNode.querySelectorAll('[data-find-req]').forEach((b) => { b.hidden = !!f && b.textContent.toLowerCase().indexOf(f) < 0; }); return; }
     if (t.matches('[data-crit-ed]')) { const c = critList()[Number(g('data-crit-ed'))]; if (c) c.t = t.value; return; }
     if (t.id === 'passNote' && PASSING) { PASSING.line = t.value; return; }
@@ -11196,6 +11209,11 @@
     const typing = /input|textarea/i.test((document.activeElement || {}).tagName || '');
     /* Enter means the obvious next thing at every state of a call (Sales):
        start it, log it. 1 to 8 pick the outcome while logging. */
+    if (e.target.matches && e.target.matches('[data-menu-q]') && (e.key === 'Enter' || e.key === 'ArrowDown')) {
+      const first = [...e.target.closest('.b-menu').querySelectorAll('.b-menu-item')].filter((b) => !b.hidden)[0];
+      if (first) { e.preventDefault(); if (e.key === 'Enter') first.click(); else first.focus(); }
+      return;
+    }
     if (e.target.id === 'dialNum' && e.key === 'Enter') { e.preventDefault(); dialGo(); return; }
     if (e.target.id === 'histNote' && e.key === 'Enter') { e.preventDefault(); histAdd(DB.byId[S.cand]); return; }
     if (e.target.id === 'meCode' && e.key === 'Enter') { e.preventDefault(); meCode(); return; }
