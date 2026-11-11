@@ -2283,8 +2283,7 @@
       say: held.length === 1 ? '<b>' + esc(held[0].c.name) + '</b> ' + (held[0].x.hand === 'Asked about pay' ? 'asked about pay' : 'said no') + ' on WhatsApp. I told them you’ll reply today, and my draft is on the thread.'
         : '<b>' + plural(held.length, 'person', 'people') + '</b> wrote what only you can answer. I told each you’ll reply today; my drafts are on the threads.',
       q: 'Why didn’t you answer them?',
-      a: '<p>' + held.map((x) => '<b>' + esc(x.c.name) + '</b>: ' + esc(lower(x.x.hand)) + ' (' + esc(ampm(x.m.time)) + ')').join('; ') + '. By ' + esc(DESKS.dina.name) +
-        '’s rule, pay and a “no” go to a person, so I sent only a holding reply and left you a brief with what you need to know.</p>',
+      a: '<p>' + held.map((x) => '<b>' + esc(x.c.name) + '</b>: ' + esc(lower(x.x.hand)) + ' (' + esc(ampm(x.m.time)) + ')').join('; ') + '. Pay and a “no” go to a person, so I sent only a holding reply and left you a brief with what you need to know.</p>',
       acts: [{ label: held.length === 1 ? 'Open the thread' : 'Open Interactions', go: held.length === 1 ? { on: 'calls', th: held[0].c.id } : { on: 'calls' }, primary: true }] }));
     /* and the WhatsApp replies it answered on its own (10 Nov) */
     const did = isRec() ? waAiDone() : [];
@@ -2294,7 +2293,7 @@
       q: 'What did you do without asking me?',
       a: '<p>' + (booked ? 'I booked ' + plural(booked, 'interview') + ' inside the interviewers’ free slots and sent each its kit' + (tests ? '; I sent ' + plural(tests, 'assessment') + ' from the link on the requisition' : '') + '. ' : '') +
         (did.length ? 'On WhatsApp: ' + did.map((x) => '<b>' + esc(x.c.name) + '</b>, ' + esc(lower(aiDid(x))) + ' (' + esc(ampm(x.rec.at)) + ')').join('; ') + '. ' : '') +
-        'Nothing reached a candidate outside a rule ' + esc(DESKS.dina.name) + ' approved, and you can undo each one from the record or thread it sits on.</p>',
+        'Nothing reached a candidate outside the rules your HR Manager set, and you can undo each one from the record or thread it sits on.</p>',
       acts: did.length ? [{ label: 'Open Interactions', go: { on: 'calls' }, primary: true }] : undefined }));
     return out;
   }
@@ -5015,7 +5014,7 @@
       const b = q.budget, want = c.salary ? Number(String(c.salary).replace(/[^\d]/g, '')) : 0;
       facts.unshift(['Band', b ? '<b>' + esc(money(b.min)) + '–' + esc(String(b.max.toLocaleString('en-US'))) + '</b> a month, on the requisition' : 'Not set on the requisition']);
       facts.splice(1, 0, ['Expects', c.salary ? '<b>' + esc(c.salary) + '</b>, said on the phone screen' + (b && want ? (want > b.max ? ': <b>above the band</b>' : want < b.min ? ': below the band' : ': inside the band') : '') : 'Not asked yet']);
-      return { why: esc(f) + ' asked about pay. That’s yours by ' + esc(DESKS.dina.name) + '’s rule, so I only told them you’ll come back today.', rule: 'pay goes to a person', facts: facts,
+      return { why: esc(f) + ' asked about pay. That’s yours to answer, so I only told them you’ll come back today.', rule: 'pay goes to a person', facts: facts,
         text: r.ar ? 'سؤال مهم، شكراً! هنرد عليك بخصوصه النهارده.' : 'Good question, ' + f + '. ' + mf + ' will come back to you on that today.',
         draft: b ? 'Hi ' + f + ', the range for the ' + q.title + ' role is ' + money(b.min) + ' to ' + b.max.toLocaleString('en-US') + ' a month, depending on experience. Happy to talk it through on a short call.'
           : 'Hi ' + f + ', thanks for asking. Could we talk about it on a short call? I’d like to hear what you’re expecting too.' };
@@ -5024,7 +5023,7 @@
     const client = ['sent', 'client', 'ctech'].indexOf(c.stage) >= 0;
     facts.push(['Waiting', up ? 'Their <b>' + esc(lower(STAGE[up.stage].label)) + '</b>, ' + esc(lower(dayLabel(up.day))) + (up.slot ? ' at ' + esc(ampm(up.slot)) : '') + ': I’ll cancel it when you take them out'
       : client ? '<b>' + esc(accOf(q).name) + '</b> has their profile and will need to hear' : 'Nothing booked']);
-    return { why: esc(f) + ' says they’re not going ahead. A “no” is yours by ' + esc(DESKS.dina.name) + '’s rule, so I only told them you’ll reply today.', rule: 'a “no” goes to a person', facts: facts,
+    return { why: esc(f) + ' says they’re not going ahead. A “no” is yours to answer, so I only told them you’ll reply today.', rule: 'a “no” goes to a person', facts: facts,
       text: r.ar ? 'شكراً إنك عرفتنا. هنرد عليك النهارده.' : 'Thank you for letting us know, ' + f + '. ' + mf + ' will reply to you personally today.',
       draft: 'Thanks for letting me know, ' + f + ', and congratulations. I’ll close your application for now; you’re welcome to apply again any time.' };
   }
@@ -5039,13 +5038,29 @@
       const tp = WA_TPL[0];
       return { kind: 'tpl', tpl: tp.k, held: 'it reopens the chat with a template', label: 'Template: ' + tp.label, note: 'the 24 hours had passed', text: waFill(tp.text, c),
         checks: [{ ok: 1, t: 'Read ' + esc(f) + '’s message: <b>“' + esc(m.text.length > 60 ? m.text.slice(0, 57) + '…' : m.text) + '”</b>' },
-          { ok: 1, t: 'The 24-hour window: <b>closed</b>, so only an approved template can go' }, { ok: 1, t: 'Picked ' + esc(DESKS.dina.name) + '’s template: <b>' + esc(tp.label) + '</b>' }],
+          { ok: 1, t: 'The 24-hour window: <b>closed</b>, so only an approved template can go' }, { ok: 1, t: 'Picked the approved template: <b>' + esc(tp.label) + '</b>' }],
         heldWhy: 'More than 24 hours since ' + esc(f) + ' wrote, so only an approved template can reopen the chat. I picked <b>“' + esc(tp.label) + '”</b> and I’m holding it in case you’d rather pick another.',
-        why: 'More than 24 hours had passed, so I reopened the chat with ' + esc(DESKS.dina.name) + '’s <b>“' + esc(tp.label) + '”</b> template. When ' + esc(f) + ' replies, you can answer them in your own words.' };
+        why: 'More than 24 hours had passed, so I reopened the chat with the approved <b>“' + esc(tp.label) + '”</b> template. When ' + esc(f) + ' replies, you can answer them in your own words.' };
     }
     const iv = r.move ? DB.ivs.filter((v) => v.cand === c.id && v.status === 'booked' && v.day >= 0).sort((a, b) => a.day - b.day)[0] : null;
     if (iv) {
       const by = iv.by.split(',')[0], mineIv = by === me().name, bf = mineIv ? 'you' : first(by), alt = freeSlots(c, 2);
+      /* A client's interviewer (Engy, 11 Nov: "the person itself confirms"):
+         AiMY never offers their time. It asks the candidate which days suit
+         them and writes the note to the client for you to send; the client
+         names the time, then AiMY tells the candidate and books it. */
+      if (iv.stage === 'client' || iv.stage === 'ctech') {
+        const acc = accOf(q).name, stg = lower(STAGE[iv.stage].label);
+        const was = (iv.day === 0 ? 'today' : iv.day === 1 ? 'tomorrow' : DAY_FULL[dayOf(iv.day).getDay()] + ' ' + sayDay(iv.day)) + (iv.slot ? ' at ' + ampm(iv.slot) : '');
+        return { kind: 'clientask', label: 'Asked for the days that suit them', note: acc + ' names the time',
+          text: 'No problem, ' + f + '. I’ll find new times with ' + acc + ' and come back to you today. Which days suit you best this week?',
+          extra: { by: by, acc: acc, draft: 'Hi ' + first(by) + ', ' + c.name + ' can’t make the ' + stg + ' ' + was + ' for ' + q.title + '. Could you share two or three times that work for you this week? I’ll confirm one with them. ' + first(me().name) + ', FlairsTech' },
+          checks: [{ ok: 1, t: 'Read ' + esc(f) + '’s message: <b>“' + esc(m.text.length > 60 ? m.text.slice(0, 57) + '…' : m.text) + '”</b>' },
+            { ok: 1, t: 'Their ' + esc(stg) + ': <b>' + esc(was) + '</b>, with ' + esc(by) + ' at ' + esc(acc) },
+            { ok: 0, t: esc(first(by)) + ' is the client’s, so I offered none of ' + esc(first(by)) + '’s times' },
+            { ok: 1, t: 'The 24-hour window: <b>open, ' + plural(hrs, 'hour') + ' left</b>' }],
+          why: esc(f) + ' wants to move their <b>' + esc(stg) + '</b> with ' + esc(by) + ' (' + esc(was) + '). ' + esc(first(by)) + ' is at ' + esc(acc) + ', so I don’t offer ' + esc(first(by)) + '’s times: I asked ' + esc(f) + ' which days suit them, and wrote the note for you to send ' + esc(first(by)) + '.' };
+      }
       if (alt.length) {
         const dn = (d) => (d === 0 ? 'today' : d === 1 ? 'tomorrow' : DAY_FULL[dayOf(d).getDay()]), stg = lower(STAGE[iv.stage].label);
         const or = alt.length === 2 && alt[0].d === alt[1].d ? dn(alt[0].d) + ' at ' + ampm(alt[0].t) + ' or ' + ampm(alt[1].t) : alt.map((x) => dn(x.d) + ' at ' + ampm(x.t)).join(' or ');
@@ -5054,9 +5069,9 @@
           text: 'No problem, ' + f + '. ' + (mineIv ? 'I’m free ' : bf + ' is free ') + or + '. Which suits you?',
           checks: [{ ok: 1, t: 'Read ' + esc(f) + '’s message: <b>“' + esc(m.text.length > 60 ? m.text.slice(0, 57) + '…' : m.text) + '”</b>' },
             { ok: 1, t: 'Their ' + esc(stg) + ': <b>' + esc(was) + '</b>, with ' + esc(mineIv ? 'you' : by) },
-            { ok: 1, t: (mineIv ? 'Your' : esc(bf) + '’s') + ' nearest free times' + (mineIv ? '' : ', and yours') + ': <b>' + esc(or) + '</b>' },
+            { ok: 1, t: (mineIv ? 'Your' : esc(bf) + '’s') + ' interview hours in Outlook, nearest free' + (mineIv ? '' : ', and yours') + ': <b>' + esc(or) + '</b>' },
             { ok: 1, t: 'The 24-hour window: <b>open, ' + plural(hrs, 'hour') + ' left</b>' }],
-          heldWhy: esc(f) + ' wants to move their <b>' + esc(stg) + '</b> with ' + esc(mineIv ? 'you' : by) + ' (' + esc(was) + '). I found ' + (mineIv ? 'your' : esc(bf) + '’s') + ' two nearest free times. It changes ' + (mineIv ? 'your' : esc(bf) + '’s') + ' week, so I’m holding it for you.',
+          heldWhy: esc(f) + ' wants to move their <b>' + esc(stg) + '</b> with ' + esc(mineIv ? 'you' : by) + ' (' + esc(was) + '). I found the two nearest of ' + (mineIv ? 'your' : esc(bf) + '’s') + ' interview hours in Outlook; the invite is ' + (mineIv ? 'yours' : esc(bf) + '’s') + ' to accept. It changes ' + (mineIv ? 'your' : esc(bf) + '’s') + ' week, so I’m holding it for you.',
           why: esc(f) + ' asked to move their ' + esc(stg) + ', so I offered ' + (mineIv ? 'your' : esc(bf) + '’s') + ' two nearest free times: <b>' + esc(or) + '</b>. I’ll book the one they pick.' };
       }
     }
@@ -5129,7 +5144,7 @@
         return;
       }
       const f = first(c.name), text = x.text;
-      const rec = { kind: x.kind, at: nowHM(), cb: c.callback, win: c.cbWin, why: x.why, checks: x.checks, label: x.label, note: x.note };
+      const rec = Object.assign({ kind: x.kind, at: nowHM(), cb: c.callback, win: c.cbWin, why: x.why, checks: x.checks, label: x.label, note: x.note }, x.extra || {});
       if (x.cb) { const h = Number(x.cb.time.slice(0, 2)); c.callback = x.cb.day; c.cbWin = h < 12 ? 'am' : h < 18 ? 'pm' : 'eve'; rec.when = whenSay(x.cb); }
       const out = { id: 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), cand: c.id, dir: 'out', day: 0, time: nowHM(), text: text, by: 'aimy', ai: true };
       D.msgs.push(out); DB.msgs.push(out);
@@ -5214,7 +5229,7 @@
      thread. */
   function waAiDone() {
     return Object.keys(D.waAi).map((id) => ({ id: id, rec: D.waAi[id], m: DB.msgs.filter((x) => x.id === id)[0] }))
-      .filter((x) => x.m && !x.rec.undone && !x.rec.pend && x.rec.kind !== 'hold' && DB.byId[x.m.cand] && reqOf(DB.byId[x.m.cand]).rec === ME)
+      .filter((x) => x.m && !x.rec.undone && !x.rec.pend && x.rec.kind !== 'hold' && !(x.rec.kind === 'clientask' && !x.rec.toClient) && DB.byId[x.m.cand] && reqOf(DB.byId[x.m.cand]).rec === ME)
       .map((x) => Object.assign(x, { c: DB.byId[x.m.cand] }));
   }
   const aiDid = (x) => x.rec.label || (x.rec.kind === 'cb' ? 'Call back ' + x.rec.when : x.rec.kind === 'ask' ? 'Asked for a time' : 'Thanked for the CV');
@@ -5223,16 +5238,20 @@
     return [n('cb') ? 'set ' + plural(n('cb'), 'call back') + ' and told them' : null, n('offer') ? 'offered new times to ' + plural(n('offer'), 'person', 'people') : null,
       n('faq') ? 'answered ' + plural(n('faq'), 'question') + ' from the requisition' : null,
       n('move') ? 'offered new interview times to ' + plural(n('move'), 'person', 'people') : null,
+      n('clientask') ? 'asked ' + plural(n('clientask'), 'person', 'people') + ' for days to move a client interview' : null,
       n('tpl') ? 'reopened ' + plural(n('tpl'), 'chat') + ' with a template' : null,
       n('ask') ? 'asked ' + plural(n('ask'), 'person', 'people') + ' for a time' : null,
       n('cv') ? 'thanked ' + plural(n('cv'), 'person', 'people') + ' for a CV' : null].filter(Boolean).join(', ').replace(/, ([^,]*)$/, ' and $1');
   }
   /* The replies AiMY read and left for a person, with why. */
   function aiNeeds() {
-    return waOwed().map((m) => {
+    const ask = Object.keys(D.waAi).filter((id) => D.waAi[id].kind === 'clientask' && !D.waAi[id].undone && !D.waAi[id].toClient)
+      .map((id) => DB.msgs.filter((x) => x.id === id)[0]).filter(Boolean);
+    return waOwed().concat(ask.filter((m) => waOwed().indexOf(m) < 0)).map((m) => {
       const c = DB.byId[m.cand];
       const rec = D.waAi[m.id];
       if (rec && rec.pend && !rec.undone) return null;
+      if (c && rec && !rec.undone && rec.kind === 'clientask' && !rec.toClient) return { m: m, c: c, x: { hand: 'Send ' + first(rec.by) + ' the note', note: rec.acc + ' names the time' } };
       if (c && rec && !rec.undone && rec.kind === 'hold') return { m: m, c: c, x: { hand: rec.hand, note: 'I said you’ll reply today' }, held: true };
       if (!c || !c.wa || (rec && !rec.undone)) return null;
       const x = waDecide(c, m);
@@ -5241,21 +5260,6 @@
   }
   /* The strip, grouped by what it means for you (direction D): what AiMY
      finished, and what it read and left for you, each with its reason. */
-  /* THE RULE, WHERE IT IS NAMED (Engy, 11 Nov: "link it"). A recruiter
-     cannot open Templates, where the HR Manager sets it, so the name opens
-     the rule in place: what AiMY may do, the hold, what always goes to a
-     person, who set it and the last change. */
-  let WA_RULE_OPEN = false;
-  function waRuleBox() {
-    const a = AUTO_SEED.filter((x) => x.k === 'wareply')[0], g = RUNG.filter((x) => x.k === autoAt('wareply'))[0], hm = waHoldMin();
-    const last = D.autoLog.filter((x) => x.k === 'wareply').pop();
-    const rows = [['What it covers', esc(a.label)], ['How far I go', '<b>' + esc(g.label) + '</b>: ' + esc(g.say)],
-      ['When I hold', hm ? 'A reply that changes someone’s time or uses a template waits <b>' + plural(hm, 'minute') + '</b> before it goes' : 'I don’t hold: those replies go straight away'],
-      ['Always to a person', 'Pay and a “no”. I send only a holding reply and leave you a brief'],
-      ['Set by', esc(DESKS.dina.name) + ', HR Manager' + (last ? '. Last changed ' + esc(last.time) + (DESKS[last.by] ? ' by ' + esc(DESKS[last.by].name) : '') : '')]];
-    return '<div class="t-aido-rulebox" id="waRule"><dl>' + rows.map((r) => '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>').join('') + '</dl>' +
-      '<p class="t-aido-rulefoot">Only ' + esc(DESKS.dina.name) + ' can change it, on Templates. ' + esc(a.why) + '</p></div>';
-  }
   function aiDidStrip() {
     const list = waAiDone(), need = connectOn() ? aiNeeds() : [], hold = connectOn() ? waHeld() : [];
     if (!list.length && !need.length && !hold.length) return '';
@@ -5270,8 +5274,7 @@
     return '<div class="t-aido" role="status">' +
       '<span class="t-aido-mark">' + mark(14) + '</span>' +
       '<div class="t-aido-in"><p class="t-aido-say">' + say + ' ' +
-        '<span class="t-aido-rule"><button class="t-aido-rulelink" type="button" data-wa-rule aria-expanded="' + WA_RULE_OPEN + '" aria-controls="waRule">' + esc(DESKS.dina.name) + '’s rule</button> lets me; Undo is on each thread.</span></p>' +
-        (WA_RULE_OPEN ? waRuleBox() : '') +
+        '<span class="t-aido-rule">Undo is on each thread.</span></p>' +
         '<div class="t-aido-grps">' + (list.length ? '<div class="t-aido-grp"><span class="t-aido-h">Done</span><div class="t-aido-list">' + list.map((x) => chip(x.c, 'is-ok', aiDid(x), x.rec.note, x.rec.at)).join('') + '</div></div>' : '') +
         (hold.length ? '<div class="t-aido-grp"><span class="t-aido-h">Holding</span><div class="t-aido-list">' + hold.map((x) => '<button class="t-aido-chip is-hold" type="button"' + goAttr({ on: 'calls', th: x.c.id }) + '>' +
           '<b>' + esc(x.c.name) + '</b><span class="t-aido-l">' + esc(x.rec.label) + '</span><span class="t-aido-n">' + esc(x.rec.note) + '</span>' +
@@ -5289,10 +5292,21 @@
         '<div class="t-wa-bar" role="presentation"><span data-due="' + rec.due + '|bar|' + mins + '"></span></div>' +
         (rec.checks ? '<details class="t-wa-why"><summary>What I checked</summary><ul class="t-wa-trail">' +
           rec.checks.map((k) => '<li' + (k.ok ? '' : ' class="is-no"') + '><span>' + k.t + '</span></li>').join('') + '</ul></details>' : '') +
-        '<span class="t-wa-rule">Under ' + esc(DESKS.dina.name) + '’s rule: when ' + esc(rec.held) + ', I hold it ' + plural(mins, 'minute') + ' first. If you do nothing, it goes.</span>' +
+        '<span class="t-wa-rule">When ' + esc(rec.held) + ', I hold it ' + plural(mins, 'minute') + ' first. If you do nothing, it goes.</span>' +
         '<span class="t-acts"><button class="t-aimy-btn" type="button" data-wa-now="' + done.id + '">' + mark(13) + 'Send now</button>' +
           '<button class="b-ghost" type="button" data-wa-change="' + done.id + '">' + (rec.tpl ? 'Pick another template' : 'Change it') + '</button>' +
           '<button class="b-ghost" type="button" data-wa-drop="' + done.id + '">Don’t send</button></span></div></div>';
+    }
+    if (rec.kind === 'clientask') {
+      const bf = first(rec.by);
+      return '<div class="b-aimy t-wa-aimy t-wa-brief">' + mark(13) + '<div class="t-wa-aimy-in"><span class="b-aimy-say">' + rec.why + '</span>' +
+        (rec.checks ? '<details class="t-wa-why"><summary>What I checked</summary><ul class="t-wa-trail">' +
+          rec.checks.map((k) => '<li' + (k.ok ? '' : ' class="is-no"') + '><span>' + k.t + '</span></li>').join('') + '</ul></details>' : '') +
+        (rec.toClient
+          ? '<p class="t-wa-wait"><b>Waiting on ' + esc(bf) + ' at ' + esc(rec.acc) + '.</b> You sent the note at ' + esc(ampm(rec.toClient)) + '. When ' + esc(bf) + ' names a time, I’ll tell ' + esc(f) + ' and book it.</p>'
+          : '<div class="t-wa-draft"><span class="t-wa-draft-h">My note to ' + esc(rec.by) + ', by email, for you to send</span><p dir="auto">' + esc(rec.draft) + '</p></div>') +
+        '<span class="t-acts">' + (rec.toClient ? '' : '<button class="t-aimy-btn" type="button" data-wa-client="' + done.id + '">' + mark(13) + 'Send it to ' + esc(bf) + '</button>') +
+          '<button class="b-ghost" type="button" data-wa-undo="' + done.id + '">Take back my reply</button></span></div></div>';
     }
     if (rec.kind === 'hold') {
       const after = ms.some((m) => m.dir === 'out' && !m.hold && callKey(m) > callKey(done));
@@ -5301,7 +5315,7 @@
       return '<div class="b-aimy t-wa-aimy t-wa-brief">' + mark(13) + '<div class="t-wa-aimy-in"><span class="b-aimy-say">' + rec.why + '</span>' +
         '<dl class="t-wa-facts">' + rec.facts.map((k) => '<dt>' + esc(k[0]) + '</dt><dd>' + k[1] + '</dd>').join('') + '</dl>' +
         '<div class="t-wa-draft"><span class="t-wa-draft-h">My draft, for you to send</span><p dir="auto">' + esc(rec.draft) + '</p></div>' +
-        '<span class="t-wa-rule">Under ' + esc(DESKS.dina.name) + '’s rule, ' + esc(rec.rule) + '. I sent nothing else.</span>' +
+        '<span class="t-wa-rule">' + esc(rec.rule.charAt(0).toUpperCase() + rec.rule.slice(1)) + ', so I sent nothing else.</span>' +
         '<span class="t-acts"><button class="t-aimy-btn" type="button" data-wa-draft="' + done.id + '">' + mark(13) + 'Use my draft</button>' +
           (canCall(c) ? '<button class="b-ghost" type="button" data-call="' + c.id + '">' + svg('phone', 14) + 'Call ' + esc(f) + ' instead</button>' : '') +
           (no ? '<button class="b-ghost" type="button" data-wa-next="out|' + c.id + '">Take them out</button>' : '') +
@@ -5310,14 +5324,14 @@
     if (rec.why) return '<div class="b-aimy t-wa-aimy is-done">' + mark(13) + '<div class="t-wa-aimy-in"><span class="b-aimy-say">' + rec.why + '</span>' +
       (rec.checks ? '<details class="t-wa-why"><summary>What I checked</summary><ul class="t-wa-trail">' +
         rec.checks.map((k) => '<li' + (k.ok ? '' : ' class="is-no"') + '><span>' + k.t + '</span></li>').join('') + '</ul></details>' : '') +
-      '<span class="t-wa-rule">Under ' + esc(DESKS.dina.name) + '’s rule: ' + (rec.sent === 'now' ? 'I held it, and you sent it before the time ran out.' : rec.sent ? 'I held it ' + plural(rec.mins || waHoldMin(), 'minute') + ', then it went.' : 'I do it and tell you.') + '</span>' +
+      '<span class="t-wa-rule">' + (rec.sent === 'now' ? 'I held it, and you sent it before the time ran out.' : rec.sent ? 'I held it ' + plural(rec.mins || waHoldMin(), 'minute') + ', then it went.' : 'I do it and tell you.') + '</span>' +
       '<span class="t-acts"><button class="b-ghost" type="button" data-wa-undo="' + done.id + '">Undo</button>' +
       '<button class="b-ghost" type="button" data-wa-edit="' + done.id + '">Change the reply</button></span></div></div>';
     const say = rec.kind === 'cb' ? 'I set a call back for <b>' + esc(rec.when) + '</b> and told ' + esc(f) + '. It’s in your calls and on the Diary.'
       : rec.kind === 'ask' ? esc(f) + ' wanted to talk without a time, so I asked for one. I’ll set the call back when they answer.'
       : 'I thanked ' + esc(f) + ' for the CV and added it to their record.';
     return '<div class="b-aimy t-wa-aimy is-done">' + mark(13) + '<div class="t-wa-aimy-in"><span class="b-aimy-say">' + say +
-      ' <span class="t-wa-rule">Under ' + esc(DESKS.dina.name) + '’s rule: I do it and tell you.</span></span>' +
+      ' <span class="t-wa-rule">I do it and tell you.</span></span>' +
       '<span class="t-acts"><button class="b-ghost" type="button" data-wa-undo="' + done.id + '">Undo</button></span></div></div>';
   }
 
@@ -5354,9 +5368,9 @@
       : hrs ? '<div class="t-wa-box"><textarea class="input t-wa-in" id="waText" rows="3" placeholder="Write to ' + esc(first(c.name)) + '…" aria-label="Your reply to ' + esc(c.name) + '"></textarea>' +
           '<div class="t-wa-end"><p class="t-wa-win">Open for ' + plural(hrs, 'more hour') + '. After that, only an approved template can start it again.</p>' +
           '<button class="s-insight-lnk primary" type="button" data-wa-send="' + c.id + '">' + svg('send', 14) + 'Send</button></div></div>'
-      : '<div class="t-wa-box"><p class="t-wa-win">' + (ms.length ? 'More than 24 hours since ' + esc(first(c.name)) + ' last wrote' : 'No conversation yet') + ', so it opens with one of ' + esc(DESKS.dina.name) + '’s approved templates.</p>' +
+      : '<div class="t-wa-box"><p class="t-wa-win">' + (ms.length ? 'More than 24 hours since ' + esc(first(c.name)) + ' last wrote' : 'No conversation yet') + ', so it opens with one of the approved templates.</p>' +
           '<div class="b-cuts t-wa-tpls" role="group" aria-label="Templates">' + WA_TPL.map((x) => '<button class="filter-chip' + (WA_TPL_ON === x.k ? ' active' : '') + '" type="button" data-wa-tpl="' + x.k + '" aria-pressed="' + (WA_TPL_ON === x.k) + '">' + esc(x.label) + '</button>').join('') + '</div>' +
-          (tpl ? '<div class="t-msg"><p class="t-msg-body">' + esc(waFill(tpl.text, c)) + '</p><div class="t-msg-end"><p class="t-msg-foot">To ' + esc(first(c.name)) + ' on WhatsApp · template approved by ' + esc(DESKS.dina.name) + '.</p>' +
+          (tpl ? '<div class="t-msg"><p class="t-msg-body">' + esc(waFill(tpl.text, c)) + '</p><div class="t-msg-end"><p class="t-msg-foot">To ' + esc(first(c.name)) + ' on WhatsApp · an approved template.</p>' +
             '<button class="s-insight-lnk primary" type="button" data-wa-send="' + c.id + '">' + svg('send', 14) + 'Send the template</button></div></div>' : '') + '</div>';
     return '<div class="s-home">' +
       '<div class="b-topbar s-block-wide"><button class="s-back" type="button"' + goAttr({ on: 'calls', q: 'inbox' }) + '>' + svg('back', 14) + 'Interactions</button>' +
@@ -10903,7 +10917,15 @@
     if ((el = at('[data-wa-send]'))) { sendWa(DB.byId[val('data-wa-send')]); return; }
     if ((el = at('[data-wa-undo]'))) { waAutoUndo(val('data-wa-undo')); return; }
     if ((el = at('[data-wa-edit]'))) { waAutoUndo(val('data-wa-edit'), true); return; }
-    if ((el = at('[data-wa-rule]'))) { WA_RULE_OPEN = !WA_RULE_OPEN; paint(); const b = document.querySelector('[data-wa-rule]'); if (b) b.focus(); return; }
+    if ((el = at('[data-wa-client]'))) {
+      const id = val('data-wa-client'), rec = D.waAi[id], m = DB.msgs.filter((x) => x.id === id)[0], c = m && DB.byId[m.cand];
+      if (!rec || !c) return;
+      rec.toClient = nowHM();
+      const e = note(c, 'note', 'Asked ' + rec.by + ' at ' + rec.acc + ' for new times, by email: “' + rec.draft + '”');
+      save(); paint();
+      toast('Sent to ' + rec.by + ' at ' + rec.acc, () => { delete rec.toClient; unmake('events', e); save(); paint(); }, 'When ' + first(rec.by) + ' names a time, I’ll tell ' + first(c.name) + ' and book it.');
+      return;
+    }
     if ((el = at('[data-wa-now]'))) { waHeldSend(val('data-wa-now'), 'now'); return; }
     if ((el = at('[data-wa-change]'))) { waHeldStop(val('data-wa-change'), true); return; }
     if ((el = at('[data-wa-drop]'))) { waHeldStop(val('data-wa-drop'), false); return; }
