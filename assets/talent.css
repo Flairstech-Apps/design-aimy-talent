@@ -2506,3 +2506,24 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-wa-draft p { margin: 0; font-size: var(--fs-xs); line-height: 1.5; color: var(--d50); }
 .t-wa-brief { border-color: rgba(var(--warn-rgb, 214, 140, 0), 0.4); }
 .t-wa-brief .t-acts { gap: 6px; flex-wrap: wrap; }
+
+/* ══ HOLDING IT FOR YOU (Engy, 11 Nov; direction B) ════════════════════════
+   A reply that changes someone's time waits, written, with a countdown. */
+.t-wa-m.is-out.is-ai.is-held { border-style: dashed; background: none; border-color: rgba(var(--accent-rgb), 0.6); }
+.t-wa-m.is-held .t-wa-t span { font-variant-numeric: tabular-nums; }
+.t-wa-held .t-acts { gap: 6px; flex-wrap: wrap; }
+.t-wa-bar { height: 4px; border-radius: 999px; overflow: hidden; background: rgba(var(--accent-rgb), 0.16); }
+.t-wa-bar span { display: block; height: 100%; background: linear-gradient(90deg, rgba(var(--accent-rgb), 0.9), rgba(0, 102, 255, 0.7)); transform-origin: left; transition: transform 1s linear; }
+@media (prefers-reduced-motion: reduce) { .t-wa-bar span { transition: none; } }
+.t-aido-chip.is-hold .t-aido-l { color: var(--d50); }
+.t-ladder-hold { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 10px 12px; border-radius: 10px;
+  font-size: var(--fs-xs); color: var(--d100); background: rgba(var(--accent-rgb), 0.06); }
+/* The strip's groups side by side on one line, wrapping when narrow, and
+   the chips in a soft tint of AiMY's colour rather than the dark card. */
+.t-aido-grps { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: start; gap: 8px 14px; }
+.t-aido-grps .t-aido-h { padding-top: 8px; }
+.t-aido-chip { flex-wrap: wrap; max-width: 100%; text-align: left; row-gap: 2px; }
+.t-aido-grp { display: contents; }
+.t-aido-chip { background: rgba(var(--accent-rgb), 0.08); border-color: rgba(var(--accent-rgb), 0.18); }
+.t-aido-chip:hover { background: rgba(var(--accent-rgb), 0.14); border-color: rgba(var(--accent-rgb), 0.4); }
+@media (max-width: 560px) { .t-aido-grps { grid-template-columns: minmax(0, 1fr); gap: 6px; } .t-aido-grps .t-aido-h { padding-top: 6px; } .t-aido-chip { border-radius: 14px; } }

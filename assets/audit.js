@@ -88,6 +88,7 @@ const MARKERS = {
   'dr-text': 'the message draft in the chat, read by the input listener',
   'crit-ed': 'which criterion a Find box rewrites, read by the input listener',
   'find-reqq': 'the requisition picker’s search box on Find, read by the input listener',
+  due: 'the held WhatsApp reply’s countdown (text and bar), updated each second by waTick',
 };
 
 /* ── 1 & 2. CONTROLS AND HANDLERS, BOTH DIRECTIONS ───────────────────────── */
