@@ -1,0 +1,310 @@
+<title>AiMY Reads the Room</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single reading column of findings, then the situations as a grid of
+   thread cards, then four interface directions shown as real AiMY mock-ups. */
+:root {
+  --bg: #f6f5fa; --card: #ffffff; --line: #e3e0ec; --ink: #1b1830; --ink-2: #4c4864; --ink-3: #7b7792;
+  --accent: #8b4ff4; --accent-rgb: 139, 79, 244; --blue-rgb: 0, 102, 255;
+  --ok: #128a5a; --ok-rgb: 18, 138, 90; --warn: #a96500; --warn-rgb: 214, 140, 20; --bad: #c2334d;
+  --in: #ffffff; --out: rgba(139, 79, 244, 0.10);
+  --f-body: 'Poppins', 'Segoe UI', system-ui, sans-serif; --f-mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12111c; --card: #1b1a29; --line: #2d2b40; --ink: #f1effa; --ink-2: #bdb8d4; --ink-3: #8a85a3;
+  --ok: #3fcf8e; --warn: #f0b44c; --bad: #ff6b81; --in: #1f1e2e; --out: rgba(139, 79, 244, 0.16); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #12111c; --card: #1b1a29; --line: #2d2b40; --ink: #f1effa; --ink-2: #bdb8d4; --ink-3: #8a85a3;
+  --ok: #3fcf8e; --warn: #f0b44c; --bad: #ff6b81; --in: #1f1e2e; --out: rgba(139, 79, 244, 0.16); color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.6; }
+.wrap { max-width: 1160px; margin: 0 auto; padding-block: 48px 80px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(28px, 4vw, 40px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; }
+h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+h3 { font-size: 15px; font-weight: 600; }
+p { margin: 0; }
+.eyebrow { font-family: var(--f-mono); font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
+.lede { font-size: 17px; color: var(--ink-2); max-width: 68ch; }
+.muted { color: var(--ink-3); }
+section { margin-top: 56px; display: flex; flex-direction: column; gap: 18px; }
+.head { display: flex; flex-direction: column; gap: 14px; }
+.sec-head { display: flex; flex-direction: column; gap: 6px; max-width: 72ch; }
+.sec-head p { color: var(--ink-2); }
+
+/* findings */
+.finds { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+.find { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.find b { font-weight: 600; }
+.find .src { font-family: var(--f-mono); font-size: 11.5px; color: var(--ink-3); }
+.find .src a { color: inherit; }
+.find .use { font-size: 13px; color: var(--ink-2); border-top: 1px dashed var(--line); padding-top: 8px; }
+
+/* what AiMY checks */
+.checks { display: flex; flex-wrap: wrap; gap: 8px; }
+.chk { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); font-size: 13.5px; }
+.chk i { font-style: normal; font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none; }
+
+/* situations */
+.sits { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; }
+.sit { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.sit-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.tag { font-family: var(--f-mono); font-size: 11px; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.tag.sends { color: var(--ok); background: rgba(var(--ok-rgb), 0.12); }
+.tag.holds { color: var(--warn); background: rgba(var(--warn-rgb), 0.14); }
+.tag.hands { color: var(--bad); background: color-mix(in srgb, var(--bad) 13%, transparent); }
+.thread { display: flex; flex-direction: column; gap: 6px; }
+.b { max-width: 88%; padding: 8px 11px; border-radius: 12px; font-size: 13.5px; line-height: 1.45; }
+.b small { display: block; margin-top: 3px; font-size: 11px; color: var(--ink-3); }
+.b.in { align-self: flex-start; background: var(--in); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+.b.ai { align-self: flex-end; border: 1px solid transparent; border-bottom-right-radius: 4px;
+  background: linear-gradient(var(--card), var(--card)) padding-box, linear-gradient(120deg, rgba(var(--accent-rgb), .75), rgba(var(--blue-rgb), .55)) border-box; }
+.read { display: grid; grid-template-columns: 74px 1fr; gap: 4px 10px; font-size: 13px; }
+.read dt { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); padding-top: 2px; text-transform: uppercase; letter-spacing: .06em; }
+.read dd { margin: 0; color: var(--ink-2); }
+.read dd b { color: var(--ink); font-weight: 500; }
+
+/* directions */
+.dirs { display: flex; flex-direction: column; gap: 22px; }
+.dir { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 22px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
+@media (max-width: 820px) { .dir { grid-template-columns: 1fr; } }
+.dir-say { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.dir-say ul { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+.letter { font-family: var(--f-mono); font-size: 12px; color: var(--accent); }
+.stage { background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.rec-pick { border-color: rgba(var(--accent-rgb), .55); box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .12); }
+.pick { align-self: flex-start; font-family: var(--f-mono); font-size: 11px; color: var(--accent); border: 1px solid rgba(var(--accent-rgb), .45); padding: 2px 8px; border-radius: 999px; }
+
+/* AiMY mock parts */
+.mark { width: 14px; height: 14px; flex: none; }
+.aimy { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 14px;
+  background: linear-gradient(120deg, rgba(var(--accent-rgb), .14), rgba(var(--blue-rgb), .06)); border: 1px solid rgba(var(--accent-rgb), .3); font-size: 13.5px; line-height: 1.5; }
+.aimy.done { border-color: rgba(var(--ok-rgb), .35); }
+.aimy-in { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.aimy b { font-weight: 600; }
+.rule { color: var(--ink-3); font-size: 12.5px; }
+.btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.btn { font: inherit; font-size: 12.5px; font-weight: 500; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
+.btn.ai { background: linear-gradient(120deg, rgba(var(--accent-rgb), .24), rgba(var(--blue-rgb), .12)); border-color: rgba(var(--accent-rgb), .45); }
+.btn:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+details.why { font-size: 12.5px; }
+details.why summary { cursor: pointer; color: var(--accent); list-style: none; display: inline-flex; gap: 6px; align-items: center; }
+details.why summary::-webkit-details-marker { display: none; }
+details.why summary::before { content: '▸'; font-size: 10px; transition: transform .15s; }
+details.why[open] summary::before { transform: rotate(90deg); }
+.trail { margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.trail li { display: grid; grid-template-columns: 16px 1fr; gap: 8px; color: var(--ink-2); }
+.trail li::before { content: '✓'; color: var(--ok); font-size: 12px; }
+.trail li.no::before { content: '–'; color: var(--ink-3); }
+.trail b { color: var(--ink); font-weight: 500; }
+.meta { font-size: 11px; color: var(--ink-3); display: inline-flex; gap: 5px; align-items: center; }
+.bar { height: 3px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 10%, transparent); overflow: hidden; }
+.bar span { display: block; height: 100%; width: 100%; background: var(--warn); transform-origin: left; }
+.strip-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; gap: 6px; align-items: baseline; font-size: 12px; padding: 5px 10px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); color: var(--ink-2); }
+.chip b { color: var(--ink); font-weight: 600; }
+.chip .ok { color: var(--ok); } .chip .warn { color: var(--warn); } .chip .bad { color: var(--bad); }
+.grp { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+
+/* recommendation */
+.recbox { background: linear-gradient(120deg, rgba(var(--accent-rgb), .12), rgba(var(--blue-rgb), .05)); border: 1px solid rgba(var(--accent-rgb), .35); border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 12px; }
+.recbox ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; color: var(--ink-2); }
+.recbox ol b { color: var(--ink); font-weight: 600; }
+.foot { margin-top: 40px; font-size: 12.5px; color: var(--ink-3); display: flex; flex-direction: column; gap: 4px; }
+.foot a { color: inherit; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="mg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b4ff4"/><stop offset="1" stop-color="#0066ff"/></linearGradient>
+    <symbol id="m" viewBox="0 0 24 24"><g fill="url(#mg)"><circle cx="12" cy="12" r="4"/><circle cx="12" cy="3" r="2"/><circle cx="12" cy="21" r="2"/><circle cx="3" cy="12" r="2"/><circle cx="21" cy="12" r="2"/><circle cx="5.6" cy="5.6" r="1.7"/><circle cx="18.4" cy="18.4" r="1.7"/><circle cx="18.4" cy="5.6" r="1.7"/><circle cx="5.6" cy="18.4" r="1.7"/></g></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <header class="head">
+    <span class="eyebrow">AiMY Talent · WhatsApp · research, 11 Nov</span>
+    <h1>AiMY answers on WhatsApp by reading what's going on</h1>
+    <p class="lede">Today AiMY reads only the words in the reply: a time means it sets a call back. A smarter AiMY checks the candidate's stage, your Diary, the interviewer's free slots, the requisition and Dina's rules before it answers. It then shows you, in one line, why it answered the way it did, and keeps the details one click away.</p>
+  </header>
+
+  <section>
+    <div class="sec-head"><span class="eyebrow">What the research says</span><h2>Five patterns from tools that already let an AI reply for people</h2></div>
+    <div class="finds">
+      <div class="find"><b>Check the calendar before offering a time</b><p>Paradox's assistant reads recruiters' and hiring managers' calendars, then offers candidates open slots over WhatsApp and SMS. It also handles rescheduling and sends reminders.</p><p class="use">For AiMY: never confirm 4:00 PM if you're in an interview at 4. Offer the next free time.</p><span class="src"><a href="https://paradox.ai/products/scheduling">paradox.ai/products/scheduling</a></span></div>
+      <div class="find"><b>Hand off with a summary, in the same thread</b><p>Intercom's Fin hands off to a person in the same inbox and thread, sometimes with a summary, and does so on its own when that's the safer path.</p><p class="use">For AiMY: when it's a person's call (salary, a "no"), send a holding reply and leave you a short brief with a draft.</p><span class="src"><a href="https://intercom.com/fin">intercom.com/fin</a></span></div>
+      <div class="find"><b>One sentence of why on every action</b><p>Practitioner guides from 2026 recommend a one-sentence reason on every action that matters, written in plain language rather than as a raw log, with more detail behind a click.</p><p class="use">For AiMY: a one-line reason under its bubble, with "What I checked" folded below.</p><span class="src"><a href="https://smashingmagazine.com/2026/02/designing-agentic-ai-practical-ux-patterns/">Smashing Magazine, Feb 2026</a></span></div>
+      <div class="find"><b>Match the oversight to the risk</b><p>Use a review step based on how much damage a mistake could do, not on how confident the model is. Undo what can be undone; flag what can't before it happens.</p><p class="use">For AiMY: sends routine replies, holds anything that commits someone's time, hands off anything about money or rejection.</p><span class="src"><a href="https://www.agenticwire.news/article/agent-ux-design-patterns">Agent UX checklist, citing NN/G</a></span></div>
+      <div class="find"><b>Skip what the conversation already answered</b><p>Zendesk's procedures skip questions the customer already answered and go straight to the relevant step. Admins can read the reasoning behind each action in the logs.</p><p class="use">For AiMY: don't ask "what time?" when the voice note already said "after four".</p><span class="src"><a href="https://support.zendesk.com/hc/en-us/articles/10473649691418-About-generative-procedures-for-AI-agents">Zendesk help center</a></span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="eyebrow">What AiMY already knows in the prototype</span><h2>What it checks before it writes</h2><p>All of this is already in the prototype's data, so AiMY can use it without anything new.</p></div>
+    <div class="checks">
+      <span class="chk"><span class="dot"></span>The whole thread, voice notes included <i>msgs, vm</i></span>
+      <span class="chk"><span class="dot"></span>Their stage and next step <i>stage, nextOf</i></span>
+      <span class="chk"><span class="dot"></span>Your Diary: interviews and call backs <i>diaryItems</i></span>
+      <span class="chk"><span class="dot"></span>The interviewer's free slots <i>freeSlots, outBusy</i></span>
+      <span class="chk"><span class="dot"></span>Any interview already booked <i>meet, slot</i></span>
+      <span class="chk"><span class="dot"></span>The requisition: place, mode, shift <i>reqOf</i></span>
+      <span class="chk"><span class="dot"></span>The 24-hour window and approved templates <i>waHrs, WA_TPL</i></span>
+      <span class="chk"><span class="dot"></span>Dina's rules: what's for a person <i>AUTO_SEED</i></span>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="eyebrow">Situations</span><h2>Same kind of reply, different answer, depending on what's going on</h2><p>Each card shows what they wrote, what AiMY found, and what it does: <span class="tag sends">sends</span> on its own, <span class="tag holds">holds</span> for a few minutes so you can change it, or <span class="tag hands">hands to you</span>.</p></div>
+    <div class="sits">
+      <article class="sit"><div class="sit-top"><h3>They give a time, you're free</h3><span class="tag sends">sends</span></div>
+        <div class="thread"><div class="b in">Yes I can talk after 4pm today<small>Karim · 11:40</small></div><div class="b ai">Great, I'll call you today at 4:00 PM. Thank you, Karim!<small>AiMY, for Omar</small></div></div>
+        <dl class="read"><dt>Checked</dt><dd>Your Diary is <b>free 4:00–5:00 PM</b>. Karim is at <b>phone screen</b>.</dd><dt>Did</dt><dd>Set the call back and confirmed.</dd></dl></article>
+
+      <article class="sit"><div class="sit-top"><h3>They give a time, you're busy</h3><span class="tag sends">sends</span></div>
+        <div class="thread"><div class="b in">After 4 works for me<small>Reem · 12:05</small></div><div class="b ai">Thanks Reem! 4:00 is taken on our side. Would 4:45 PM or 5:15 PM suit you?<small>AiMY, for Omar</small></div></div>
+        <dl class="read"><dt>Checked</dt><dd>You have <b>Nour's interview 4:00–4:45</b>. Next free: 4:45, 5:15.</dd><dt>Did</dt><dd>Offered the two nearest times and held them in your Diary.</dd></dl></article>
+
+      <article class="sit"><div class="sit-top"><h3>They ask to move an interview</h3><span class="tag holds">holds 10 min</span></div>
+        <div class="thread"><div class="b in">Can we move Thursday's interview? Something came up<small>Youssef · 09:12</small></div><div class="b ai">No problem, Youssef. Sara is free Sunday 11:00 AM or Monday 2:00 PM. Which suits you?<small>Sending in 8 min</small></div></div>
+        <dl class="read"><dt>Checked</dt><dd><b>Technical interview, Thu 12:30</b> with Sara. Sara's free slots in the next 5 days.</dd><dt>Holds</dt><dd>It changes another person's day, so you get 10 minutes to change it.</dd></dl></article>
+
+      <article class="sit"><div class="sit-top"><h3>They ask about the job</h3><span class="tag sends">sends</span></div>
+        <div class="thread"><div class="b in">Is it remote or in the office?<small>Mariam · 14:20</small></div><div class="b ai">It's hybrid: three days a week at our Maadi office, two from home.<small>AiMY, for Omar</small></div></div>
+        <dl class="read"><dt>Checked</dt><dd>The requisition says <b>Hybrid, Maadi, 3 days on site</b>. Dina's "Answer from the offer facts" rule allows it.</dd><dt>Did</dt><dd>Answered from the requisition and said where it came from.</dd></dl></article>
+
+      <article class="sit"><div class="sit-top"><h3>They ask about money</h3><span class="tag hands">hands to you</span></div>
+        <div class="thread"><div class="b in">What's the salary range for this role?<small>Ahmed · 16:02</small></div><div class="b ai">Good question, Ahmed. Omar will come back to you on that today.<small>AiMY, for Omar</small></div></div>
+        <dl class="read"><dt>Checked</dt><dd>Dina's rule: <b>anything about money goes to a person</b>.</dd><dt>Did</dt><dd>Sent a holding reply only, and left you a brief with the band and a draft.</dd></dl></article>
+
+      <article class="sit"><div class="sit-top"><h3>They say no</h3><span class="tag hands">hands to you</span></div>
+        <div class="thread"><div class="b in">Thanks but I've accepted another offer<small>Laila · 10:31</small></div></div>
+        <dl class="read"><dt>Checked</dt><dd>Laila is at <b>client interview</b>; the client is waiting on her.</dd><dt>Left you</dt><dd>A thank-you draft, and a note that the client needs to hear. Nothing sent.</dd></dl></article>
+
+      <article class="sit"><div class="sit-top"><h3>They write in Arabic</h3><span class="tag sends">sends</span></div>
+        <div class="thread"><div class="b in" dir="rtl" lang="ar">ممكن نتكلم بكرة الصبح؟<small>Hassan · 21:40</small></div><div class="b ai" dir="rtl" lang="ar">أكيد يا حسن، هكلمك بكرة الساعة ١٠ الصبح. شكراً!<small>AiMY, for Omar</small></div></div>
+        <dl class="read"><dt>Checked</dt><dd>Written in <b>Arabic</b>, after your hours. You're free <b>tomorrow 10:00 AM</b>.</dd><dt>Did</dt><dd>Answered in Arabic and set the call back for your first free time.</dd></dl></article>
+
+      <article class="sit"><div class="sit-top"><h3>The 24 hours have passed</h3><span class="tag holds">holds 10 min</span></div>
+        <div class="thread"><div class="b in">Sorry for the late reply, still interested!<small>Omar S. · 2 days ago</small></div><div class="b ai">[Template: A good time to talk] Hi Omar, this is Omar from FlairsTech…<small>Sending in 6 min</small></div></div>
+        <dl class="read"><dt>Checked</dt><dd>The <b>24-hour window is closed</b>, so a free-form reply can't go.</dd><dt>Holds</dt><dd>Picked Dina's approved template and gives you time to swap it.</dd></dl></article>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="eyebrow">Interface</span><h2>Four ways to show it, using AiMY's current parts</h2><p>Each one uses parts the prototype already has: the AiMY glass card, the AiMY edge on bubbles, chips and Undo.</p></div>
+    <div class="dirs">
+
+      <div class="dir">
+        <div class="dir-say"><span class="letter">A · On the thread</span><h3>The reason, in one line, under what AiMY sent</h3>
+          <p class="muted">The card under the conversation says what it did and why, naming the thing it checked. "What I checked" opens the steps: what it read, what it looked up, what it left alone.</p>
+          <ul><li>Default view: one sentence anyone can read.</li><li>Opened view: each check with its answer, for when you doubt it.</li><li>Undo and "Change the reply" stay on the card.</li></ul></div>
+        <div class="stage rec-pick"><span class="pick">Recommended</span>
+          <div class="thread"><div class="b in">After 4 works for me<small>Reem · 12:05</small></div><div class="b ai">Thanks Reem! 4:00 is taken on our side. Would 4:45 PM or 5:15 PM suit you?<small><svg class="mark" style="width:10px;height:10px;vertical-align:-1px"><use href="#m"/></svg> AiMY, for you · 12:05</small></div></div>
+          <div class="aimy done"><svg class="mark"><use href="#m"/></svg><div class="aimy-in">
+            <span>You're in <b>Nour's interview until 4:45</b>, so I offered Reem the next two free times and held them in your Diary.</span>
+            <details class="why"><summary>What I checked</summary>
+              <ul class="trail">
+                <li><span>Read her message: <b>"after 4", today</b></span></li>
+                <li><span>Your Diary at 4:00: <b>Nour Hassan, phone screen, until 4:45</b></span></li>
+                <li><span>Next free on your Diary: <b>4:45, 5:15</b></span></li>
+                <li><span>24-hour window: <b>open, 21 hours left</b></span></li>
+                <li class="no"><span>Nothing about pay or a "no", so no person needed</span></li>
+              </ul></details>
+            <span class="rule">Under Dina Ragab's rule: I do it and tell you.</span>
+            <div class="btns"><button class="btn" type="button">Undo</button><button class="btn" type="button">Change the reply</button></div>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="dir">
+        <div class="dir-say"><span class="letter">B · Before it goes</span><h3>Held for a few minutes when it commits someone's time</h3>
+          <p class="muted">For replies that move an interview or use a template, AiMY writes the message and holds it, with a countdown bar. You can send it now, change it, or let it go on its own. If you do nothing, it still goes, so the candidate isn't kept waiting.</p>
+          <ul><li>A new step on Dina's rules: "Holds for 10 minutes".</li><li>The Inbox shows these with the time left.</li><li>Like Gmail's undo send, but before it sends.</li></ul></div>
+        <div class="stage">
+          <div class="thread"><div class="b in">Can we move Thursday's interview? Something came up<small>Youssef · 09:12</small></div>
+            <div class="b ai" style="border-style:dashed">No problem, Youssef. Sara is free Sunday 11:00 AM or Monday 2:00 PM. Which suits you?<small id="cdTxt">Sending in 8:00</small></div></div>
+          <div class="aimy"><svg class="mark"><use href="#m"/></svg><div class="aimy-in">
+            <span>Youssef wants to move his <b>technical interview with Sara</b>. I found her two nearest free times. It changes Sara's week, so I'm holding it for you.</span>
+            <div class="bar" aria-hidden="true"><span id="cdBar"></span></div>
+            <div class="btns"><button class="btn ai" type="button"><svg class="mark" style="width:12px;height:12px;vertical-align:-2px"><use href="#m"/></svg> Send now</button><button class="btn" type="button">Change it</button><button class="btn" type="button">Don't send</button></div>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="dir">
+        <div class="dir-say"><span class="letter">C · When it's a person's call</span><h3>A holding reply goes out, and you get a brief</h3>
+          <p class="muted">For money or a "no", AiMY answers only to say a person will come back, so the candidate isn't left on read. The thread opens on a short brief: what they asked, what you need to know, and a draft you send yourself.</p>
+          <ul><li>The thread stays in the Inbox until you answer.</li><li>The brief names the rule that stopped AiMY.</li></ul></div>
+        <div class="stage">
+          <div class="thread"><div class="b in">What's the salary range for this role?<small>Ahmed · 16:02</small></div><div class="b ai">Good question, Ahmed. Omar will come back to you on that today.<small><svg class="mark" style="width:10px;height:10px;vertical-align:-1px"><use href="#m"/></svg> AiMY, for you · 16:02</small></div></div>
+          <div class="aimy"><svg class="mark"><use href="#m"/></svg><div class="aimy-in">
+            <span>Ahmed asked about pay. That's yours, by Dina's rule, so I only told him you'll come back today.</span>
+            <dl class="read"><dt>Band</dt><dd><b>EGP 38–45k</b> on the requisition</dd><dt>Expects</dt><dd>His CV says <b>EGP 42k</b> now</dd><dt>Stage</dt><dd>Phone screen done, <b>passed</b></dd></dl>
+            <div class="btns"><button class="btn ai" type="button"><svg class="mark" style="width:12px;height:12px;vertical-align:-2px"><use href="#m"/></svg> Use my draft</button><button class="btn" type="button">Call him instead</button></div>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="dir">
+        <div class="dir-say"><span class="letter">D · On Interactions</span><h3>The strip says what happened, grouped by what it means for you</h3>
+          <p class="muted">The current strip says "I answered 1 reply". This one splits what AiMY finished, what it's holding, and what's waiting on you. Each chip shows a short reason.</p>
+          <ul><li>Held items show time left and leave the strip when they send.</li><li>"Waiting on you" chips also stay in the Inbox list.</li></ul></div>
+        <div class="stage rec-pick"><span class="pick">Recommended, with A</span>
+          <div class="aimy"><svg class="mark"><use href="#m"/></svg><div class="aimy-in">
+            <span>Since this morning I answered <b>4 WhatsApp replies</b>, I'm holding <b>1</b> for you to see, and <b>1</b> needs you.</span>
+            <span class="grp">Done</span>
+            <div class="strip-list">
+              <span class="chip"><b>Karim</b><span class="ok">Call back 4:00 PM</span></span>
+              <span class="chip"><b>Reem</b><span class="ok">Offered 4:45 or 5:15</span><span>you were busy at 4</span></span>
+              <span class="chip"><b>Mariam</b><span class="ok">Answered: hybrid, Maadi</span></span>
+              <span class="chip"><b>Hassan</b><span class="ok">Call back tomorrow 10 AM</span><span>in Arabic</span></span>
+            </div>
+            <span class="grp">Holding</span>
+            <div class="strip-list"><span class="chip"><b>Youssef</b><span class="warn">Moving his interview</span><span>sends in 8 min</span></span></div>
+            <span class="grp">Needs you</span>
+            <div class="strip-list"><span class="chip"><b>Ahmed</b><span class="bad">Asked about pay</span><span>I told him today</span></span></div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="recbox">
+      <span class="eyebrow">My recommendation</span>
+      <h2>Build A and D first, then C, then B</h2>
+      <ol>
+        <li><b>Make the decision use the context.</b> Before replying, AiMY checks your Diary and the booked interview, answers job questions from the requisition, and replies in the language they wrote in. Situations 1, 2, 4 and 7 work with today's data.</li>
+        <li><b>A: the one-line reason with "What I checked"</b> on the thread card that's already there. This is what makes the extra intelligence visible and trustworthy.</li>
+        <li><b>D: the grouped strip</b> on Interactions, replacing today's single sentence.</li>
+        <li><b>C: the holding reply and brief</b> for money and "no" replies, so nobody waits on read.</li>
+        <li><b>B: held-to-send</b> last, since it needs a new step on Dina's rules and a timer in the Inbox.</li>
+      </ol>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span>Sources: <a href="https://paradox.ai/products/scheduling">Paradox scheduling</a> · <a href="https://intercom.com/fin">Intercom Fin</a> · <a href="https://smashingmagazine.com/2026/02/designing-agentic-ai-practical-ux-patterns/">Smashing, agentic UX patterns</a> · <a href="https://smashingmagazine.com/2026/04/identifying-necessary-transparency-moments-agentic-ai-part1/">Smashing, transparency moments</a> · <a href="https://www.agenticwire.news/article/agent-ux-design-patterns">Agent UX checklist</a> · <a href="https://support.zendesk.com/hc/en-us/articles/10473649691418-About-generative-procedures-for-AI-agents">Zendesk procedures</a></span>
+    <span>Names, times and pay figures are examples from the prototype's data.</span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var t = 480, txt = document.getElementById('cdTxt'), bar = document.getElementById('cdBar');
+  if (!txt || !bar) return;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function draw() {
+    var m = Math.floor(t / 60), s = t % 60;
+    txt.textContent = 'Sending in ' + m + ':' + (s < 10 ? '0' : '') + s;
+    bar.style.transform = 'scaleX(' + (t / 480) + ')';
+  }
+  draw();
+  if (reduce) return;
+  setInterval(function () { t = t > 0 ? t - 1 : 480; draw(); }, 1000);
+})();
+</script>

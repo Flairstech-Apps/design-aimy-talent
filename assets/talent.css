@@ -2464,7 +2464,8 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-aido-chip:hover { border-color: rgba(var(--accent-rgb), 0.5); }
 .t-aido-chip:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .t-aido-chip b { font-weight: var(--fw-semibold); color: var(--d50); }
-.t-aido-chip.is-cb span:not(.t-aido-t) { color: var(--ok); }
+.t-aido-chip.is-ok .t-aido-l { color: var(--ok); }
+.t-aido-chip.is-need .t-aido-l { color: var(--err-text, var(--err)); }
 .t-aido-t { color: var(--ink-muted); font-variant-numeric: tabular-nums; }
 .t-cut-ai { display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; padding: 1px 6px 1px 4px; border-radius: var(--r-pill);
   font-size: var(--t-micro); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; color: var(--d50);
@@ -2473,3 +2474,22 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
   background: linear-gradient(var(--card-bg), var(--card-bg)) padding-box, linear-gradient(120deg, rgba(var(--accent-rgb), 0.7), rgba(0, 102, 255, 0.5)) border-box; }
 .t-wa-m.is-out.is-ai .t-wa-text { color: var(--d50); }
 .b-log-ico.is-ai { background: rgba(var(--accent-rgb), 0.14); }
+
+/* ══ READING THE ROOM (Engy, 11 Nov) ═══════════════════════════════════════
+   The strip in groups (Done, Needs you), each chip with its reason; on the
+   thread, AiMY's one line of why with the checks folded under it. */
+.t-aido-grp { display: flex; flex-direction: column; gap: 6px; }
+.t-aido-h { font-size: var(--t-micro); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+.t-aido-n { color: var(--ink-muted); }
+.t-wa-why { font-size: var(--fs-xs); }
+.t-wa-why summary { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; color: var(--brand); font-weight: var(--fw-semibold); }
+.t-wa-why summary::-webkit-details-marker { display: none; }
+.t-wa-why summary::before { content: ''; width: 0; height: 0; border-left: 5px solid currentColor; border-top: 4px solid transparent; border-bottom: 4px solid transparent; transition: transform var(--t-fast, 150ms); }
+.t-wa-why[open] summary::before { transform: rotate(90deg); }
+.t-wa-why summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
+.t-wa-trail { margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; color: var(--ink-secondary); line-height: 1.45; }
+.t-wa-trail li { display: grid; grid-template-columns: 14px 1fr; gap: 8px; }
+.t-wa-trail li::before { content: '✓'; color: var(--ok); }
+.t-wa-trail li.is-no::before { content: '–'; color: var(--ink-muted); }
+.t-wa-trail b { color: var(--d50); font-weight: var(--fw-semibold); }
+.t-wa-aimy.is-done .t-acts { gap: 6px; }
