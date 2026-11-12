@@ -513,15 +513,15 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-src { margin: 0 0 10px; font-size: var(--fs-xs); color: var(--ink-muted); line-height: var(--lh-snug); }
 .t-src-cap { margin-right: 4px; font-size: var(--fs-2xs); font-weight: var(--fw-medium); letter-spacing: 0.08em; text-transform: uppercase; }
 
-/* Select many, act once (M7). The bar holds while anything is ticked. */
+/* Select many, act once (M7). The bar holds while anything is ticked. It
+   sits in the flow where its list puts it, never floating over the rows
+   (Engy, 12 Nov: sticky, it covered the text under it). */
 .t-sel { margin-right: 4px; }
 .t-row > .t-sel { align-self: center; margin: 0 8px 0 2px; }
 .t-batch {
-  position: sticky; bottom: 92px; z-index: 5;
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px;
   margin: 12px 0 0; padding: 10px 14px; border-radius: var(--r-lg);
   border: 1px solid rgba(var(--accent-rgb), 0.45); background: var(--card-bg-raised);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
   animation: t-reveal-in var(--reveal-dur) ease-in-out both;
 }
 .t-batch-n { font-size: var(--fs-sm); color: var(--d100); }
