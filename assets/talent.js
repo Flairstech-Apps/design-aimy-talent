@@ -940,6 +940,43 @@
     if (today1) today1.mode = 'video';
     const late1 = DB.ivs.filter((v) => v.status === 'owed' && v.by.split(',')[0] !== RECRUITERS[0].name && mine.some((c) => c.id === v.cand)).sort((a, b) => a.day - b.day)[0];
     if (late1) late1.mode = 'video';
+    /* ONE NAME, ONE PERSON (Engy, 12 Nov): AiMY's copy and the demo call
+       this cast by first name ("Adham asked about pay"), so nobody else
+       shares a cast member's first name. "Adham Fouad" on Candidates read
+       as Adham Sabry renamed. Everyone else keeps their surname. */
+    const cast = [tried, asks, booked, arab, pay, says, moves, inner].filter(Boolean);
+    Object.keys(CAST).forEach((k) => { delete CAST[k]; });
+    cast.forEach((c) => { CAST[first(c.name)] = 1; });
+    const castPid = {}, taken = {}, renamed = {};
+    cast.forEach((c) => { castPid[c.pid] = 1; });
+    DB.cands.forEach((c) => { taken[c.name] = 1; });
+    (DB.past || []).forEach((p) => { taken[p.name] = 1; });
+    DB.cands.forEach((c) => {
+      if (castPid[c.pid] || !CAST[first(c.name)]) return;
+      const was = c.name, now = renamed[c.pid] || castSafe(was, c.pid, taken);
+      renamed[c.pid] = now; taken[now] = 1; c.name = now;
+      if (c.email) c.email = c.email.replace(/^[^.@]+/, first(now).toLowerCase());
+      DB.calls.forEach((t) => { if (t.cand === c.id && t.vm) t.vm.text = t.vm.text.replace('it is ' + first(was), 'it is ' + first(now)); });
+    });
+    (DB.past || []).forEach((p) => { if (CAST[first(p.name)]) { p.name = castSafe(p.name, p.id, taken); taken[p.name] = 1; } });
+  }
+  /* The cast's first names, and a name that keeps clear of them and of the
+     staff: the same surname, another first name from the same list. */
+  const CAST = {};
+  const STAFF_FIRST = {};
+  [].concat(Object.keys(DESKS).map((k) => DESKS[k].name), RECRUITERS.map((x) => x.name), HMS.map((x) => x.name),
+    ...Object.keys(INTERVIEWERS).map((k) => INTERVIEWERS[k])).forEach((n) => { STAFF_FIRST[first(n)] = 1; });
+  function castSafe(name, key, taken) {
+    const f = first(name);
+    if (!CAST[f]) return name;
+    const list = MEN.indexOf(f) >= 0 ? MEN : WOMEN, rest = name.slice(f.length);
+    let h = 7;
+    for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+    for (let i = 0; i < list.length; i++) {
+      const g = list[(h + i) % list.length];
+      if (!CAST[g] && !STAFF_FIRST[g] && !(taken && taken[g + rest])) return g + rest;
+    }
+    return name;
   }
   /* Days spent at each stage a person has finished (`took`), drawn from
      their id and their requisition's own pace rather than the random
@@ -7094,7 +7131,7 @@
     const make1 = (n) => {
       for (let i = 0; i < n; i++) {
         const woman = chance(r, 0.5);
-        const p = { name: pick(r, woman ? WOMEN : MEN) + ' ' + pick(r, LAST), at: pick(r, WEB_AT), place: pick(r, PLACES), years: between(r, 1, 9),
+        const p = { name: castSafe(pick(r, woman ? WOMEN : MEN) + ' ' + pick(r, LAST), 'web' + i), at: pick(r, WEB_AT), place: pick(r, PLACES), years: between(r, 1, 9),
           langs: chance(r, 0.25) ? ['Arabic', 'English', 'German'] : ['Arabic', 'English'], skills: SKILLS[fam].filter(() => chance(r, 0.45)).slice(0, 4) };
         const page = pick(r, WEB_PAGES);
         const mail = FIND.src.apollo && chance(r, 0.6);
