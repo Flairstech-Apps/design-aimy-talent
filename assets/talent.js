@@ -5417,26 +5417,35 @@
   }
   /* The strip, grouped by what it means for you (direction D): what AiMY
      finished, and what it read and left for you, each with its reason. */
+  /* DECLUTTERED (Engy, 12 Nov: "so much elements in the card"). One short
+     line from AiMY; the groups in the order they ask something of you
+     (Waiting on you, Sending soon, Done), each with its count; each chip is
+     the name and one fact, and the reason and time open on hover or focus. */
   function aiDidStrip() {
     const list = waAiDone(), need = connectOn() ? aiNeeds() : [], hold = connectOn() ? waHeld() : [];
     if (!list.length && !need.length && !hold.length) return '';
-    const chip = (c, cls, lab, note, t) => '<button class="t-aido-chip ' + cls + '" type="button"' + goAttr({ on: 'calls', th: c.id }) + '>' +
-      '<b>' + esc(c.name) + '</b><span class="t-aido-l">' + esc(lab) + '</span>' + (note ? '<span class="t-aido-n">' + esc(note) + '</span>' : '') + '<span class="t-aido-t">' + esc(ampm(t)) + '</span></button>';
-    const held = need.filter((x) => x.held).length;
-    const told = held ? (held === need.length ? ', and I told ' + (held === 1 ? 'them' : 'each of them') : ', and I told ' + held + ' of them') + ' you’ll reply today' : '';
-    const hsay = hold.length ? ' <b>' + hold.length + '</b> ' + (hold.length === 1 ? 'is' : 'are') + ' sending soon on ' + (hold.length === 1 ? 'its' : 'their') + ' own, unless you step in.' : '';
-    const say = (list.length
-      ? 'I answered <b>' + plural(list.length, 'WhatsApp reply', 'WhatsApp replies') + '</b> for you: I ' + esc(aiDidLine(list)) + '.' + (need.length ? ' <b>' + need.length + '</b> ' + (need.length === 1 ? 'is' : 'are') + ' waiting on you' + told + '.' : '')
-      : !need.length ? '' : 'I read <b>' + plural(need.length, 'WhatsApp reply', 'WhatsApp replies') + '</b> that ' + (need.length === 1 ? 'needs' : 'need') + ' a person, so I left ' + (need.length === 1 ? 'it' : 'them') + ' for you' + told + '.') + hsay;
+    const chip = (c, cls, lab, tip) => '<button class="t-aido-chip ' + cls + '" type="button"' + goAttr({ on: 'calls', th: c.id }) + '>' +
+      '<b>' + esc(c.name) + '</b><span class="t-aido-l">' + esc(lab) + '</span>' +
+      (tip ? '<span class="t-aido-tip"><span class="sr-only">, </span>' + tip + '</span>' : '') + '</button>';
+    const tipOf = (bits) => bits.filter(Boolean).map((b) => '<span>' + esc(b) + '</span>').join('');
+    const grp = (h, n, chips) => '<div class="t-aido-grp"><span class="t-aido-h">' + h + '<span class="t-aido-c">' + n + '</span></span><div class="t-aido-list">' + chips + '</div></div>';
+    const goes = (x) => ampm(new Date(x.rec.due).toTimeString().slice(0, 5));
+    const say = list.length
+      ? 'I answered <b>' + plural(list.length, 'WhatsApp reply', 'WhatsApp replies') + '</b> for you' + (need.length ? ' and left <b>' + need.length + '</b> that need you' : '') + '.'
+      : need.length ? 'I left <b>' + plural(need.length, 'WhatsApp reply', 'WhatsApp replies') + '</b> that need you.'
+        : 'I have <b>' + plural(hold.length, 'message') + '</b> ready to go on ' + (hold.length === 1 ? 'its' : 'their') + ' own.';
     return '<div class="t-aido" role="status">' +
       '<span class="t-aido-mark">' + mark(14) + '</span>' +
-      '<div class="t-aido-in"><p class="t-aido-say">' + say + ' ' +
-        '<span class="t-aido-rule">Undo is on each thread.</span></p>' +
-        '<div class="t-aido-grps">' + (list.length ? '<div class="t-aido-grp"><span class="t-aido-h">Done</span><div class="t-aido-list">' + list.map((x) => chip(x.c, 'is-ok', aiDid(x), x.rec.note, x.rec.at)).join('') + '</div></div>' : '') +
-        (hold.length ? '<div class="t-aido-grp"><span class="t-aido-h">Sending soon</span><div class="t-aido-list">' + hold.map((x) => '<button class="t-aido-chip is-hold" type="button"' + goAttr({ on: 'calls', th: x.c.id }) + '>' +
-          '<b>' + esc(x.c.name) + '</b><span class="t-aido-l">' + esc(x.rec.label) + '</span><span class="t-aido-n">' + esc(x.rec.note) + '</span>' +
-          '<span class="t-aido-t">goes at ' + esc(ampm(new Date(x.rec.due).toTimeString().slice(0, 5))) + '</span></button>').join('') + '</div></div>' : '') +
-        (need.length ? '<div class="t-aido-grp"><span class="t-aido-h">Waiting on you</span><div class="t-aido-list">' + need.map((x) => chip(x.c, 'is-need', ({ 'Asked about pay': 'Reply about pay', 'Said no': 'Reply to their “no”', '24 hours passed': 'Send a template' })[x.x.hand] || x.x.hand, x.x.note, x.m.time)).join('') + '</div></div>' : '') + '</div>' +
+      '<div class="t-aido-in"><p class="t-aido-say">' + say + ' <span class="t-aido-rule">Undo is on each thread.</span></p>' +
+        '<div class="t-aido-grps">' +
+        (need.length ? grp('Waiting on you', need.length, need.map((x) => chip(x.c, 'is-need',
+          ({ 'Asked about pay': 'Reply about pay', 'Said no': 'Reply to their “no”', '24 hours passed': 'Send a template' })[x.x.hand] || x.x.hand,
+          tipOf([x.x.note && x.x.note.charAt(0).toUpperCase() + x.x.note.slice(1), 'They wrote at ' + ampm(x.m.time)]))).join('')) : '') +
+        (hold.length ? grp('Sending soon', hold.length, hold.map((x) => chip(x.c, 'is-hold', 'goes at ' + goes(x),
+          tipOf([x.rec.label, x.rec.note && x.rec.note.charAt(0).toUpperCase() + x.rec.note.slice(1), 'It goes on its own unless you step in']))).join('')) : '') +
+        (list.length ? grp('Done', list.length, list.map((x) => chip(x.c, 'is-ok', aiDid(x),
+          tipOf([x.rec.note && x.rec.note.charAt(0).toUpperCase() + x.rec.note.slice(1), 'I did it at ' + ampm(x.rec.at)]))).join('')) : '') +
+        '</div>' +
       '</div></div>';
   }
   function waAutoSay(c, ms) {
