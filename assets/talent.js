@@ -909,6 +909,11 @@
     if (pay) { optIn(pay); M(pay, 'in', 0, '13:20', 'Thanks for the update. What is the salary range for this role?'); }
     const says = mine.filter((c) => ['sent', 'client', 'ctech'].indexOf(c.stage) >= 0 && c !== pay && !c.wa)[0];
     if (says) { optIn(says); M(says, 'in', 0, '10:31', 'Thank you for everything, but I have accepted another offer.'); }
+    /* A chat past its 24 hours (Engy, 12 Nov): unanswered for two days, so
+       only an approved template can reopen it, and the recruiter picks it
+       or asks the HR Manager for another. */
+    const quiet = mine.filter((c) => c.stage === 'assess' && !c.wa)[0];
+    if (quiet) { optIn(quiet); M(quiet, 'in', -2, '16:40', 'Hi, I finished the assessment last week. Is there any news on my application?'); }
     /* Two interviews still to book (Outlook, 5 Nov): AiMY books most of
        them under the HR Manager's rule, so without these the seed has
        nobody for a person to book. Taken from interviews booked for a later
@@ -944,7 +949,7 @@
        this cast by first name ("Adham asked about pay"), so nobody else
        shares a cast member's first name. "Adham Fouad" on Candidates read
        as Adham Sabry renamed. Everyone else keeps their surname. */
-    const cast = [tried, asks, booked, arab, pay, says, moves, inner].filter(Boolean);
+    const cast = [tried, asks, booked, arab, pay, says, quiet, moves, inner].filter(Boolean);
     Object.keys(CAST).forEach((k) => { delete CAST[k]; });
     cast.forEach((c) => { CAST[first(c.name)] = 1; });
     const castPid = {}, taken = {}, renamed = {};
@@ -5131,14 +5136,10 @@
       if (hrs) x.hold = waHold(c, r);
       return x;
     }
-    if (!hrs) {
-      const tp = waTplOk()[0];
-      if (!tp) return { hand: '24 hours passed', note: 'no approved template to send' };
-      return { kind: 'tpl', tpl: tp.k, label: 'Template: ' + tp.label, note: 'the 24 hours had passed', text: waFill(tp.text, c),
-        checks: [{ ok: 1, t: 'Read ' + esc(f) + '’s message: <b>“' + esc(m.text.length > 60 ? m.text.slice(0, 57) + '…' : m.text) + '”</b>' },
-          { ok: 1, t: 'The 24-hour window: <b>closed</b>, so only an approved template can go' }, { ok: 1, t: 'Picked the approved template: <b>' + esc(tp.label) + '</b>' }],
-        why: 'More than 24 hours had passed, so I reopened the chat with the approved <b>“' + esc(tp.label) + '”</b> template. When ' + esc(f) + ' replies, you can answer them in your own words.' };
-    }
+    /* After 24 hours the recruiter picks the template (Engy, 12 Nov): I
+       leave it in Waiting on you, and the thread lists the approved ones
+       with Ask for one beside them. */
+    if (!hrs) return { hand: '24 hours passed', note: waTplOk().length ? 'the 24 hours have passed' : 'no approved template yet' };
     const iv = r.move ? DB.ivs.filter((v) => v.cand === c.id && v.status === 'booked' && v.day >= 0).sort((a, b) => a.day - b.day)[0] : null;
     if (iv) {
       const by = iv.by.split(',')[0], mineIv = by === me().name, bf = mineIv ? 'you' : first(by), alt = freeSlots(c, 8).filter((x) => x.d !== iv.day).slice(0, 2);
