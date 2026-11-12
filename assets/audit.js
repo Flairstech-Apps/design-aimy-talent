@@ -89,6 +89,7 @@ const MARKERS = {
   'crit-ed': 'which criterion a Find box rewrites, read by the input listener',
   'find-reqq': 'the requisition picker’s search box on Find, read by the input listener',
   'menu-q': 'the search box inside a picker menu, read by the input and keydown listeners',
+  due: 'the held WhatsApp template’s countdown (text and bar), updated each second by waTick',
 };
 
 /* ── 1 & 2. CONTROLS AND HANDLERS, BOTH DIRECTIONS ───────────────────────── */

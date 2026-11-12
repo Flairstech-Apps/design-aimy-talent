@@ -2507,6 +2507,15 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-wa-brief { border-color: rgba(var(--warn-rgb, 214, 140, 0), 0.4); }
 .t-wa-brief .t-acts { gap: 6px; flex-wrap: wrap; }
 
+/* ══ HOLDING IT FOR YOU (Engy, 11 Nov; back 12 Nov for templates) ═════════
+   A template that reopens a chat waits, written, with a countdown. */
+.t-wa-m.is-out.is-ai.is-held { border-style: dashed; background: none; border-color: rgba(var(--accent-rgb), 0.6); }
+.t-wa-m.is-held .t-wa-t span { font-variant-numeric: tabular-nums; }
+.t-wa-held .t-acts { gap: 6px; flex-wrap: wrap; }
+.t-wa-bar { height: 4px; border-radius: 999px; overflow: hidden; background: rgba(var(--accent-rgb), 0.16); }
+.t-wa-bar span { display: block; height: 100%; background: linear-gradient(90deg, rgba(var(--accent-rgb), 0.9), rgba(0, 102, 255, 0.7)); transform-origin: left; transition: transform 1s linear; }
+@media (prefers-reduced-motion: reduce) { .t-wa-bar span { transition: none; } }
+
 /* ══ ASKING THE COLLEAGUE (Engy, 11 Nov) ══════════════════════════════════
    AiMY asks the interviewer whose time it is; the prototype answers as them. */
 .t-wa-as { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 12px; border: 1px dashed rgba(var(--accent-rgb), 0.3); }
@@ -2514,6 +2523,7 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-wa-as .t-acts { gap: 6px; flex-wrap: wrap; }
 .t-wa-let { display: flex; align-items: center; gap: 8px; font-size: var(--fs-xs); color: var(--ink-secondary); cursor: pointer; }
 .t-wa-let input { accent-color: var(--accent); }
+.t-aido-chip.is-hold .t-aido-l { color: var(--d50); }
 .t-ladder-hold { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 10px 12px; border-radius: 10px;
   font-size: var(--fs-xs); color: var(--d100); background: rgba(var(--accent-rgb), 0.06); }
 /* The strip's groups side by side on one line, wrapping when narrow, and
