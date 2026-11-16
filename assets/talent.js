@@ -9527,7 +9527,7 @@
     : t.kind === 'book' ? bookTurnHtml(t) : t.kind === 'wu' ? wuTurnHtml(t) : t.kind === 'draft' ? draftTurnHtml(t) : t.kind === 'logsay' ? logSayHtml(t) : '');
   const turnHtml = (t) => t.who === 'you'
     ? '<div class="chat-msg user">' + msgAvatar('you') + '<div class="msg-bubble">' + t.html + '</div></div>'
-    : '<div class="chat-msg aimy">' + msgAvatar('aimy') + '<div class="msg-bubble">' + turnBody(t) +
+    : '<div class="chat-msg aimy"><div class="msg-bubble">' + turnBody(t) +
         (t.acts && t.acts.length ? '<p class="t-acts">' + t.acts.map(actBtn).join('') + '</p>' : '') + '</div></div>';
   function paintThread() {
     const host = byId('overlayThread'), ch = chatNow();
@@ -9538,7 +9538,7 @@
         '<button class="overlay-sugg-chip" type="button" data-ask="' + esc(q) + '">' + esc(q) + '</button>').join('') + '</div>';
     } else {
       host.innerHTML = turns.map(turnHtml).join('') + (THINK
-        ? turnHtml({ who: 'you', html: esc(THINK) }) + '<div class="chat-msg aimy is-thinking">' + msgAvatar('aimy') +
+        ? turnHtml({ who: 'you', html: esc(THINK) }) + '<div class="chat-msg aimy is-thinking">' +
           '<div class="msg-bubble"><span class="t-shimmer" data-text="Reading the requisitions">Reading the requisitions</span></div></div>' : '');
       if (turns.length > THREAD_SEEN && host.lastElementChild) host.lastElementChild.classList.add('b-arrive');
       THREAD_SEEN = turns.length;

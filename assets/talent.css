@@ -2607,3 +2607,36 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-wtpl-ask b { color: var(--d50); }
 .t-wa-tplmore { margin-top: 2px; }
 @media (max-width: 560px) { .t-wtpl { flex-direction: column; } }
+
+/* ══ CHAT BUBBLES AS THE LIBRARY (Engy, 16 Nov) ═══════════════════════════
+   AiMY UI's Message (ai.css .aimy-msg-bubble): 16px text at 400, 12px
+   corners with the square one top on the speaker's side, 12px by 16px
+   inside. AiMY's turn has no mark and takes 95% of the thread on the
+   see-through ground; yours is up to 540px on the accent's dim ground with
+   a 22% accent edge, beside your 28px round face. While AiMY thinks there is
+   no bubble yet, only the think-mark. The WhatsApp thread wears the same
+   bubble: theirs on the see-through ground, yours on the accent's. */
+.chat-msg { gap: 12px; max-width: none; padding-inline: 4px; }
+.chat-msg.user { margin-left: 0; }
+.chat-msg .msg-avatar.user-av { width: 28px; height: 28px; margin-top: 2px; font-size: 12px; }
+.msg-bubble, .t-wa-m {
+  padding: 0.75rem 1rem; border: 1px solid transparent; border-radius: 0.75rem;
+  font-size: 1rem; font-weight: 400; line-height: 1.5;
+  transition: background-color var(--t-base) var(--ease-out, ease-out), border-color var(--t-base) var(--ease-out, ease-out);
+}
+.chat-msg.aimy .msg-bubble, .t-wa-m.is-in {
+  background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07);
+  color: var(--d50); border-radius: 0.75rem; border-top-left-radius: 0.25rem;
+}
+.chat-msg.user .msg-bubble, .t-wa-m.is-out {
+  background: var(--accent-dim); border-color: rgba(var(--accent-rgb),0.22);
+  color: var(--d100); border-radius: 0.75rem; border-top-right-radius: 0.25rem;
+}
+:root[data-theme="light"] .chat-msg.aimy .msg-bubble,
+:root[data-theme="light"] .t-wa-m.is-in { background: #edf2f8; border-color: rgba(16,24,40,0.10); }
+.chat-msg.aimy .msg-bubble { flex: 0 1 95%; min-width: 0; max-width: none; }
+.chat-msg.user .msg-bubble { max-width: 33.75rem; min-width: 0; }
+.chat-msg.aimy.is-thinking .msg-bubble { background: none; border-color: transparent; padding-inline: 0; }
+.t-wa-text { font-size: 1rem; line-height: 1.5; color: inherit; }
+.t-wa-m.is-out .t-wa-text { color: var(--d100); }
+@media (prefers-reduced-motion: reduce) { .msg-bubble, .t-wa-m { transition: none; } }
