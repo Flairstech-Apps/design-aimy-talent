@@ -459,6 +459,30 @@
   /* ── Interview templates ── the agenda the HR Manager sets for each kind
      of interview (New Operations list). AiMY adds the questions the CV is
      silent on to whichever template is used. */
+  /* THE VIRTUAL ASSESSMENT (AIMY-2942): a 30-minute language session AiMY
+     runs by voice and chat, in four phases the candidate cannot skip:
+     Speaking (AiMY reads a passage), Comprehension (questions on it),
+     Listening (a recorded exchange, then questions) and Writing (AiMY says a
+     sentence; they write it down). `questions` is the scored part, in order,
+     so results, per-question rates and rewording work as for any other. */
+  ASMT_SEED.push({ id: 'a5', title: 'English language session', kind: 'session', fam: 'support', pass: 70, mins: 30, lang: 'English', level: 'B2', feedback: true,
+    phases: [
+      { k: 'speak', label: 'Speaking', intro: 'First, I will read you a short message a support agent sends a customer. Just listen; the questions come next.',
+        items: [{ say: 'Hello, and thank you for writing to Northwind support. Your order left our warehouse on Monday, but the courier marked it as delayed because of the storm. It should reach you by Thursday. If it has not arrived by then, I will send a replacement the same day, at no cost to you.' }] },
+      { k: 'comp', label: 'Comprehension', intro: 'Now a few questions on what I just said. Answer out loud or type it.',
+        items: [{ qi: 0 }, { qi: 1 }] },
+      { k: 'listen', label: 'Listening', intro: 'Next, play the recording of a call. You can play it twice. Then I will ask about it.',
+        items: [{ audio: 'Customer: Hi, I was charged twice for my subscription this month. Agent: I am sorry about that. I can see two payments of forty-nine dollars. I will refund the second one now. It takes three to five working days to reach your card.' }, { qi: 2 }, { qi: 3 }] },
+      { k: 'write', label: 'Writing', intro: 'Last part. I will say one sentence. Write it down exactly as you hear it.',
+        items: [{ qi: 4 }] },
+    ],
+    questions: [
+      { q: 'When did the order leave the warehouse?', type: 'choice', options: ['On Monday', 'On Thursday', 'It has not left yet', 'Today'], right: 0, fails: 0.12 },
+      { q: 'In your own words: what will the agent do if the order has not arrived by Thursday?', type: 'open', points: ['sends a replacement', 'the same day', 'at no cost'], fails: 0.24 },
+      { q: 'How much was the customer charged, each time?', type: 'choice', options: ['Forty-nine dollars', 'Ninety-eight dollars', 'Nineteen dollars', 'Four dollars ninety'], right: 0, fails: 0.18 },
+      { q: 'How long will the refund take to reach the card?', type: 'open', points: ['three to five', 'working days'], fails: 0.21 },
+      { q: 'Write the sentence AiMY said.', type: 'write', dictate: 'Your refund will reach your account within five working days.', points: ['every word', 'spelling'], fails: 0.31 },
+    ] });
   const IVTPL_SEED = [
     { id: 'tp-hr',   kind: 'hr',     title: 'HR interview',                items: ['Motivation and why this role', 'Notice period and salary expectation', 'Shift and location fit', 'Questions they have for us'] },
     { id: 'tp-tech', kind: 'tech',   title: 'Technical interview',         items: ['Walk through a recent piece of work', 'One live problem from the role', 'The must-haves the CV is silent on', 'How they learn something new'] },
@@ -1166,7 +1190,19 @@
         DB.offers.push(offer);
       }
     });
+    /* AIMY-2942: one waiting support test becomes the English language
+       session, so a candidate always has one to take. No draw is added, so
+       the rest of the corpus is untouched. */
+    const sv = DB.sends.filter((s) => s.status === 'sent' && s.asmt === 'a1')[0];
+    if (sv) sv.asmt = 'a5';
+    else {
+      /* None waiting on that test: send it to the first support candidate at the assessment. */
+      const c = DB.cands.filter((x) => !x.exit && x.stage === 'assess' && DB.reqById[x.req].fam === 'support')[0] || DB.cands.filter((x) => !x.exit && x.stage === 'assess')[0];
+      if (c) DB.sends.push({ id: 's' + (++sn), asmt: 'a5', cand: c.id, day: -1, status: 'sent', answers: null, score: null, doneDay: null });
+    }
   }
+  /* The send the prototype panel opens as the candidate. */
+  const sessionSend = () => DB.sends.filter((s) => s.asmt === 'a5')[0] || null;
 
   /* ── The loop's own records (UI/UX plan, waves 1 to 3) ── drawn from a
      second seed, so the corpus above draws exactly what it always drew and
@@ -1846,7 +1882,7 @@
      `approve` are the screens people outside the recruiting team reach from a
      link: the careers page, a candidate's own profile, an assessment, an
      interviewer's debrief and an approver's offer packet. */
-  const KEYS = ['as', 'on', 'req', 'cand', 'asmt', 'acc', 'q', 'p', 'list', 'find', 'edit', 'th', 'lg', 'apply', 'me', 'take', 'debrief', 'approve', 'by', 'src', 'period', 'account', 'rq', 'day', 'st', 'ch'];
+  const KEYS = ['as', 'on', 'req', 'cand', 'asmt', 'acc', 'q', 'p', 'list', 'find', 'edit', 'th', 'lg', 'apply', 'me', 'take', 'debrief', 'approve', 'by', 'src', 'period', 'account', 'pos', 'rec', 'rq', 'day', 'st', 'ch'];
   const OUTSIDE = ['apply', 'me', 'take', 'debrief', 'approve'];
   const outside = () => OUTSIDE.some((k) => !!S[k]);
   function parse() {
@@ -1942,7 +1978,7 @@
      in bold, the figures behind it as pills, and one way in. Changing page
      closes the old reading while the new one opens. It replaced QA's open
      side nav (4 Nov) and its collapsed form (5 Nov). ── */
-  const TAB_ICO = { '': 'home', cands: 'users', reqs: 'req', calls: 'msg', diary: 'cal', asmts: 'goal', templates: 'doc', reports: 'bars' };
+  const TAB_ICO = { '': 'home', search: 'find', team: 'listc', cands: 'users', reqs: 'req', calls: 'msg', diary: 'cal', asmts: 'goal', templates: 'doc', reports: 'bars' };
   /* Every reading stays in the rail, shut unless you are on its page, so a
      change of page can close one while the next opens (grid rows 0fr to
      1fr). The rail is painted again on each change, so the row you left is
@@ -2108,7 +2144,7 @@
      the one way round: every tab is a rail entry with its count, and what a
      rail card used to say (the next interview, a missed call) is the line
      under its entry. The page keeps its name as a plain heading. ── */
-  const TAB_NAME = { '': 'Today', cands: 'Candidates', reqs: 'Requisitions', calls: 'Interactions', diary: 'Diary', asmts: 'Assessments', templates: 'Templates', reports: 'Reports' };
+  const TAB_NAME = { '': 'Today', search: 'Recruiters View', team: 'Team pipeline', cands: 'Candidates', reqs: 'Requisitions', calls: 'Interactions', diary: 'Diary', asmts: 'Assessments', templates: 'Templates', reports: 'Reports' };
   function tabsFor() {
     const open = myOpen().length;
     /* Each desk's row is the work that desk does (Sales: a surface belongs
@@ -2120,8 +2156,9 @@
       reqs: open,
       calls: isRec() ? toCall().length : null,
     };
-    const row = isRec() ? ['', 'cands', 'reqs', 'calls', 'asmts', 'reports'] : isHM() ? ['', 'reqs', 'reports'] : isBU() ? ['', 'reqs', 'reports']
-      : isHR() ? ['', 'cands', 'reqs', 'asmts', 'templates', 'reports'] : ['', 'reqs'];
+    /* The Recruiters View (AIMY-2926) sits next to Today: lists, work and search. */
+    const row = isRec() ? ['', 'search', 'cands', 'reqs', 'calls', 'asmts', 'reports'] : isHM() ? ['', 'reqs', 'reports'] : isBU() ? ['', 'reqs', 'reports']
+      : isHR() ? ['', 'search', 'cands', 'reqs', 'team', 'asmts', 'templates', 'reports'] : ['', 'reqs'];
     if (isHM()) row.splice(2, 0, 'asmts');
     return row.map((k) => ({ k: k, label: TAB_NAME[k], n: n[k] }));
   }
@@ -2989,8 +3026,12 @@
         const cut = txt.indexOf('. ') + 1;
         const lead = !txt ? '' : '<span><b>' + esc(cut ? txt.slice(0, cut) : txt) + '</b>' + (cut ? esc(txt.slice(cut)) : '') + '</span>';
         return txt || ndg ? '<p class="b-qcard-where t-cnow">' + lead + ndg + '</p>' : '';
-      })() + '</div>' +
+      })() +
+      /* How fresh AiMY's read is (AIMY-2900): checked in an interview, or the CV's date. */
+      (isClient() ? '' : (function () { const fr = freshSay(c); return '<p class="b-qcard-where t-fresh is-' + fr.tone + '"><span class="b-fact">' + svg('clock') + '<span>' + esc(fr.t) + '</span></span></p>'; })()) +
+      '</div>' +
       whySay(c) +
+      (isClient() || UI.read ? '' : gapLines(c) + whyMore(c)) +
       (c.stage === 'sent' || (isClient() && c.exit === 'clientno') ? sendout(c) : '') +
       /* The track sits last, on the card's floor above the foot, so it is at
          the same height on every card in a row (Engy, 6 Nov). */
@@ -3248,6 +3289,17 @@
      the line of the CV under each. */
   /* `tagOnly` gives the verdict's Tag alone, for beside the name (5 Nov). */
   function whySay(c, withFrom, tagOnly) {
+    /* WHILE AiMY READS, AND WHEN IT CANNOT (AIMY-2900's loading and error
+       states). The prototype panel sets which one the cards show; the
+       profile (withFrom) always has the full read. */
+    const rs = !withFrom && UI.read;
+    if (rs === 'loading') return tagOnly ? tag('Reading', 'neutral') : '<div class="b-aimy t-fit t-read-wait" role="status" aria-live="polite">' +
+      '<svg class="b-aimy-mark" width="13" height="15" viewBox="0 0 18 20" aria-hidden="true"><use href="#aimy-logo-small"/></svg>' +
+      '<span class="b-aimy-say"><span class="t-shimmer" data-text="Reading the CV against the must-haves…">Reading the CV against the must-haves…</span>' +
+      '<span class="t-skel" aria-hidden="true"></span><span class="t-skel is-short" aria-hidden="true"></span></span></div>';
+    if (rs === 'error') return tagOnly ? '' : '<div class="b-aimy t-fit t-read-err" role="status">' + svg('warnc', 14) +
+      '<span class="b-aimy-say"><b>I couldn’t read ' + esc(first(c.name)) + '’s CV.</b> It is a scanned image with no text in it. The rest of the card is right; only my read is missing. ' +
+      '<button class="s-inline-btn" type="button" data-read-retry>Try again</button></span></div>';
     const must = reqOf(c).must || [], f = first(c.name);
     /* Mid-sentence, a must-have keeps its capital when it starts with a
        name (German, NetSuite, SQL); otherwise it goes lower case. */
@@ -3334,6 +3386,57 @@
         : '<span class="t-why-none">Nothing on the CV shows a must-have yet.</span>') +
       (unk ? '<span class="t-why-unk">' + svg('qc', 12) + plural(unk, 'must-have') + ' not known yet, not missing</span>' : '') +
     '</div>';
+  }
+  /* ── THE CARD'S REASONING, FINISHED (AIMY-2900) ──────────────────────────
+     The ticket's three tiers, each said in words so colour is never alone:
+     met (a check), partly or not known yet (a dashed ring, a question), and
+     flags (a cross): an interview that found less than the CV says, or
+     fewer years than the must-have asks. "Not known" stays not known; it is
+     never turned into a flag (29 Oct: unknown is not missing). */
+  function lastChecked(c) {
+    return verified(c).reduce((d, x) => x.seen.reduce((e, s) => (e == null || s.day > e ? s.day : e), d), null);
+  }
+  /* How fresh the read is: the latest interview that rated a must-have, or
+     the CV's own date when none has. A CV over six months old says so. */
+  function freshSay(c) {
+    const last = lastChecked(c);
+    if (last != null) return { t: 'Checked in an interview ' + sayWhen(last), tone: 'ok' };
+    const cv = c.applied != null ? c.applied : null;
+    if (cv != null && cv < -180) return { t: 'CV from ' + sayDay(cv) + ', may be out of date', tone: 'warn' };
+    return { t: 'From the CV' + (cv != null ? ' sent ' + sayWhen(cv) : '') + ', not checked in an interview yet', tone: 'neutral' };
+  }
+  function gapsOf(c) {
+    const out = [];
+    verified(c).forEach((x, i) => {
+      if (x.state === 'differs') out.push('the ' + lower(STAGE[x.seen[0].stage].label) + ' found less on “' + x.must + '” than the CV says');
+      else if (c.ev[i] === 'm' && yearsAsked(x.must) > c.years) out.push(plural(c.years, 'year') + ' in all, where “' + x.must + '” asks for ' + yearsAsked(x.must) + '+');
+    });
+    return out;
+  }
+  function gapLines(c) {
+    return gapsOf(c).map((g) => '<p class="t-why-gap">' + svg('x', 14) + '<span><b>Flag</b> · ' + esc(capFirst(g)) + '.</span></p>').join('');
+  }
+  /* Each must-have, opened in place on the card (the ticket's expandable
+     detail, without leaving the results). */
+  const WHY_ROW = {
+    verified: ['okc', 'Confirmed', 'is-ok'], m: ['check', 'On the CV', 'is-ok'], p: ['ring', 'Partly', 'is-part'],
+    differs: ['x', 'Flag', 'is-err'], n: ['qc', 'Not known yet', 'is-unk'],
+  };
+  function whyMore(c) {
+    const open = !!(UI.whyOpen || {})[c.id];
+    const btn = '<button class="s-inline-btn t-why-more" type="button" data-why-more="' + c.id + '" aria-expanded="' + open + '">' +
+      (open ? 'Hide each must-have' : 'Each must-have') + svg(open ? 'up' : 'down', 14) + '</button>';
+    if (!open) return btn;
+    const ev = evNow(c);
+    return btn + '<ul class="t-why-list" aria-label="Each must-have for ' + esc(c.name) + '">' + verified(c).map((x, i) => {
+      const k = x.state === 'verified' ? 'verified' : x.state === 'differs' ? 'differs' : ev[i];
+      const r = WHY_ROW[k], s = x.seen[0];
+      const on = k === 'verified' ? STAGE[s.stage].label + ' with ' + s.by + ', ' + sayWhen(s.day)
+        : k === 'differs' ? 'CV says yes; the ' + lower(STAGE[s.stage].label) + ' found less, ' + sayWhen(s.day)
+        : k === 'n' ? 'The CV is silent on it. Ask them, or check it in the interview.'
+        : cvSays(c, x.must) + (yearsAsked(x.must) > c.years ? '; ' + plural(c.years, 'year') + ' in all' : '');
+      return '<li class="t-why-row ' + r[2] + '">' + svg(r[0], 14) + '<span class="t-why-st">' + r[1] + '</span><span class="t-why-m">' + esc(x.must) + '</span><span class="t-why-on">' + esc(on) + '</span></li>';
+    }).join('') + '</ul>';
   }
   function fitCard(c, v) {
     const q = reqOf(c), works = isRec() || isHR(), asks = c.asks || [];
@@ -7216,7 +7319,7 @@
     /* Everyone in the pool for the role's family, read against the needs; the
        strongest come back first (9 Nov: it was the seven most recent). */
     if (FIND.src.pool) poolOf(fam).forEach((c) => {
-      fromPerson(c, 'pool', { pid: c.pid, was: reqOf(c).title + ', ' + EXIT[c.exit].label.toLowerCase(), consent: c.exit === 'withdrew' ? 'Withdrew last time. Ask before calling.' : 'Applied before and agreed to hear about other roles.' });
+      fromPerson(c, 'pool', { pid: c.pid, cvDay: c.applied, was: reqOf(c).title + ', ' + EXIT[c.exit].label.toLowerCase(), consent: c.exit === 'withdrew' ? 'Withdrew last time. Ask before calling.' : 'Applied before and agreed to hear about other roles.' });
     });
     const make1 = (n) => {
       for (let i = 0; i < n; i++) {
@@ -7387,6 +7490,12 @@
       '<div class="b-qcard-top"><span class="tc-title s-card-title">' + esc(x.name) + '</span>' + shortRead(x, d.crit, true) + '</div>' +
       '<p class="tc-summary b-qcard-role">' + esc(x.at) + '</p>' +
       '<p class="b-qcard-where">' + fact('job', plural(x.years, 'year')) + fact('pin', x.place) + fact('lang', x.langs.join(', ')) + '</p>' +
+      /* How fresh the read is (AIMY-2900), for the pool and the web alike. */
+      (function () {
+        const t = x.src === 'pool' ? (x.cvDay != null ? (x.cvDay < -180 ? 'CV from ' + sayDay(x.cvDay) + ', may be out of date' : 'CV from ' + sayWhen(x.cvDay) + (/^In progress/.test(x.consent || '') ? ', when they applied' : ', when they applied before')) : '')
+          : x.seen != null ? 'Public page read ' + sayWhen(x.seen) : '';
+        return t ? '<p class="b-qcard-where t-fresh' + (x.cvDay != null && x.cvDay < -180 ? ' is-warn' : '') + '"><span class="b-fact">' + svg('clock') + '<span>' + esc(t) + '</span></span></p>' : '';
+      })() +
       shortRead(x, d.crit) +
       '<p class="b-vfoot">' + esc(x.consent) + (x.email ? (x.emailFrom ? ' Work email from ' + esc(x.emailFrom) + '.' : ' Email on file.') : '') + '</p>' +
       (saved ? '' : '<div class="tc-gov b-qcard-foot"><span></span><button class="filter-chip' + (keep ? ' active' : '') + '" type="button" data-keep="' + x.i + '" aria-pressed="' + keep + '">' + (keep ? svg('check', 12) + 'Keep' : 'Keep') + '</button></div>') +
@@ -7747,7 +7856,7 @@
      Build them by hand or with AiMY, share a link, AiMY scores the answers,
      and the questions everyone fails come back as something to fix (New
      Operations list: "people have always been failing Q5"). */
-  const ASMT_KIND = { quiz: 'Questionnaire', live: 'Live with the AiMY agent' };
+  const ASMT_KIND = { quiz: 'Questionnaire', live: 'Live with the AiMY agent', session: 'Language session with AiMY' };
   /* A LANGUAGE CHECK GIVES A LEVEL (Assessments, 29 Oct; R4). Clients ask
      for "German at C1", so the result is said on the CEFR scale the
      requisition uses, read off the spoken answers, and the pass is the
@@ -7767,6 +7876,7 @@
     fast: (f, a) => 'finished in ' + plural(f.mins, 'minute') + ' of the ' + a.mins + ' it usually takes',
     away: (f) => 'left the test page ' + f.n + ' times',
     voice: (f) => 'a second voice was heard on Q' + (f.q + 1),
+    read: () => 'read the listening recording as text instead of playing it',
   };
   const flagsOf = (a, x) => (x.flags || []).map((f) => FLAG_SAY[f.k](f, a));
   /* Waiting on a person: they asked for one to score it, or for a review. */
@@ -8039,7 +8149,10 @@
     if (!s) return '<div class="t-out">' + outsideHead('Assessment', 'FlairsTech careers') + '<p class="s-none">This link has expired.</p></div>';
     const a = asmtOf(s.asmt), c = DB.byId[s.cand];
     if (s.status === 'done') return '<div class="t-out">' + outsideHead('Assessment', 'FlairsTech careers') + '<section class="t-out-card t-done">' + successCheck() +
-      '<h1 class="t-out-h">Thank you, ' + esc(first(c.name)) + '. It is in.</h1><p>The recruiting team will be in touch about next steps. ' +
+      '<h1 class="t-out-h">' + (s.timedOut ? 'Time is up, ' + esc(first(c.name)) + '. What you answered is in.' : 'Thank you, ' + esc(first(c.name)) + '. It is in.') + '</h1>' +
+      (a.kind === 'session' ? '<p>' + (s.timedOut ? 'The ' + a.mins + ' minutes ran out during ' + esc(lower(s.stoppedAt || 'the last part')) + '. Everything you answered before that is scored; nothing counts against you for the parts you did not reach.'
+        : 'All ' + a.phases.length + ' parts are in: ' + esc(listSay(a.phases.map((p) => lower(p.label)))) + '.') + '</p>' : '') +
+      '<p>The recruiting team will be in touch about next steps. ' +
         (s.consent === 'person' ? 'A person scores it, as you asked.' : 'AiMY scored it and a person reads every result.') + (a.feedback ? ' You will get a short note on how you did within five days.' : '') + '</p>' +
         (s.consent === 'ai' && !s.review ? '<p class="t-acts"><button class="btn btn-ghost btn-sm" type="button" data-take-review="' + s.id + '">Ask a person to look at it again</button></p>'
           : s.review === 'asked' ? '<p class="b-vfoot">You asked for a person to look again. They will.</p>' : '') + '</section></div>';
@@ -8051,7 +8164,8 @@
       '<section class="t-out-card">' +
         '<p class="t-out-kicker">Before you start · about ' + a.mins + ' minutes</p>' +
         '<h1 class="t-out-h">' + esc(a.title) + '</h1>' +
-        '<p>For ' + esc(reqOf(c).title) + '. ' + (a.kind === 'live' ? 'AiMY asks the questions; you answer out loud or typed, on a phone or a computer.' : 'Answer every question; there is no trick to it.') +
+        '<p>For ' + esc(reqOf(c).title) + '. ' + (a.kind === 'session' ? 'AiMY runs it by voice, in ' + plural((a.phases || []).length, 'part') + ': it speaks, and you answer out loud or typed, on a phone or a computer.'
+          : a.kind === 'live' ? 'AiMY asks the questions; you answer out loud or typed, on a phone or a computer.' : 'Answer every question; there is no trick to it.') +
           (a.practice ? ' A practice question comes first and is not scored.' : '') + '</p>' +
         '<div class="t-consent"><p class="t-consent-h">How your answers are scored</p>' +
           '<p>AiMY, our AI, scores each answer against what a good answer covers' + (a.lang ? ', and gives your ' + esc(a.lang) + ' a level from A1 to C2' : '') + '. A person at FlairsTech reads every result and makes the decision; AiMY never decides on its own.</p>' +
@@ -8060,7 +8174,8 @@
         '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-take-consent="ai">Start: AiMY scores it, a person decides</button>' +
           '<button class="btn btn-ghost btn-sm" type="button" data-take-consent="person">Start: a person scores it</button></p>' +
       '</section></div>';
-    if (a.kind === 'live') return liveTake(s, a, c);
+    if (a.kind === 'session' && a.phases) return sessionTake(s, a, c);
+    if (a.kind === 'live' || a.kind === 'session') return liveTake(s, a, c);
     return '<div class="t-out">' + outsideHead('Assessment', 'FlairsTech careers') +
       '<section class="t-out-card">' +
         '<p class="t-out-kicker">' + esc(ASMT_KIND[a.kind]) + ' · about ' + a.mins + ' minutes</p>' +
@@ -8189,6 +8304,356 @@
       consent: TAKE.consent, flags: flags, review: null, reviewed: null });
     note(c, 'asmt', 'Finished the ' + a.title + ' assessment: ' + scoreSay(a, { score: score }) + '.' + (TAKE.consent === 'person' ? ' Asked for a person to score it.' : ''));
     TAKE = null;
+    paint();
+  }
+
+  /* ══ THE VIRTUAL ASSESSMENT SESSION (AIMY-2942) ═══════════════════════════
+     A 30-minute language session that AiMY runs by voice and chat. It is a
+     run of beats, built from the assessment's phases: a divider for each
+     part, AiMY's lines (spoken, with the words appearing as they are said),
+     a recording to play, a question to answer, a sentence to write, the end.
+     AiMY sets the pace; the candidate cannot skip ahead. Everything AiMY
+     says is on screen as text, and every state is said in words. */
+  const SESS_ICO = { speak: 'msg', comp: 'listc', listen: 'play', write: 'pen' };
+  const SESS_SAY = { speak: 'I read a short passage; you listen.', comp: 'Questions on the passage, answered out loud or typed.',
+    listen: 'A recorded call, played twice at most, then questions on it.', write: 'I say one sentence; you write it down.' };
+  const sWords = (t) => String(t || '').trim().split(/\s+/).filter(Boolean);
+  const clockSay = (n) => Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0');
+  function sessBeats(a) {
+    const out = [];
+    a.phases.forEach((p, pi) => {
+      out.push({ k: 'div', pi: pi });
+      out.push({ k: 'say', pi: pi, text: p.intro });
+      p.items.forEach((it) => {
+        if (it.say) out.push({ k: 'say', pi: pi, text: it.say, passage: true });
+        if (it.audio) out.push({ k: 'audio', pi: pi, text: it.audio });
+        if (it.qi != null) out.push({ k: a.questions[it.qi].type === 'write' ? 'write' : 'ask', pi: pi, qi: it.qi });
+      });
+    });
+    out.push({ k: 'end', pi: a.phases.length - 1 });
+    return out;
+  }
+  const sessV = () => (TAKE && TAKE.v) || null;
+  const sessSend0 = () => DB.sends.filter((x) => TAKE && x.id === TAKE.id)[0];
+  const sessAsmt = () => asmtOf(sessSend0().asmt);
+  function sessLeft(a) {
+    const V = sessV();
+    if (!V || !V.t0) return a.mins * 60;
+    return Math.max(0, Math.round(a.mins * 60 - ((V.pausedAt || Date.now()) - V.t0) / 1000));
+  }
+  /* Before the first word: the four parts, a microphone test, a sound test,
+     and no camera. The timer starts with Start, not before. */
+  function sessPre(a, c, V) {
+    const micSay = {
+      ok: ['okc', 'Your microphone works. You can answer out loud.', 'is-ok'],
+      nosr: ['warnc', 'Your microphone works, but this browser cannot turn speech into text. Type your answers, or open the link in Chrome, Edge or Safari.', 'is-warn'],
+      denied: ['warnc', 'The microphone was blocked. Allow it from the browser’s address bar, or type your answers; typing counts the same.', 'is-warn'],
+      none: ['warnc', 'I could not find a microphone. You can still take it: type your answers; typing counts the same.', 'is-warn'],
+    }[V.mic];
+    return '<section class="t-out-card">' +
+      '<p class="t-out-kicker">Before we begin · ' + a.mins + ' minutes · ' + a.phases.length + ' parts</p>' +
+      '<h1 class="t-out-h">' + esc(a.title) + '</h1>' +
+      '<p>For ' + esc(reqOf(c).title) + '. I run this one by voice: I speak, and you answer out loud or typed. The parts come in order, and each starts when the one before it ends.</p>' +
+      '<ol class="t-sess-plan">' + a.phases.map((p, i) => '<li>' + svg(SESS_ICO[p.k], 16) + '<span><b>' + (i + 1) + '. ' + esc(p.label) + '</b><span>' + esc(SESS_SAY[p.k]) + '</span></span></li>').join('') + '</ol>' +
+      '<div class="t-sess-checks">' +
+        '<div class="t-sess-check"><span class="t-sess-check-h">' + svg('mic', 16) + '<b>Microphone</b></span>' +
+          (micSay ? '<p class="t-sess-check-say ' + micSay[2] + '">' + svg(micSay[0], 14) + '<span>' + micSay[1] + '</span></p>'
+            : '<p class="t-sess-check-say">Press Test, and allow the microphone when the browser asks. Nothing is recorded before you start.</p>') +
+          '<button class="btn btn-ghost btn-sm" type="button" data-sess-mictest>' + (V.mic ? 'Test again' : 'Test my microphone') + '</button></div>' +
+        '<div class="t-sess-check"><span class="t-sess-check-h">' + svg('play', 16) + '<b>Sound</b></span>' +
+          (V.heard ? '<p class="t-sess-check-say is-ok">' + svg('okc', 14) + '<span>You played the test sound. If you heard me, you are ready.</span></p>'
+            : '<p class="t-sess-check-say">Turn your volume up, and play a test sound.</p>') +
+          '<button class="btn btn-ghost btn-sm" type="button" data-sess-sound>Play a test sound</button></div>' +
+        '<div class="t-sess-check"><span class="t-sess-check-h">' + svg('videooff', 16) + '<b>No camera</b></span>' +
+          '<p class="t-sess-check-say">The camera stays off. Find a quiet place; the ' + a.mins + '-minute timer starts when you press Start.</p></div>' +
+      '</div>' +
+      '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-sess-start>Start the session</button></p>' +
+    '</section>';
+  }
+  /* A recording or a sentence to play: two plays at most, its progress, and
+     the words for anyone who cannot play sound (said in the result). */
+  function sessAudio(V, i, text, label) {
+    const pl = V.plays[i] || 0, playing = V.playing === i, read = V.read && V.read[i];
+    return '<div class="t-sess-audio' + (playing ? ' is-playing' : '') + '">' +
+        '<button class="t-sess-play" type="button" data-sess-play="' + i + '"' + (pl >= 2 || playing || V.net === 'lost' ? ' disabled' : '') + ' aria-label="' + esc(playing ? 'Playing' : label) + '">' + svg(playing ? 'pause' : 'play', 16) + '</button>' +
+        '<span class="t-sess-track" aria-hidden="true"><span class="t-sess-fill" id="sessBar' + i + '" style="width:' + (playing ? V.prog || 0 : pl ? 100 : 0) + '%"></span></span>' +
+        '<span class="t-sess-plays">' + (playing ? 'Playing' : pl >= 2 ? 'Played twice' : pl ? '1 play left' : '2 plays') + '</span></div>' +
+      (read ? '<p class="t-sess-read"><span class="t-out-sub">The words</span>' + esc(text) + '</p>'
+        : '<button class="s-inline-btn t-sess-readbtn" type="button" data-sess-read="' + i + '">Can’t play sound? Read it instead</button>');
+  }
+  function sessionTake(s, a, c) {
+    const V = TAKE.v || (TAKE.v = { pre: true, mic: null, heard: false, at: 0, shown: 0, ans: {}, plays: {}, net: 'ok', t0: null });
+    const head = outsideHead('Assessment', 'FlairsTech careers');
+    if (V.pre) return '<div class="t-out">' + head + sessPre(a, c, V) + '</div>';
+    const P = a.phases, beats = sessBeats(a), cur = beats[V.at], pi = cur.pi, left = sessLeft(a);
+    const stOf = (i) => cur.k === 'end' || i < pi ? 'done' : i === pi ? 'now' : 'next';
+    const ST_SAY = { done: 'Done', now: 'Now', next: 'Next' };
+    const headCard = '<section class="t-out-card t-sess-head" aria-label="Session">' +
+      '<div class="t-sess-top"><span class="t-sess-ava">' + mark(22) + '</span>' +
+        '<span class="t-sess-title"><b>' + esc(a.title) + '</b><span>' + (cur.k === 'end' ? 'All ' + P.length + ' parts done' : 'Part ' + (pi + 1) + ' of ' + P.length + ' · ' + esc(P[pi].label)) + '</span></span>' +
+        '<span class="t-sess-clock' + (left <= 300 ? ' is-low' : '') + (V.pausedAt ? ' is-paused' : '') + '" id="sessClock" role="timer" aria-label="Time left"><b>' + clockSay(left) + '</b><span>' + (V.pausedAt ? 'paused' : 'left') + '</span></span></div>' +
+      '<ol class="t-sess-steps" aria-label="Parts">' + P.map((p, i) => { const st = stOf(i);
+        return '<li class="is-' + st + '"' + (st === 'now' ? ' aria-current="step"' : '') + '><span class="t-sess-n">' + (st === 'done' ? svg('check', 12) : i + 1) + '</span><span class="t-sess-step-l">' + esc(p.label) + '</span><span class="sr-only">, ' + ST_SAY[st] + '</span></li>'; }).join('') + '</ol>' +
+    '</section>';
+    const canMic = V.mic !== 'denied' && V.mic !== 'none' && V.mic !== 'nosr' && !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+    const openNow = cur.k === 'ask' && a.questions[cur.qi].type === 'open';
+    const banners = (V.net === 'lost' ? '<div class="t-sess-banner is-err" role="alert">' + svg('warnc', 16) + '<span><b>The connection dropped.</b> Your answers so far are kept and the timer is paused. I carry on as soon as you are back.</span>' +
+        '<button class="btn btn-ghost btn-sm" type="button" data-sess-net="retry">Try again</button></div>' : '') +
+      (openNow && !canMic ? '<div class="t-sess-banner is-warn" role="status">' + svg('micoff', 16) + '<span><b>' + (V.mic === 'denied' ? 'The microphone is blocked.' : V.mic === 'none' ? 'No microphone found.' : 'This browser cannot hear your answers.') + '</b> Type your answers below; typing counts the same.</span></div>' : '') +
+      (left <= 300 && left > 0 && cur.k !== 'end' ? '<div class="t-sess-banner is-warn" role="status">' + svg('clock', 16) + '<span><b>' + plural(Math.ceil(left / 60), 'minute') + ' left.</b> When the time runs out, what you have answered is sent.</span></div>' : '');
+    const log = [];
+    const ai = (html) => log.push('<div class="t-chat-ai">' + mark(14) + '<div class="t-sess-msg">' + html + '</div></div>');
+    beats.slice(0, V.at + 1).forEach((b, i) => {
+      const now = i === V.at;
+      if (b.k === 'div') log.push('<div class="t-sess-div" role="separator"><span>' + svg(SESS_ICO[P[b.pi].k], 14) + 'Part ' + (b.pi + 1) + ' · ' + esc(P[b.pi].label) + '</span></div>');
+      else if (b.k === 'say') {
+        const ws = sWords(b.text), n = now && V.speaking ? Math.min(V.shown, ws.length) : ws.length;
+        ai((now && V.speaking ? '<span class="t-sess-speaking"><span class="t-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>AiMY is speaking' + (UI.quiet ? ' · sound is off, read along' : '') + '</span>' : '') +
+          '<p class="t-sess-bub' + (b.passage ? ' is-passage' : '') + '"' + (now ? ' id="sessSay"' : '') + '>' + esc(ws.slice(0, n).join(' ')) + '</p>');
+      } else if (b.k === 'audio') {
+        ai('<p class="t-sess-bub">Here is the recording. Play it when you are ready; you can play it twice.</p>' + sessAudio(V, i, b.text, 'Play the recording'));
+      } else if (b.k === 'ask' || b.k === 'write') {
+        const qq = a.questions[b.qi];
+        ai('<p class="t-sess-bub"><b>Question ' + (b.qi + 1) + ' of ' + a.questions.length + '.</b> ' +
+          (b.k === 'write' ? 'Play the sentence, then write it in the box below exactly as you hear it.</p>' + sessAudio(V, i, qq.dictate, 'Play the sentence') : esc(qq.q) + '</p>'));
+        if (V.ans[b.qi] != null) log.push('<div class="t-chat-you"><p>' + esc(qq.type === 'choice' ? qq.options[V.ans[b.qi]] : V.ans[b.qi]) + '</p></div>');
+      } else if (b.k === 'end') ai('<p class="t-sess-bub">That is all ' + P.length + ' parts, ' + esc(first(c.name)) + '. Thank you. Send it when you are ready; a person at FlairsTech reads every result.</p>');
+    });
+    const off = V.net === 'lost' ? ' disabled' : '';
+    let input;
+    if (cur.k === 'say') input = '<p class="t-sess-wait">' + svg('msg', 14) + '<span>AiMY is speaking. Your turn comes next.</span></p>';
+    else if (cur.k === 'audio') input = '<p class="t-sess-wait">' + svg('play', 14) + '<span>Play the recording above to go on.</span></p>';
+    else if (cur.k === 'ask' && a.questions[cur.qi].type === 'choice') {
+      const qq = a.questions[cur.qi];
+      input = '<p class="t-sess-in-h">Pick one</p><div class="b-cuts t-col t-sess-picks">' + qq.options.map((o, k, all) => { const j = (k + cur.qi * 3 + 1) % all.length;
+        return '<button class="filter-chip" type="button" data-sess-pick="' + cur.qi + '|' + j + '"' + off + '>' + esc(all[j]) + '</button>'; }).join('') + '</div>';
+    } else if (cur.k === 'ask') {
+      input = '<div class="t-sess-in t-input-wrap" id="wrapSess">' +
+        (canMic ? '<button class="t-sess-mic" type="button" data-sess-mic aria-pressed="false"' + off + '>' + svg('mic', 20) + '<span>Answer out loud</span></button>' : '') +
+        '<label class="t-sess-in-h" for="sessIn">' + (canMic ? 'Or type it' : 'Type your answer') + '</label>' +
+        '<textarea class="dial-input t-area t-input" id="sessIn" rows="2" placeholder="Enter sends it."' + off + '></textarea>' +
+        '<p class="t-error-msg">Say or type an answer first.</p>' +
+        '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-sess-send' + off + '>Send</button></p></div>';
+    } else if (cur.k === 'write') {
+      /* The writing task looks like a task, not a chat: a label, its own
+         box, the count, Submit, and no microphone. */
+      input = '<div class="t-sess-in t-sess-write t-input-wrap" id="wrapSess">' +
+        '<p class="t-sess-write-tag">' + svg('pen', 14) + '<span>Writing task · the microphone is off for this one</span></p>' +
+        '<label class="t-sess-in-h" for="sessWrite">Write the sentence AiMY said</label>' +
+        '<textarea class="dial-input t-area" id="sessWrite" rows="3" spellcheck="false" autocomplete="off" autocapitalize="off"' + off + '></textarea>' +
+        '<p class="t-sess-count" id="sessCount" aria-live="polite">0 words · 0 characters</p>' +
+        '<p class="t-error-msg">Write the sentence first.</p>' +
+        '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-sess-write' + off + '>Submit</button></p></div>';
+    } else input = '<p class="t-acts"><button class="btn btn-brand btn-sm" type="button" data-sess-done' + off + '>Send my session</button></p>';
+    const side = '<aside class="t-out-card t-sess-side" aria-label="Your session">' +
+      '<p class="t-out-sub">Your session</p>' +
+      '<p class="t-sess-who"><b>' + esc(c.name) + '</b><span>' + esc(reqOf(c).title) + '</span></p>' +
+      '<ul class="t-sess-list">' + P.map((p, i) => { const st = stOf(i);
+        return '<li class="is-' + st + '">' + svg(st === 'done' ? 'okc' : st === 'now' ? 'dot' : 'ring', 14) + '<span>' + esc(p.label) + '</span><span class="t-sess-list-st">' + ST_SAY[st] + '</span></li>'; }).join('') + '</ul>' +
+      '<p class="t-sess-note">Your answers are kept as you go. Keep this page open until you send it.</p></aside>';
+    return '<div class="t-out t-out-wide t-sess-page">' + head + headCard + banners +
+      '<div class="t-sess"><div class="t-sess-main">' +
+        '<section class="t-out-card t-chat t-sess-chat" aria-label="Session with AiMY" aria-live="polite">' + log.join('') + '</section>' +
+        '<section class="t-out-card t-sess-dock' + (cur.k === 'write' ? ' is-write' : '') + '" aria-label="Your answer">' + input + '</section>' +
+      '</div>' + side + '</div></div>';
+  }
+  let SESS_T = null, SESS_SPK = null;
+  function sessTick() {
+    clearInterval(SESS_T);
+    SESS_T = setInterval(() => {
+      const V = sessV();
+      if (!V || V.pre || !V.t0) { clearInterval(SESS_T); return; }
+      const a = sessAsmt(), left = sessLeft(a), el = byId('sessClock');
+      if (el) { el.querySelector('b').textContent = clockSay(left); el.classList.toggle('is-low', left <= 300); }
+      if (left <= 0 && !V.pausedAt) { clearInterval(SESS_T); sessSubmit(true); }
+    }, 1000);
+  }
+  function sessStart() {
+    const V = sessV();
+    V.pre = false; V.t0 = Date.now(); V.at = 0; TAKE.t0 = V.t0;
+    sessTick();
+    sessGo();
+  }
+  /* From the current beat: dividers pass at once, AiMY's lines are spoken,
+     and anything that waits on the candidate stops and takes the focus. */
+  function sessGo() {
+    const V = sessV();
+    if (!V) return;
+    const beats = sessBeats(sessAsmt());
+    while (beats[V.at] && beats[V.at].k === 'div') V.at++;
+    const b = beats[V.at];
+    if (b && b.k === 'say') { V.shown = 0; V.speaking = true; }
+    paint();
+    /* The newest message in view, clear of the answer box pinned under it. */
+    const dock = document.querySelector('.t-sess-dock'), last = document.querySelector('.t-sess-chat > :last-child');
+    if (last && last.scrollIntoView) { last.style.scrollMarginBottom = ((dock ? dock.offsetHeight : 0) + 28) + 'px'; last.scrollIntoView({ block: 'end' }); }
+    const inp = byId('sessIn') || byId('sessWrite');
+    if (inp) inp.focus({ preventScroll: true });
+    if (b && b.k === 'say') sessSpeak(b.text, () => { V.at++; sessGo(); });
+  }
+  const vaNext = () => { const V = sessV(); if (!V) return; V.at++; sessGo(); };
+  /* AiMY's voice, with the words appearing as they are said. With sound off,
+     or no voice in the browser, the words still come, faster, to read. */
+  function sessSpeak(text, done) {
+    const V = sessV(), ws = sWords(text);
+    const mute = UI.quiet || !window.speechSynthesis || !window.SpeechSynthesisUtterance;
+    let said = mute, shown = false, over = false;
+    const finish = () => { if (over || !said || !shown) return; over = true; V.speaking = false; done(); };
+    if (!mute) {
+      try {
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'en-GB'; u.rate = 0.95;
+        u.onend = u.onerror = () => { said = true; finish(); };
+        speechSynthesis.speak(u);
+        /* A voice that never reports its end does not hold the session. */
+        setTimeout(() => { said = true; finish(); }, ws.length * 500 + 2500);
+      } catch (e) { said = true; }
+    }
+    clearInterval(SESS_SPK);
+    SESS_SPK = setInterval(() => {
+      if (sessV() !== V) { clearInterval(SESS_SPK); return; }
+      if (V.net === 'lost') return;
+      V.shown++;
+      const el = byId('sessSay');
+      if (el) el.textContent = ws.slice(0, V.shown).join(' ');
+      if (V.shown >= ws.length) { clearInterval(SESS_SPK); shown = true; finish(); }
+    }, mute ? 90 : 330);
+  }
+  function sessPlay(i) {
+    const V = sessV(), a = sessAsmt(), b = sessBeats(a)[i];
+    if (!V || !b || V.playing != null || (V.plays[i] || 0) >= 2 || V.net === 'lost') return;
+    V.plays[i] = (V.plays[i] || 0) + 1; V.playing = i; V.prog = 0;
+    const text = b.k === 'write' ? a.questions[b.qi].dictate : b.text;
+    const mute = UI.quiet || !window.speechSynthesis || !window.SpeechSynthesisUtterance;
+    const total = sWords(text).length * (mute ? 90 : 380);
+    if (!mute) {
+      try {
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text.replace(/(Customer|Agent): /g, ''));
+        u.lang = 'en-US'; u.rate = b.k === 'write' ? 0.85 : 1;
+        speechSynthesis.speak(u);
+      } catch (e) {}
+    }
+    paint();
+    const t0 = Date.now();
+    clearInterval(V.playT);
+    V.playT = setInterval(() => {
+      if (sessV() !== V) { clearInterval(V.playT); return; }
+      V.prog = Math.min(100, (Date.now() - t0) / total * 100);
+      const bar = byId('sessBar' + i);
+      if (bar) bar.style.width = V.prog + '%';
+      if (V.prog >= 100) {
+        clearInterval(V.playT); V.playing = null;
+        if (V.at === i && b.k === 'audio') vaNext(); else paint();
+      }
+    }, 100);
+  }
+  function sessRead(i) {
+    const V = sessV(), b = sessBeats(sessAsmt())[i];
+    V.read = V.read || {}; V.read[i] = true; V.readUsed = true;
+    if (V.at === i && b.k === 'audio') vaNext(); else paint();
+  }
+  function sessMic() {
+    if (DICT) { DICT.stop(); return; }
+    const V = sessV(), SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { V.mic = 'nosr'; paint(); return; }
+    const box = byId('sessIn'), btn = document.querySelector('[data-sess-mic]');
+    const base = box.value.trim() ? box.value.trim() + ' ' : '';
+    const rec = new SR();
+    rec.lang = 'en-GB'; rec.interimResults = true; rec.continuous = true;
+    rec.onresult = (e) => { let t = ''; for (let k = 0; k < e.results.length; k++) t += e.results[k][0].transcript; const bx = byId('sessIn'); if (bx) bx.value = base + t.trim(); };
+    rec.onerror = (e) => {
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { V.mic = 'denied'; paint(); }
+      else if (e.error === 'audio-capture') { V.mic = 'none'; paint(); }
+    };
+    rec.onend = () => {
+      DICT = null;
+      const b = document.querySelector('[data-sess-mic]');
+      if (b) { b.classList.remove('is-rec'); b.setAttribute('aria-pressed', 'false'); b.lastChild.textContent = 'Answer out loud'; }
+    };
+    try { rec.start(); } catch (err) { V.mic = 'none'; paint(); return; }
+    DICT = rec;
+    btn.classList.add('is-rec'); btn.setAttribute('aria-pressed', 'true'); btn.lastChild.textContent = 'Listening… press to stop';
+  }
+  async function sessMicTest() {
+    const V = sessV(), SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { V.mic = 'none'; paint(); return; }
+    try {
+      const st = await navigator.mediaDevices.getUserMedia({ audio: true });
+      st.getTracks().forEach((t) => t.stop());
+      V.mic = SR ? 'ok' : 'nosr';
+    } catch (e) { V.mic = e && (e.name === 'NotAllowedError' || e.name === 'SecurityError') ? 'denied' : 'none'; }
+    paint();
+  }
+  function sessSound() {
+    const V = sessV();
+    V.heard = true;
+    if (!UI.quiet && window.speechSynthesis && window.SpeechSynthesisUtterance) {
+      try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance('Can you hear me? If you can, you are ready.'); u.lang = 'en-GB'; speechSynthesis.speak(u); } catch (e) {}
+    }
+    paint();
+  }
+  function sessAnswer(v) { const V = sessV(), b = sessBeats(sessAsmt())[V.at]; V.ans[b.qi] = v; vaNext(); }
+  function sessSendIt() {
+    if (DICT) { DICT.onresult = null; DICT.stop(); }
+    const box = byId('sessIn'), v = box ? box.value.trim() : '';
+    if (!v) { shake('wrapSess'); return; }
+    sessAnswer(v);
+  }
+  function sessWriteIt() {
+    const box = byId('sessWrite'), v = box ? box.value.trim() : '';
+    if (!v) { shake('wrapSess'); return; }
+    sessAnswer(v);
+  }
+  /* The connection: the timer pauses while it is down, AiMY's voice holds,
+     and nothing can be sent until it is back. */
+  function sessNet(up) {
+    const V = sessV();
+    if (!V || V.pre) return;
+    if (!up && V.net !== 'lost') { V.net = 'lost'; V.pausedAt = Date.now(); try { speechSynthesis.pause(); } catch (e) {} }
+    else if (up && V.net === 'lost') { V.net = 'ok'; if (V.t0) V.t0 += Date.now() - V.pausedAt; V.pausedAt = null; try { speechSynthesis.resume(); } catch (e) {} }
+    paint();
+  }
+  window.addEventListener('offline', () => sessNet(false));
+  window.addEventListener('online', () => sessNet(true));
+  /* Scored as the others are: a choice is right or wrong, an open answer
+     against what a good one covers (fixture: enough said), and the written
+     sentence by the words it got (fixture: four in five). Time running out
+     sends what was answered, and says where it stopped. */
+  function sessSubmit(timedOut) {
+    const V = sessV();
+    if (!V) return;
+    clearInterval(SESS_T); clearInterval(SESS_SPK); clearInterval(V.playT);
+    try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
+    if (DICT) { DICT.onresult = null; DICT.stop(); }
+    const s = sessSend0(), a = asmtOf(s.asmt), c = DB.byId[s.cand];
+    const norm = (t) => sWords(String(t).toLowerCase().replace(/[^a-z0-9 ]/g, ' '));
+    const answers = a.questions.map((qq, i) => {
+      const v = V.ans[i];
+      if (v == null || v === '') return false;
+      if (qq.type === 'choice') return v === qq.right;
+      if (qq.type === 'write') { const want = norm(qq.dictate), got = norm(v); return want.filter((w) => got.indexOf(w) >= 0).length / want.length >= 0.8; }
+      return sWords(v).length >= 3;
+    });
+    const score = Math.round(answers.filter(Boolean).length / answers.length * 100);
+    const pi = (sessBeats(a)[V.at] || {}).pi || 0;
+    put('sends', s, { status: 'done', answers: answers, score: score, doneDay: 0, consent: TAKE.consent, flags: V.readUsed ? [{ k: 'read' }] : [], review: null, reviewed: null,
+      timedOut: !!timedOut, stoppedAt: timedOut ? a.phases[pi].label : null });
+    note(c, 'asmt', 'Finished the ' + a.title + ': ' + scoreSay(a, { score: score }) + '.' +
+      (timedOut ? ' Time ran out during ' + lower(a.phases[pi].label) + '; what was answered is scored.' : '') + (TAKE.consent === 'person' ? ' Asked for a person to score it.' : ''));
+    TAKE = null;
+    paint();
+  }
+  /* For review, from the prototype panel: the connection and the clock. */
+  function sessProto(k) {
+    const V = sessV();
+    if (k === 'open') { const s = sessionSend(); if (!s) { toast('No session to take', null, 'Nobody is at the assessment stage in this data. Reset to seed.'); return; } if (s) { if (s.status === 'done') put('sends', s, { status: 'sent', answers: null, score: null, doneDay: null, timedOut: false, stoppedAt: null }); TAKE = null; go({ take: s.id }); } return; }
+    if (!V || V.pre) { toast('Start the session first', null, 'Open it as the candidate, then press Start.'); return; }
+    if (k === 'net') { sessNet(V.net === 'lost'); paintProto(); return; }
+    const a = sessAsmt();
+    if (k === 'late') V.t0 = (V.pausedAt || Date.now()) - (a.mins * 60 - 290) * 1000;
+    if (k === 'out') V.t0 = (V.pausedAt || Date.now()) - a.mins * 60 * 1000;
     paint();
   }
 
@@ -8604,7 +9069,8 @@
     const wt = ch.filter((c) => c.k === 'wait')[0];
     if (bits.length < 2 && wt && lanes.client && lanes.client.d * 3 >= all) bits.push('the longest wait is with <mark class="t-mk">the client</mark>');
     const head = (found ? plural(found, 'person', 'people') + ' found, ' + (hired ? '<mark class="t-mk is-ok">' + hired + ' hired</mark>. ' : 'none hired yet. ') : '') +
-      (bits.length ? capFirst(bits.join(', and ')) + '.' : 'Every step is near its usual time and share.');
+      /* Capitalised past any leading mark, so "<mark>the HR interview" reads "The HR interview". */
+      (bits.length ? bits.join(', and ').replace(/^((?:<[^>]+>)*)([a-z])/, (m, t, c) => t + c.toUpperCase()) + '.' : 'Every step is near its usual time and share.');
     /* The same chapters as slides, one sentence each (V5), to share. */
     const slides = [{ k: 'The period', big: plural(hired, 'person', 'people'), say: 'hired from ' + found + ' found, on ' + plural(reqs.length, 'requisition') + '.', foot: st.seats + ' seats · ' + st.openSeats + ' still open' }];
     if (sp && actual != null) slides.push({ k: 'Speed', big: dSay(actual), say: 'to the first profile. The target is ' + SEND_TARGET + '.', foot: sp.slow ? STEP_SAY[sp.slow.k] + ' runs slow' : sp.segs.length + ' steps, each near its usual time' });
@@ -8696,12 +9162,19 @@
     const accs = ACCOUNTS.filter((a) => pool.some((q) => q.acc === a.id));
     const accIn = accs.filter((a) => a.id === S.account)[0] || null;
     const inAcc = pool.filter((q) => !accIn || q.acc === accIn.id);
-    const reqs = inAcc.filter((q) => openedIn(q, 0, per));
+    /* ONE POSITION OR EVERY ONE (AIMY-2866: "recruiters can select a
+       specific open position to see that position's funnel"). The third
+       blank in the scope sentence; with one picked, the whole report, its
+       journey and its funnel read that position alone. */
+    const inPer = inAcc.filter((q) => openedIn(q, 0, per));
+    const posIn = inPer.filter((q) => q.id === S.pos)[0] || null;
+    const inPos = posIn ? [posIn] : inAcc;
+    const reqs = posIn ? [posIn] : inPer;
     const st = rstats(reqs);
     /* The three spans the trend reads, on the same account, whatever the period. */
-    const WS = [[60, 90], [30, 60], [0, 30]].map((w) => rstats(inAcc.filter((q) => openedIn(q, w[0], w[1]))));
+    const WS = [[60, 90], [30, 60], [0, 30]].map((w) => rstats(inPos.filter((q) => openedIn(q, w[0], w[1]))));
     /* The widest view this desk has, for a card the period leaves empty. */
-    const stWide = rstats(inAcc);
+    const stWide = rstats(inPos);
     const reached = st.reached;
     const offers = st.offers;
     const num = (x) => (x == null ? '·' : String(x));
@@ -8808,8 +9281,15 @@
     const accBlank = accs.length > 1 ? blank('accMenu', accIn ? accIn.name : 'every account', 'Account · ' + accs.length + ' in view',
       item('data-account=""', !accIn, 'Every account', pool.filter((q) => openedIn(q, 0, per)).length) + '<span class="t-rpt-sep" aria-hidden="true"></span>' +
       accs.map((x) => item('data-account="' + x.id + '"', accIn === x, x.name, pool.filter((q) => q.acc === x.id && openedIn(q, 0, per)).length)).join('')) : accs[0] ? esc(accs[0].name) : '';
+    const posBlank = inPer.length > 1 ? blank('posMenu', posIn ? posIn.title + ', ' + accOf(posIn).name : 'every position', 'Position · ' + inPer.length + ' in view',
+      '<span class="t-menu-search">' + svg('find', 14) + '<input class="t-field t-menu-q" type="search" data-menu-q placeholder="Search by role or account" aria-label="Search positions" autocomplete="off"></span>' +
+      item('data-pos=""', !posIn, 'Every position', inPer.length) + '<span class="t-rpt-sep" aria-hidden="true"></span>' +
+      /* Same role, same client happens often (replacements), so each says its state and when it opened. */
+      inPer.slice().sort((x, y) => x.title.localeCompare(y.title) || y.opened - x.opened).map((x) => item('data-pos="' + x.id + '"', posIn === x, x.title + ' · ' + accOf(x).name,
+        esc(REQ_STATE[stateOf(x)].label) + ', opened ' + esc(sayWhen(x.opened)))).join('') +
+      '<span class="t-menu-none" hidden>No position in view matches that.</span>') : '';
     const head = '<div class="s-camp-list-head t-rpt-head">' + switcher('reports') +
-      '<p class="t-rpt-scope">' + esc(whose) + ' opened in ' + perBlank + (accBlank ? ', on ' + accBlank : '') + '.</p></div>';
+      '<p class="t-rpt-scope">' + esc(whose) + ' opened in ' + perBlank + (accBlank ? ', on ' + accBlank : '') + (posBlank ? ', for ' + posBlank : '') + '.</p></div>';
     if (!reqs.length) {
       return '<div class="s-home"><section class="s-block s-block-wide" aria-label="Reports">' + head +
         '<p class="t-rpt-none">No requisitions opened in the last ' + per + ' days' + (accIn ? ' for ' + esc(accIn.name) : '') + '. Try a longer period' + (accIn ? ' or all accounts' : '') + '.</p></section></div>';
@@ -8876,6 +9356,7 @@
          a field experiment, R6). The same period and account as the rest. */
       (isHR() ? sec('By recruiter', 'alphabetical · not a ranking',
         aimyBlock({ text: 'The same numbers the dashboard shows today, as counts. Whether per-person numbers stay in Talent is decision D5; the research leans to team views here and coaching one person at a time in AiMY QA.', from: 'the UI/UX plan, P6' }) +
+        '<p class="t-acts"><button class="s-inline-btn" type="button"' + goAttr({ on: 'team' }) + '>Open the team pipeline, stage by stage</button></p>' +
         '<div class="t-tbl" role="table" aria-label="By recruiter"><div class="t-tbl-row t-tbl-head" role="row"><span role="columnheader">Recruiter</span><span role="columnheader">Open requisitions</span><span role="columnheader">People in progress</span><span role="columnheader">Days to send profiles</span></div>' +
         RECRUITERS.slice().sort((x, y) => x.name.localeCompare(y.name)).map((rc) => { const mineR = reqs.filter((q) => q.rec === rc.id);
           const act = mineR.filter(isOpen).reduce((t, q) => t + activeOf(q).length, 0);
@@ -9055,6 +9536,321 @@
   }
 
   /* ══ THE OTHER DESKS ═════════════════════════════════════════════════════ */
+  /* ══ THE RECRUITERS VIEW (AIMY-2926) ═════════════════════════════════════
+     The recruiter's lists, briefing and work on one page, with AiMY's chat
+     always open beside it to search their candidates in plain words. The
+     chat keeps the conversation, each message refines what came before, and
+     the people come back here, in the main panel, as the Candidates cards,
+     with the filters said as one row of chips that can be taken off. A
+     result is saved as a list in one press, shared by link, and opened like
+     any shortlist. Search runs over this desk's candidates (`sees`), people
+     who left only when asked for. */
+  let RV = { turns: [], crit: null, res: null, busy: false, recent: [] };
+  const RV_LANGS = ['German', 'English', 'Arabic', 'French', 'Italian', 'Spanish'];
+  const RV_STAGES = [
+    [/pass(ed)? (the )?tech|past (the )?tech|after (the )?tech|technical (stage|round|interview) (passed|done)/, 'tech', 'past the technical interview'],
+    [/pass(ed)? (the )?hr|past (the )?hr|after (the )?hr/, 'hr', 'past the HR interview'],
+    [/pass(ed)? (the )?(phone|screen|call)|past (the )?(phone|screen)/, 'phone', 'past the phone screen'],
+  ];
+  const rvSkills = () => { const s = {}; DB.cands.forEach((c) => (c.skills || []).forEach((k) => { s[k.toLowerCase()] = k; })); return s; };
+  /* Reads one message onto what came before: a language, years, a stage,
+     a place, a skill, a family of roles, a requisition, people who left. */
+  function rvRead(text, prev) {
+    const t = ' ' + text.toLowerCase() + ' ';
+    if (/start over|new search|clear (it|all)|forget (that|it)/.test(t)) prev = null;
+    const c = prev ? JSON.parse(JSON.stringify(prev)) : { langs: [], skills: [], years: null, stage: null, place: null, fam: null, word: null, req: null, left: false };
+    let got = false;
+    RV_LANGS.forEach((l) => { if (t.indexOf(l.toLowerCase()) >= 0 && c.langs.indexOf(l) < 0) { c.langs.push(l); got = true; } });
+    const y = /(\d+)\s*\+?\s*(years|yrs|year)/.exec(t);
+    if (y) { c.years = Number(y[1]); got = true; }
+    RV_STAGES.forEach((s) => { if (s[0].test(t)) { c.stage = s[1]; got = true; } });
+    if (/with the client|profile sent|at the client/.test(t)) { c.stage = 'sent'; got = true; }
+    PLACES.forEach((p) => { if (t.indexOf(p.toLowerCase()) >= 0) { c.place = p; got = true; } });
+    if (/\bcairo\b/.test(t) && !c.place) { c.place = 'Cairo'; got = true; }
+    const sk = rvSkills();
+    Object.keys(sk).forEach((k) => { if (k.length > 2 && t.indexOf(' ' + k) >= 0 && c.skills.indexOf(sk[k]) < 0) { c.skills.push(sk[k]); got = true; } });
+    if (/support|helpdesk|help desk|customer service/.test(t)) { c.fam = 'support'; got = true; }
+    if (/accountant|accounting|finance|payable|receivable|\bap\b|\bar\b/.test(t)) { c.fam = 'finance'; got = true; }
+    if (/operations|\bops\b/.test(t)) { c.fam = 'ops'; got = true; }
+    const w = /\b(engineers?|analysts?|leads?|agents?|specialists?)\b/.exec(t);
+    if (w) { c.word = w[1].replace(/s$/, ''); got = true; }
+    const q = DB.reqs.filter(isOpen).filter((x) => isHR() || x.rec === DESK).filter((x) => t.indexOf(x.title.toLowerCase()) >= 0)[0];
+    if (q) { c.req = q.id; got = true; }
+    if (/\b(who left|people who left|past candidates|left before|rejected|from the pool)\b/.test(t)) { c.left = true; got = true; }
+    if (/\b(only )?active|still in\b/.test(t)) { c.left = false; got = true; }
+    /* "without German", "drop the years": a filter taken off in words. */
+    RV_LANGS.forEach((l) => { if (new RegExp('(without|drop|no longer|not) ' + l.toLowerCase()).test(t)) { c.langs = c.langs.filter((x) => x !== l); got = true; } });
+    if (/(drop|without|forget) (the )?years/.test(t)) { c.years = null; got = true; }
+    if (/(drop|without|forget|any) (the )?(stage|place|city)/.test(t)) { if (/stage/.test(t)) c.stage = null; else c.place = null; got = true; }
+    return got ? c : null;
+  }
+  /* The filters, said: each a chip with its own key, to take it off. */
+  function rvLabels(c) {
+    const out = [];
+    if (c.req) out.push(['req', 'For ' + DB.reqById[c.req].title]);
+    if (c.fam) out.push(['fam', { support: 'Support roles', finance: 'Finance roles', ops: 'Operations roles' }[c.fam]]);
+    if (c.word) out.push(['word', capFirst(c.word) + 's']);
+    c.langs.forEach((l) => out.push(['lang:' + l, l]));
+    c.skills.forEach((s) => out.push(['skill:' + s, s]));
+    if (c.years) out.push(['years', c.years + '+ years']);
+    if (c.stage) out.push(['stage', c.stage === 'sent' ? 'With the client' : capFirst(RV_STAGES.filter((s) => s[1] === c.stage)[0][2])]);
+    if (c.place) out.push(['place', 'In ' + c.place]);
+    out.push(['left', c.left ? 'People who left' : 'In progress now']);
+    return out;
+  }
+  function rvMatch(c) {
+    return DB.cands.filter(sees).filter((p) => {
+      const q = reqOf(p);
+      if (!!p.exit !== !!c.left) return false;
+      if (c.req && p.req !== c.req) return false;
+      if (c.fam && q.fam !== c.fam) return false;
+      if (c.word && (q.title + ' ' + p.at).toLowerCase().indexOf(c.word) < 0) return false;
+      if (c.langs.some((l) => (p.langs || []).indexOf(l) < 0)) return false;
+      if (c.skills.some((s) => (p.skills || []).indexOf(s) < 0)) return false;
+      if (c.years && p.years < c.years) return false;
+      if (c.place && (c.place === 'Cairo' ? ['Alexandria', 'Mansoura'].indexOf(p.place) >= 0 : p.place !== c.place)) return false;
+      if (c.stage) {
+        const t = tplOf(q);
+        if (t.indexOf(c.stage) < 0) return false;
+        const at = p.exit ? p.maxAt || p.stage : p.stage;
+        if (c.stage === 'sent' ? ['sent', 'client', 'ctech'].indexOf(at) < 0 : rank(q, at) <= rank(q, c.stage)) return false;
+      }
+      return true;
+    }).sort((a, b) => rank(reqOf(b), b.stage) - rank(reqOf(a), a.stage) || b.years - a.years);
+  }
+  function rvAsk(text) {
+    text = String(text || '').trim();
+    if (!text || RV.busy) return;
+    RV.turns.push({ who: 'you', html: esc(text) });
+    const c = rvRead(text, RV.crit);
+    if (!c) {
+      RV.turns.push({ who: 'aimy', html: 'I could not read who to look for in that. Name a language, a skill, years, a stage or a place, like “German speakers past the technical interview”.' });
+      paint(); return;
+    }
+    RV.crit = c; RV.busy = true; RV.res = null;
+    RV.recent = [text].concat(RV.recent.filter((x) => x !== text)).slice(0, 4);
+    paint();
+    setTimeout(() => { RV.busy = false; rvRun(true); }, 700);
+  }
+  /* Runs the filters and says what came back; with nobody, which filter to
+     take off and how many that brings back. */
+  function rvRun(say) {
+    const c = RV.crit;
+    RV.res = rvMatch(c);
+    if (say) {
+      /* Mid-sentence in lower case, but a language or a tool keeps its capital. */
+      const lab = rvLabels(c).filter((l) => l[0] !== 'left').map((l) => /^(lang|skill):/.test(l[0]) ? l[1] : l[1].charAt(0).toLowerCase() + l[1].slice(1));
+      if (RV.res.length) RV.turns.push({ who: 'aimy', html: 'I found <b>' + plural(RV.res.length, 'person', 'people') + '</b>' + (lab.length ? ': ' + esc(listSay(lab)) : '') + (c.left ? ', among people who left' : '') + '. They are in the results. Tell me more to narrow it, like ' +
+        (!c.place ? '“only in Nasr City”' : !c.stage ? '“past the HR interview”' : !c.langs.length ? '“with German”' : '“5+ years”') + ', or save them as a list.' });
+      else {
+        const tries = rvLabels(c).filter((l) => l[0] !== 'left').map((l) => { const x = rvDrop(JSON.parse(JSON.stringify(c)), l[0]); return { l: l, n: rvMatch(x).length }; }).sort((a, b) => b.n - a.n)[0];
+        const nm = tries ? (/^(lang|skill):/.test(tries.l[0]) ? tries.l[1] : tries.l[1].charAt(0).toLowerCase() + tries.l[1].slice(1)) : '';
+        RV.turns.push({ who: 'aimy', html: 'Nobody matches all of that.' + (tries && tries.n ? ' Without <b>' + esc(nm) + '</b>, ' + plural(tries.n, 'person', 'people') + ' do.' : ''),
+          acts: tries && tries.n ? [{ label: 'Take off ' + nm, data: 'rv-drop="' + tries.l[0] + '"' }] : [] });
+      }
+    }
+    paint();
+    const box = byId('rvLog'); if (box) box.scrollTop = box.scrollHeight;
+  }
+  function rvDrop(c, k) {
+    if (k === 'left') c.left = !c.left;
+    else if (k.indexOf('lang:') === 0) c.langs = c.langs.filter((x) => x !== k.slice(5));
+    else if (k.indexOf('skill:') === 0) c.skills = c.skills.filter((x) => x !== k.slice(6));
+    else c[k] = null;
+    return c;
+  }
+  /* A result kept as a list, in the shortlist's own form, so it opens,
+     adds to a requisition and is deleted as any shortlist does. */
+  function rvSave() {
+    if (!RV.res || !RV.res.length) return;
+    const lab = rvLabels(RV.crit).filter((l) => l[0] !== 'left').map((l) => l[1]);
+    const name = (lab.slice(0, 3).join(', ') || 'People') + ', ' + sayDay(0);
+    const res = RV.res.map((p, i) => ({ i: i, src: 'pool', pid: p.pid, name: p.name, at: p.at, place: p.place, years: p.years, langs: p.langs || [], skills: p.skills || [],
+      ev: lab.map(() => 'm'), cvDay: p.applied, phone: p.phone || null, email: p.email || null,
+      was: reqOf(p).title + ', ' + (p.exit ? lower(EXIT[p.exit].label) : lower(STAGE[p.stage].label)), consent: p.exit ? 'Applied before and agreed to hear about other roles.' : 'In progress on ' + reqOf(p).title + '.' }));
+    const l = { id: uid('l'), name: name, req: RV.crit.req, crit: lab, res: res, day: 0, by: DESK };
+    D.lists.push(l); save(); paint();
+    toast('Saved as a list', () => { D.lists = D.lists.filter((x) => x !== l); save(); paint(); }, plural(res.length, 'person', 'people') + ', in your lists at the top of this page.');
+  }
+  function rvShare(kind, id) {
+    const url = location.origin + location.pathname + '?' + (kind === 'list' ? 'on=draft&list=' + id : 'on=find');
+    try { navigator.clipboard.writeText(url); } catch (e) {}
+    toast('Link copied', null, 'Anyone on the team who uses Talent can open it.');
+  }
+  function rvPage() {
+    const open = DB.reqs.filter(isOpen).filter((q) => isHR() || q.rec === DESK);
+    const lists = D.lists.filter((l) => l.by === DESK || isHR()).slice().reverse();
+    const ss = searches();
+    const waiting = queue().length;
+    /* The briefing, the lists, the searches: equal cards, each with its one move. */
+    const card = (i, head, title, say, acts) => '<div class="b-slot"><article class="type-card s-card b-qcard t-rvw-card" style="--i:' + Math.min(i, 8) + '">' +
+      '<div class="tc-head">' + head + '</div><div class="b-qcard-top"><span class="tc-title s-card-title">' + esc(title) + '</span></div>' +
+      '<p class="tc-summary">' + say + '</p><div class="tc-gov b-qcard-foot t-rvw-acts">' + acts + '</div></article></div>';
+    const cards = [card(0, tag('Briefing', 'info') + '<span class="b-kind">' + esc(sayDay(0)) + '</span>', 'Today’s briefing',
+        '<b>' + plural(waiting, 'thing') + '</b> ' + (waiting === 1 ? 'waits' : 'wait') + ' on you, across ' + plural(open.length, 'open requisition') + '.',
+        '<button class="s-insight-lnk primary" type="button"' + goAttr({}) + '>Open it</button>')]
+      .concat(lists.map((l, i) => card(i + 1, tag('List', 'ok') + '<span class="b-kind">Saved ' + esc(sayWhen(l.day)) + '</span>', l.name,
+        plural(l.res.length, 'person', 'people') + (l.req ? ' for ' + esc((DB.reqById[l.req] || {}).title || '') : '') + (l.crit && l.crit.length ? ' · ' + esc(l.crit.slice(0, 3).join(', ')) : ''),
+        '<button class="b-ghost" type="button" data-rv-share="list|' + l.id + '">Share</button><button class="s-insight-lnk primary" type="button"' + goAttr({ on: 'draft', list: l.id }) + '>Open</button>')))
+      .concat(ss.map((x, i) => { const n = searchNew(x).length;
+        return card(lists.length + i + 1, tag('Saved search', 'neutral') + (n ? tag(n + ' new', 'info') : ''), x.name, n ? plural(n, 'person', 'people') + ' new in your pool since it last ran.' : 'Nothing new in your pool since it last ran.',
+          '<button class="b-ghost" type="button" data-rv-share="search|' + x.id + '">Share</button><button class="s-insight-lnk primary" type="button" data-search-run="' + x.id + '">Run it</button>'); }));
+    const listsBlock = '<section class="s-block s-block-wide" aria-label="Lists and briefings"><div class="s-camp-list-head"><h2 class="s-block-h">Lists and briefings</h2>' +
+        '<span class="s-block-say">your briefing, the lists you saved, and searches that run again</span></div>' +
+      '<div class="b-grid">' + cards.join('') + '</div>' +
+      (lists.length || ss.length ? '' : '<p class="s-none t-rvw-none">No saved lists yet. Ask AiMY for people, then save what comes back; it lands here.</p>') + '</section>';
+    /* The work now: open requisitions, each a door into the search, and
+       the searches asked here, to ask again. */
+    const work = '<section class="s-block s-block-wide" aria-label="Your work now"><div class="s-camp-list-head"><h2 class="s-block-h">Your work now</h2>' +
+        '<span class="s-block-say">press a requisition to search its people</span></div>' +
+      '<div class="b-owed">' + open.slice(0, 6).map((q, i) => { const act = activeOf(q), at = {}; act.forEach((p) => { at[p.stage] = (at[p.stage] || 0) + 1; });
+        const top = Object.keys(at).sort((a, b) => at[b] - at[a])[0];
+        return '<button class="b-owed-row" type="button" data-rv-ask="' + esc('People for ' + q.title) + '" style="--i:' + i + '"><span class="b-owed-sev" aria-hidden="true"></span><span class="b-owed-main"><span class="b-owed-head"><span class="b-owed-type">' + esc(q.title) + '</span>' +
+          '<span class="b-owed-by">' + esc(accOf(q).name) + '</span>' + tag(REQ_STATE[stateOf(q)].label, REQ_STATE[stateOf(q)].tone) + '</span>' +
+          '<span class="b-owed-body">' + plural(act.length, 'person', 'people') + ' in progress' + (top ? ', most ' + esc(atStage(top)) : '') + '.</span></span></button>'; }).join('') + '</div>' +
+      (RV.recent.length ? '<p class="t-rvw-recent"><span class="t-rvw-recent-h">Asked here</span>' + RV.recent.map((r) => '<button class="filter-chip" type="button" data-rv-ask="' + esc(r) + '">' + esc(r) + '</button>').join('') + '</p>' : '') + '</section>';
+    /* The results, in the main panel: loading, nobody, or the cards. */
+    let results = '';
+    if (RV.busy) results = '<section class="s-block s-block-wide" aria-label="Results" aria-busy="true"><div class="s-camp-list-head"><h2 class="s-block-h">Results</h2><span class="s-block-say t-shimmer" data-text="Searching your candidates…">Searching your candidates…</span></div>' +
+      '<div class="b-grid">' + [0, 1, 2].map(() => '<div class="b-slot"><div class="type-card s-card t-rvw-skel"><span class="t-skel"></span><span class="t-skel is-short"></span><span class="t-skel"></span></div></div>').join('') + '</div></section>';
+    else if (RV.res) {
+      const chips = rvLabels(RV.crit).map((l) => '<button class="filter-chip active t-rvw-chip" type="button" data-rv-drop="' + esc(l[0]) + '" aria-label="' + esc((l[0] === 'left' ? 'Switch to ' + (RV.crit.left ? 'people in progress' : 'people who left') : 'Take off ' + l[1])) + '">' + esc(l[1]) + (l[0] === 'left' ? svg('loop', 12) : svg('x', 12)) + '</button>').join('');
+      results = '<section class="s-block s-block-wide" aria-label="Results"><div class="s-camp-list-head"><h2 class="s-block-h">Results</h2><span class="s-block-say">' + plural(RV.res.length, 'person', 'people') + ' · from AiMY, refined in the chat</span></div>' +
+        '<div class="b-cuts t-rvw-chips" role="group" aria-label="Filters">' + chips + '</div>' +
+        (RV.res.length ? '<div class="t-rvw-bar"><button class="s-insight-lnk primary" type="button" data-rv-save>Save as a list</button><button class="b-ghost" type="button" data-rv-clear>Clear the search</button></div>' +
+          '<div class="b-grid">' + RV.res.slice(0, 12).map((p, i) => '<div class="b-slot">' + candCard(p, i) + '</div>').join('') + '</div>' +
+          (RV.res.length > 12 ? '<p class="b-vfoot">' + (RV.res.length - 12) + ' more. Save the list to see everyone, or narrow it in the chat.</p>' : '')
+          : '<p class="s-none t-rvw-none">Nobody matches all of these. Take a filter off above, or tell AiMY what to change.</p>') + '</section>';
+    }
+    /* The chat: always open, the conversation kept while you work. */
+    const sugg = ['German speakers past the technical interview', 'Accountants with 3+ years', 'Support people who left, with Zendesk'];
+    const chat = '<aside class="t-rvw-chat" aria-label="Find people with AiMY">' +
+      '<div class="t-rvw-chat-h">' + mark(16) + '<b>Find people</b><span>AiMY searches your candidates</span></div>' +
+      '<div class="t-rvw-log" id="rvLog" role="log" aria-live="polite">' +
+        (RV.turns.length ? RV.turns.map((m) => m.who === 'you' ? '<div class="t-chat-you"><p>' + m.html + '</p></div>'
+          : '<div class="t-chat-ai">' + mark(14) + '<div class="t-sess-msg"><p class="t-sess-bub">' + m.html + '</p>' + ((m.acts || []).length ? '<p class="t-acts">' + m.acts.map((a) => '<button class="s-inline-btn" type="button" data-' + a.data + '>' + esc(a.label) + '</button>').join('') + '</p>' : '') + '</div></div>').join('')
+          : '<div class="t-chat-ai">' + mark(14) + '<div class="t-sess-msg"><p class="t-sess-bub">Who are you looking for? Say it in your own words; I search your candidates and put them in the results. Each thing you add narrows it.</p>' +
+            '<p class="t-rvw-sugg">' + sugg.map((s) => '<button class="filter-chip" type="button" data-rv-ask="' + esc(s) + '">' + esc(s) + '</button>').join('') + '</p></div></div>') +
+        (RV.busy ? '<div class="t-chat-ai">' + mark(14) + '<div class="t-sess-msg"><p class="t-sess-bub"><span class="t-shimmer" data-text="Looking…">Looking…</span></p></div></div>' : '') +
+      '</div>' +
+      '<div class="t-rvw-in t-input-wrap" id="wrapRv"><textarea class="dial-input t-area" id="rvIn" rows="2" placeholder="Like “German, 2+ years, past HR”. Enter sends it." aria-label="Ask AiMY for people"></textarea>' +
+        '<button class="btn btn-brand btn-sm" type="button" data-rv-send>Ask</button></div>' +
+    '</aside>';
+    return '<div class="s-home t-rvw">' +
+      '<section class="s-block s-block-wide"><div class="s-camp-list-head">' + switcher('search') + '<span class="s-block-say">your lists, your work, and AiMY to find people in it</span></div></section>' +
+      '<div class="t-rvw-grid"><div class="t-rvw-main">' + results + listsBlock + work + '</div>' + chat + '</div>' +
+    '</div>';
+  }
+  /* ══ THE TEAM PIPELINE, BY RECRUITER (AIMY-2901) ═════════════════════════
+     The HR Manager's view of the team's open work: one equal card per
+     recruiter, in alphabetical order (never a ranking: decision D5 is still
+     open, and the research leans to team views over per-person numbers).
+     Each card counts work, not people's worth: positions, people at each
+     stage, the ones held past a set number of business days, and when they
+     last moved anything. A stage count opens its people here, in place. The
+     team's own line leads. Thresholds are the HR Manager's, in the sentence
+     at the top, as Reports does it. Rule-based; nothing predictive. */
+  const TP_COLS = ['applied', 'assess', 'phone', 'hr', 'tech', 'mgr', 'sent', 'client', 'ctech', 'offer'];
+  const TP_SHORT = { applied: 'Applied', assess: 'Assessment', phone: 'Screening', hr: 'HR', tech: 'Technical', mgr: 'Managerial', sent: 'Profile sent', client: 'Client', ctech: 'Client tech', offer: 'Offer' };
+  let TP = { open: {}, drill: null, range: 'all' };
+  /* Business days, near enough for a flag: weekends out of every seven. */
+  const bdays = (n) => n - 2 * Math.floor(n / 7) - (n % 7 === 6 ? 1 : 0);
+  function recLast(rid) {
+    let d = null;
+    const up = (x) => { if (x != null && x <= 0 && (d == null || x > d)) d = x; };
+    const mineC = (c) => c && DB.reqById[c.req] && DB.reqById[c.req].rec === rid;
+    DB.cands.forEach((c) => { if (mineC(c)) up(c.exit ? -c.since : -c.since); });
+    DB.calls.forEach((t) => { if (mineC(DB.byId[t.cand])) up(t.day); });
+    DB.events.forEach((e) => { if (e.by === rid && mineC(DB.byId[e.cand])) up(e.day); });
+    return d;
+  }
+  function teamPage() {
+    const head = '<section class="s-block s-block-wide"><div class="s-camp-list-head">' + switcher('team') +
+      '<span class="s-block-say">alphabetical · counts of work, not scores of people</span></div>';
+    if (!isHR()) return '<div class="s-home">' + head + '<p class="s-none">The team pipeline is the HR Manager’s view. You see your own positions on Requisitions.</p></section></div>';
+    const BN = UI.tpBn || 5, QUIET = UI.tpQuiet || 3, STILL = UI.tpStill || 10;
+    const inRange = (c) => TP.range === 'week' ? c.since <= 7 : TP.range === 'month' ? c.since <= 30 : true;
+    const open = DB.reqs.filter(isOpen);
+    const cols = TP_COLS.filter((k) => open.some((q) => tplOf(q).indexOf(k) >= 0));
+    const recs = RECRUITERS.slice().sort((a, b) => a.name.localeCompare(b.name)).map((r) => {
+      const rq = open.filter((q) => q.rec === r.id);
+      const act = [].concat(...rq.map(activeOf)).filter(inRange);
+      const at = {}, held = {};
+      cols.forEach((k) => { at[k] = act.filter((c) => c.stage === k); held[k] = at[k].filter((c) => bdays(c.since) > BN); });
+      const last = recLast(r.id);
+      return { r: r, rq: rq, act: act, at: at, held: held, nHeld: cols.reduce((t, k) => t + held[k].length, 0), last: last, quiet: rq.length && (last == null || bdays(-last) > QUIET) };
+    }).filter((x) => x.rq.length);
+    /* The sentence is the filter: what counts, and the two thresholds. */
+    const blank = (id, label, cap, items) => '<span class="b-menu-wrap t-blank-wrap"><button class="t-blank" type="button" data-pickopen="' + id + '" aria-haspopup="menu" aria-expanded="false">' + esc(label) + svg('down', 13) + '</button>' +
+      '<span class="b-menu t-rpt-menu" id="' + id + '" role="menu" hidden><span class="b-menu-cap">' + esc(cap) + '</span>' + items + '</span></span>';
+    const item = (attr, on, name) => '<button class="b-menu-item" type="button" role="menuitemradio" aria-checked="' + on + '" ' + attr + '><span class="t-rpt-tick" aria-hidden="true">' + (on ? svg('check', 13) : '') + '</span><span class="b-menu-name">' + esc(name) + '</span></button>';
+    const RANGE = { all: 'everyone in progress', week: 'people who moved in the last 7 days', month: 'people who moved in the last 30 days' };
+    const scope = '<p class="t-rpt-scope">Every recruiter’s open positions, counting ' +
+      blank('tpRange', RANGE[TP.range], 'Counting', Object.keys(RANGE).map((k) => item('data-tp-set="range|' + k + '"', TP.range === k, capFirst(RANGE[k]))).join('')) +
+      ', flagging a stage after ' + blank('tpBn', plural(BN, 'business day'), 'Flag a stage after', [3, 5, 7, 10].map((n) => item('data-tp-set="bn|' + n + '"', BN === n, plural(n, 'business day'))).join('')) +
+      ' and a quiet recruiter after ' + blank('tpQuiet', plural(QUIET, 'business day'), 'Quiet after', [1, 2, 3, 5].map((n) => item('data-tp-set="quiet|' + n + '"', QUIET === n, plural(n, 'business day'))).join('')) + '.</p>';
+    if (!recs.length) return '<div class="s-home">' + head + scope + '<p class="s-none">No open positions on the team right now. When a requisition opens, its recruiter appears here.</p></section></div>';
+    /* One stage strip for the team and for each recruiter: the count, a
+       button to the people, and the held ones flagged in words. */
+    const strip = (rid, at, held, small) => '<div class="t-tp-strip' + (small ? ' is-small' : '') + '" role="list">' + cols.map((k) => {
+      const n = at[k].length, h = held[k].length, on = TP.drill && TP.drill.rec === rid && TP.drill.k === k;
+      const lab = TP_SHORT[k] + ': ' + plural(n, 'person', 'people') + (h ? ', ' + h + ' held past ' + plural(BN, 'business day') : '');
+      return '<span role="listitem" class="t-tp-li">' + (n ? '<button class="t-tp-cell' + (h ? ' is-held' : '') + (on ? ' is-on' : '') + '" type="button" data-tp-drill="' + rid + '|' + k + '" aria-pressed="' + on + '" aria-label="' + esc(lab + '. Show them') + '" title="' + esc(lab) + '">'
+          : '<span class="t-tp-cell is-zero" title="' + esc(lab) + '">') +
+        '<b>' + n + '</b><span class="t-tp-k">' + esc(TP_SHORT[k]) + '</span>' + (h ? '<span class="t-tp-flag">' + svg('clock', 12) + h + ' held</span>' : '') + (n ? '</button>' : '</span>') + '</span>';
+    }).join('') + '</div>';
+    const teamAt = {}, teamHeld = {};
+    cols.forEach((k) => { teamAt[k] = [].concat(...recs.map((x) => x.at[k])); teamHeld[k] = [].concat(...recs.map((x) => x.held[k])); });
+    const people = recs.reduce((t, x) => t + x.act.length, 0), heldN = recs.reduce((t, x) => t + x.nHeld, 0);
+    const worst = cols.slice().sort((a, b) => teamHeld[b].length - teamHeld[a].length)[0];
+    const quiet = recs.filter((x) => x.quiet);
+    const still = open.filter((q) => { const a = activeOf(q); return !a.length ? -q.opened >= STILL : a.every((c) => c.since >= STILL); });
+    const fig = (k, v, say, tone) => '<li class="t-fig"><span class="t-fig-head"><span class="t-fig-k">' + esc(k) + '</span><b class="t-fig-v">' + v + '</b>' + (tone ? '<span class="t-fig-tgt is-warn">' + esc(tone) + '</span>' : '') + '</span><span class="t-fig-say">' + say + '</span></li>';
+    const team = '<section class="s-block s-block-wide" aria-label="The team"><div class="s-camp-list-head"><h2 class="s-block-h">The team</h2><span class="s-block-say">' + plural(recs.length, 'recruiter') + ' with open positions</span></div>' +
+      '<ul class="t-figs">' +
+        fig('Open positions', open.filter((q) => recs.some((x) => x.r.id === q.rec)).length, 'across ' + plural(recs.length, 'recruiter')) +
+        fig('People in progress', people, TP.range === 'all' ? 'at every stage from applied to offer' : RANGE[TP.range]) +
+        fig('Held past ' + plural(BN, 'business day'), heldN, heldN ? 'most at ' + esc(lower(STAGE[worst].label)) + ' (' + teamHeld[worst].length + ')' : 'nobody is held that long', heldN ? 'Look at these' : '') +
+        fig('No recent activity', quiet.length, quiet.length ? esc(quiet.map((x) => x.r.name + ', last ' + (x.last == null ? 'never' : sayWhen(x.last))).join('; ')) : 'everyone moved something in the last ' + plural(QUIET, 'business day'), quiet.length ? 'Check in' : '') +
+        fig('No movement in ' + STILL + ' days', still.length, still.length ? esc(still.slice(0, 3).map((q) => q.title + ' (' + (RECRUITERS.filter((r) => r.id === q.rec)[0] || {}).name + ')').join('; ')) + (still.length > 3 ? ', and ' + (still.length - 3) + ' more' : '') : 'every open position moved someone', still.length ? 'Ask why' : '') +
+      '</ul>' +
+      '<p class="t-tp-cap">The team, stage by stage</p>' + strip('*', teamAt, teamHeld) +
+      aimyBlock({ text: (heldN ? 'The team holds <b>' + plural(heldN, 'person', 'people') + '</b> past ' + plural(BN, 'business day') + ', most at ' + esc(lower(STAGE[worst].label)) + '.' : 'Nobody is held past ' + plural(BN, 'business day') + '.') +
+        (quiet.length ? ' ' + esc(quiet.map((x) => first(x.r.name)).join(' and ')) + (quiet.length === 1 ? ' has' : ' have') + ' not moved anything for a while; ask how they are before you reassign, as leave and a heavy load look the same here.' : ''),
+        from: 'every open requisition, by its recruiter · rule-based, nothing predictive' }) +
+    '</section>';
+    /* The people behind a count, in place: who, for what, how long. */
+    let drill = '';
+    if (TP.drill) {
+      /* A count is the team's ('*'), a recruiter's, or one position's ('rec:req'). */
+      const d = TP.drill, ids = d.rec.split(':'), x = ids[0] === '*' ? null : recs.filter((y) => y.r.id === ids[0])[0], rq = ids[1] ? DB.reqById[ids[1]] : null;
+      const list = (rq ? activeOf(rq).filter(inRange).filter((c) => c.stage === d.k) : x ? x.at[d.k] : teamAt[d.k] || []).slice().sort((a, b) => b.since - a.since);
+      drill = '<section class="s-block s-block-wide t-tp-drill" id="tpDrill" aria-label="People at this stage"><div class="s-camp-list-head"><h2 class="s-block-h">' + esc((x ? x.r.name : 'The team') + (rq ? ' · ' + rq.title : '') + ' · ' + STAGE[d.k].label) + '</h2>' +
+          '<span class="s-block-say">' + plural(list.length, 'person', 'people') + ', longest first</span><button class="s-inline-btn" type="button" data-tp-drill="close">Close</button></div>' +
+        '<div class="b-owed">' + list.map((c, i) => { const h = bdays(c.since) > BN;
+          return '<button class="b-owed-row" type="button" data-cand="' + c.id + '" style="--i:' + Math.min(i, 8) + '"><span class="b-owed-sev' + (h ? ' is-warn' : '') + '" aria-hidden="true"></span><span class="b-owed-main"><span class="b-owed-head"><span class="b-owed-type">' + esc(c.name) + '</span>' +
+            '<span class="b-owed-by">' + esc(reqOf(c).title) + (x ? '' : ' · ' + esc((RECRUITERS.filter((r) => r.id === reqOf(c).rec)[0] || {}).name || '')) + '</span>' + (h ? tag('Held ' + plural(bdays(c.since), 'business day'), 'warn') : '') + '</span>' +
+            '<span class="b-owed-body">' + esc(days(c.since)) + ' at ' + esc(lower(STAGE[c.stage].label)) + '; it usually takes ' + esc(days(STAGE[c.stage].exp)) + '.</span></span></button>'; }).join('') + '</div></section>';
+    }
+    const cards = recs.map((x, i) => {
+      const exp = !!TP.open[x.r.id];
+      return '<div class="b-slot"><article class="type-card s-card b-qcard" style="--i:' + Math.min(i, 8) + '">' +
+        '<div class="tc-head">' + (x.quiet ? tag('No recent activity', 'warn') : tag('Active', 'ok')) + '<span class="b-kind">Last moved something ' + esc(x.last == null ? 'never' : sayWhen(x.last)) + '</span></div>' +
+        '<div class="b-qcard-top"><span class="tc-title s-card-title">' + esc(x.r.name) + '</span></div>' +
+        '<p class="tc-summary">' + plural(x.rq.length, 'open position') + ' · ' + plural(x.act.length, 'person', 'people') + ' in progress' +
+          (x.nHeld ? ' · <b class="t-tp-heldsay">' + x.nHeld + ' held past ' + plural(BN, 'business day') + '</b>' : '') + '</p>' +
+        strip(x.r.id, x.at, x.held) +
+        (exp ? '<div class="t-tp-pos">' + x.rq.map((q) => { const a = activeOf(q).filter(inRange), at = {}, held = {};
+            cols.forEach((k) => { at[k] = a.filter((c) => c.stage === k); held[k] = at[k].filter((c) => bdays(c.since) > BN); });
+            return '<div><button class="t-tp-posname" type="button" data-req="' + q.id + '">' + esc(q.title) + '<span>' + esc(accOf(q).name) + ' · ' + plural(a.length, 'person', 'people') + '</span></button>' + strip(x.r.id + ':' + q.id, at, held, true) + '</div>'; }).join('') + '</div>' : '') +
+        '<div class="tc-gov b-qcard-foot"><span></span><button class="b-ghost" type="button" data-tp-open="' + x.r.id + '" aria-expanded="' + exp + '">' + (exp ? 'Hide their positions' : 'Their positions') + svg(exp ? 'up' : 'down', 14) + '</button></div>' +
+      '</article></div>';
+    }).join('');
+    return '<div class="s-home">' + head + scope + '</section>' + team + drill +
+      '<section class="s-block s-block-wide" aria-label="By recruiter"><div class="s-camp-list-head"><h2 class="s-block-h">By recruiter</h2><span class="s-block-say">alphabetical · press a count to see who it is</span></div>' +
+        '<div class="b-grid t-tp-grid">' + cards + '</div></section>' +
+    '</div>';
+  }
   function deskHome() { return isHM() ? hmHome() : isHR() ? hrHome() : isClient() ? clientHome() : isBU() ? buHome() : homePage(); }
   /* What waits on this desk, each with the one way to answer it. Feeds the
      home page, the rail and the bell alike, so they cannot disagree. */
@@ -10342,6 +11138,22 @@
         [['', 'The run picks one'], ['greet', 'No hello'], ['talk', 'Talks over them'], ['rush', 'Rushes the goodbye'], ['none', 'Nothing to coach']].map((x) =>
           '<button class="proto-link" type="button" data-coachset="' + x[0] + '" aria-pressed="' + (COACH_FORCE === x[0]) + '">' + esc(x[1]) + '</button>').join('') +
       '</div>' +
+      /* AIMY-2942, for review: the session as the candidate, and the two
+         things that go wrong that a reviewer cannot cause on purpose. */
+      '<div class="proto-sec">' +
+        '<div class="proto-h">Language session (AIMY-2942)</div>' +
+        '<button class="proto-link" type="button" data-sess-proto="open">Take it as the candidate</button>' +
+        '<button class="proto-link" type="button" data-sess-proto="net">' + (sessV() && sessV().net === 'lost' ? 'Bring the connection back' : 'Drop the connection') + '</button>' +
+        '<button class="proto-link" type="button" data-sess-proto="late">Jump to the last 5 minutes</button>' +
+        '<button class="proto-link" type="button" data-sess-proto="out">Run out the time</button>' +
+      '</div>' +
+      /* AIMY-2900's loading and error states, for review: what a candidate
+         card shows while AiMY's read is still coming, and when it cannot come. */
+      '<div class="proto-sec">' +
+        '<div class="proto-h">AiMY’s read on candidate cards</div>' +
+        [['', 'Ready'], ['loading', 'Still reading'], ['error', 'Could not read']].map((x) =>
+          '<button class="proto-link" type="button" data-readset="' + x[0] + '" aria-pressed="' + ((UI.read || '') === x[0]) + '">' + esc(x[1]) + '</button>').join('') +
+      '</div>' +
       '<div class="proto-sec">' +
         '<div class="proto-h">Sample data · ' + DB.reqs.length + ' requisitions, ' + DB.cands.length + ' candidates, ' + DB.calls.length + ' calls</div>' +
         '<button class="proto-link" type="button" data-reset>Reset to seed</button>' +
@@ -10425,11 +11237,13 @@
       : S.on === 'draft' && (isRec() || isHR()) ? draftPage() : S.on === 'cands' && (isRec() || isHR()) && !S.cand ? candsPage() : S.cand ? candPage() : S.req ? reqPage() : S.asmt ? asmtPage() : S.acc ? accPage()
       : S.on === 'reqs' ? reqsPage() : S.on === 'calls' && isRec() ? callsPage()
       : S.on === 'asmts' ? asmtsPage() : S.on === 'templates' ? templatesPage()
-      : S.on === 'reports' ? reportsPage() : deskHome()));
+      : S.on === 'reports' ? reportsPage() : S.on === 'search' && (isRec() || isHR()) ? rvPage() : S.on === 'team' ? teamPage() : deskHome()));
     paintRail();
     paintBell();
     paintProto();
     paintDial();
+    /* The Recruiters View's chat stays on its newest message across repaints. */
+    const rvLog = byId('rvLog'); if (rvLog) rvLog.scrollTop = rvLog.scrollHeight;
     requestAnimationFrame(afterPaint);
   }
 
@@ -10970,6 +11784,19 @@
     if ((el = at('[data-appr]'))) { const p = two('data-appr'); approve(DB.offers.filter((o) => o.id === p[0])[0], p[1], p[2]); return; }
     if ((el = at('[data-ans]'))) { const p = two('data-ans'); TAKE.a[Number(p[0])] = Number(p[1]); paint(); return; }
     if ((el = at('[data-take-submit]'))) { takeSubmit(); return; }
+    /* The language session (AIMY-2942). */
+    if ((el = at('[data-sess-mictest]'))) { sessMicTest(); return; }
+    if ((el = at('[data-sess-sound]'))) { sessSound(); return; }
+    if ((el = at('[data-sess-start]'))) { sessStart(); return; }
+    if ((el = at('[data-sess-play]'))) { sessPlay(Number(val('data-sess-play'))); return; }
+    if ((el = at('[data-sess-read]'))) { sessRead(Number(val('data-sess-read'))); return; }
+    if ((el = at('[data-sess-pick]'))) { const p = val('data-sess-pick').split('|'); sessAnswer(Number(p[1])); return; }
+    if ((el = at('[data-sess-mic]'))) { sessMic(); return; }
+    if ((el = at('[data-sess-send]'))) { sessSendIt(); return; }
+    if ((el = at('[data-sess-write]'))) { sessWriteIt(); return; }
+    if ((el = at('[data-sess-done]'))) { sessSubmit(false); return; }
+    if ((el = at('[data-sess-net]'))) { if (navigator.onLine === false) toast('Still offline', null, 'I try again by myself when the connection comes back.'); else sessNet(true); paintProto(); return; }
+    if ((el = at('[data-sess-proto]'))) { sessProto(val('data-sess-proto')); return; }
     if ((el = at('[data-take-consent]'))) { TAKE.consent = val('data-take-consent'); TAKE.t0 = Date.now(); TAKE.away = 0; TAKE.paste = {}; paint(); return; }
     if ((el = at('[data-take-practice]'))) { TAKE.practiced = true; paint(); return; }
     if ((el = at('[data-take-review]'))) { const x = DB.sends.filter((y) => y.id === val('data-take-review'))[0]; put('sends', x, { review: 'asked' }); paint(); return; }
@@ -11217,7 +12044,7 @@
        requisition, on the one requisition a report is narrowed to, or in
        the Candidates queue from a report across many. */
     if ((el = at('[data-fdrill]'))) {
-      const p = el.getAttribute('data-fdrill').split('|'), k = p[0], rq = p[1];
+      const p = el.getAttribute('data-fdrill').split('|'), k = p[0], rq = p[1] || (S.on === 'reports' && S.pos ? S.pos : '');
       if (!rq && !S.req) { go({ on: 'cands', st: k }); return; }
       if (rq) go({ req: rq, q: k }); else go(Object.assign({}, S, { q: k }), true);
       const cs = document.querySelector('section[aria-label="Candidates"]');
@@ -11241,7 +12068,8 @@
       return;
     }
     if ((el = at('[data-period]'))) { const p = val('data-period'); go(Object.assign({}, S, { period: p === '90' ? null : p }), true); return; }
-    if ((el = at('[data-account]'))) { go(Object.assign({}, S, { account: val('data-account') || null }), true); return; }
+    if ((el = at('[data-account]'))) { go(Object.assign({}, S, { account: val('data-account') || null, pos: null }), true); return; }
+    if ((el = at('[data-pos]'))) { go(Object.assign({}, S, { pos: val('data-pos') || null }), true); return; }
     if ((el = at('[data-trail]'))) { go(TRAIL && !TRAIL.req ? TRAIL : { on: 'reqs' }); return; }
     if ((el = at('[data-home]'))) { go({}); return; }
     if ((el = at('[data-reset]'))) { reset(); load(); go({}, true); toast('Back to the start', null, 'Every change you made is gone.'); return; }
@@ -11264,6 +12092,27 @@
     if ((el = at('[data-go]'))) { go(JSON.parse(el.getAttribute('data-go'))); return; }
     /* The whole card is a door, written as the trailing fallback so any
        control inside it wins (Sales's rule). */
+    /* The team pipeline (AIMY-2901). */
+    if ((el = at('[data-tp-set]'))) { const p = el.getAttribute('data-tp-set').split('|'); if (p[0] === 'range') TP.range = p[1]; else { UI[p[0] === 'bn' ? 'tpBn' : 'tpQuiet'] = Number(p[1]); saveUI(); } paint(); return; }
+    if ((el = at('[data-tp-open]'))) { const id = el.getAttribute('data-tp-open'); TP.open[id] = !TP.open[id]; paint(); return; }
+    if ((el = at('[data-tp-drill]'))) {
+      const v = el.getAttribute('data-tp-drill'), i = v.lastIndexOf('|');
+      const d = v === 'close' ? null : { rec: v.slice(0, i), k: v.slice(i + 1) };
+      TP.drill = d && TP.drill && TP.drill.rec === d.rec && TP.drill.k === d.k ? null : d;
+      paint();
+      const dr = byId('tpDrill'); if (dr) dr.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      return;
+    }
+    /* The Recruiters View (AIMY-2926). */
+    if ((el = at('[data-rv-send]'))) { const b = byId('rvIn'); if (!b.value.trim()) { shake('wrapRv'); return; } rvAsk(b.value); return; }
+    if ((el = at('[data-rv-ask]'))) { if (S.on !== 'search') go({ on: 'search' }); rvAsk(el.getAttribute('data-rv-ask')); return; }
+    if ((el = at('[data-rv-drop]'))) { RV.crit = rvDrop(RV.crit, el.getAttribute('data-rv-drop')); rvRun(false); return; }
+    if ((el = at('[data-rv-save]'))) { rvSave(); return; }
+    if ((el = at('[data-rv-clear]'))) { RV.crit = null; RV.res = null; RV.turns.push({ who: 'aimy', html: 'Cleared. Who next?' }); paint(); return; }
+    if ((el = at('[data-rv-share]'))) { const p = el.getAttribute('data-rv-share').split('|'); rvShare(p[0], p[1]); return; }
+    if ((el = at('[data-why-more]'))) { const id = el.getAttribute('data-why-more'); UI.whyOpen = UI.whyOpen || {}; UI.whyOpen[id] = !UI.whyOpen[id]; saveUI(); paint(); return; }
+    if ((el = at('[data-read-retry]'))) { UI.read = 'loading'; saveUI(); paint(); setTimeout(() => { UI.read = ''; saveUI(); paint(); }, 1600); return; }
+    if ((el = at('[data-readset]'))) { UI.read = el.getAttribute('data-readset'); saveUI(); paint(); paintProto(); return; }
     if ((el = at('[data-open]'))) { const p = el.getAttribute('data-open').split(':'); if (p[0] === 'req') go({ req: p[1] }); else if (p[0] === 'cand') go({ cand: p[1] }); else if (p[0] === 'asmt') go({ asmt: p[1] }); return; }
     /* A click outside the bell, the dialer or an open menu closes it. */
     if (!at('#ntfPanel') && !at('#ntfBell')) { const p = byId('ntfPanel'); if (!p.hidden) { p.hidden = true; byId('ntfBell').setAttribute('aria-expanded', 'false'); } }
@@ -11339,6 +12188,7 @@
     if (t.matches('[data-in]') && INTAKE && INTAKE.f) { INTAKE.f[g('data-in')] = t.value; return; }
     if (t.matches('[data-find-q]')) { FIND.q = t.value; return; }
     if (t.id === 'elNote' && EL) { EL.note = t.value; return; }
+    if (t.id === 'sessWrite') { const n = byId('sessCount'), w = sWords(t.value).length; if (n) n.textContent = plural(w, 'word') + ' · ' + plural(t.value.length, 'character'); return; }
     if (t.matches('[data-menu-q]')) {
       const f = t.value.trim().toLowerCase(), menu = t.closest('.b-menu');
       let n = 0;
@@ -11433,6 +12283,8 @@
     }
     if (e.target.id === 'overlayInput' && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); canvasAsk(e.target.value); return; }
     if (e.target.id === 'liveIn' && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); liveSend(); return; }
+    if (e.target.id === 'sessIn' && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sessSendIt(); return; }
+    if (e.target.id === 'rvIn' && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (e.target.value.trim()) rvAsk(e.target.value); else shake('wrapRv'); return; }
     if (e.key === 'Escape' && canvasShown()) { closeCanvas(); return; }
     if (CALL && CALL.state === 'ready' && e.key === 'Enter' && !typing && !/button/i.test(e.target.tagName)) { e.preventDefault(); callGo(); return; }
     if (e.key === 'Escape') { closeDial(); document.querySelectorAll('.tel-menu').forEach((m) => { m.hidden = true; }); }

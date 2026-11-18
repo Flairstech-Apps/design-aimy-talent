@@ -948,6 +948,10 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-rpt-head .t-blank-wrap { display: inline-flex; vertical-align: baseline; }
 .t-rpt-head .t-blank { display: inline-flex; }
 .t-rpt-menu { min-width: 248px; }
+/* The position blank (AIMY-2866): up to 39 positions, so wider, scrolled, and searchable. */
+#posMenu { min-width: min(440px, calc(100vw - 32px)); max-height: 380px; overflow-y: auto; left: auto; right: 0; }
+#posMenu .b-menu-name { white-space: normal; }
+#posMenu .tel-menu-cc { white-space: nowrap; }
 .t-rpt-tick { display: inline-flex; width: 14px; flex: none; color: var(--accent-text, var(--accent)); }
 .t-rpt-sep { height: 1px; margin: 3px 8px; background: var(--card-border); }
 @media (prefers-reduced-motion: reduce) { .t-blank, .t-blank svg { transition: none; } }
@@ -1090,6 +1094,34 @@ body.is-portal .aimy-overlay { display: none !important; }
 .t-why-tag.is-part { background: transparent; border-style: dashed; }
 .t-why-none, .t-why-unk { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--d100); }
 .t-why-unk svg { flex: none; color: var(--ink-muted); }
+
+/* ── AIMY-2900: the card's reasoning, finished ── freshness, flags, each
+   must-have opened in place, and the read's loading and error states.
+   Every state is a word as well as a colour. */
+.t-fresh { color: var(--d100); }
+.t-fresh.is-ok svg { color: var(--ok-text, var(--ok)); }
+.t-fresh.is-warn { color: var(--warn-text, var(--warn)); }
+.t-why-gap { display: flex; align-items: flex-start; gap: 6px; margin: 8px 0 0; font-size: var(--fs-xs); line-height: 1.45; color: var(--err-text, var(--err)); }
+.t-why-gap svg { flex: none; margin-top: 2px; }
+.t-why-gap b { font-weight: var(--fw-semibold, 600); }
+.t-why-more { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; }
+.t-why-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; border-top: 1px solid var(--card-border); padding-top: 8px; }
+.t-why-row { display: grid; grid-template-columns: 14px auto 1fr; column-gap: 6px; row-gap: 2px; align-items: start; font-size: var(--fs-xs); line-height: 1.45; }
+.t-why-row svg { margin-top: 2px; }
+.t-why-st { font-weight: var(--fw-medium); white-space: nowrap; }
+.t-why-m { color: var(--d50); }
+.t-why-on { grid-column: 2 / -1; color: var(--d100); }
+.t-why-row.is-ok svg, .t-why-row.is-ok .t-why-st { color: var(--ok-text, var(--ok)); }
+.t-why-row.is-part svg, .t-why-row.is-part .t-why-st { color: var(--warn-text, var(--warn)); }
+.t-why-row.is-err svg, .t-why-row.is-err .t-why-st { color: var(--err-text, var(--err)); }
+.t-why-row.is-unk svg, .t-why-row.is-unk .t-why-st { color: var(--ink-muted); }
+.t-read-wait .b-aimy-say { display: grid; gap: 6px; width: 100%; }
+.t-skel { display: block; height: 8px; width: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--card-border) 0%, rgba(var(--accent-rgb), 0.18) 50%, var(--card-border) 100%); background-size: 200% 100%; animation: t-skel 1.4s linear infinite; }
+.t-skel.is-short { width: 62%; }
+@keyframes t-skel { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+.t-read-err { align-items: flex-start; }
+.t-read-err > svg { flex: none; margin-top: 2px; color: var(--warn-text, var(--warn)); }
+@media (prefers-reduced-motion: reduce) { .t-skel { animation: none; } }
 .t-cnow { margin-top: 12px; }
 
 /* ══ ASSESSMENTS: CHECKS, INTEGRITY, CONSENT ══════════════════════════════
@@ -2640,3 +2672,190 @@ article.b-qcard .b-qcard-role { padding-top: 4px; color: var(--d100); }
 .t-wa-text { font-size: 1rem; line-height: 1.5; color: inherit; }
 .t-wa-m.is-out .t-wa-text { color: var(--d100); }
 @media (prefers-reduced-motion: reduce) { .msg-bubble, .t-wa-m { transition: none; } }
+
+/* ══ THE LANGUAGE SESSION (AIMY-2942) ══════════════════════════════════════
+   The live assessment's chat, with what a 30-minute voice session needs on
+   top: the header (AiMY, the part, the clock, the four steps), banners for
+   what goes wrong, AiMY speaking, a recording to play, a writing task that
+   does not look like the chat, and a side panel on a wide screen. */
+.t-sess-page { gap: 12px; grid-template-columns: minmax(0, 1fr); }
+.t-sess-head { gap: 14px; padding: 16px 20px; position: sticky; top: 8px; z-index: 3; grid-template-columns: minmax(0, 1fr); }
+.t-sess-chat, .t-sess-dock, .t-sess-side { grid-template-columns: minmax(0, 1fr); }
+.t-sess-top { display: flex; align-items: center; gap: 12px; }
+.t-sess-ava { display: inline-flex; width: 40px; height: 40px; flex: none; border-radius: 12px; align-items: center; justify-content: center; background: rgba(var(--accent-rgb), 0.14); }
+.t-sess-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.t-sess-title b { color: var(--d50); font-size: var(--t-body); font-weight: var(--fw-bold); }
+.t-sess-title > span { color: var(--accent-text); font-size: var(--fs-sm); font-weight: var(--fw-medium); }
+.t-sess-clock { display: inline-flex; align-items: baseline; gap: 6px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--card-border); background: var(--card-bg-raised); }
+.t-sess-clock b { font-variant-numeric: tabular-nums; font-size: 18px; color: var(--d50); }
+.t-sess-clock span { font-size: var(--fs-xs); color: var(--d100); }
+.t-sess-clock.is-low { border-color: var(--warn); }
+.t-sess-clock.is-low b { color: var(--warn-text, var(--warn)); }
+.t-sess-clock.is-paused b { color: var(--d100); }
+.t-sess-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.t-sess-steps li { display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 3px solid var(--card-border); font-size: var(--fs-sm); color: var(--d100); min-width: 0; }
+.t-sess-steps li.is-done { border-top-color: rgba(var(--accent-rgb), 0.55); }
+.t-sess-steps li.is-now { border-top-color: var(--accent); color: var(--d50); font-weight: var(--fw-semibold); }
+.t-sess-n { display: inline-flex; width: 20px; height: 20px; flex: none; border-radius: 50%; align-items: center; justify-content: center; font-size: var(--fs-2xs); border: 1px solid var(--card-border); }
+.t-sess-steps li.is-now .t-sess-n { background: var(--accent); border-color: var(--accent); color: #fff; }
+.t-sess-steps li.is-done .t-sess-n { background: rgba(var(--accent-rgb), 0.16); border-color: transparent; color: var(--accent-text); }
+.t-sess-step-l { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.t-sess-banner { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 12px; border: 1px solid; font-size: var(--fs-sm); line-height: 1.45; color: var(--d50); }
+.t-sess-banner > svg { flex: none; margin-top: 2px; }
+.t-sess-banner > span { flex: 1; }
+.t-sess-banner.is-err { border-color: rgba(var(--err-rgb), 0.5); background: rgba(var(--err-rgb), 0.08); }
+.t-sess-banner.is-err > svg { color: var(--err-text, var(--err)); }
+.t-sess-banner.is-warn { border-color: rgba(var(--warn-rgb), 0.5); background: rgba(var(--warn-rgb), 0.08); }
+.t-sess-banner.is-warn > svg { color: var(--warn-text, var(--warn)); }
+.t-sess { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 12px; align-items: start; }
+.t-sess-main { display: grid; gap: 12px; min-width: 0; }
+.t-sess-chat { min-height: 240px; }
+.t-sess-msg { display: grid; gap: 8px; min-width: 0; }
+.t-sess-bub { margin: 0; padding: 10px 14px; border-radius: 14px; border-top-left-radius: 4px; font-size: var(--fs-sm); line-height: var(--lh-base); max-width: 56ch; background: rgba(var(--accent-rgb), 0.10); color: var(--d50); }
+.t-sess-bub.is-passage { font-size: var(--t-body); }
+.t-sess-speaking { display: inline-flex; align-items: center; gap: 8px; font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--accent-text); }
+.t-wave { display: inline-flex; align-items: center; gap: 2px; height: 14px; }
+.t-wave i { display: block; width: 3px; height: 100%; border-radius: 2px; background: var(--accent); animation: t-wave 0.9s ease-in-out infinite; transform-origin: center; }
+.t-wave i:nth-child(2) { animation-delay: -0.75s; }
+.t-wave i:nth-child(3) { animation-delay: -0.5s; }
+.t-wave i:nth-child(4) { animation-delay: -0.3s; }
+.t-wave i:nth-child(5) { animation-delay: -0.1s; }
+@keyframes t-wave { 0%, 100% { transform: scaleY(0.3); } 50% { transform: scaleY(1); } }
+.t-sess-div { display: flex; align-items: center; gap: 10px; font-size: var(--fs-xs); font-weight: var(--fw-semibold); letter-spacing: 0.04em; color: var(--d100); }
+.t-sess-div::before, .t-sess-div::after { content: ""; flex: 1; height: 1px; background: var(--card-border); }
+.t-sess-div span { display: inline-flex; align-items: center; gap: 6px; }
+.t-sess-audio { display: flex; align-items: center; gap: 10px; max-width: 420px; padding: 8px 12px 8px 8px; border-radius: 12px; border: 1px solid var(--card-border); background: var(--card-bg-raised); }
+.t-sess-play { display: inline-flex; width: 36px; height: 36px; flex: none; border-radius: 50%; align-items: center; justify-content: center; border: 0; background: var(--accent); color: #fff; cursor: pointer; }
+.t-sess-play:disabled { background: var(--card-border); color: var(--d100); cursor: default; }
+.t-sess-play:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.t-sess-track { flex: 1; height: 6px; border-radius: 3px; background: var(--card-border); overflow: hidden; }
+.t-sess-fill { display: block; height: 100%; background: var(--accent); transition: width 0.1s linear; }
+.t-sess-plays { font-size: var(--fs-xs); color: var(--d100); white-space: nowrap; }
+.t-sess-readbtn { justify-self: start; }
+.t-sess-read { margin: 0; padding: 10px 12px; border-radius: 10px; border: 1px dashed var(--card-border); font-size: var(--fs-sm); line-height: 1.5; color: var(--d50); max-width: 56ch; }
+.t-sess-read .t-out-sub { display: block; margin: 0 0 4px; }
+.t-sess-dock { padding: 16px 20px; gap: 10px; position: sticky; bottom: 12px; z-index: 2; box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.18); }
+.t-sess-dock.is-write { border: 1.5px dashed rgba(var(--accent-rgb), 0.6); background: linear-gradient(0deg, rgba(var(--accent-rgb), 0.05), rgba(var(--accent-rgb), 0.05)), var(--card-bg); }
+.t-sess-wait { display: flex; align-items: center; gap: 8px; margin: 0; font-size: var(--fs-sm); color: var(--d100); }
+.t-sess-in { display: grid; gap: 8px; }
+.t-sess-in-h { margin: 0; font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--d100); }
+.t-sess-mic { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 52px; border-radius: 14px; border: 1px solid var(--accent); background: rgba(var(--accent-rgb), 0.14); color: var(--d50); font: inherit; font-weight: var(--fw-semibold); cursor: pointer; }
+.t-sess-mic:hover { background: rgba(var(--accent-rgb), 0.22); }
+.t-sess-mic.is-rec { border-color: var(--err); background: rgba(var(--err-rgb), 0.10); color: var(--err-text, var(--err)); animation: t-sess-pulse 1.4s ease-out infinite; }
+@keyframes t-sess-pulse { 0% { box-shadow: 0 0 0 0 rgba(var(--err-rgb), 0.35); } 70% { box-shadow: 0 0 0 10px rgba(var(--err-rgb), 0); } 100% { box-shadow: 0 0 0 0 rgba(var(--err-rgb), 0); } }
+.t-sess-mic:disabled { opacity: 0.5; cursor: default; animation: none; }
+.t-sess-write-tag { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--accent-text); }
+.t-sess-write .t-sess-in-h { font-size: var(--fs-sm); color: var(--d50); font-weight: var(--fw-semibold); }
+#sessWrite { font-size: var(--t-body); line-height: 1.5; }
+.t-sess-count { margin: 0; font-size: var(--fs-xs); color: var(--d100); font-variant-numeric: tabular-nums; }
+.t-sess-picks { margin-left: 0; }
+.t-sess-side { position: sticky; top: 150px; padding: 16px; gap: 10px; }
+.t-sess-side .t-out-sub { margin: 0; }
+.t-sess-who { margin: 0; display: flex; flex-direction: column; gap: 2px; font-size: var(--fs-sm); }
+.t-sess-who b { color: var(--d50); }
+.t-sess-who span { color: var(--d100); }
+.t-sess-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.t-sess-list li { display: grid; grid-template-columns: 14px 1fr auto; gap: 8px; align-items: center; font-size: var(--fs-sm); color: var(--d100); }
+.t-sess-list li.is-now { color: var(--d50); font-weight: var(--fw-semibold); }
+.t-sess-list li.is-now svg { color: var(--accent); }
+.t-sess-list li.is-done svg { color: var(--ok-text, var(--ok)); }
+.t-sess-list-st { font-size: var(--fs-xs); font-weight: 400; color: var(--d100); }
+.t-sess-note { margin: 0; font-size: var(--fs-xs); line-height: 1.45; color: var(--d100); }
+.t-sess-plan { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.t-sess-plan li { display: flex; gap: 10px; align-items: flex-start; font-size: var(--fs-sm); }
+.t-sess-plan li > svg { flex: none; margin-top: 2px; color: var(--accent-text); }
+.t-sess-plan li > span { display: flex; flex-direction: column; gap: 2px; }
+.t-sess-plan b { color: var(--d50); }
+.t-sess-plan li > span > span { color: var(--d100); }
+.t-sess-checks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.t-sess-check { display: grid; gap: 8px; align-content: start; padding: 12px; border-radius: 12px; border: 1px solid var(--card-border); background: var(--card-bg-raised); }
+.t-sess-check .btn { justify-self: start; }
+.t-sess-check-h { display: inline-flex; align-items: center; gap: 8px; color: var(--d50); }
+.t-sess-check-say { display: flex; gap: 6px; align-items: flex-start; margin: 0; font-size: var(--fs-xs); line-height: 1.45; color: var(--d100); }
+.t-sess-check-say svg { flex: none; margin-top: 1px; }
+.t-sess-check-say.is-ok svg { color: var(--ok-text, var(--ok)); }
+.t-sess-check-say.is-warn { color: var(--warn-text, var(--warn)); }
+/* Narrower: the side panel goes (its steps are in the header), the checks stack. */
+@media (max-width: 860px) {
+  .t-sess { grid-template-columns: 1fr; }
+  .t-sess-side { display: none; }
+  .t-sess-checks { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  .t-sess-head { padding: 12px 14px; top: 0; gap: 10px; }
+  .t-sess-ava { width: 32px; height: 32px; border-radius: 10px; }
+  .t-sess-title b { font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .t-sess-title > span { font-size: var(--fs-xs); }
+  .t-sess-clock { padding: 4px 10px; }
+  .t-sess-clock b { font-size: 15px; }
+  .t-sess-steps { display: flex; gap: 6px; }
+  .t-sess-steps li { flex: none; font-size: var(--fs-xs); gap: 6px; }
+  .t-sess-steps li.is-now { flex: 1; }
+  .t-sess-step-l { display: none; }
+  .t-sess-steps li.is-now .t-sess-step-l { display: inline; }
+  .t-sess-dock { bottom: 0; padding: 12px 14px; }
+}
+/* ══ THE RECRUITERS VIEW (AIMY-2926) ══════════════════════════════════════
+   The page's blocks on the left, AiMY's chat always open on the right; on a
+   narrow screen the chat follows the results. */
+.t-rvw-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; width: 100%; grid-column: 1 / -1; }
+.t-rvw > .s-block { grid-column: 1 / -1; }
+.t-rvw-chat-h > svg { flex: none; }
+.t-rvw-main { display: grid; gap: 24px; min-width: 0; grid-template-columns: minmax(0, 1fr); }
+.t-rvw-main > .s-block { margin: 0; }
+.t-rvw-chat { position: sticky; top: 12px; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; max-height: calc(100vh - 140px); min-height: 380px; border: 1px solid var(--card-border); border-radius: var(--r-lg); background: var(--card-bg); overflow: hidden; }
+.t-rvw-chat-h { display: flex; align-items: center; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--card-border); }
+.t-rvw-chat-h b { color: var(--d50); font-size: var(--fs-sm); }
+.t-rvw-chat-h span { margin-left: auto; font-size: var(--fs-xs); color: var(--d100); }
+.t-rvw-log { display: grid; gap: 12px; align-content: start; padding: 14px 16px; overflow-y: auto; }
+.t-rvw-log .t-chat-you p { max-width: 30ch; }
+.t-rvw-sugg { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.t-rvw-in { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; padding: 12px 16px; border-top: 1px solid var(--card-border); }
+.t-rvw-in .t-area { min-height: 44px; resize: none; }
+.t-rvw-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.t-rvw-chip { display: inline-flex; align-items: center; gap: 6px; }
+.t-rvw-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }
+.t-rvw-card .tc-summary { margin: 0; }
+.t-rvw-acts { justify-content: flex-end; gap: 8px; }
+.t-rvw-none { margin-top: 8px; }
+.t-rvw-recent { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 12px 0 0; }
+.t-rvw-recent-h { font-size: var(--fs-xs); color: var(--d100); margin-right: 4px; }
+.t-rvw-skel { display: grid; gap: 10px; padding: 18px; min-height: 140px; align-content: start; }
+@media (max-width: 1080px) {
+  .t-rvw-grid { grid-template-columns: minmax(0, 1fr); }
+  .t-rvw-chat { position: static; max-height: none; min-height: 0; grid-template-rows: auto auto auto; }
+  .t-rvw-log { max-height: 320px; }
+}
+
+/* ══ THE TEAM PIPELINE (AIMY-2901) ════════════════════════════════════════
+   One stage strip for the team and for each recruiter: a cell per stage,
+   its count, and the people held too long flagged in words and amber. */
+.t-tp-cap { margin: 16px 0 8px; font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--d100); }
+.t-tp-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 6px; margin: 10px 0 4px; }
+.t-tp-strip.is-small { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 4px; margin: 6px 0 0; }
+.t-tp-li { display: block; min-width: 0; }
+.t-tp-cell { display: grid; gap: 2px; width: 100%; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--card-border); background: var(--card-bg-raised); color: var(--d50); text-align: left; font: inherit; }
+button.t-tp-cell { cursor: pointer; }
+button.t-tp-cell:hover { border-color: rgba(var(--accent-rgb), 0.6); }
+button.t-tp-cell:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.t-tp-cell b { font-size: 18px; font-variant-numeric: tabular-nums; }
+.t-tp-cell.is-zero { opacity: 0.55; }
+.t-tp-cell.is-zero b { color: var(--d100); }
+.t-tp-cell.is-held { border-color: rgba(var(--warn-rgb), 0.55); background: rgba(var(--warn-rgb), 0.07); }
+.t-tp-cell.is-on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.t-tp-k { font-size: var(--fs-2xs); color: var(--d100); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t-tp-flag { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-2xs); font-weight: var(--fw-semibold); color: var(--warn-text, var(--warn)); }
+.is-small .t-tp-cell { padding: 6px 8px; }
+.is-small .t-tp-cell b { font-size: 14px; }
+.t-tp-heldsay { color: var(--warn-text, var(--warn)); font-weight: var(--fw-semibold); }
+.t-tp-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); }
+.t-tp-pos { display: grid; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--card-border); }
+.t-tp-posname { display: flex; flex-direction: column; gap: 2px; padding: 0; border: 0; background: none; color: var(--d50); font: inherit; font-size: var(--fs-sm); font-weight: var(--fw-semibold); text-align: left; cursor: pointer; }
+.t-tp-posname span { font-size: var(--fs-xs); font-weight: 400; color: var(--d100); }
+.t-tp-posname:hover { color: var(--accent-text); }
+.t-tp-drill .s-camp-list-head .s-inline-btn { margin-left: auto; }
+.b-owed-sev.is-warn { background: var(--warn); }
+
+/* A short window: nothing pinned, so the chat keeps the room. */
+@media (max-height: 760px) { .t-sess-head, .t-sess-dock, .t-sess-side { position: static; box-shadow: none; } }
+@media (prefers-reduced-motion: reduce) { .t-wave i, .t-sess-mic.is-rec { animation: none; } .t-sess-fill { transition: none; } }
