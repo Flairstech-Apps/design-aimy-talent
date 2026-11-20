@@ -8492,55 +8492,101 @@
     if (b && b.k === 'say') sessSpeak(b.text, () => { V.at++; sessGo(); });
   }
   const vaNext = () => { const V = sessV(); if (!V) return; V.at++; sessGo(); };
-  /* AiMY's voice, with the words appearing as they are said. With sound off,
-     or no voice in the browser, the words still come, faster, to read. */
+  /* AiMY'S REAL VOICE. The session's lines are recorded in AiMY's own voice,
+     Katie (Cartesia Sonic, as in the AiMY film), in assets/voice/session/;
+     the recorded call has two other voices, a customer and an agent, so it
+     never sounds like AiMY. A line with no recording (an intro the hiring
+     manager reworded, say) falls back to the browser's voice. */
+  const SESS_TEST = 'Can you hear me? If you can, you are ready.';
+  const SESS_CLIPS = (() => {
+    const a = ASMT_SEED.filter((x) => x.id === 'a5')[0], m = {};
+    if (!a) return m;
+    a.phases.forEach((p) => { m[p.intro] = p.k; p.items.forEach((it) => { if (it.say) m[it.say] = 'passage'; if (it.audio) m[it.audio] = 'call'; }); });
+    a.questions.forEach((q) => { if (q.dictate) m[q.dictate] = 'dictate'; });
+    m[SESS_TEST] = 'test';
+    return m;
+  })();
+  let SESS_AUD = null;
+  const sessClip = (text) => (SESS_CLIPS[text] ? 'assets/voice/session/' + SESS_CLIPS[text] + '.mp3?v=1' : null);
+  const sessCanSay = () => !!(window.speechSynthesis && window.SpeechSynthesisUtterance);
+  /* Stops whatever is speaking: a recording or the browser's voice. */
+  function sessHush() {
+    if (SESS_AUD) { const au = SESS_AUD; SESS_AUD = null; au.onended = au.onerror = null; try { au.pause(); } catch (e) {} }
+    try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
+  }
+  /* Plays one recording; onFail lets the caller fall back to the browser's voice. */
+  function sessClipPlay(src, onEnd, onFail) {
+    sessHush();
+    const au = new Audio(src);
+    SESS_AUD = au;
+    let failed = false;
+    const fail = () => { if (failed || SESS_AUD !== au) return; failed = true; SESS_AUD = null; onFail(); };
+    au.onended = () => { if (SESS_AUD === au) SESS_AUD = null; onEnd(); };
+    au.onerror = fail;
+    try { const p = au.play(); if (p && p.catch) p.catch(fail); } catch (e) { fail(); }
+    return au;
+  }
+  /* AiMY's voice, with the words appearing as they are said: in step with
+     the recording, or at a steady pace with the browser's voice. With sound
+     off, or no voice at all, the words still come, faster, to read. */
   function sessSpeak(text, done) {
-    const V = sessV(), ws = sWords(text);
-    const mute = UI.quiet || !window.speechSynthesis || !window.SpeechSynthesisUtterance;
-    let said = mute, shown = false, over = false;
+    const V = sessV(), ws = sWords(text), src = sessClip(text);
+    const mute = UI.quiet || (!src && !sessCanSay());
+    let said = mute, shown = false, over = false, au = null, n = 0;
     const finish = () => { if (over || !said || !shown) return; over = true; V.speaking = false; done(); };
-    if (!mute) {
+    const robot = () => {
+      if (!sessCanSay()) { said = true; finish(); return; }
       try {
         speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(text);
         u.lang = 'en-GB'; u.rate = 0.95;
         u.onend = u.onerror = () => { said = true; finish(); };
         speechSynthesis.speak(u);
-        /* A voice that never reports its end does not hold the session. */
-        setTimeout(() => { said = true; finish(); }, ws.length * 500 + 2500);
-      } catch (e) { said = true; }
+      } catch (e) { said = true; finish(); }
+    };
+    if (!mute) {
+      if (src) au = sessClipPlay(src, () => { said = true; finish(); }, () => { au = null; robot(); });
+      else robot();
+      /* A voice that never reports its end does not hold the session. */
+      setTimeout(() => { if (V.net !== 'lost') { said = true; finish(); } }, ws.length * 600 + 4000);
     }
     clearInterval(SESS_SPK);
     SESS_SPK = setInterval(() => {
-      if (sessV() !== V) { clearInterval(SESS_SPK); return; }
+      if (sessV() !== V) { clearInterval(SESS_SPK); if (au && SESS_AUD === au) sessHush(); return; }
       if (V.net === 'lost') return;
-      V.shown++;
+      if (au && au.duration && isFinite(au.duration)) V.shown = Math.max(V.shown, Math.ceil(ws.length * Math.min(1, au.currentTime / au.duration * 1.06)));
+      else if (!au) { n += 100 / (mute ? 90 : 330); V.shown = Math.floor(n); }
       const el = byId('sessSay');
       if (el) el.textContent = ws.slice(0, V.shown).join(' ');
       if (V.shown >= ws.length) { clearInterval(SESS_SPK); shown = true; finish(); }
-    }, mute ? 90 : 330);
+    }, 100);
   }
   function sessPlay(i) {
     const V = sessV(), a = sessAsmt(), b = sessBeats(a)[i];
     if (!V || !b || V.playing != null || (V.plays[i] || 0) >= 2 || V.net === 'lost') return;
     V.plays[i] = (V.plays[i] || 0) + 1; V.playing = i; V.prog = 0;
-    const text = b.k === 'write' ? a.questions[b.qi].dictate : b.text;
-    const mute = UI.quiet || !window.speechSynthesis || !window.SpeechSynthesisUtterance;
+    const text = b.k === 'write' ? a.questions[b.qi].dictate : b.text, src = sessClip(text);
+    const mute = UI.quiet || (!src && !sessCanSay());
     const total = sWords(text).length * (mute ? 90 : 380);
-    if (!mute) {
+    let au = null;
+    const robot = () => {
+      if (!sessCanSay()) return;
       try {
         speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(text.replace(/(Customer|Agent): /g, ''));
         u.lang = 'en-US'; u.rate = b.k === 'write' ? 0.85 : 1;
         speechSynthesis.speak(u);
       } catch (e) {}
-    }
+    };
+    if (!mute) { if (src) au = sessClipPlay(src, () => {}, () => { au = null; robot(); }); else robot(); }
     paint();
     const t0 = Date.now();
     clearInterval(V.playT);
     V.playT = setInterval(() => {
-      if (sessV() !== V) { clearInterval(V.playT); return; }
-      V.prog = Math.min(100, (Date.now() - t0) / total * 100);
+      if (sessV() !== V) { clearInterval(V.playT); if (au && SESS_AUD === au) sessHush(); return; }
+      /* The bar follows the recording itself, so it pauses when the call does. */
+      if (au && au.duration && isFinite(au.duration)) V.prog = au.ended ? 100 : Math.min(100, au.currentTime / au.duration * 100);
+      else if (!au) V.prog = Math.min(100, (Date.now() - t0) / total * 100);
       const bar = byId('sessBar' + i);
       if (bar) bar.style.width = V.prog + '%';
       if (V.prog >= 100) {
@@ -8589,9 +8635,11 @@
   function sessSound() {
     const V = sessV();
     V.heard = true;
-    if (!UI.quiet && window.speechSynthesis && window.SpeechSynthesisUtterance) {
-      try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance('Can you hear me? If you can, you are ready.'); u.lang = 'en-GB'; speechSynthesis.speak(u); } catch (e) {}
-    }
+    const robot = () => {
+      if (!sessCanSay()) return;
+      try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(SESS_TEST); u.lang = 'en-GB'; speechSynthesis.speak(u); } catch (e) {}
+    };
+    if (!UI.quiet) sessClipPlay(sessClip(SESS_TEST), () => {}, robot);
     paint();
   }
   function sessAnswer(v) { const V = sessV(), b = sessBeats(sessAsmt())[V.at]; V.ans[b.qi] = v; vaNext(); }
@@ -8611,8 +8659,11 @@
   function sessNet(up) {
     const V = sessV();
     if (!V || V.pre) return;
-    if (!up && V.net !== 'lost') { V.net = 'lost'; V.pausedAt = Date.now(); try { speechSynthesis.pause(); } catch (e) {} }
-    else if (up && V.net === 'lost') { V.net = 'ok'; if (V.t0) V.t0 += Date.now() - V.pausedAt; V.pausedAt = null; try { speechSynthesis.resume(); } catch (e) {} }
+    if (!up && V.net !== 'lost') { V.net = 'lost'; V.pausedAt = Date.now(); try { if (SESS_AUD) SESS_AUD.pause(); speechSynthesis.pause(); } catch (e) {} }
+    else if (up && V.net === 'lost') {
+      V.net = 'ok'; if (V.t0) V.t0 += Date.now() - V.pausedAt; V.pausedAt = null;
+      try { if (SESS_AUD) { const p = SESS_AUD.play(); if (p && p.catch) p.catch(() => {}); } speechSynthesis.resume(); } catch (e) {}
+    }
     paint();
   }
   window.addEventListener('offline', () => sessNet(false));
@@ -8625,7 +8676,7 @@
     const V = sessV();
     if (!V) return;
     clearInterval(SESS_T); clearInterval(SESS_SPK); clearInterval(V.playT);
-    try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
+    sessHush();
     if (DICT) { DICT.onresult = null; DICT.stop(); }
     const s = sessSend0(), a = asmtOf(s.asmt), c = DB.byId[s.cand];
     const norm = (t) => sWords(String(t).toLowerCase().replace(/[^a-z0-9 ]/g, ' '));
